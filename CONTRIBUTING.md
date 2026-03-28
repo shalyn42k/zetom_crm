@@ -33,4 +33,10 @@
    git merge test
    ```
 > Молиться
-4.
+
+
+### Если есть вопросы по работе git команд, гляньте эту документацию(**прошу не кидайте это чат гпт или другой ллм**)
+
+[Документация по гит](https://education.github.com/git-cheat-sheet-education.pdf)
+
+[Еще норм документация по гит](https://git-scm.com/cheat-sheet)
