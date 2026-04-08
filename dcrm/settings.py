@@ -11,6 +11,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+
+
 import os 
 from dotenv import load_dotenv
 from pathlib import Path
@@ -19,12 +23,8 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
-
 load_dotenv(BASE_DIR / ".env")
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '').split(',') if host.strip()]
@@ -86,6 +86,21 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT'),
     }
 }
+
+
+# Email SMTP
+
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "").strip() or (
+    "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.console.EmailBackend"
+)
+
+EMAIL_HOST = os.environ.get('SMTP_SERVER')
+EMAIL_PORT = os.environ.get('SMTP_PORT')
+EMAIL_USE_TLS = os.environ.get('SMTP_USE_TLS')
+EMAIL_HOST_USER = os.environ.get('SMTP_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('SMTP_PASSWORD')
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
