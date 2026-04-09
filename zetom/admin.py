@@ -1,7 +1,6 @@
 from django.contrib import admin
-from .models import Record
+from .models import Request_Null
 
-@admin.register(Record)
-class RecordAdmin(admin.ModelAdmin):
-    list_display = ('created_at', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'state', 'zipcode')
-    search_fields = ( 'first_name','last_name')
+@admin.register(Request_Null)
+class Request_Null(admin.ModelAdmin):
+    list_display = ('created_at', 'phone', 'company_name', 'company_nip', 'email')

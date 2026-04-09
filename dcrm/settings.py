@@ -40,7 +40,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'zetom'
+    'zetom.apps.ZetomConfig',
+    'phonenumber_field', # библиотека для валидации телефона
+    'localflavor', # библиотеки для валидациия NIP
+    
+   
 ]
 
 MIDDLEWARE = [
@@ -73,7 +77,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'dcrm.wsgi.application'
 
 
-# Database
+# Database psql
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
@@ -91,14 +95,16 @@ DATABASES = {
 # Email SMTP
 
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "").strip() or (
-    "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.console.EmailBackend"
+    "django.core.mail.backends.console.EmailBackend" 
+    if DEBUG 
+    else "django.core.mail.backends.console.EmailBackend"
 )
 
-EMAIL_HOST = os.environ.get('SMTP_SERVER')
-EMAIL_PORT = os.environ.get('SMTP_PORT')
-EMAIL_USE_TLS = os.environ.get('SMTP_USE_TLS')
-EMAIL_HOST_USER = os.environ.get('SMTP_USER')
-EMAIL_HOST_PASSWORD = os.environ.get('SMTP_PASSWORD')
+EMAIL_HOST = os.environ.get("SMTP_SERVER", "localhost")
+EMAIL_PORT = os.environ.get("SMTP_PORT", "587")
+EMAIL_USE_TLS = os.environ.get("SMTP_USE_TLS", "true".lower() == "true")
+EMAIL_HOST_USER = os.environ.get("SMTP_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 
 
 
@@ -131,6 +137,9 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+# настройка дефолтного региона для библиотеки для валидации телефонов
+PHONENUMBER_DEFAULT_REGION = 'PL'
 
 
 # Static files (CSS, JavaScript, Images)

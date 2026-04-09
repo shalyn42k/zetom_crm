@@ -1,7 +1,11 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django import forms 
-from .models import Record
+from .models import Request_Null
+
+#Библиотеки валидации номера и нипа
+from phonenumber_field.formfields import PhoneNumberField
+from localflavor.pl.forms import PLNIPField
 
 class SignUpForm(UserCreationForm):
     email = forms.EmailField(label="", widget=forms.TextInput(attrs={'class':'form-control', 'placeholder':'Email Address'}))
@@ -32,20 +36,25 @@ class SignUpForm(UserCreationForm):
         self.fields['password2'].label = ''
         self.fields['password2'].help_text = '<span class="form-text text-muted"><small>Enter the same password as before, for verification.</small></span>'	
 
+class AddRequestFormNull(forms.ModelForm):
+    phone = PhoneNumberField(
+        region="PL",
+        widget=forms.TextInput(attrs={'placeholder': 'Phone', 'class': 'form-control'})
+        
+    )
 
+    company_name = forms.CharField(
+        widget=forms.TextInput(attrs={'placholder': 'company', 'class': 'form-control'})
+    )
 
+    email = forms.EmailField(
+        widget=forms.TextInput(attrs={'placeholder': 'email@gmail.com', 'class': 'form-control'})
+    )
 
-# Create Add Record Form
-class AddRecordForm(forms.ModelForm):
-    first_name = forms.CharField(required=True, widget=forms.widgets.TextInput(attrs={"placeholder":"First Name", "class":"form-control"}), label="")
-    last_name = forms.CharField(required=True, widget=forms.widgets.TextInput(attrs={"placeholder":"Last Name", "class":"form-control"}), label="")
-    email = forms.CharField(required=True, widget=forms.widgets.TextInput(attrs={"placeholder":"Email", "class":"form-control"}), label="")
-    phone = forms.CharField(required=True, widget=forms.widgets.TextInput(attrs={"placeholder":"Phone", "class":"form-control"}), label="")
-    address = forms.CharField(required=True, widget=forms.widgets.TextInput(attrs={"placeholder":"Address", "class":"form-control"}), label="")
-    city = forms.CharField(required=True, widget=forms.widgets.TextInput(attrs={"placeholder":"City", "class":"form-control"}), label="")
-    state = forms.CharField(required=True, widget=forms.widgets.TextInput(attrs={"placeholder":"State", "class":"form-control"}), label="")
-    zipcode = forms.CharField(required=True, widget=forms.widgets.TextInput(attrs={"placeholder":"Zipcode", "class":"form-control"}), label="")
+    company_nip = PLNIPField(
+        widget=forms.TextInput(attrs={'placeholder': '1234567890', 'class': 'form-control'})
+    )
 
     class Meta:
-        model = Record
-        exclude = ("user",)
+        model = Request_Null
+        fields = ('phone', 'company_name', 'email', 'company_nip' )

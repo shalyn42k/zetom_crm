@@ -1,15 +1,39 @@
 from django.db import models
+from django import forms
+from django.core.validators import RegexValidator
 
-class Record(models.Model):
+from phonenumber_field.modelfields import PhoneNumberField
+
+class Request_Null(models.Model):
 	created_at = models.DateTimeField(auto_now_add=True)
-	first_name = models.CharField(max_length=50)
-	last_name =  models.CharField(max_length=50)
-	email =  models.CharField(max_length=100)
-	phone = models.CharField(max_length=15)
-	address =  models.CharField(max_length=100)
-	city =  models.CharField(max_length=50)
-	state =  models.CharField(max_length=50)
-	zipcode =  models.CharField(max_length=20)
-
+	phone = PhoneNumberField(blank=False)
+	company_name = models.CharField(max_length=50, blank=True)
+	email = models.EmailField(
+		max_length=100,
+		validators=[
+			
+		]
+	)
+	company_nip = models.CharField(
+		max_length=10,
+		validators=[
+			RegexValidator(
+				regex=r'^[0-9-]+$',
+				message="Your NIP sucks man, It must be 10 digits yo"
+			)
+		],
+		blank=True
+	)
+	
 	def __str__(self):
-		return(f"{self.first_name} {self.last_name}")
+	    return(f"{self.company_name}")
+
+#class Oferta(models.Model):
+#	created_at = models.DateTimeField(auto_now_add=True)
+#	phone = PhoneNumberField(blank=True)
+#	company_name = models.CharField(max_length=50, blank=False)
+#	email = models.EmailField(max_length=500, blank=False)
+
+
+
+
