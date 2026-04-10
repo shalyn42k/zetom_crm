@@ -16,7 +16,7 @@ def email_template(request):
             except Exception as e:
                 message = "Все ок в базе, но с почтой нет"
         else:
-            return HttpResponse(f"Все плохо: {form.errors}")
+            nessage = "Все плохо: {form.errors}"
     else:
         form = AddRequestFormNull()
     return render(
