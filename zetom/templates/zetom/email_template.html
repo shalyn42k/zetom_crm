@@ -20,7 +20,11 @@
 
     <div class="container">
         <h2>Отправка данных</h2>
-
+ {% if message %}
+<div class="success">
+    {{ message }}
+</div>
+{% endif %}
         {% if form.errors %}
             <div class="errorlist">
                 Пожалуйста, исправьте ошибки в полях ниже.
