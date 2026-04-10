@@ -15,7 +15,6 @@ def email_template(request):
                 message = ("Все заебок со всем")
             except Exception as e:
                 message = "Все ок в базе, но с почтой нет"
-                    # тут написать че случится если имейл не удалось отправить
         else:
             return HttpResponse(f"Все плохо: {form.errors}")
     return render(request, 'zetom/email_template.html', {
