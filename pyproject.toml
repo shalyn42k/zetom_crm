@@ -1,0 +1,17 @@
+[project]
+name = "zetom-crm"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Pan_Ivan",email = "ilitovko660@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11, <4.0"
+dependencies = [
+    "django-unfold (>=0.89.0,<0.90.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
