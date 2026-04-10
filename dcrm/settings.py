@@ -94,17 +94,17 @@ DATABASES = {
 
 # Email SMTP
 
-EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "").strip() or (
+EMAIL_BACKEND = (
     "django.core.mail.backends.console.EmailBackend" 
     if DEBUG 
-    else "django.core.mail.backends.console.EmailBackend"
+    else "django.core.mail.backends.smtp.EmailBackend"
 )
 
-EMAIL_HOST = os.environ.get("SMTP_SERVER", "localhost")
-EMAIL_PORT = os.environ.get("SMTP_PORT", "587")
-EMAIL_USE_TLS = os.environ.get("SMTP_USE_TLS", "true".lower() == "true")
-EMAIL_HOST_USER = os.environ.get("SMTP_USER", "")
-EMAIL_HOST_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+EMAIL_HOST = os.getenv("SMTP_SERVER", "localhost")
+EMAIL_PORT = int(os.getenv("SMTP_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("SMTP_USE_TLS", "False").lower() == "true"
+EMAIL_HOST_USER = os.getenv("SMTP_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 
 
 

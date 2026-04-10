@@ -51,7 +51,7 @@ class AddRequestFormNull(forms.ModelForm):
         widget=forms.TextInput(attrs={'placeholder': 'email@gmail.com', 'class': 'form-control'})
     )
 
-    company_nip = PLNIPField(
+    company_nip = PLNIPField( # почему работает? - работающий NIP 7322215365
         widget=forms.TextInput(attrs={'placeholder': '1234567890', 'class': 'form-control'})
     )
 
