@@ -1,12 +1,13 @@
 asgiref==3.11.1
 certifi==2026.2.25
-charset-normalizer==3.4.6
+charset-normalizer==3.4.7
 click==8.3.1
 colorama==0.4.6
 cssbeautifier==1.15.4
-Django==6.0.3
+Django==5.2.13
 django-localflavor==5.0
 django-phonenumber-field==8.4.0
+django-unfold==0.89.0
 djlint==1.36.4
 docker==7.1.0
 EditorConfig==0.17.1
@@ -22,7 +23,7 @@ python-stdnum==2.2
 PyYAML==6.0.3
 regex==2026.3.32
 requests==2.33.1
-ruff==0.15.8
+ruff==0.15.10
 six==1.17.0
 sqlparse==0.5.5
 tqdm==4.67.3
