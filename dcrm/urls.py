@@ -20,5 +20,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('zetom.urls')),
+    path('zetom/', include('zetom.urls')),
 ]

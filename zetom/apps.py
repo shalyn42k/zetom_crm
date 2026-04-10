@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
-class websiteConfig(AppConfig):
+class ZetomConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'zetom'
