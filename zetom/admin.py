@@ -1,34 +1,33 @@
 from django import forms
 from django.contrib import admin
+from django.shortcuts import redirect
 
-from .forms import AddOferta, AddRequestFormMain, AddRequestFormNull
-from .models import Oferta, RequestMain, RequestNull, Role, UserProfile
+from unfold.admin import ModelAdmin
+from unfold.decorators import action
 
-
-@admin.register(Role)
-class AdminRole(admin.ModelAdmin):
-    list_display = ("code", "name", "level")
-
-@admin.register(UserProfile)
-class AdminUserProfile(admin.ModelAdmin):
-    list_display = ("user", "role")
+from .models import Request_Null
 
 
-@admin.register(RequestNull)
-class RequestNullAdmin(admin.ModelAdmin):
-    form = AddRequestFormNull
-    list_display = ("created_at", "phone", "company_name", "company_nip", "email")
+@admin.register(Request_Null)
+class Request_NullAdmin(ModelAdmin):      
+    list_display = ('created_at', 'phone', 'company_name', 'company_nip', 'email')
 
+    actions_detail = ["oferta_action", "zlecenie_action"]
 
-@admin.register(RequestMain)
-class RequestMainAdmin(admin.ModelAdmin):
-    form = AddRequestFormMain
-    list_display = ("created_at", "full_name", "address", "notes")
-    exclude = ["from_null"]
+    @action(
+        description="Oferta",
+        icon="assignment",
+        url_path="oferta",
+    )
+    def oferta_action(self, request, object_id):
+        self.message_user(request, "Oferta")
+        return redirect("admin:zetom_request_null_change", object_id)
 
-
-@admin.register(Oferta)
-class OfertaAdmin(admin.ModelAdmin):
-    form = AddOferta
-    list_display = ("created_at", "price")
-    exclude = ["from_main"]
+    @action(
+        description="zlecenie",
+        icon="assignment",
+        url_path="zlecenie_action",
+    )
+    def zlecenie_action(self, request, object_id):
+        self.message_user(request, "zlecenie")
+        return redirect("admin:zetom_request_null_change", object_id)
