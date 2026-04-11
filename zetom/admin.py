@@ -9,16 +9,16 @@ from .models import Oferta, RequestMain, RequestNull, Role, UserProfile
 
 
 @admin.register(Role)
-class AdminRole(admin.ModelAdmin):
+class AdminRole(ModelAdmin):
     list_display = ("code", "name", "level")
 
 @admin.register(UserProfile)
-class AdminUserProfile(admin.ModelAdmin):
+class AdminUserProfile(ModelAdmin):
     list_display = ("user", "role")
 
 
 @admin.register(RequestNull)
-class RequestNullAdmin(admin.ModelAdmin):
+class RequestNullAdmin(ModelAdmin):
     form = AddRequestFormNull
     list_display = ("created_at", "phone", "company_name", "company_nip", "email")
     actions_detail = ["oferta_action", "zlecenie_action"]
@@ -30,7 +30,7 @@ class RequestNullAdmin(admin.ModelAdmin):
     )
     def oferta_action(self, request, object_id):
         self.message_user(request, "Oferta")
-        return redirect("admin:zetom_request_null_change", object_id)
+        return redirect("admin:zetom_requestnull_change", object_id)
 
     @action(
         description="zlecenie",
@@ -39,18 +39,18 @@ class RequestNullAdmin(admin.ModelAdmin):
     )
     def zlecenie_action(self, request, object_id):
         self.message_user(request, "zlecenie")
-        return redirect("admin:zetom_request_null_change", object_id)
+        return redirect("admin:zetom_requestnull_change", object_id)
 
 
 @admin.register(RequestMain)
-class RequestMainAdmin(admin.ModelAdmin):
+class RequestMainAdmin(ModelAdmin):
     form = AddRequestFormMain
     list_display = ("created_at", "full_name", "address", "notes")
     exclude = ["from_null"]
 
 
 @admin.register(Oferta)
-class OfertaAdmin(admin.ModelAdmin):
+class OfertaAdmin(ModelAdmin):
     form = AddOferta
     list_display = ("created_at", "price")
     exclude = ["from_main"]
