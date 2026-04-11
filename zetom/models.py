@@ -33,6 +33,11 @@ class RequestTemplate(models.Model):
     )
 
     class Meta:
+        permissions = [
+            ("change_status", "Can change status"),
+            ("assign_record", "Can assign record"),
+            ("view_logs", "Can view logs"),
+        ]
         abstract = True
 
     def __str__(self):
@@ -41,15 +46,6 @@ class RequestTemplate(models.Model):
 
 class RequestNull(RequestTemplate):
     created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        permissions = [
-            ("change_status", "Can change status"),
-            ("assign_record", "Can assign record"),
-            ("view_logs", "Can view logs"),
-        ]
-
-
 
 class RequestMain(RequestTemplate):
     # Уникальные таблицы

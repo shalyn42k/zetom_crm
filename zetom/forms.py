@@ -140,4 +140,4 @@ class AddOferta(AddRequestFormMain):
 
     class Meta:
         model = Oferta
-        fields = ("company_name", "company_nip", "full_name", "price")
+        fields = ("phone", "email")
