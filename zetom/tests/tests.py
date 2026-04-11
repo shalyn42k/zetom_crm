@@ -1,11 +1,7 @@
 # test made by codex
 
 
-
-from django.test import TestCase
 from unittest.mock import patch
- 
-
 
 from django.core import mail
 from django.test import TestCase, override_settings
@@ -88,7 +84,9 @@ class EmailTemplateViewTests(TestCase):
         send_mock.assert_called_once()
         self.assertContains(response, "Все заебок со всем")
 
-    @patch("zetom.views.send_notification_to_staff", side_effect=Exception("SMTP failed"))
+    @patch(
+        "zetom.views.send_notification_to_staff", side_effect=Exception("SMTP failed")
+    )
     def test_post_valid_data_handles_email_errors(self, _send_mock):
         response = self.client.post(
             reverse("zetom:index"),
