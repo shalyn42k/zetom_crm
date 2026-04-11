@@ -1,0 +1,79 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренировка Django Forms</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; line-height: 1.6; background-color: #f4f7f6; }
+        .container { max-width: 500px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { padding: 10px 20px; background-color: #0984e3; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background-color: #74b9ff; }
+        .errorlist { color: #d63031; list-style: none; padding: 0; font-size: 14px; margin-bottom: 10px; }
+        .success { color: #27ae60; font-weight: bold; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Отправка данных</h2>
+ {% if message %}
+<div class="success">
+    {{ message }}
+</div>
+{% endif %}
+        {% if form.errors %}
+            <div class="errorlist">
+                Пожалуйста, исправьте ошибки в полях ниже.
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="id_phone">Ваш телефон:</label>
+                <input type="tel" id="id_phone" name="phone" 
+                       placeholder="+48 000 000 000" 
+                       value="{{ form.phone.value|default:'' }}">
+                {{ form.phone.errors }}
+            </div>
+
+            <div class="form-group">
+                <label for="id_company_name">Имя компании:</label>
+                <input type="text" id="id_company_name" name="company_name" 
+                       placeholder="Zetom Sp. z o.o." required 
+                       value="{{ form.company_name.value|default:'' }}">
+                {{ form.company_name.errors }}
+            </div>
+
+            <div class="form-group">
+                <label for="id_email">Ваша почта:</label>
+                <input type="email" id="id_email" name="email" 
+                       placeholder="example@zetom.pl" required 
+                       value="{{ form.email.value|default:'' }}">
+                {{ form.email.errors }}
+            </div>
+
+            <div class="form-group">
+                <label for="id_company_nip">NIP компании:</label>
+                <input type="text" id="id_company_nip" name="company_nip" 
+                       placeholder="1234567890" required 
+                       value="{{ form.company_nip.value|default:'' }}">
+                
+                {% if form.company_nip.errors %}
+                    <div class="errorlist">
+                        {{ form.company_nip.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            <button type="submit">Отправить заявку</button>
+        </form>
+    </div>
+
+</body>
+</html>
