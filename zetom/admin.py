@@ -1,9 +1,7 @@
 from django import forms
 from django.contrib import admin
-
 from .forms import AddOferta, AddRequestFormMain, AddRequestFormNull
-from .models import Oferta, RequestMain, RequestNull
-
+from .models import Oferta, RequestMain, RequestNull, Role, UserProfile
 
 @admin.register(RequestNull)
 class RequestNullAdmin(admin.ModelAdmin):
@@ -23,3 +21,7 @@ class OfertaAdmin(admin.ModelAdmin):
     form = AddOferta
     list_display = ("created_at", "price")
     exclude = ["from_main"]
+    
+@admin.register(Role)
+
+@admin.register(UserProfile)
