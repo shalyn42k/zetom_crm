@@ -8,15 +8,6 @@ from unfold.enums import ActionVariant
 from .forms import AddOferta, AddRequestFormMain, AddRequestFormNull
 from .models import Oferta, RequestMain, RequestNull, Role, UserProfile
 
-class ActionVariant(enumerate):
-     DEFAULT = "default"
-     PRIMARY = "primary"
-     SUCCESS = "success"
-     INFO = "info"
-     WARNING = "warning"
-     DANGER = "danger"
-
-
 @admin.register(Role)
 class AdminRole(ModelAdmin):
     list_display = ("code", "name", "level")
