@@ -140,11 +140,4 @@ class AddOferta(TemplateForm):
 
     class Meta:
         model = Oferta
-        fields = (
-            "from_main", 
-            "phone",
-            "email",
-            "company_name", 
-            "company_nip", 
-            "price"
-        )
+        fields = ("from_main", "phone", "email", "company_name", "company_nip", "price")

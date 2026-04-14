@@ -1,8 +1,7 @@
 from django.shortcuts import get_object_or_404
+from safedelete.models import SOFT_DELETE
 
-from ..models import RequestNull, RequestMain, Oferta
-from safedelete.models import SOFT_DELETE 
-
+from ..models import Oferta, RequestMain, RequestNull
 
 
 def approve_null_action(null_id):
@@ -19,19 +18,18 @@ def approve_null_action(null_id):
 
     return main_obj
 
-    
+
 def approve_oferta_action(main_id):
     main_obj = get_object_or_404(RequestMain, pk=main_id)
-    
 
     oferta_obj, created = Oferta.objects.update_or_create(
         from_main=main_obj,
         defaults={
-        "phone": main_obj.phone,
-        "company_name": main_obj.company_name,
-        "company_nip":main_obj.company_nip,
-        "email": main_obj.email,
-        }
+            "phone": main_obj.phone,
+            "company_name": main_obj.company_name,
+            "company_nip": main_obj.company_nip,
+            "email": main_obj.email,
+        },
     )
 
     if created:
