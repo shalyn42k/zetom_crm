@@ -20,3 +20,6 @@ def send_notification_to_staff(request_object: RequestNull):
         ["tymirapps@gmail.com"],  # это стафф кому отправляется
         fail_silently=False,
     )
+
+
+

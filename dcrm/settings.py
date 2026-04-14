@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "zetom.apps.ZetomConfig",
     "phonenumber_field",  # библиотека для валидации телефона
     "localflavor",  # библиотеки для валидациия NIP
+    "safedelete", # библиотека для безопасного удаления данных в таблицах
 ]
 
 
