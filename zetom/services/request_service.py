@@ -31,8 +31,11 @@ def approve_oferta_action(main_id):
         "company_name": main_obj.company_name,
         "company_nip":main_obj.company_nip,
         "email": main_obj.email,
-        #"price": 0,
         }
     )
+
+    if created:
+        oferta_obj.price = 0.00
+        oferta_obj.save()
 
     return oferta_obj

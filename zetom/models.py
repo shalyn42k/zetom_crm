@@ -52,8 +52,8 @@ class RequestMain(RequestTemplate):
     created_at = models.DateTimeField(auto_now_add=True)
     from_null = models.OneToOneField(RequestNull, on_delete=models.SET_NULL, null=True)
     full_name = models.CharField(max_length=50)
-    address = models.CharField(max_length=50)
-    notes = models.CharField(max_length=500)
+    address = models.CharField(max_length=50, null=True)
+    notes = models.CharField(max_length=500, null=True)
     # вложение понять как сделать
 
 
@@ -61,4 +61,4 @@ class Oferta(RequestTemplate):
     # Уникальные таблички
     created_at = models.DateTimeField(auto_now_add=True)
     from_main = models.ForeignKey(RequestMain, on_delete=models.CASCADE, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
