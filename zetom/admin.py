@@ -4,11 +4,12 @@ from django.shortcuts import redirect
 from unfold.admin import ModelAdmin
 from unfold.decorators import action
 from unfold.enums import ActionVariant
+from django.db import transaction
 
 from .forms import AddOferta, AddRequestFormMain, AddRequestFormNull
 from .models import Oferta, RequestMain, RequestNull, Role, UserProfile
 from .services.request_service import approve_null_action, approve_oferta_action
-
+from .services.notification_service import send_notification_approve_null
 
 @admin.register(Role)
 class AdminRole(ModelAdmin):
@@ -31,10 +32,12 @@ class RequestNullAdmin(ModelAdmin):
         variant=ActionVariant.SUCCESS,
         icon="",
     )
+    @transaction.atomic
     def approve_action(self, request, object_id):
         new_main_record = approve_null_action(object_id)
+        send_notification_approve_null(new_main_record)
 
-        return redirect("admin:zetom_requestmain_change", object_id)
+        return redirect("admin:zetom_requestmain_change", new_main_record.pk)
 
 
 @admin.register(RequestMain)
@@ -70,7 +73,7 @@ class RequestMainAdmin(ModelAdmin):
         url_path="zlecenie_action",
     )
     def zlecenie_action(self, request, object_id):
-        self.message_user(request, "Zlecenie")
+        self.message_user(request, "no zlecenie :(")
         return redirect("admin:zetom_requestmain_change", object_id)
 
 

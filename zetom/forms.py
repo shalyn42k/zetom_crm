@@ -86,7 +86,7 @@ class TemplateForm(forms.ModelForm):
 
     company_nip = PLNIPField(  # почему работает? - работающий NIP 7322215365
         widget=forms.TextInput(
-            attrs={"placeholder": "1234567890", "class": "form-control"}
+            attrs={"placeholder": "7322215365", "class": "form-control"}
         )
     )
 
