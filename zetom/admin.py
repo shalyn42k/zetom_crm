@@ -1,12 +1,11 @@
 from django import forms
 from django.contrib import admin, messages
+from django.contrib.admin.models import LogEntry
 from django.db import transaction
 from django.shortcuts import redirect
 from unfold.admin import ModelAdmin
 from unfold.decorators import action
 from unfold.enums import ActionVariant
-from django.contrib.admin.models import LogEntry
-
 
 from .forms import AddOferta, AddRequestFormMain, AddRequestFormNull
 from .models import Oferta, RequestMain, RequestNull, Role, UserProfile
@@ -14,19 +13,24 @@ from .services.notification_service import send_notification_approve_null
 from .services.request_service import approve_null_action, approve_oferta_action
 
 
-#Ии написал класс, ебу че делает
+# Ии написал класс, ебу че делает
 @admin.register(LogEntry)
-class LogEntryAdmin(ModelAdmin): # Используем ModelAdmin от Unfold для красоты
+class LogEntryAdmin(ModelAdmin):  # Используем ModelAdmin от Unfold для красоты
     list_display = ("action_time", "user", "content_type", "object_repr", "action_flag")
     list_filter = ("action_flag", "content_type", "user")
     search_fields = ("object_repr", "change_message")
-    
-    # Запрещаем всё, кроме просмотра
-    def has_add_permission(self, request): return False
-    def has_change_permission(self, request, obj=None): return False
-    def has_delete_permission(self, request, obj=None): return False
 
-    
+    # Запрещаем всё, кроме просмотра
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Role)
 class AdminRole(ModelAdmin):
     list_display = ("code", "name", "level")
@@ -59,6 +63,7 @@ class RequestNullAdmin(ModelAdmin):
 @admin.register(RequestMain)
 class RequestMainAdmin(ModelAdmin):
     form = AddRequestFormMain
+    # change_form_template = "requestmain/change_form.html"
     list_display = ("created_at", "company_name")
     fields = (
         "full_name",
