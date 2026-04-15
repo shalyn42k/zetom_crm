@@ -81,6 +81,11 @@ UNFOLD = {
                     "icon": "check",
                     "link": reverse_lazy("admin:zetom_requestnull_changelist"),
                 },
+                {
+                    "title": "Activity Log",
+                    "icon": "history",
+                    "link": ("/admin/admin/logentry/"),
+                },
             ]
         },
         {
@@ -101,7 +106,7 @@ UNFOLD = {
             ],
         },
         {
-            "title": "Settings",
+            "title": "Admin",
             "separator": True,
             "collapsible": True,
             "items": [
