@@ -135,7 +135,7 @@ class AddRequestFormMain(TemplateForm):
 
 class AddOferta(TemplateForm):
     price = forms.DecimalField(
-        widget=forms.NumberInput(attrs={"placeholder": "0.00", "class": "form-control"})
+        widget=forms.NumberInput(attrs={"placeholder": "0", "class": "form-control"})
     )
 
     class Meta:

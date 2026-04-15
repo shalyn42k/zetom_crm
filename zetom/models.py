@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
+from safedelete.models import SafeDeleteModel
 
 
 class Role(models.Model):
@@ -21,7 +22,7 @@ class UserProfile(models.Model):
         return f"{self.user.username} - {self.role}"
 
 
-class RequestTemplate(models.Model):
+class RequestTemplate(SafeDeleteModel):
     phone = PhoneNumberField(blank=False)
     company_name = models.CharField(max_length=50, blank=True)
     email = models.EmailField(max_length=100, validators=[])
