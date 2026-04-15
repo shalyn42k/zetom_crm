@@ -1,31 +1,26 @@
 from django.templatetags.static import static
-from django.urls import reverse_lazy 
-
+from django.urls import reverse_lazy
 
 UNFOLD = {
     "SITE_TITLE": "Zetom CRM",
     "SITE_HEADER": "Zetom CRM",
     "SITE_SUBHEADER": "Control Panel",
-
-# Static files
-    "SITE_ICON": { # чет не оч работает
+    # Static files
+    "SITE_ICON": {  # чет не оч работает
         "light": lambda request: static("zetom/img/zet1.avif"),
         "dark": lambda request: static("zetom/img/zet1.avif"),
     },
-
     "SITE_LOGO": {
         "light": lambda request: static("zetom/img/logo.avif"),
         "dark": lambda request: static("zetom/img/logo.avif"),
     },
-
     "LOGIN": {
         # разобраться как красиво сделать бекграунд
-        #"image": lambda request: static("zetom/img/bg.jpg"),
-        #"redirect_after": lambda request: reverse_lazy("admin:APP_MODEL_changelist"),
+        # "image": lambda request: static("zetom/img/bg.jpg"),
+        # "redirect_after": lambda request: reverse_lazy("admin:APP_MODEL_changelist"),
         # Inherits from `unfold.forms.AuthenticationForm`
-        #"form": "app.forms.CustomLoginForm",
+        # "form": "app.forms.CustomLoginForm",
     },
-
     "SITE_URL": "/",
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
@@ -67,61 +62,60 @@ UNFOLD = {
             "important-dark": "var(--color-base-100)",
         },
     },
-
     "SIDEBAR": {
-    "show_search": True,
-    "navigation": [
-        {
-            "title": "Developer Interface",
-            "separator": True,
-            "collapsible": True,
-            "items": [
-                {
-                    "title": "Valdiation Window",
-                    "icon": "check",
-                    "link": reverse_lazy("admin:zetom_requestnull_changelist"),
-                },
-                {
-                    "title": "Activity Log",
-                    "icon": "history",
-                    "link": ("/admin/admin/logentry/"),
-                },
-            ]
-        },
-        {
-            "title": "Requests",  # название группы
-            "separator": True,
-            "collapsible": True,  # можно сворачивать
-            "items": [
-                {
-                    "title": "Information",
-                    "icon": "folder",
-                    "link": reverse_lazy("admin:zetom_requestmain_changelist"),
-                },
-                {
-                    "title": "Oferta Information",
-                    "icon": "description",
-                    "link": reverse_lazy("admin:zetom_oferta_changelist"),
-                },
-            ],
-        },
-        {
-            "title": "Admin",
-            "separator": True,
-            "collapsible": True,
-            "items": [
-                {
-                    "title": "Roles",
-                    "icon": "shield",
-                    "link": reverse_lazy("admin:zetom_role_changelist"),
-                },
-                {
-                    "title": "Users",
-                    "icon": "account_box",
-                    "link": reverse_lazy("admin:zetom_userprofile_changelist"),
-                },
-            ],
-        },
-    ],
-}
+        "show_search": True,
+        "navigation": [
+            {
+                "title": "Developer Interface",
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": "Valdiation Window",
+                        "icon": "check",
+                        "link": reverse_lazy("admin:zetom_requestnull_changelist"),
+                    },
+                    {
+                        "title": "Activity Log",
+                        "icon": "history",
+                        "link": ("/admin/admin/logentry/"),
+                    },
+                ],
+            },
+            {
+                "title": "Requests",  # название группы
+                "separator": True,
+                "collapsible": True,  # можно сворачивать
+                "items": [
+                    {
+                        "title": "Information",
+                        "icon": "folder",
+                        "link": reverse_lazy("admin:zetom_requestmain_changelist"),
+                    },
+                    {
+                        "title": "Oferta Information",
+                        "icon": "description",
+                        "link": reverse_lazy("admin:zetom_oferta_changelist"),
+                    },
+                ],
+            },
+            {
+                "title": "Admin",
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": "Roles",
+                        "icon": "shield",
+                        "link": reverse_lazy("admin:zetom_role_changelist"),
+                    },
+                    {
+                        "title": "Users",
+                        "icon": "account_box",
+                        "link": reverse_lazy("admin:zetom_userprofile_changelist"),
+                    },
+                ],
+            },
+        ],
+    },
 }
