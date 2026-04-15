@@ -86,7 +86,7 @@ class TemplateForm(forms.ModelForm):
 
     company_nip = PLNIPField(  # почему работает? - работающий NIP 7322215365
         widget=forms.TextInput(
-            attrs={"placeholder": "1234567890", "class": "form-control"}
+            attrs={"placeholder": "7322215365", "class": "form-control"}
         )
     )
 
@@ -133,11 +133,11 @@ class AddRequestFormMain(TemplateForm):
         )
 
 
-class AddOferta(AddRequestFormMain):
+class AddOferta(TemplateForm):
     price = forms.DecimalField(
-        widget=forms.NumberInput(attrs={"placeholder": "0.00", "class": "form-control"})
+        widget=forms.NumberInput(attrs={"placeholder": "0", "class": "form-control"})
     )
 
     class Meta:
         model = Oferta
-        fields = ("phone", "email")
+        fields = ("from_main", "phone", "email", "company_name", "company_nip", "price")

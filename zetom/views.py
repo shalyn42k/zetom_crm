@@ -1,8 +1,8 @@
 from django.http import HttpResponse
 from django.shortcuts import render
 
-from .emails.email_utils import send_notification_to_staff
 from .forms import AddRequestFormNull
+from .services.notification_service import send_notification_to_staff
 
 
 def email_template(request):
