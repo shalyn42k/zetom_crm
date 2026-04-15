@@ -13,7 +13,7 @@ def approve_null_action(null_id):
             "company_name": null_obj.company_name,
             "company_nip": null_obj.company_nip,
             "email": null_obj.email,
-        }
+        },
     )
 
     null_obj.delete()

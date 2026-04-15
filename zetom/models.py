@@ -13,6 +13,11 @@ class Role(models.Model):
     def __str__(self):
         return f"{self.name} ({self.code})"
 
+    class Meta:
+        verbose_name = "Roles"
+        verbose_name_plural = "Roles"
+
+
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -21,6 +26,9 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.role}"
 
+    class Meta:
+        verbose_name = "Users"
+        verbose_name_plural = "Users"
 
 class RequestTemplate(SafeDeleteModel):
     phone = PhoneNumberField(blank=False)
@@ -37,11 +45,6 @@ class RequestTemplate(SafeDeleteModel):
     )
 
     class Meta:
-        permissions = [
-            ("change_status", "Can change status"),
-            ("assign_record", "Can assign record"),
-            ("view_logs", "Can view logs"),
-        ]
         abstract = True
 
     def __str__(self):
@@ -50,6 +53,11 @@ class RequestTemplate(SafeDeleteModel):
 
 class RequestNull(RequestTemplate):
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Validation Window"
+        verbose_name_plural = "Validation Window"
+
 
 
 class RequestMain(RequestTemplate):
@@ -61,9 +69,19 @@ class RequestMain(RequestTemplate):
     notes = models.CharField(max_length=500, null=True)
     # вложение понять как сделать
 
+    class Meta:
+        verbose_name = "Information"
+        verbose_name_plural = "Information"
+
+
 
 class Oferta(RequestTemplate):
     # Уникальные таблички
     created_at = models.DateTimeField(auto_now_add=True)
     from_main = models.ForeignKey(RequestMain, on_delete=models.CASCADE, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+
+    class Meta:
+        verbose_name = "Oferta Information"
+        verbose_name_plural = "Oferta Information"
+ 

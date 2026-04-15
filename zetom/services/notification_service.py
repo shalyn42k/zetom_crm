@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.mail import send_mail
 
-from ..models import RequestNull, RequestMain
+from ..models import RequestMain, RequestNull
 
 
 def send_notification_to_staff(request_object: RequestNull):
@@ -21,12 +21,11 @@ def send_notification_to_staff(request_object: RequestNull):
         fail_silently=False,
     )
 
+
 def send_notification_approve_null(request_object: RequetMain):
     subject = f"Request - {request_object.id} was fully approved, you can now start your work!"
 
-    message = (
-        f"Check your messages at Zetom CRM to view new request for work!\n"
-    )
+    message = f"Check your messages at Zetom CRM to view new request for work!\n"
 
     send_mail(
         subject,
