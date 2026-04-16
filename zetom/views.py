@@ -1,8 +1,12 @@
+# Django imports
 from django.http import HttpResponse
 from django.shortcuts import render
 
-from .emails.email_utils import send_notification_to_staff
-from .forms import AddRequestFormNull
+# Notification app imports
+from notification.services.notification_service import send_notification_to_staff
+
+# Zetom app imports
+from zetom.forms import AddRequestFormNull
 
 
 def email_template(request):

@@ -1,15 +1,19 @@
 # test made by codex
 
-
+# Django imports
+# Other imports
 from unittest.mock import patch
 
 from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from zetom.emails.email_utils import send_notification_to_staff
+# Notification app imports
+from notification.services.notification_service import send_notification_to_staff
+
+# Zetom app imports
 from zetom.forms import AddRequestFormNull
-from zetom.models import Request_Null
+from zetom.models import RequestNull
 
 
 class AddRequestFormNullTests(TestCase):
