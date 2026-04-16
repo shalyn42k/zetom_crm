@@ -34,6 +34,7 @@ UNFOLD = {
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
     "SHOW_BACK_BUTTON": True,
+    "SHOW_LANGUAGES": False, # включить когда будет настроен перевод
     "BORDER_RADIUS": "6px",
     "COLORS": {
         "base": {
@@ -69,6 +70,16 @@ UNFOLD = {
             "default-dark": "var(--color-base-300)",
             "important-light": "var(--color-base-900)",
             "important-dark": "var(--color-base-100)",
+        },
+    },
+    "EXTENSIONS": {
+        "modeltranslation": {
+            "flags": {
+                "en": "",
+                "ru": "",
+                "pl": "",
+                "ua": "",
+            },
         },
     },
     "SIDEBAR": {

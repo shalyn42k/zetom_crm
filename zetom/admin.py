@@ -65,7 +65,7 @@ class RequestNullAdmin(ModelAdmin):
 @admin.register(RequestMain)
 class RequestMainAdmin(ModelAdmin):
     form = AddRequestFormMain
-    # change_form_template = ""
+    # change_form_template = "requestmain/change_form.html"
     list_display = ("created_at", "company_name")
     fields = (
         "full_name",
@@ -78,6 +78,7 @@ class RequestMainAdmin(ModelAdmin):
     )
     actions_detail = ["oferta_action", "zlecenie_action"]
     warn_unsaved_form = True
+
 
     def has_module_permission(self, request):
         if request.user.is_superuser:
