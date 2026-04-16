@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "users.apps.UsersConfig",
     "zetom.apps.ZetomConfig",
     "phonenumber_field",  # библиотека для валидации телефона
     "localflavor",  # библиотеки для валидациия NIP
