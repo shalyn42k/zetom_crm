@@ -6,7 +6,6 @@
         "readonly_models": [],
         "hidden_models": [],
     },
-
     "department_head": {
         "label": "Руководитель отдела",
         "modules": ["requests"],
@@ -14,7 +13,6 @@
         "readonly_models": ["requestnull", "oferta"],
         "hidden_models": [],
     },
-
     "specialist": {
         "label": "Специалист",
         "modules": ["requests"],
@@ -22,7 +20,6 @@
         "readonly_models": ["requestnull", "requestmain", "oferta"],
         "hidden_models": [],
     },
-
     "auditor": {
         "label": "Аудитор",
         "modules": ["requests"],
@@ -30,7 +27,6 @@
         "readonly_models": ["requestnull", "requestmain", "oferta"],
         "hidden_models": [],
     },
-
     "custom_role": {
         "label": "Всевидящий",
         "modules": ["*"],

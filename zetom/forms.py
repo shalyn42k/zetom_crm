@@ -71,24 +71,39 @@ class SignUpForm(UserCreationForm):
 class TemplateForm(forms.ModelForm):
     phone = PhoneNumberField(
         region="PL",
-        widget=forms.TextInput(attrs={"placeholder": "Phone", "class": "form-control"}),
+        widget=forms.TextInput(attrs={"placeholder": "Phone"}),
     )
 
     company_name = forms.CharField(
-        widget=forms.TextInput(attrs={"placeholder": "Zetom", "class": "form-control"})
+        widget=forms.TextInput(attrs={"placeholder": "Zetom"})
     )
 
     email = forms.EmailField(
-        widget=forms.TextInput(
-            attrs={"placeholder": "email@gmail.com", "class": "form-control"}
-        )
+        widget=forms.TextInput(attrs={"placeholder": "email@gmail.com"})
     )
 
     company_nip = PLNIPField(  # почему работает? - работающий NIP 7322215365
-        widget=forms.TextInput(
-            attrs={"placeholder": "1234567890", "class": "form-control"}
-        )
+        widget=forms.TextInput(attrs={"placeholder": "7322215365"})
     )
+
+    # ИИ, навешывает стили и переопределают какие поля нужно заполнить или нет, нужно подумать какие могут быть проблемы с этим дальше когда будет несколько детей
+    # Если нужно будет сделать другие поля в других табличках обязательными, то надо в models глянуть blank & null и в классе этой же таблицы сделать init
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Список полей, которые ДОЛЖНЫ быть обязательными
+        required_fields = ["phone", "company_nip", "email"]
+
+        for field_name, field in self.fields.items():
+            # 1. Всем без исключения вешаем CSS-класс
+            field.widget.attrs.update({"class": "form-control"})
+
+            # 2. Проверяем: если поля нет в нашем списке "важных", делаем его необязательным
+            if field_name not in required_fields:
+                field.required = False
+            else:
+                # На всякий случай явно ставим True для важных полей
+                field.required = True
 
 
 class AddRequestFormNull(TemplateForm):
@@ -99,23 +114,15 @@ class AddRequestFormNull(TemplateForm):
 
 class AddRequestFormMain(TemplateForm):
     full_name = forms.CharField(
-        widget=forms.TextInput(
-            attrs={"placeholder": "John Johnson", "class": "form-control"}
-        )
+        widget=forms.TextInput(attrs={"placeholder": "John Johnson"})
     )
     address = forms.CharField(
-        widget=forms.TextInput(
-            attrs={
-                "placeholder": "ulica Gen. Jozefa Hallera 76/49",
-                "class": "form-control",
-            }
-        )
+        widget=forms.TextInput(attrs={"placeholder": "ulica Gen. Jozefa Hallera 76/49"})
     )
     notes = forms.CharField(
         widget=forms.TextInput(
             attrs={
                 "placeholder": "Long and very interesting note for noting your long and intresting text",
-                "class": "form-control",
             }
         )
     )
@@ -133,11 +140,9 @@ class AddRequestFormMain(TemplateForm):
         )
 
 
-class AddOferta(AddRequestFormMain):
-    price = forms.DecimalField(
-        widget=forms.NumberInput(attrs={"placeholder": "0.00", "class": "form-control"})
-    )
+class AddOferta(TemplateForm):
+    price = forms.DecimalField(widget=forms.NumberInput(attrs={"placeholder": "0"}))
 
     class Meta:
         model = Oferta
-        fields = ("phone", "email")
+        fields = ("from_main", "phone", "email", "company_name", "company_nip", "price")

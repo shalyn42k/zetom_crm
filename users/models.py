@@ -1,9 +1,5 @@
-
-from django.db import models
 from django.contrib.auth import get_user_model
-
-
-
+from django.db import models
 
 User = get_user_model()
 
@@ -35,6 +31,7 @@ class UserProfile(models.Model):
         if not self.role:
             return {}
         from .permissions import ROLES_CONFIG
+
         return ROLES_CONFIG.get(self.role.code, {})
 
     def can_see_module(self, module_name: str) -> bool:

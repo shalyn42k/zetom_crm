@@ -1,7 +1,8 @@
 from django.contrib import admin
 
+
 class RBACAdmin(admin.ModelAdmin):
-   
+
     def _get_profile(self, request):
         user = request.user
         if not user.is_authenticated:

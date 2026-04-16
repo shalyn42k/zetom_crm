@@ -1,14 +1,16 @@
 import os
+
 import django
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dcrm.settings")
 django.setup()
 
 from django.contrib.auth.models import User
-from users.models import UserProfile, Role
+
+from users.models import Role, UserProfile
 from users.permissions import ROLES_CONFIG
 
-user = User.objects.get(username='TEST142')
+user = User.objects.get(username="TEST142")
 profile = user.profile
 
 print(f"User: {user}")

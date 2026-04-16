@@ -1,12 +1,13 @@
 from django.contrib.auth import get_user_model
-from django.db.models.signals import post_save, post_migrate
-from django.dispatch import receiver
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.signals import post_migrate, post_save
+from django.dispatch import receiver
 
-from users.models import UserProfile, Role
+from users.models import Role, UserProfile
 from users.roles import ROLES
-from zetom.models import RequestNull, RequestMain, Oferta
+from zetom.models import Oferta, RequestMain, RequestNull
+
 User = get_user_model()
 
 print("SIGNALS LOADED")
@@ -28,8 +29,7 @@ def create_user_profile(sender, instance, created, **kwargs):
         default_role = Role.objects.first()
 
         UserProfile.objects.get_or_create(
-            user=instance,
-            defaults={"role": default_role}
+            user=instance, defaults={"role": default_role}
         )
 
         print(f"PROFILE CREATED FOR: {instance.username}")
@@ -46,10 +46,7 @@ def create_roles(sender, **kwargs):
     for role in ROLES:
         Role.objects.get_or_create(
             code=role["code"],
-            defaults={
-                "name": role["name"],
-                "level": role.get("level", 0)
-            }
+            defaults={"name": role["name"], "level": role.get("level", 0)},
         )
 
 
@@ -69,8 +66,7 @@ def give_view_permissions(sender, **kwargs):
 
         # Django создаёт view_* автоматически
         perm = Permission.objects.get(
-            content_type=ct,
-            codename=f"view_{model.__name__.lower()}"
+            content_type=ct, codename=f"view_{model.__name__.lower()}"
         )
 
         # Дать право всем пользователям
