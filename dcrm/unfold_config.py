@@ -1,10 +1,19 @@
 from django.templatetags.static import static
 from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
 
 UNFOLD = {
     "SITE_TITLE": "Zetom CRM",
     "SITE_HEADER": "Zetom CRM",
     "SITE_SUBHEADER": "Control Panel",
+    "SITE_DROPDOWN": [
+        {
+            "icon": "mail",
+            "title": _("Email Form"),
+            "link": reverse_lazy("zetom:index"),
+        },
+    ],
+
     # Static files
     "SITE_ICON": {  # чет не оч работает
         "light": lambda request: static("zetom/img/zet1.avif"),
