@@ -1,33 +1,14 @@
+# Django imports
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
+
+# Other imports
 from phonenumber_field.modelfields import PhoneNumberField
 from safedelete.models import SafeDeleteModel
 
-
-class Role(models.Model):
-    code = models.CharField(max_length=50, unique=True)  # admin, specialist, auditor...
-    name = models.CharField(max_length=100)  # Человекочитаемое имя
-    level = models.PositiveIntegerField(default=0)  # Иерархия ролей
-
-    def __str__(self):
-        return f"{self.name} ({self.code})"
-
-    class Meta:
-        verbose_name = "Roles"
-        verbose_name_plural = "Roles"
-
-
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.user.username} - {self.role}"
-
-    class Meta:
-        verbose_name = "Users"
-        verbose_name_plural = "Users"
+# Users app imports
+from users.models import Role, UserProfile
 
 
 class RequestTemplate(SafeDeleteModel):
@@ -61,7 +42,6 @@ class RequestNull(RequestTemplate):
 
 
 class RequestMain(RequestTemplate):
-    # Уникальные таблицы
     created_at = models.DateTimeField(auto_now_add=True)
     from_null = models.OneToOneField(
         RequestNull, on_delete=models.SET_NULL, null=True, blank=True
@@ -77,7 +57,6 @@ class RequestMain(RequestTemplate):
 
 
 class Oferta(RequestTemplate):
-    # Уникальные таблички
     created_at = models.DateTimeField(auto_now_add=True)
     from_main = models.ForeignKey(
         RequestMain, on_delete=models.CASCADE, null=True, blank=True

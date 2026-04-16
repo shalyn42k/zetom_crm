@@ -107,12 +107,12 @@ UNFOLD = {
                     {
                         "title": "Roles",
                         "icon": "shield",
-                        "link": reverse_lazy("admin:zetom_role_changelist"),
+                        "link": reverse_lazy("admin:users_role_changelist"),
                     },
                     {
                         "title": "Users",
                         "icon": "account_box",
-                        "link": reverse_lazy("admin:zetom_userprofile_changelist"),
+                        "link": reverse_lazy("admin:users_userprofile_changelist"),
                     },
                 ],
             },

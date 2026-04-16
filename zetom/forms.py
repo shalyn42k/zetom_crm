@@ -1,13 +1,14 @@
+# Django imports
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from localflavor.pl.forms import PLNIPField
 
-# Библиотеки валидации номера и нипа
+# Other imports
+from localflavor.pl.forms import PLNIPField
 from phonenumber_field.formfields import PhoneNumberField
 
-# Наши импорты
-from .models import Oferta, RequestMain, RequestNull, RequestTemplate
+# Zetom app imports
+from zetom.models import Oferta, RequestMain, RequestNull, RequestTemplate
 
 
 class SignUpForm(UserCreationForm):

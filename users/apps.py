@@ -1,11 +1,9 @@
-# Django app imports
 from django.apps import AppConfig
 
 
-class ZetomConfig(AppConfig):
+class UsersConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "zetom"
-    verbose_name = "Zetom CRM"
+    name = "users"
 
     def ready(self):
         from . import signals
