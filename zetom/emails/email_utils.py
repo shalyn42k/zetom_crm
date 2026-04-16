@@ -20,3 +20,17 @@ def send_notification_to_staff(request_object: RequestNull):
         ["tymirapps@gmail.com"],  # это стафф кому отправляется
         fail_silently=False,
     )
+
+
+def send_notification_approve_null(request_object: RequestMain):
+    subject = f"Request - {request_object.id} was fully approved, you can now start your work!"
+
+    message = f"Check your messages at Zetom CRM to view new request for work!\n"
+
+    send_mail(
+        subject,
+        message,
+        settings.EMAIL_HOST_USER,
+        ["tymirapps@gmail.com"],  # это стафф кому отправляется
+        fail_silently=False,
+    )
