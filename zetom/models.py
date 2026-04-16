@@ -1,9 +1,13 @@
+# Django imports
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
+
+# Other imports
 from phonenumber_field.modelfields import PhoneNumberField
 from safedelete.models import SafeDeleteModel
 
+# Users app imports
 from users.models import Role, UserProfile
 
 

@@ -1,17 +1,28 @@
-from django.contrib import admin, messages
-from django.shortcuts import redirect
-from unfold.admin import ModelAdmin
-from unfold.decorators import action
-from zetom.forms import AddOferta, AddRequestFormMain, AddRequestFormNull
-from zetom.models import Oferta, RequestMain, RequestNull
-from users.models import UserProfile, Role
-from users.admin import get_profile
+# Django imports
 from django import forms
+from django.contrib import admin, messages
 from django.contrib.admin.models import LogEntry
 from django.db import transaction
+from django.shortcuts import redirect
+
+# Unfold imports
+from unfold.admin import ModelAdmin
+from unfold.decorators import action
 from unfold.enums import ActionVariant
-from zetom.services.notification_service import send_notification_approve_null
+
+# Notification app imports
+from notification.services.notification_service import send_notification_approve_null
+from users.admin import get_profile
+
+# Users app imports
+from users.models import Role, UserProfile
+
+# Zetom app imports
+from zetom.forms import AddOferta, AddRequestFormMain, AddRequestFormNull
+from zetom.models import Oferta, RequestMain, RequestNull
 from zetom.services.request_service import approve_null_action, approve_oferta_action
+
+# Other imports
 
 
 # Ии написал класс, ебу че делает
@@ -50,6 +61,7 @@ class RequestNullAdmin(ModelAdmin):
 
         return redirect("admin:zetom_requestmain_change", new_main_record.pk)
 
+
 @admin.register(RequestMain)
 class RequestMainAdmin(ModelAdmin):
     form = AddRequestFormMain
@@ -77,7 +89,7 @@ class RequestMainAdmin(ModelAdmin):
         # Проверяем, может ли пользователь видеть модуль AND модель не скрыта
         can_see = profile.can_see_module("requests")
         is_hidden = profile.is_model_hidden("requestnull")
-        
+
         return can_see and not is_hidden
 
     def has_view_permission(self, request, obj=None):
@@ -90,7 +102,9 @@ class RequestMainAdmin(ModelAdmin):
             return False
 
         can_see = profile.can_see_module("requests")
-        print(f"✓ RequestNull: {profile.user.username} role={profile.role}, can_see={can_see}")
+        print(
+            f"✓ RequestNull: {profile.user.username} role={profile.role}, can_see={can_see}"
+        )
         return can_see
 
     def has_change_permission(self, request, obj=None):
@@ -119,14 +133,10 @@ class RequestMainAdmin(ModelAdmin):
         messages.info(request, f"Redirecting to Oferta: {object_id}")
         return redirect("admin:zetom_oferta_change", oferta.pk)
 
-
     @action(description="Zlecenie", icon="assignment", url_path="zlecenie_action")
     def zlecenie_action(self, request, object_id):
         self.message_user(request, "no zlecenie :(")
         return redirect("admin:zetom_requestmain_change", object_id)
-
-
-
 
 
 @admin.register(Oferta)
@@ -135,7 +145,6 @@ class OfertaAdmin(ModelAdmin):
     list_display = ("created_at", "company_name")
     readonly_fields = ("from_main",)
     fields = ("from_main", "phone", "email", "company_name", "company_nip", "price")
-    
 
     def has_module_permission(self, request):
         if request.user.is_superuser:
@@ -148,7 +157,7 @@ class OfertaAdmin(ModelAdmin):
         # Проверяем, может ли пользователь видеть модуль AND модель не скрыта
         can_see = profile.can_see_module("requests")
         is_hidden = profile.is_model_hidden("oferta")
-        
+
         return can_see and not is_hidden
 
     def has_view_permission(self, request, obj=None):
@@ -161,7 +170,9 @@ class OfertaAdmin(ModelAdmin):
             return False
 
         can_see = profile.can_see_module("requests")
-        print(f"✓ Oferta: {profile.user.username} role={profile.role}, can_see={can_see}")
+        print(
+            f"✓ Oferta: {profile.user.username} role={profile.role}, can_see={can_see}"
+        )
         return can_see
 
     def has_change_permission(self, request, obj=None):
@@ -183,5 +194,3 @@ class OfertaAdmin(ModelAdmin):
             return [f.name for f in self.model._meta.fields]
 
         return super().get_readonly_fields(request, obj)
-
-
