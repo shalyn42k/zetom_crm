@@ -1,10 +1,19 @@
 from django.templatetags.static import static
 from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
 
 UNFOLD = {
     "SITE_TITLE": "Zetom CRM",
     "SITE_HEADER": "Zetom CRM",
     "SITE_SUBHEADER": "Control Panel",
+    "SITE_DROPDOWN": [
+        {
+            "icon": "mail",
+            "title": _("Email Form"),
+            "link": reverse_lazy("zetom:index"),
+        },
+    ],
+
     # Static files
     "SITE_ICON": {  # чет не оч работает
         "light": lambda request: static("zetom/img/zet1.avif"),
@@ -25,6 +34,7 @@ UNFOLD = {
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
     "SHOW_BACK_BUTTON": True,
+    "SHOW_LANGUAGES": False, # включить когда будет настроен перевод
     "BORDER_RADIUS": "6px",
     "COLORS": {
         "base": {
@@ -60,6 +70,16 @@ UNFOLD = {
             "default-dark": "var(--color-base-300)",
             "important-light": "var(--color-base-900)",
             "important-dark": "var(--color-base-100)",
+        },
+    },
+    "EXTENSIONS": {
+        "modeltranslation": {
+            "flags": {
+                "en": "",
+                "ru": "",
+                "pl": "",
+                "ua": "",
+            },
         },
     },
     "SIDEBAR": {
