@@ -12,11 +12,6 @@ UNFOLD = {
             "title": _("Email Form"),
             "link": reverse_lazy("zetom:index"),
         },
-        {
-            "icon": "description",
-            "title": _("Crispy Form"),
-            "link": reverse_lazy("crispy:form"),
-        },
     ],
     # Static files
     "SITE_ICON": {  # чет не оч работает
