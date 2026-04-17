@@ -46,7 +46,7 @@ class AddRequestFormNullTests(TestCase):
 class EmailNotificationTests(TestCase):
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_send_notification_to_staff_creates_email_message(self):
-        request_obj = Request_Null.objects.create(
+        request_obj = RequestNull.objects.create(
             phone="+48501600300",
             company_name="Zetom Sp. z o.o.",
             email="contact@zetom.pl",
@@ -84,7 +84,7 @@ class EmailTemplateViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(Request_Null.objects.count(), 1)
+        self.assertEqual(RequestNull.objects.count(), 1)
         send_mock.assert_called_once()
         self.assertContains(response, "Все заебок со всем")
 
@@ -103,7 +103,7 @@ class EmailTemplateViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(Request_Null.objects.count(), 1)
+        self.assertEqual(RequestNull.objects.count(), 1)
         self.assertContains(response, "Все ок в базе, но с почтой нет")
 
     def test_post_invalid_data_returns_errors(self):
@@ -119,4 +119,4 @@ class EmailTemplateViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn("Все плохо", response.content.decode("utf-8"))
-        self.assertEqual(Request_Null.objects.count(), 0)
+        self.assertEqual(RequestNull.objects.count(), 0)

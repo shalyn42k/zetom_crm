@@ -64,7 +64,7 @@ class RequestNullAdmin(ModelAdmin):
 @admin.register(RequestMain)
 class RequestMainAdmin(ModelAdmin):
     form = AddRequestFormMain
-    # change_form_template = "requestmain/change_form.html"
+    # change_form_template = ""
     list_display = ("created_at", "company_name")
     fields = (
         "full_name",
