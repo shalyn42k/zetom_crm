@@ -13,7 +13,6 @@ from unfold.enums import ActionVariant
 # Notification app imports
 from notification.services.notification_service import send_notification_approve_null
 
-
 # Users app imports
 from users.models import Role, UserProfile
 
@@ -79,9 +78,6 @@ class RequestMainAdmin(ModelAdmin):
     actions_detail = ["oferta_action", "zlecenie_action"]
     warn_unsaved_form = True
 
-
-    
-
     @action(description="Oferta", icon="assignment", url_path="oferta")
     def oferta_action(self, request, object_id):
         oferta = approve_oferta_action(object_id)
@@ -101,5 +97,3 @@ class OfertaAdmin(ModelAdmin):
     readonly_fields = ("from_main",)
     fields = ("from_main", "phone", "email", "company_name", "company_nip", "price")
     warn_unsaved_form = True
-
-    

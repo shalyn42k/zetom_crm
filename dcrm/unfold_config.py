@@ -13,7 +13,6 @@ UNFOLD = {
             "link": reverse_lazy("zetom:index"),
         },
     ],
-
     # Static files
     "SITE_ICON": {  # чет не оч работает
         "light": lambda request: static("zetom/img/zet1.avif"),
@@ -34,7 +33,7 @@ UNFOLD = {
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
     "SHOW_BACK_BUTTON": True,
-    "SHOW_LANGUAGES": False, # включить когда будет настроен перевод
+    "SHOW_LANGUAGES": False,  # включить когда будет настроен перевод
     "BORDER_RADIUS": "6px",
     "COLORS": {
         "base": {

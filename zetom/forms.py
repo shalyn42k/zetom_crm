@@ -91,6 +91,7 @@ class TemplateForm(forms.ModelForm):
     ИИ, навешывает стили и переопределают какие поля нужно заполнить или нет, нужно подумать какие могут быть проблемы с этим дальше когда будет несколько детей
     Если нужно будет сделать другие поля в других табличках обязательными, то надо в models глянуть blank & null и в классе этой же таблицы сделать init
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -107,6 +108,7 @@ class TemplateForm(forms.ModelForm):
             else:
                 # На всякий случай явно ставим True для важных полей
                 field.required = True
+
 
 class AddRequestFormNull(TemplateForm):
     class Meta:
