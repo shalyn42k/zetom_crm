@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "users.apps.UsersConfig",
     "zetom.apps.ZetomConfig",
     "notification.apps.NotificationConfig",
+    "crispy.apps.CrispyConfig",
     "phonenumber_field",  # библиотека для валидации телефона
     "localflavor",  # библиотеки для валидациия NIP
     "safedelete",  # библиотека для безопасного удаления данных в таблицах
