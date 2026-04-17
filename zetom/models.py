@@ -8,7 +8,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from safedelete.models import SafeDeleteModel
 
 # Users app imports
-from users.models import Role, UserProfile
+#from users.models import Role, UserProfile
 
 
 class RequestTemplate(SafeDeleteModel):
