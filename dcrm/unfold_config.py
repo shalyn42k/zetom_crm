@@ -99,6 +99,16 @@ UNFOLD = {
                         "icon": "history",
                         "link": ("/admin/admin/logentry/"),
                     },
+                    {
+                        "title": "Notification",
+                        "icon": "notifications",
+                        "link": reverse_lazy("admin:notification_notification_changelist"),
+                    },
+                    {
+                        "title": "Email Notification",
+                        "icon": "notification_multiple",
+                        "link": reverse_lazy("admin:notification_emailnotification_changelist")
+                    }
                 ],
             },
             {
