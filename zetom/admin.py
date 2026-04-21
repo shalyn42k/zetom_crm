@@ -1,9 +1,9 @@
 # Django imports
 from django import forms
-from django.contrib import admin, messages
+from django.contrib import admin
 from django.contrib.admin.models import LogEntry
 from django.db import transaction
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 
 # Unfold imports
 from unfold.admin import ModelAdmin
@@ -19,12 +19,12 @@ from users.models import Role, UserProfile
 # Zetom app imports
 from zetom.forms import AddOferta, AddRequestFormMain, AddRequestFormNull
 from zetom.models import Oferta, RequestMain, RequestNull
-from zetom.services.request_service import approve_null_action, approve_oferta_action
+from zetom.services.request_service import approve_null_action
 
 # Other imports
 
 
-# Ии написал класс, ебу че делает
+# AI-generated (unknown, legacy): LogEntryAdmin — read-only viewer for django admin log
 @admin.register(LogEntry)
 class LogEntryAdmin(ModelAdmin):  # Используем ModelAdmin от Unfold для красоты
     list_display = ("action_time", "user", "content_type", "object_repr", "action_flag")
@@ -64,7 +64,6 @@ class RequestNullAdmin(ModelAdmin):
 @admin.register(RequestMain)
 class RequestMainAdmin(ModelAdmin):
     form = AddRequestFormMain
-    # change_form_template = ""
     list_display = ("created_at", "company_name")
     fields = (
         "full_name",
@@ -75,19 +74,17 @@ class RequestMainAdmin(ModelAdmin):
         "address",
         "notes",
     )
-    actions_detail = ["oferta_action", "zlecenie_action"]
+    actions_detail = ["request_info_action"]
     warn_unsaved_form = True
 
-    @action(description="Oferta", icon="assignment", url_path="oferta")
-    def oferta_action(self, request, object_id):
-        oferta = approve_oferta_action(object_id)
-        messages.info(request, f"Redirecting to Oferta: {object_id}")
-        return redirect("admin:zetom_oferta_change", oferta.pk)
-
-    @action(description="Zlecenie", icon="assignment", url_path="zlecenie_action")
-    def zlecenie_action(self, request, object_id):
-        self.message_user(request, "no zlecenie :(")
-        return redirect("admin:zetom_requestmain_change", object_id)
+    # AI-edited (claude-opus-4-7, 2026-04-21): simplified to render static design mockup only
+    @action(description="Request Info", icon="article", url_path="request-info")
+    def request_info_action(self, request, object_id):
+        return render(
+            request,
+            "admin/zetom/requestmain/request_info.html",
+            self.admin_site.each_context(request),
+        )
 
 
 @admin.register(Oferta)
