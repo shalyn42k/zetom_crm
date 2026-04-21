@@ -10,6 +10,9 @@ from safedelete.models import SafeDeleteModel
 # Users app imports
 from users.models import Role, UserProfile
 
+# Zetom app imports
+from zetom.services.statuses import Status
+
 
 class RequestTemplate(SafeDeleteModel):
     phone = PhoneNumberField(null=False, blank=False)
@@ -42,6 +45,8 @@ class RequestNull(RequestTemplate):
 
 
 class RequestMain(RequestTemplate):
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
+    is_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     from_null = models.OneToOneField(
         RequestNull, on_delete=models.SET_NULL, null=True, blank=True
@@ -57,6 +62,7 @@ class RequestMain(RequestTemplate):
 
 
 class Oferta(RequestTemplate):
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
     created_at = models.DateTimeField(auto_now_add=True)
     from_main = models.ForeignKey(
         RequestMain, on_delete=models.CASCADE, null=True, blank=True

@@ -1,17 +1,16 @@
-from permissions import ROLE_PERMISSIONS
-from .models import RequestMain, Oferta
-from statuses import Status, ArchiveState
+from users.permissions import ROLES_CONFIG
+from zetom.models import RequestMain, Oferta
+from .statuses import Status, ArchiveState
+from django.db import transaction
+
+def handle_child_change(child, new_status):
+    with transaction.atomic():
+        change_status(child, new_status)
+        parent = child.from_main
+        if parent:
+            update_parent(parent)
 
 
-def handle_child_change(child, new_status):  # изменение, создание , удаление ребёнка
-    
-    change_status(child, new_status)  # меняем статус ребёнка
-
-    parent = child.from_main   # берем у родителя детей 
-    if not parent:
-        return
-
-    update_parent(parent)
 
 
 def change_status(child, new_status): # в скобках пишем название функции/класса откуда будем брать статусы   
@@ -23,10 +22,10 @@ def change_status(child, new_status): # в скобках пишем назва�
 
     # тут пишем проверку перехода статусов. например с new в in progress
     transitions = {
-        Status.new: ["in_progress"],
-        Status.in_progress: ["waiting"],
-        Status.waiting: ["done"],
-        Status.done: ["in_progress", "waiting"]
+        Status.new: [Status.in_progress],
+        Status.in_progress: [Status.waiting],
+        Status.waiting: [Status.done],
+        Status.done: [Status.waiting, Status.in_progress]
     }
 
     allowed = transitions.get(current_status, [])

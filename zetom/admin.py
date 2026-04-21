@@ -24,6 +24,8 @@ from zetom.services.request_service import approve_null_action, approve_oferta_a
 
 # Other imports
 
+from zetom.services.services import handle_child_change
+
 
 # Ии написал класс, ебу че делает
 @admin.register(LogEntry)
@@ -142,9 +144,22 @@ class RequestMainAdmin(ModelAdmin):
 @admin.register(Oferta)
 class OfertaAdmin(ModelAdmin):
     form = AddOferta
-    list_display = ("created_at", "company_name")
+    list_display = ("created_at", "company_name", "status") 
     readonly_fields = ("from_main",)
-    fields = ("from_main", "phone", "email", "company_name", "company_nip", "price")
+    fields = ("from_main", "phone", "email", "company_name", "company_nip", "price", "status")
+    
+    def save_model(self, request, obj, form, change):
+       new_status = form.cleaned_data.get("status")
+       if change:
+           old_status = Oferta.objects.get(pk=obj.pk).status
+           obj.status = old_status  # вернуть старый, чтобы change_status мог проверить переход
+       try:
+           handle_child_change(obj, new_status)
+       except ValueError as e:
+           messages.error(request, str(e))
+           return
+       super().save_model(request, obj, form, change)
+ 
 
     def has_module_permission(self, request):
         if request.user.is_superuser:
@@ -194,3 +209,5 @@ class OfertaAdmin(ModelAdmin):
             return [f.name for f in self.model._meta.fields]
 
         return super().get_readonly_fields(request, obj)
+
+
