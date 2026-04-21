@@ -1,81 +1,82 @@
-from zetom.statuses import Status
+from permissions import ROLE_PERMISSIONS
+from .models import RequestMain, Oferta
+from statuses import Status, ArchiveState
 
 
-def handle_child_change(child, new_status):
-    """
-    Обработка изменения дочернего объекта:
-    - меняем статус ребёнка
-    - обновляем родителя
-    """
+def handle_child_change(child, new_status):  # изменение, создание , удаление ребёнка
+    
+    change_status(child, new_status)  # меняем статус ребёнка
 
-    change_status(child, new_status)
-
-    parent = child.from_main
+    parent = child.from_main   # берем у родителя детей 
     if not parent:
         return
 
     update_parent(parent)
 
 
-def change_status(child, new_status):
-    """
-    Меняет статус с проверкой переходов
-    """
-
-    if not new_status or new_status == child.status:
+def change_status(child, new_status): # в скобках пишем название функции/класса откуда будем брать статусы   
+    
+    if new_status is None:
         return
 
+    current_status = child.status
+
+    # тут пишем проверку перехода статусов. например с new в in progress
     transitions = {
         Status.new: ["in_progress"],
         Status.in_progress: ["waiting"],
         Status.waiting: ["done"],
-        Status.done: ["in_progress", "waiting"],
+        Status.done: ["in_progress", "waiting"]
     }
 
-    allowed = transitions.get(child.status, [])
+    allowed = transitions.get(current_status, [])
 
-    if new_status not in allowed:
-        raise ValueError("Ошибка статуса: недопустимый переход")
+    if new_status == current_status:
+      return
 
-    child.status = new_status
-    child.save()
+    if new_status in allowed:
+       child.status = new_status
+       child.save()
+    else:
+       raise ValueError("Ошибка статуса")
 
 
-def update_parent(parent: RequestMain):
-    """
-    Обновляет статус и архив родителя на основе детей
-    """
+def update_parent(parent):
 
-    children = parent.ofertas.all()
-
-    # если нет детей — просто сбрасываем архив
-    if not children.exists():
-        parent.is_archived = False
-        parent.save()
-        return
-
-    priority = {
-        Status.in_progress: 1,
-        Status.waiting: 2,
-        Status.new: 3,
-        Status.done: 4,
-    }
-
+    children = parent.oferta_set.all()
     highest_status = None
-    best_priority = 999
 
-    for child in children:
-        if child.status in priority:
-            if priority[child.status] < best_priority:
-                best_priority = priority[child.status]
-                highest_status = child.status
 
-    # обновляем статус родителя
-    if highest_status and parent.status != highest_status:
+    if children.exists():
+
+        priority = {
+            Status.in_progress: 1,
+            Status.waiting: 2,
+            Status.new: 3,
+            Status.done: 4
+        }
+
+        highest_priority = 5
+
+        # проверка сильного статуса 
+        for child in children:
+            if child.status in priority:
+                if priority[child.status] < highest_priority:
+                    highest_priority = priority[child.status]
+                    highest_status = child.status
+
+    if highest_status is not None:
         parent.status = highest_status
 
-    # архив:
-    # архивируем ТОЛЬКО если ВСЕ дети done
-    parent.is_archived = not children.exclude(status=Status.done).exists()
+
+    # архивирование родителя
+
+
+
+        # если есть хоть один не  done активный
+    if not children.exists():
+       parent.is_archived = True
+    else:
+       parent.is_archived = not children.exclude(status=Status.done).exists()
 
     parent.save()
