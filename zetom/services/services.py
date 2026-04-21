@@ -79,4 +79,4 @@ def update_parent(parent):
     else:
        parent.is_archived = not children.exclude(status=Status.done).exists()
 
-    parent.save()
+    parent.save() 
