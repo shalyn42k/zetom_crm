@@ -1,8 +1,8 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 
+from notification.models import EmailNotification, Notification
 
-from notification.models import Notification, EmailNotification
 
 @admin.register(Notification)
 class NotificationAdmin(ModelAdmin):
