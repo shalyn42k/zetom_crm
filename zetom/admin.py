@@ -68,7 +68,7 @@ class RequestNullAdmin(ModelAdmin):
 class RequestMainAdmin(ModelAdmin):
     form = AddRequestFormMain
     # change_form_template = "requestmain/change_form.html"
-    list_display = ("created_at", "company_name")
+    list_display = ("created_at", "company_name", "status")
     fields = (
         "full_name",
         "phone",
