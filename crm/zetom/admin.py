@@ -11,15 +11,15 @@ from unfold.decorators import action
 from unfold.enums import ActionVariant
 
 # Notification app imports
-from notification.services.notification_service import send_notification_approve_null
+from crm.notification.services.notification_service import send_notification_approve_null
 
 # Users app imports
-from users.models import Role, UserProfile
+from crm.users.models import Role, UserProfile
 
 # Zetom app imports
-from zetom.forms import AddOferta, AddRequestFormMain, AddRequestFormNull
-from zetom.models import Oferta, RequestMain, RequestNull
-from zetom.services.request_service import approve_null_action, approve_oferta_action
+from crm.zetom.forms import AddOferta, AddRequestFormMain, AddRequestFormNull
+from crm.zetom.models import Oferta, RequestMain, RequestNull
+from crm.zetom.services.request_service import approve_null_action, approve_oferta_action
 
 # Other imports
 
@@ -45,7 +45,7 @@ class LogEntryAdmin(ModelAdmin):  # Используем ModelAdmin от Unfold 
 @admin.register(RequestNull)
 class RequestNullAdmin(ModelAdmin):
     form = AddRequestFormNull
-    list_display = ("created_at", "phone", "company_name", "company_nip", "email")
+    list_display = ("created_at", "updated_at", "company_name")
     actions_detail = ["approve_action"]
 
     @action(
@@ -64,15 +64,16 @@ class RequestNullAdmin(ModelAdmin):
 @admin.register(RequestMain)
 class RequestMainAdmin(ModelAdmin):
     form = AddRequestFormMain
-    list_display = ("created_at", "company_name")
+    list_display = ("created_at", "updated_at", "company_name")
     fields = (
         "full_name",
         "phone",
+        "department",
         "company_name",
         "company_nip",
         "email",
         "address",
-        "notes",
+        "message",
     )
     actions_detail = ["request_info_action", "oferta_action", "zlecenie_action"]
     warn_unsaved_form = True
@@ -101,7 +102,7 @@ class RequestMainAdmin(ModelAdmin):
 @admin.register(Oferta)
 class OfertaAdmin(ModelAdmin):
     form = AddOferta
-    list_display = ("created_at", "company_name")
+    list_display = ("created_at", "updated_at", "company_name")
     readonly_fields = ("from_main",)
-    fields = ("from_main", "phone", "email", "company_name", "company_nip", "price")
+    fields = ("from_main", "phone","department", "email", "company_name", "company_nip", "price", "notes")
     warn_unsaved_form = True

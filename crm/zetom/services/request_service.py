@@ -2,7 +2,7 @@
 from django.shortcuts import get_object_or_404
 
 # Zetom app imports
-from zetom.models import Oferta, RequestMain, RequestNull
+from crm.zetom.models import Oferta, RequestMain, RequestNull
 
 
 def approve_null_action(null_id):

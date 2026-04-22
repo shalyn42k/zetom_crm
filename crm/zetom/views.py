@@ -3,10 +3,10 @@ from django.http import HttpResponse
 from django.shortcuts import render
 
 # Notification app imports
-from notification.services.notification_service import send_notification_to_staff
+from crm.notification.services.notification_service import send_notification_to_staff
 
 # Zetom app imports
-from zetom.forms import AddRequestFormNull
+from crm.zetom.forms import AddRequestFormNull
 
 
 def email_template(request):

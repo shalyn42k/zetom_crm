@@ -50,9 +50,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "users.apps.UsersConfig",
-    "zetom.apps.ZetomConfig",
-    "notification.apps.NotificationConfig",
+    "crm.users.apps.UsersConfig",
+    "crm.zetom.apps.ZetomConfig",
+    "crm.notification.apps.NotificationConfig",
     "phonenumber_field",  # библиотека для валидации телефона
     "localflavor",  # библиотеки для валидациия NIP
     "safedelete",  # библиотека для безопасного удаления данных в таблицах
@@ -70,12 +70,12 @@ MIDDLEWARE = [
     "django.middleware.locale.LocaleMiddleware",  # для переводов от unfold
 ]
 
-ROOT_URLCONF = "dcrm.urls"
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -87,7 +87,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "dcrm.wsgi.application"
+WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database psql
@@ -160,5 +160,9 @@ PHONENUMBER_DEFAULT_REGION = "PL"
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

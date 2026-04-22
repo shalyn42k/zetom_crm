@@ -3,7 +3,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 
 # Zetom app imports
-from zetom.models import RequestMain, RequestNull
+from crm.zetom.models import RequestMain, RequestNull
 
 
 def send_notification_to_staff(request_object: RequestNull):

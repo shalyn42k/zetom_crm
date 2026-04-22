@@ -119,7 +119,7 @@ MessageMiddleware — позволяет показывать всплывающ
 XFrameOptionsMiddleware — защищает от clickjacking‑атак.
 
 ```bash
-ROOT_URLCONF = 'dcrm.urls'
+ROOT_URLCONF = 'config.urls'
    ```
 Строка говорит Django, где находится главный файл маршрутов (URL‑адресов) проекта
 
@@ -188,7 +188,7 @@ INSTALLED_APPS → TEMPLATES → context_processors → HTML - запуск ад
 Вот такая крутая связь у этого чуда
 
 ```bash
-WSGI_APPLICATION = 'dcrm.wsgi.application'
+WSGI_APPLICATION = 'config.wsgi.application'
    ```
 
 Это строка, которая говорит django что при запуске нужно юзать этот объект как точку входа в приложение

@@ -1,0 +1,59 @@
+/* Цветовые переменные — светлая тема по умолчанию */
+:root {
+    --custom-input-bg: #ffffff;
+    --custom-input-border: #d0d0d8;
+    --custom-input-text: #1a1a2e;
+    --custom-input-placeholder: #8a8aa0;
+    --custom-input-focus-border: #5a5aff;
+    --custom-input-focus-shadow: rgba(90, 90, 255, 0.25);
+}
+
+/* Тёмная тема: класс .dark на <html> (Unfold), или системные настройки */
+html.dark {
+    --custom-input-bg: #2a2a3d;
+    --custom-input-border: #4a4a6a;
+    --custom-input-text: #ffffff;
+    --custom-input-placeholder: #8888aa;
+    --custom-input-focus-border: #7a7aff;
+    --custom-input-focus-shadow: rgba(122, 122, 255, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not(.light) {
+        --custom-input-bg: #2a2a3d;
+        --custom-input-border: #4a4a6a;
+        --custom-input-text: #ffffff;
+        --custom-input-placeholder: #8888aa;
+        --custom-input-focus-border: #7a7aff;
+        --custom-input-focus-shadow: rgba(122, 122, 255, 0.3);
+    }
+}
+
+/* Все input и textarea поля (кроме чекбоксов, радио, файлов и кнопок) */
+.form-row input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),
+.form-row textarea,
+.form-row select,
+#content-main input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),
+#content-main textarea,
+#content-main select {
+    background-color: var(--custom-input-bg) !important;
+    border: 1px solid var(--custom-input-border) !important;
+    color: var(--custom-input-text) !important;
+    border-radius: 4px !important;
+    padding: 6px 10px !important;
+}
+
+/* Placeholder текст */
+.form-row input:not([type="checkbox"]):not([type="radio"])::placeholder,
+.form-row textarea::placeholder {
+    color: var(--custom-input-placeholder) !important;
+    opacity: 1 !important;
+}
+
+/* Фокус на поле */
+.form-row input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.form-row textarea:focus {
+    border-color: var(--custom-input-focus-border) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px var(--custom-input-focus-shadow) !important;
+}
