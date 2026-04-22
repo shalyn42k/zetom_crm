@@ -70,7 +70,7 @@ MIDDLEWARE = [
     "django.middleware.locale.LocaleMiddleware",  # для переводов от unfold
 ]
 
-ROOT_URLCONF = "dcrm.urls"
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
@@ -87,7 +87,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "dcrm.wsgi.application"
+WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database psql
