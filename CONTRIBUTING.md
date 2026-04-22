@@ -92,3 +92,53 @@
 [Документация по гит](https://education.github.com/git-cheat-sheet-education.pdf)
 
 [Еще норм документация по гит](https://git-scm.com/cheat-sheet)
+
+---
+
+## Маркировка AI-кода
+
+Весь код, написанный или существенно отредактированный ИИ (ChatGPT, Claude, Codex и т.п.), **обязан** быть помечен комментарием. Это нужно чтобы:
+- при дебаге в проде сразу видеть, где код «чужой» и к нему нужна двойная проверка;
+- через grep быстро находить все AI-места (`grep -rn "AI-generated\|AI-edited" .`);
+- знать, какой моделью и когда писалось — модели меняются, их стиль и баги тоже.
+
+### Формат
+
+Python:
+```python
+# AI-generated (<модель>, <YYYY-MM-DD>): короткое описание
+# AI-edited (<модель>, <YYYY-MM-DD>): что именно изменено
+```
+
+HTML / Django-шаблоны:
+```html
+<!-- AI-generated (<модель>, <YYYY-MM-DD>): короткое описание -->
+{# AI-generated (<модель>, <YYYY-MM-DD>): короткое описание #}
+```
+
+Поле `<модель>` — например `claude-opus-4-7`, `gpt-5`, `codex`. Если не помнишь/не знаешь — пиши `unknown, legacy`.
+
+### Куда ставить
+
+- **Весь файл писал ИИ** → маркер первой строкой (под `{% extends %}` / shebang / module docstring).
+- **ИИ писал одну функцию/класс/блок** → маркер строкой выше `def`/`class`/`@decorator`.
+- **ИИ правил существующий код** → используй `AI-edited`, а не `AI-generated`.
+
+### Когда маркер снимать
+
+Если ты переписал AI-код вручную **больше чем на 50%** — убери маркер. После этого код считается твоим, и ты за него отвечаешь.
+
+### Что НЕ помечать
+
+- Автогенерённое Django (миграции, `startproject`, `startapp`) — это не ИИ.
+- Сниппеты, скопированные со Stack Overflow или из документации — это не ИИ.
+- Код, где ты спросил у ИИ «как сделать X», а потом **сам** написал реализацию с нуля.
+
+### Пример
+
+```python
+# AI-edited (claude-opus-4-7, 2026-04-21): simplified to render static design mockup only
+@action(description="Request Info", icon="article", url_path="request-info")
+def request_info_action(self, request, object_id):
+    return render(request, "admin/zetom/requestmain/request_info.html", ...)
+```

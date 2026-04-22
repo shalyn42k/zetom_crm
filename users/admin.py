@@ -4,8 +4,6 @@ from unfold.admin import ModelAdmin
 from users.models import Role, UserProfile
 
 
-
-
 @admin.register(Role)
 class AdminRole(ModelAdmin):
     list_display = ("code", "name", "level")
@@ -14,5 +12,3 @@ class AdminRole(ModelAdmin):
 @admin.register(UserProfile)
 class AdminUserProfile(ModelAdmin):
     list_display = ("user", "role")
-
-
