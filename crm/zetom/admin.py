@@ -20,6 +20,7 @@ from crm.users.models import Role, UserProfile
 from crm.zetom.forms import AddOferta, AddRequestFormMain, AddRequestFormNull
 from crm.zetom.models import Oferta, RequestMain, RequestNull
 from crm.zetom.services.request_service import approve_null_action, approve_oferta_action
+from crm.zetom.services.services import handle_child_change
 
 # Other imports
 
@@ -64,7 +65,7 @@ class RequestNullAdmin(ModelAdmin):
 @admin.register(RequestMain)
 class RequestMainAdmin(ModelAdmin):
     form = AddRequestFormMain
-    list_display = ("created_at", "updated_at", "company_name")
+    list_display = ("created_at", "updated_at", "company_name", "status")
     fields = (
         "full_name",
         "phone",
@@ -104,5 +105,17 @@ class OfertaAdmin(ModelAdmin):
     form = AddOferta
     list_display = ("created_at", "updated_at", "company_name")
     readonly_fields = ("from_main",)
-    fields = ("from_main", "phone","department", "email", "company_name", "company_nip", "price", "notes")
+    fields = ("from_main", "phone", "status", "department", "email", "company_name", "company_nip", "price", "notes")
     warn_unsaved_form = True
+
+    def save_model(self, request, obj, form, change):
+       new_status = form.cleaned_data.get("status")
+       if change:
+           old_status = Oferta.objects.get(pk=obj.pk).status
+           obj.status = old_status  # вернуть старый, чтобы change_status мог проверить переход
+       try:
+           handle_child_change(obj, new_status)
+       except ValueError as e:
+           messages.error(request, str(e))
+           return
+       super().save_model(request, obj, form, change)
