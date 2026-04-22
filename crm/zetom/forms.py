@@ -72,45 +72,35 @@ class SignUpForm(UserCreationForm):
 class TemplateForm(forms.ModelForm):
     phone = PhoneNumberField(
         region="PL",
+        required=True,
         widget=forms.TextInput(attrs={"placeholder": "Phone"}),
     )
 
     company_name = forms.CharField(
+        required=False,
         widget=forms.TextInput(attrs={"placeholder": "Zetom"})
     )
 
     email = forms.EmailField(
+        required=True,
         widget=forms.TextInput(attrs={"placeholder": "email@gmail.com"})
     )
 
-    company_nip = PLNIPField(  # почему работает? - работающий NIP 7322215365
-        widget=forms.TextInput(attrs={"placeholder": "7322215365"})
+    company_nip = PLNIPField(
+        required=True,
+        widget=forms.TextInput(attrs={"placeholder": "7322215365"}) # почему работает? - работающий NIP 7322215365
     )
     message = forms.CharField(
+        required=False,
         widget=forms.Textarea(attrs={"placeholder": "Long and very interesting note for noting your long and intresting text" })
     )
 
-    """
-    ИИ, навешывает стили и переопределают какие поля нужно заполнить или нет, нужно подумать какие могут быть проблемы с этим дальше когда будет несколько детей
-    Если нужно будет сделать другие поля в других табличках обязательными, то надо в models глянуть blank & null и в классе этой же таблицы сделать init
-    """
-
+    "Разобраться все еще как работает, но есть понимание что делает"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Список полей, которые ДОЛЖНЫ быть обязательными
-        required_fields = ["phone", "company_nip", "email"]
-
-        for field_name, field in self.fields.items():
-            # 1. Всем без исключения вешаем CSS-класс
+        for field in self.fields.values():
             field.widget.attrs.update({"class": "form-control"})
-
-            # 2. Проверяем: если поля нет в нашем списке "важных", делаем его необязательным
-            if field_name not in required_fields:
-                field.required = False
-            else:
-                # На всякий случай явно ставим True для важных полей
-                field.required = True
 
 
 class AddRequestFormNull(TemplateForm):
@@ -121,9 +111,11 @@ class AddRequestFormNull(TemplateForm):
 
 class AddRequestFormMain(TemplateForm):
     full_name = forms.CharField(
+        required=False,
         widget=forms.TextInput(attrs={"placeholder": "John Johnson"})
     )
     address = forms.CharField(
+        required=False,
         widget=forms.Textarea(attrs={
             "placeholder": "ulica Gen. Jozefa Hallera 76/49",
             "rows": 2,
@@ -144,8 +136,9 @@ class AddRequestFormMain(TemplateForm):
 
 
 class AddOferta(TemplateForm):
-    price = forms.DecimalField(widget=forms.NumberInput(attrs={"placeholder": "0"}))
+    price = forms.DecimalField(required=False, widget=forms.NumberInput(attrs={"placeholder": "0"}))
     notes = forms.CharField(
+        required=False,
         widget=forms.Textarea(
             attrs={
                 "placeholder": "Long and very interesting note for noting your long and intresting text",

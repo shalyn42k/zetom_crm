@@ -45,7 +45,7 @@ class LogEntryAdmin(ModelAdmin):  # Используем ModelAdmin от Unfold 
 @admin.register(RequestNull)
 class RequestNullAdmin(ModelAdmin):
     form = AddRequestFormNull
-    list_display = ("created_at", "phone", "company_name", "company_nip", "email")
+    list_display = ("created_at", "updated_at", "company_name")
     actions_detail = ["approve_action"]
 
     @action(
@@ -64,10 +64,11 @@ class RequestNullAdmin(ModelAdmin):
 @admin.register(RequestMain)
 class RequestMainAdmin(ModelAdmin):
     form = AddRequestFormMain
-    list_display = ("created_at", "company_name")
+    list_display = ("created_at", "updated_at", "company_name")
     fields = (
         "full_name",
         "phone",
+        "department",
         "company_name",
         "company_nip",
         "email",
@@ -101,7 +102,7 @@ class RequestMainAdmin(ModelAdmin):
 @admin.register(Oferta)
 class OfertaAdmin(ModelAdmin):
     form = AddOferta
-    list_display = ("created_at", "company_name")
+    list_display = ("created_at", "updated_at", "company_name")
     readonly_fields = ("from_main",)
-    fields = ("from_main", "phone", "email", "company_name", "company_nip", "price", "notes")
+    fields = ("from_main", "phone","department", "email", "company_name", "company_nip", "price", "notes")
     warn_unsaved_form = True
