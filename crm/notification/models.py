@@ -1,7 +1,7 @@
 # Django imports
 from django.db import models
 
-from users.models import User
+from crm.users.models import User
 
 
 class NotificationTemplate(models.Model):

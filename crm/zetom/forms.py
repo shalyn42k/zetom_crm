@@ -8,7 +8,7 @@ from localflavor.pl.forms import PLNIPField
 from phonenumber_field.formfields import PhoneNumberField
 
 # Zetom app imports
-from zetom.models import Oferta, RequestMain, RequestNull, RequestTemplate
+from crm.zetom.models import Oferta, RequestMain, RequestNull, RequestTemplate
 
 
 class SignUpForm(UserCreationForm):
@@ -86,6 +86,9 @@ class TemplateForm(forms.ModelForm):
     company_nip = PLNIPField(  # почему работает? - работающий NIP 7322215365
         widget=forms.TextInput(attrs={"placeholder": "7322215365"})
     )
+    message = forms.CharField(
+        widget=forms.Textarea(attrs={"placeholder": "Long and very interesting note for noting your long and intresting text" })
+    )
 
     """
     ИИ, навешывает стили и переопределают какие поля нужно заполнить или нет, нужно подумать какие могут быть проблемы с этим дальше когда будет несколько детей
@@ -113,7 +116,7 @@ class TemplateForm(forms.ModelForm):
 class AddRequestFormNull(TemplateForm):
     class Meta:
         model = RequestNull
-        fields = ("phone", "company_name", "email", "company_nip")
+        fields = ("phone", "company_name", "email", "company_nip", "message")
 
 
 class AddRequestFormMain(TemplateForm):
@@ -121,14 +124,10 @@ class AddRequestFormMain(TemplateForm):
         widget=forms.TextInput(attrs={"placeholder": "John Johnson"})
     )
     address = forms.CharField(
-        widget=forms.TextInput(attrs={"placeholder": "ulica Gen. Jozefa Hallera 76/49"})
-    )
-    notes = forms.CharField(
-        widget=forms.TextInput(
-            attrs={
-                "placeholder": "Long and very interesting note for noting your long and intresting text",
-            }
-        )
+        widget=forms.Textarea(attrs={
+            "placeholder": "ulica Gen. Jozefa Hallera 76/49",
+            "rows": 2,
+            })
     )
 
     class Meta:
@@ -140,13 +139,19 @@ class AddRequestFormMain(TemplateForm):
             "company_nip",
             "full_name",
             "address",
-            "notes",
+            "message",
         )
 
 
 class AddOferta(TemplateForm):
     price = forms.DecimalField(widget=forms.NumberInput(attrs={"placeholder": "0"}))
-
+    notes = forms.CharField(
+        widget=forms.Textarea(
+            attrs={
+                "placeholder": "Long and very interesting note for noting your long and intresting text",
+            }
+        )
+    )
     class Meta:
         model = Oferta
-        fields = ("from_main", "phone", "email", "company_name", "company_nip", "price")
+        fields = ("from_main", "phone", "email", "company_name", "company_nip", "price", "notes")

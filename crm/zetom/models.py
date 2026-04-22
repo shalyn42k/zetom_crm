@@ -8,7 +8,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from safedelete.models import SafeDeleteModel
 
 # Users app imports
-# from users.models import Role, UserProfile
+# from crm.users.models import Role, UserProfile
 
 
 class RequestTemplate(SafeDeleteModel):
@@ -25,6 +25,7 @@ class RequestTemplate(SafeDeleteModel):
         blank=False,
         null=False,
     )
+    message = models.TextField(null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -47,8 +48,7 @@ class RequestMain(RequestTemplate):
         RequestNull, on_delete=models.SET_NULL, null=True, blank=True
     )
     full_name = models.CharField(max_length=50, null=True, blank=True)
-    address = models.CharField(max_length=50, null=True, blank=True)
-    notes = models.CharField(max_length=500, null=True, blank=True)
+    address = models.CharField(max_length=228, null=True, blank=True)
     # вложение понять как сделать
 
     class Meta:
@@ -62,6 +62,7 @@ class Oferta(RequestTemplate):
         RequestMain, on_delete=models.CASCADE, null=True, blank=True
     )
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Oferta Information"

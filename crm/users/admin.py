@@ -1,7 +1,7 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 
-from users.models import Role, UserProfile
+from crm.users.models import Role, UserProfile
 
 
 @admin.register(Role)

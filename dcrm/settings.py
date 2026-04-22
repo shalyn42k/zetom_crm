@@ -50,9 +50,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "users.apps.UsersConfig",
-    "zetom.apps.ZetomConfig",
-    "notification.apps.NotificationConfig",
+    "crm.users.apps.UsersConfig",
+    "crm.zetom.apps.ZetomConfig",
+    "crm.notification.apps.NotificationConfig",
     "phonenumber_field",  # библиотека для валидации телефона
     "localflavor",  # библиотеки для валидациия NIP
     "safedelete",  # библиотека для безопасного удаления данных в таблицах
