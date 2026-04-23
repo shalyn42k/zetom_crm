@@ -8,7 +8,7 @@ from localflavor.pl.forms import PLNIPField
 from phonenumber_field.formfields import PhoneNumberField
 
 # Zetom app imports
-from crm.zetom.models import Oferta, RequestMain, RequestNull, RequestTemplate
+from crm.zetom.models import Oferta, RequestMain, RequestNull, RequestTemplate, Zlecenie, Wniosek
 
 
 class SignUpForm(UserCreationForm):
@@ -148,3 +148,32 @@ class AddOferta(TemplateForm):
     class Meta:
         model = Oferta
         fields = ("from_main", "phone", "email", "company_name", "company_nip", "price", "notes")
+
+
+class AddZlecenie(TemplateForm):
+    price = forms.DecimalField(required=False, widget=forms.NumberInput(attrs={"placeholder": "0"}))
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "placeholder": "Long and very interesting note for noting your long and intresting text",
+            }
+        )
+    )
+    class Meta:
+        model = Zlecenie
+        fields = ("from_main", "phone", "email", "company_name", "company_nip", "price", "notes")
+
+
+class AddWniosek(TemplateForm):
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "placeholder": "Long and very interesting note for noting your long and intresting text",
+            }
+        )
+    )
+    class Meta:
+        model = Wniosek
+        fields = ("from_main", "phone", "email", "company_name", "company_nip", "notes")

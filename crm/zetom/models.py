@@ -11,7 +11,7 @@ from safedelete.models import SafeDeleteModel
 # from crm.users.models import Role, UserProfile
 
 # Zetom app imports
-from crm.zetom.services.statuses import Status
+from crm.zetom.services.statuses import Status, ArchiveState
 
 
 class DepartmentsVariants(models.TextChoices):
@@ -66,7 +66,6 @@ class RequestMain(RequestTemplate):
     )
     full_name = models.CharField(max_length=50, null=True, blank=True)
     address = models.CharField(max_length=228, null=True, blank=True)
-    # вложение понять как сделать
 
     class Meta:
         verbose_name = "Information"
@@ -84,3 +83,29 @@ class Oferta(RequestTemplate):
     class Meta:
         verbose_name = "Oferta Information"
         verbose_name_plural = "Oferta Information"
+
+class Zlecenie(RequestTemplate):
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
+    from_main = models.ForeignKey(
+        RequestMain, on_delete=models.CASCADE, null=True, blank=True
+    )
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    deadline = models.DateField(null=True, blank = True)
+
+    class Meta:
+        verbose_name = "Zlecenie Information"
+        verbose_name_plural = "Zlecenie Information"
+
+
+class Wniosek(RequestTemplate):
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
+    from_main = models.ForeignKey(
+        RequestMain, on_delete=models.CASCADE, null=True, blank=True
+    )
+    notes = models.TextField(null=True, blank=True)
+    application_number = models.CharField(max_length=20, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Wniosek Information"
+        verbose_name_plural = "Wniosek Information"

@@ -2,8 +2,8 @@
 from django.shortcuts import get_object_or_404
 
 # Zetom app imports
-from crm.zetom.models import Oferta, RequestMain, RequestNull
-
+from crm.zetom.models import Oferta, RequestMain, RequestNull, Zlecenie, Wniosek
+from crm.zetom.services.services import update_parent
 
 def approve_null_action(null_id):
     null_obj = get_object_or_404(RequestNull, pk=null_id)
@@ -22,22 +22,44 @@ def approve_null_action(null_id):
 
     return main_obj
 
-
 def approve_oferta_action(main_id):
     main_obj = get_object_or_404(RequestMain, pk=main_id)
-
-    oferta_obj, created = Oferta.objects.update_or_create(
+    oferta_obj = Oferta.objects.create(
         from_main=main_obj,
-        defaults={
-            "phone": main_obj.phone,
-            "company_name": main_obj.company_name,
-            "company_nip": main_obj.company_nip,
-            "email": main_obj.email,
-        },
+        phone=main_obj.phone,
+        company_name=main_obj.company_name,
+        company_nip=main_obj.company_nip,
+        email=main_obj.email,
+        price=0,
     )
-
-    if created:
-        oferta_obj.price = 0
-        oferta_obj.save()
-
+    update_parent(main_obj)
     return oferta_obj
+
+def approve_zlecenie_action(main_id):
+    main_obj = get_object_or_404(RequestMain, pk=main_id)
+    zlecenie_obj = Zlecenie.objects.create(
+        from_main=main_obj,
+        phone=main_obj.phone,
+        company_name=main_obj.company_name,
+        company_nip=main_obj.company_nip,
+        email=main_obj.email,
+        price=0,
+    )
+    update_parent(main_obj)
+    return zlecenie_obj
+
+def approve_wniosek_action(main_id):
+    main_obj = get_object_or_404(RequestMain, pk=main_id)
+    wniosek_obj = Wniosek.objects.create(
+        from_main=main_obj,
+        phone=main_obj.phone,
+        company_name=main_obj.company_name,
+        company_nip=main_obj.company_nip,
+        email=main_obj.email,
+    )
+    update_parent(main_obj)
+    return wniosek_obj
+
+
+
+

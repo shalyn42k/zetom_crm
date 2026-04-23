@@ -1,3 +1,5 @@
+from itertools import chain
+
 # from crm.users.permissions import ROLES_CONFIG
 from crm.zetom.models import RequestMain, Oferta
 from crm.zetom.services.statuses import Status, ArchiveState
@@ -40,11 +42,14 @@ def change_status(child, new_status): # в скобках пишем назва�
 
 def update_parent(parent):
 
-    children = parent.oferta_set.all()
+    children = list(chain(
+        parent.oferta_set.all(),
+        parent.zlecenie_set.all(),
+        parent.wniosek_set.all(),
+    ))
     highest_status = None
 
-
-    if children.exists():
+    if children:
 
         priority = {
             Status.in_progress: 1,
@@ -55,7 +60,7 @@ def update_parent(parent):
 
         highest_priority = 5
 
-        # проверка сильного статуса 
+        # проверка сильного статуса
         for child in children:
             if child.status in priority:
                 if priority[child.status] < highest_priority:
@@ -68,12 +73,10 @@ def update_parent(parent):
 
     # архивирование родителя
 
-
-
-        # если есть хоть один не  done активный
-    if not children.exists():
+        # если есть хоть один не done активный
+    if not children:
        parent.is_archived = True
     else:
-       parent.is_archived = not children.exclude(status=Status.done).exists()
+       parent.is_archived = all(c.status == Status.done for c in children)
 
-    parent.save() 
+    parent.save()
