@@ -8,7 +8,6 @@ class Status(models.TextChoices):
     done = "done"
 
 
-
 class ArchiveState:
-    active = 'active'
-    archive = 'archive'
+    active = "active"
+    archive = "archive"

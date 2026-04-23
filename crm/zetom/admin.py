@@ -17,10 +17,10 @@ from crm.notification.services.notification_service import send_notification_app
 from crm.users.models import Role, UserProfile
 
 # Zetom app imports
-from crm.zetom.forms import AddOferta, AddRequestFormMain, AddRequestFormNull
-from crm.zetom.models import Oferta, RequestMain, RequestNull
-from crm.zetom.services.request_service import approve_null_action, approve_oferta_action
-from crm.zetom.services.services import handle_child_change
+from crm.zetom.forms import AddOferta, AddRequestFormMain, AddRequestFormNull, AddWniosek, AddZlecenie
+from crm.zetom.models import Oferta, RequestMain, RequestNull, Zlecenie, Wniosek
+from crm.zetom.services.request_service import approve_null_action, approve_oferta_action, approve_wniosek_action, approve_zlecenie_action
+from crm.zetom.services.services import handle_child_change, save_child_with_status
 
 # Other imports
 
@@ -65,7 +65,7 @@ class RequestNullAdmin(ModelAdmin):
 @admin.register(RequestMain)
 class RequestMainAdmin(ModelAdmin):
     form = AddRequestFormMain
-    list_display = ("created_at", "updated_at", "company_name", "status")
+    list_display = ("created_at", "updated_at", "company_name", "status", "is_archived")
     fields = (
         "full_name",
         "phone",
@@ -76,7 +76,7 @@ class RequestMainAdmin(ModelAdmin):
         "address",
         "message",
     )
-    actions_detail = ["request_info_action", "oferta_action", "zlecenie_action"]
+    actions_detail = ["request_info_action", "oferta_action", "zlecenie_action", "wniosek_action"]
     warn_unsaved_form = True
 
     @action(description="Oferta", icon="assignment", url_path="oferta")
@@ -85,10 +85,18 @@ class RequestMainAdmin(ModelAdmin):
         messages.info(request, f"Redirecting to Oferta: {object_id}")
         return redirect("admin:zetom_oferta_change", oferta.pk)
 
-    @action(description="Zlecenie", icon="assignment", url_path="zlecenie_action")
+    @action(description="Zlecenie", icon="assignment", url_path="zlecenie")
     def zlecenie_action(self, request, object_id):
-        self.message_user(request, "no zlecenie :(")
-        return redirect("admin:zetom_requestmain_change", object_id)
+        zlecenie = approve_zlecenie_action(object_id)
+        messages.info(request, f"Redirecting to Zlecenie: {object_id}")
+        return redirect("admin:zetom_zlecenie_change", zlecenie.pk)
+
+    @action(description="Wniosek", icon="assignment", url_path="wniosek")
+    def wniosek_action(self, request, object_id):
+        wniosek = approve_wniosek_action(object_id)
+        messages.info(request, f"Redirecting to Wniosek: {object_id}")
+        return redirect("admin:zetom_wniosek_change", wniosek.pk)
+
 
     # AI-edited (claude-opus-4-7, 2026-04-21): simplified to render static design mockup only
     @action(description="Request Info", icon="article", url_path="request-info")
@@ -100,22 +108,46 @@ class RequestMainAdmin(ModelAdmin):
         )
 
 
+# AI-suggested (claude-opus-4-7, 2026-04-23): save_model во всех трёх админках ниже делегирует в save_child_with_status — паттерн предложен Claude, код написал пользователь.
 @admin.register(Oferta)
 class OfertaAdmin(ModelAdmin):
     form = AddOferta
-    list_display = ("created_at", "updated_at", "company_name")
+    list_display = ("created_at", "updated_at", "company_name", "status")
     readonly_fields = ("from_main",)
     fields = ("from_main", "phone", "status", "department", "email", "company_name", "company_nip", "price", "notes")
     warn_unsaved_form = True
 
     def save_model(self, request, obj, form, change):
-       new_status = form.cleaned_data.get("status")
-       if change:
-           old_status = Oferta.objects.get(pk=obj.pk).status
-           obj.status = old_status  # вернуть старый, чтобы change_status мог проверить переход
-       try:
-           handle_child_change(obj, new_status)
-       except ValueError as e:
-           messages.error(request, str(e))
-           return
-       super().save_model(request, obj, form, change)
+         if save_child_with_status(request, obj, form, change, messages):
+            super().save_model(request, obj, form, change)
+ 
+    
+@admin.register(Zlecenie)
+class ZlecenieAdmin(ModelAdmin):
+    form = AddZlecenie
+    list_display = ("created_at", "updated_at", "company_name", "status")
+    readonly_fields = ("from_main",)
+    fields = ("from_main","deadline", "phone", "status", "department", "email", "company_name", "company_nip", "price", "notes")
+    warn_unsaved_form = True
+
+    def save_model(self, request, obj, form, change):
+         if save_child_with_status(request, obj, form, change, messages):
+            super().save_model(request, obj, form, change)
+    
+
+@admin.register(Wniosek)
+class WniosekAdmin(ModelAdmin):
+    form = AddWniosek
+    list_display = ("created_at", "updated_at", "company_name", "status")
+    readonly_fields = ("from_main",)
+    fields = ("from_main","application_number", "phone", "status", "department", "email", "company_name", "company_nip", "notes",)
+    warn_unsaved_form = True
+
+    def save_model(self, request, obj, form, change):
+         if save_child_with_status(request, obj, form, change, messages):
+            super().save_model(request, obj, form, change)
+
+
+
+    
+

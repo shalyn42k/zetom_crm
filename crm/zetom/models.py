@@ -2,16 +2,15 @@
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
-
 # Other imports
 from phonenumber_field.modelfields import PhoneNumberField
 from safedelete.models import SafeDeleteModel
 
+# Zetom app imports
+from crm.zetom.services.statuses import ArchiveState, Status
+
 # Users app imports
 # from crm.users.models import Role, UserProfile
-
-# Zetom app imports
-from crm.zetom.services.statuses import Status
 
 
 class DepartmentsVariants(models.TextChoices):
@@ -19,6 +18,7 @@ class DepartmentsVariants(models.TextChoices):
     DEPARTMENT_1 = "DEPARTMENT_1", "department 2"
     DEPARTMENT_2 = "DEPARTMENT_2", "department 3"
     DEPARTMENT_3 = "DEPARTMENT_3", "department 4"
+
 
 class RequestTemplate(SafeDeleteModel):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -39,11 +39,11 @@ class RequestTemplate(SafeDeleteModel):
     message = models.TextField(null=True, blank=True)
     department = models.CharField(
         max_length=30,
-        choices=DepartmentsVariants, 
+        choices=DepartmentsVariants,
         default=DepartmentsVariants.DEPARTMENT_0,
-        null = True,
-        blank=True
-        )
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         abstract = True
@@ -66,7 +66,6 @@ class RequestMain(RequestTemplate):
     )
     full_name = models.CharField(max_length=50, null=True, blank=True)
     address = models.CharField(max_length=228, null=True, blank=True)
-    # вложение понять как сделать
 
     class Meta:
         verbose_name = "Information"
@@ -84,3 +83,30 @@ class Oferta(RequestTemplate):
     class Meta:
         verbose_name = "Oferta Information"
         verbose_name_plural = "Oferta Information"
+
+
+class Zlecenie(RequestTemplate):
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
+    from_main = models.ForeignKey(
+        RequestMain, on_delete=models.CASCADE, null=True, blank=True
+    )
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    deadline = models.DateField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Zlecenie Information"
+        verbose_name_plural = "Zlecenie Information"
+
+
+class Wniosek(RequestTemplate):
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
+    from_main = models.ForeignKey(
+        RequestMain, on_delete=models.CASCADE, null=True, blank=True
+    )
+    notes = models.TextField(null=True, blank=True)
+    application_number = models.CharField(max_length=20, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Wniosek Information"
+        verbose_name_plural = "Wniosek Information"

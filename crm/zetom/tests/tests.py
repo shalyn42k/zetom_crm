@@ -9,8 +9,8 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 # Notification app imports
-from crm.notification.services.notification_service import send_notification_to_staff
-
+from crm.notification.services.notification_service import \
+    send_notification_to_staff
 # Zetom app imports
 from crm.zetom.forms import AddRequestFormNull
 from crm.zetom.models import RequestNull
@@ -89,7 +89,8 @@ class EmailTemplateViewTests(TestCase):
         self.assertContains(response, "Все заебок со всем")
 
     @patch(
-        "crm.zetom.views.send_notification_to_staff", side_effect=Exception("SMTP failed")
+        "crm.zetom.views.send_notification_to_staff",
+        side_effect=Exception("SMTP failed"),
     )
     def test_post_valid_data_handles_email_errors(self, _send_mock):
         response = self.client.post(

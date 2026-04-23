@@ -130,6 +130,16 @@ UNFOLD = {
                         "icon": "description",
                         "link": reverse_lazy("admin:zetom_oferta_changelist"),
                     },
+                    {
+                        "title": "Zlecenie Information",
+                        "icon": "description",
+                        "link": reverse_lazy("admin:zetom_zlecenie_changelist"),
+                    },
+                    {
+                        "title": "Wniosek Information",
+                        "icon": "description",
+                        "link": reverse_lazy("admin:zetom_wniosek_changelist"),
+                    },
                 ],
             },
             {
