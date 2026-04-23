@@ -14,7 +14,7 @@ print("RBAC SIGNALS LOADED")
 @receiver(post_migrate)
 def create_rbac_defaults(sender, **kwargs):
     # Срабатывает только для приложения users
-    if sender.name != "users":
+    if sender.label != "users":
         return
 
     print("RBAC SIGNAL RUNNING FOR USERS")
@@ -32,13 +32,10 @@ def create_rbac_defaults(sender, **kwargs):
     permissions_data = [
         ("view_dashboard", "Просмотр дашборда"),
         ("view_admin_panel", "Просмотр админ-панели"),
-
         ("view_users", "Просмотр пользователей"),
         ("edit_users", "Редактирование пользователей"),
-
         ("view_roles", "Просмотр ролей"),
         ("edit_roles", "Редактирование ролей"),
-
         ("view_requests", "Просмотр заявок"),
         ("edit_requests", "Редактирование заявок"),
         ("delete_requests", "Удаление заявок"),
@@ -46,10 +43,7 @@ def create_rbac_defaults(sender, **kwargs):
 
     perm_objects = {}
     for code, name in permissions_data:
-        perm, _ = Permission.objects.get_or_create(
-            code=code,
-            defaults={"name": name}
-        )
+        perm, _ = Permission.objects.get_or_create(code=code, defaults={"name": name})
         perm_objects[code] = perm
 
     # 2. Роли
@@ -94,10 +88,7 @@ def create_rbac_defaults(sender, **kwargs):
     }
 
     for code, data in roles_data.items():
-        role, _ = Role.objects.get_or_create(
-            code=code,
-            defaults={"name": data["name"]}
-        )
+        role, _ = Role.objects.get_or_create(code=code, defaults={"name": data["name"]})
         role.permissions.set([perm_objects[p] for p in data["perms"]])
 
     # 3. Маппинг кастомных прав → Django permissions
@@ -106,10 +97,8 @@ def create_rbac_defaults(sender, **kwargs):
         "view_requests": ("zetom", "requestmain"),
         "edit_requests": ("zetom", "requestmain"),
         "delete_requests": ("zetom", "requestmain"),
-
         "view_users": ("users", "userprofile"),
         "edit_users": ("users", "userprofile"),
-
         "view_roles": ("users", "role"),
         "edit_roles": ("users", "role"),
     }
