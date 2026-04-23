@@ -2,13 +2,20 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+
 # Other imports
 from localflavor.pl.forms import PLNIPField
 from phonenumber_field.formfields import PhoneNumberField
 
 # Zetom app imports
-from crm.zetom.models import (Oferta, RequestMain, RequestNull,
-                              RequestTemplate, Wniosek, Zlecenie)
+from crm.zetom.models import (
+    Oferta,
+    RequestMain,
+    RequestNull,
+    RequestTemplate,
+    Wniosek,
+    Zlecenie,
+)
 
 
 class SignUpForm(UserCreationForm):

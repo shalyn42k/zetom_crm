@@ -20,6 +20,7 @@ class Role(models.Model):
     def __str__(self):
         return self.name
 
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)

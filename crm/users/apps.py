@@ -12,4 +12,4 @@ class UsersConfig(AppConfig):
     def ready(self):
         print("READY() WORKS")
         import crm.users.signals
-        import crm.users.signals_profile 
+        import crm.users.signals_profile

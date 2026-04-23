@@ -8,7 +8,6 @@ UNFOLD = {
     "SITE_TITLE": "Zetom CRM",
     "SITE_HEADER": "Zetom CRM",
     "SITE_SUBHEADER": "Control Panel",
-
     "SITE_DROPDOWN": [
         {
             "icon": "mail",
@@ -25,20 +24,17 @@ UNFOLD = {
         "light": lambda request: static("zetom/img/logo.avif"),
         "dark": lambda request: static("zetom/img/logo.avif"),
     },
-
     "LOGIN": {
         # "image": lambda request: static("zetom/img/bg.jpg"),
         # "redirect_after": lambda request: reverse_lazy("admin:APP_MODEL_changelist"),
         # "form": "app.forms.CustomLoginForm",
     },
-
     "SITE_URL": "/",
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
     "SHOW_BACK_BUTTON": True,
     "SHOW_LANGUAGES": False,  # включить когда будет настроен перевод
     "BORDER_RADIUS": "6px",
-
     "COLORS": {
         "base": {
             "50": "oklch(98.5% .002 247.839)",
@@ -75,7 +71,6 @@ UNFOLD = {
             "important-dark": "var(--color-base-100)",
         },
     },
-
     "EXTENSIONS": {
         "modeltranslation": {
             "flags": {
@@ -86,11 +81,9 @@ UNFOLD = {
             },
         },
     },
-
     "SIDEBAR": {
         "show_search": True,
         "filter": "dcrm.unfold_sidebar.filter_sidebar_items",
-
         "navigation": [
             {
                 "title": "Developer Interface",
@@ -100,13 +93,17 @@ UNFOLD = {
                         "title": "Validation Window",
                         "icon": "check",
                         "link": reverse_lazy("admin:zetom_requestnull_changelist"),
-                        "permission": lambda request: user_has_perm(request.user, "view_requests"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_requests"
+                        ),
                     },
                     {
                         "title": "Activity Log",
                         "icon": "history",
                         "link": "/admin/admin/logentry/",
-                        "permission": lambda request: user_has_perm(request.user, "view_admin_panel"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_admin_panel"
+                        ),
                     },
                     {
                         "title": "Notification",
@@ -124,7 +121,6 @@ UNFOLD = {
                     },
                 ],
             },
-
             {
                 "title": "Requests",
                 "collapsible": True,
@@ -133,13 +129,17 @@ UNFOLD = {
                         "title": "Information",
                         "icon": "folder",
                         "link": reverse_lazy("admin:zetom_requestmain_changelist"),
-                        "permission": lambda request: user_has_perm(request.user, "view_requests"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_requests"
+                        ),
                     },
                     {
                         "title": "Oferta Information",
                         "icon": "description",
                         "link": reverse_lazy("admin:zetom_oferta_changelist"),
-                        "permission": lambda request: user_has_perm(request.user, "view_requests"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_requests"
+                        ),
                     },
                     {
                         "title": "Zlecenie Information",
@@ -153,7 +153,6 @@ UNFOLD = {
                     },
                 ],
             },
-
             {
                 "title": "Admin",
                 "collapsible": True,
@@ -162,17 +161,20 @@ UNFOLD = {
                         "title": "Roles",
                         "icon": "shield",
                         "link": reverse_lazy("admin:users_role_changelist"),
-                        "permission": lambda request: user_has_perm(request.user, "view_roles"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_roles"
+                        ),
                     },
                     {
                         "title": "Users",
                         "icon": "account_box",
                         "link": reverse_lazy("admin:users_userprofile_changelist"),
-                        "permission": lambda request: user_has_perm(request.user, "view_users"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_users"
+                        ),
                     },
                 ],
             },
         ],
     },
 }
-

@@ -7,7 +7,10 @@ from crm.users.utils import user_has_perm
 
 @admin.register(Role)
 class AdminRole(ModelAdmin):
-    list_display = ("code", "name",)
+    list_display = (
+        "code",
+        "name",
+    )
 
     def has_view_permission(self, request, obj=None):
         return user_has_perm(request.user, "view_roles")
