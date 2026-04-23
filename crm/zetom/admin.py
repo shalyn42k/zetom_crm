@@ -14,7 +14,7 @@ from unfold.enums import ActionVariant
 from crm.notification.services.notification_service import send_notification_approve_null
 
 # Users app imports
-from crm.users.models import Role, UserProfile
+from crm.users.utils import user_has_perm
 
 # Zetom app imports
 from crm.zetom.forms import AddOferta, AddRequestFormMain, AddRequestFormNull, AddWniosek, AddZlecenie
@@ -25,6 +25,22 @@ from crm.zetom.services.services import handle_child_change, save_child_with_sta
 # Other imports
 
 
+class BaseRequestAdmin(ModelAdmin):
+    # RBAC для запросов (общие разрешения для RequestNull, RequestMain, Oferta)
+    def has_view_permission(self, request, obj=None):
+        return user_has_perm(request.user, "view_requests")
+
+    def has_add_permission(self, request):
+        return user_has_perm(request.user, "edit_requests")
+
+    def has_change_permission(self, request, obj=None):
+        return user_has_perm(request.user, "edit_requests")
+
+    def has_delete_permission(self, request, obj=None):
+        return user_has_perm(request.user, "delete_requests")
+
+
+
 # AI-generated (unknown, legacy): LogEntryAdmin — read-only viewer for django admin log
 @admin.register(LogEntry)
 class LogEntryAdmin(ModelAdmin):  # Используем ModelAdmin от Unfold для красоты
@@ -32,7 +48,10 @@ class LogEntryAdmin(ModelAdmin):  # Используем ModelAdmin от Unfold 
     list_filter = ("action_flag", "content_type", "user")
     search_fields = ("object_repr", "change_message")
 
-    # Запрещаем всё, кроме просмотра
+    # RBAC
+    def has_view_permission(self, request, obj=None):
+        return user_has_perm(request.user, "view_admin_panel")
+
     def has_add_permission(self, request):
         return False
 
@@ -44,7 +63,7 @@ class LogEntryAdmin(ModelAdmin):  # Используем ModelAdmin от Unfold 
 
 
 @admin.register(RequestNull)
-class RequestNullAdmin(ModelAdmin):
+class RequestNullAdmin(BaseRequestAdmin):
     form = AddRequestFormNull
     list_display = ("created_at", "updated_at", "company_name")
     actions_detail = ["approve_action"]
@@ -63,7 +82,7 @@ class RequestNullAdmin(ModelAdmin):
 
 
 @admin.register(RequestMain)
-class RequestMainAdmin(ModelAdmin):
+class RequestMainAdmin(BaseRequestAdmin):
     form = AddRequestFormMain
     list_display = ("created_at", "updated_at", "company_name", "status", "is_archived")
     fields = (
@@ -110,7 +129,7 @@ class RequestMainAdmin(ModelAdmin):
 
 # AI-suggested (claude-opus-4-7, 2026-04-23): save_model во всех трёх админках ниже делегирует в save_child_with_status — паттерн предложен Claude, код написал пользователь.
 @admin.register(Oferta)
-class OfertaAdmin(ModelAdmin):
+class OfertaAdmin(BaseRequestAdmin):
     form = AddOferta
     list_display = ("created_at", "updated_at", "company_name", "status")
     readonly_fields = ("from_main",)
@@ -123,7 +142,7 @@ class OfertaAdmin(ModelAdmin):
  
     
 @admin.register(Zlecenie)
-class ZlecenieAdmin(ModelAdmin):
+class ZlecenieAdmin(BaseRequestAdmin):
     form = AddZlecenie
     list_display = ("created_at", "updated_at", "company_name", "status")
     readonly_fields = ("from_main",)
@@ -136,7 +155,7 @@ class ZlecenieAdmin(ModelAdmin):
     
 
 @admin.register(Wniosek)
-class WniosekAdmin(ModelAdmin):
+class WniosekAdmin(BaseRequestAdmin):
     form = AddWniosek
     list_display = ("created_at", "updated_at", "company_name", "status")
     readonly_fields = ("from_main",)
@@ -147,7 +166,4 @@ class WniosekAdmin(ModelAdmin):
          if save_child_with_status(request, obj, form, change, messages):
             super().save_model(request, obj, form, change)
 
-
-
-    
 
