@@ -9,8 +9,8 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 # Notification app imports
-from crm.notification.services.notification_service import \
-    send_notification_to_staff
+from crm.notification.services.notification_service import send_notification_to_staff
+
 # Zetom app imports
 from crm.zetom.forms import AddRequestFormNull
 from crm.zetom.models import RequestNull
