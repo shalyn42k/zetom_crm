@@ -111,6 +111,7 @@ class RequestMainAdmin(ModelAdmin):
 # AI-suggested (claude-opus-4-7, 2026-04-23): save_model во всех трёх админках ниже делегирует в save_child_with_status — паттерн предложен Claude, код написал пользователь.
 @admin.register(Oferta)
 class OfertaAdmin(ModelAdmin):
+    actions = []
     form = AddOferta
     list_display = ("created_at", "updated_at", "company_name", "status")
     readonly_fields = ("from_main",)
@@ -124,6 +125,7 @@ class OfertaAdmin(ModelAdmin):
     
 @admin.register(Zlecenie)
 class ZlecenieAdmin(ModelAdmin):
+    actions = []
     form = AddZlecenie
     list_display = ("created_at", "updated_at", "company_name", "status")
     readonly_fields = ("from_main",)
@@ -137,6 +139,7 @@ class ZlecenieAdmin(ModelAdmin):
 
 @admin.register(Wniosek)
 class WniosekAdmin(ModelAdmin):
+    actions = []
     form = AddWniosek
     list_display = ("created_at", "updated_at", "company_name", "status")
     readonly_fields = ("from_main",)
