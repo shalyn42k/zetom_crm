@@ -13,26 +13,42 @@ from unfold.enums import ActionVariant
 # Notification app imports
 from notification.services.notification_service import send_notification_approve_null
 
-
 # Users app imports
-from users.models import Role, UserProfile
+from users.utils import user_has_perm
 
 # Zetom app imports
 from zetom.forms import AddOferta, AddRequestFormMain, AddRequestFormNull
 from zetom.models import Oferta, RequestMain, RequestNull
 from zetom.services.request_service import approve_null_action, approve_oferta_action
 
-# Other imports
+
+class BaseRequestAdmin(ModelAdmin):
+    # RBAC для запросов (общие разрешения для RequestNull, RequestMain, Oferta)
+    def has_view_permission(self, request, obj=None):
+        return user_has_perm(request.user, "view_requests")
+
+    def has_add_permission(self, request):
+        return user_has_perm(request.user, "edit_requests")
+
+    def has_change_permission(self, request, obj=None):
+        return user_has_perm(request.user, "edit_requests")
+
+    def has_delete_permission(self, request, obj=None):
+        return user_has_perm(request.user, "delete_requests")
 
 
-# Ии написал класс, ебу че делает
+
+# LogEntryAdmin
 @admin.register(LogEntry)
-class LogEntryAdmin(ModelAdmin):  # Используем ModelAdmin от Unfold для красоты
+class LogEntryAdmin(ModelAdmin):
     list_display = ("action_time", "user", "content_type", "object_repr", "action_flag")
     list_filter = ("action_flag", "content_type", "user")
     search_fields = ("object_repr", "change_message")
 
-    # Запрещаем всё, кроме просмотра
+    # RBAC
+    def has_view_permission(self, request, obj=None):
+        return user_has_perm(request.user, "view_admin_panel")
+
     def has_add_permission(self, request):
         return False
 
@@ -43,8 +59,10 @@ class LogEntryAdmin(ModelAdmin):  # Используем ModelAdmin от Unfold 
         return False
 
 
+
+# RequestNullAdmin
 @admin.register(RequestNull)
-class RequestNullAdmin(ModelAdmin):
+class RequestNullAdmin(BaseRequestAdmin):
     form = AddRequestFormNull
     list_display = ("created_at", "phone", "company_name", "company_nip", "email")
     actions_detail = ["approve_action"]
@@ -58,14 +76,14 @@ class RequestNullAdmin(ModelAdmin):
     def approve_action(self, request, object_id):
         new_main_record = approve_null_action(object_id)
         send_notification_approve_null(new_main_record)
-
         return redirect("admin:zetom_requestmain_change", new_main_record.pk)
 
 
+
+# RequestMainAdmin
 @admin.register(RequestMain)
-class RequestMainAdmin(ModelAdmin):
+class RequestMainAdmin(BaseRequestAdmin):
     form = AddRequestFormMain
-    # change_form_template = "requestmain/change_form.html"
     list_display = ("created_at", "company_name")
     fields = (
         "full_name",
@@ -79,9 +97,6 @@ class RequestMainAdmin(ModelAdmin):
     actions_detail = ["oferta_action", "zlecenie_action"]
     warn_unsaved_form = True
 
-
-    
-
     @action(description="Oferta", icon="assignment", url_path="oferta")
     def oferta_action(self, request, object_id):
         oferta = approve_oferta_action(object_id)
@@ -94,12 +109,12 @@ class RequestMainAdmin(ModelAdmin):
         return redirect("admin:zetom_requestmain_change", object_id)
 
 
+
+# OfertaAdmin
 @admin.register(Oferta)
-class OfertaAdmin(ModelAdmin):
+class OfertaAdmin(BaseRequestAdmin):
     form = AddOferta
     list_display = ("created_at", "company_name")
     readonly_fields = ("from_main",)
     fields = ("from_main", "phone", "email", "company_name", "company_nip", "price")
     warn_unsaved_form = True
-
-    
