@@ -4,23 +4,27 @@ from django.contrib import admin, messages
 from django.contrib.admin.models import LogEntry
 from django.db import transaction
 from django.shortcuts import redirect, render
-
 # Unfold imports
 from unfold.admin import ModelAdmin
 from unfold.decorators import action
 from unfold.enums import ActionVariant
 
 # Notification app imports
-from crm.notification.services.notification_service import send_notification_approve_null
-
+from crm.notification.services.notification_service import \
+    send_notification_approve_null
 # Users app imports
 from crm.users.utils import user_has_perm
-
 # Zetom app imports
-from crm.zetom.forms import AddOferta, AddRequestFormMain, AddRequestFormNull, AddWniosek, AddZlecenie
-from crm.zetom.models import Oferta, RequestMain, RequestNull, Zlecenie, Wniosek
-from crm.zetom.services.request_service import approve_null_action, approve_oferta_action, approve_wniosek_action, approve_zlecenie_action
-from crm.zetom.services.services import handle_child_change, save_child_with_status
+from crm.zetom.forms import (AddOferta, AddRequestFormMain, AddRequestFormNull,
+                             AddWniosek, AddZlecenie)
+from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek,
+                              Zlecenie)
+from crm.zetom.services.request_service import (approve_null_action,
+                                                approve_oferta_action,
+                                                approve_wniosek_action,
+                                                approve_zlecenie_action)
+from crm.zetom.services.services import (handle_child_change,
+                                         save_child_with_status)
 
 # Other imports
 

@@ -1,7 +1,8 @@
 ﻿from django.templatetags.static import static
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
-from users.utils import user_has_perm
+
+from crm.users.utils import user_has_perm
 
 UNFOLD = {
     "SITE_TITLE": "Zetom CRM",

@@ -1,10 +1,10 @@
-from django.db.models.signals import post_migrate
-from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission as DjangoPermission
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
 
-from .models import Role, Permission
+from crm.users.models import Permission, Role
 
 User = get_user_model()
 

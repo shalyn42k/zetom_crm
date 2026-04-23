@@ -1,12 +1,8 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 
-<<<<<<< HEAD:crm/users/admin.py
 from crm.users.models import Role, UserProfile
-=======
-from users.models import Role, UserProfile
-from users.utils import user_has_perm
->>>>>>> 39979298bd14d6dba7e63567826a8516481ff88e:users/admin.py
+from crm.users.utils import user_has_perm
 
 
 @admin.register(Role)
@@ -29,8 +25,6 @@ class AdminRole(ModelAdmin):
 @admin.register(UserProfile)
 class AdminUserProfile(ModelAdmin):
     list_display = ("user", "role")
-<<<<<<< HEAD:crm/users/admin.py
-=======
 
     def has_view_permission(self, request, obj=None):
         return user_has_perm(request.user, "view_users")
@@ -43,4 +37,3 @@ class AdminUserProfile(ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return user_has_perm(request.user, "edit_users")
->>>>>>> 39979298bd14d6dba7e63567826a8516481ff88e:users/admin.py

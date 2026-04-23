@@ -2,11 +2,14 @@ print("APPS.PY LOADED")
 
 from django.apps import AppConfig
 
+
 class UsersConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "users"
+    name = "crm.users"
+    label = "users"
+    verbose_name = "users"
 
     def ready(self):
         print("READY() WORKS")
-        import users.signals          
-        import users.signals_profile 
+        import crm.users.signals
+        import crm.users.signals_profile 
