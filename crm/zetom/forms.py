@@ -2,13 +2,13 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-
 # Other imports
 from localflavor.pl.forms import PLNIPField
 from phonenumber_field.formfields import PhoneNumberField
 
 # Zetom app imports
-from crm.zetom.models import Oferta, RequestMain, RequestNull, RequestTemplate, Zlecenie, Wniosek
+from crm.zetom.models import (Oferta, RequestMain, RequestNull,
+                              RequestTemplate, Wniosek, Zlecenie)
 
 
 class SignUpForm(UserCreationForm):
@@ -77,25 +77,30 @@ class TemplateForm(forms.ModelForm):
     )
 
     company_name = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={"placeholder": "Zetom"})
+        required=False, widget=forms.TextInput(attrs={"placeholder": "Zetom"})
     )
 
     email = forms.EmailField(
-        required=True,
-        widget=forms.TextInput(attrs={"placeholder": "email@gmail.com"})
+        required=True, widget=forms.TextInput(attrs={"placeholder": "email@gmail.com"})
     )
 
     company_nip = PLNIPField(
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "7322215365"}) # почему работает? - работающий NIP 7322215365
+        widget=forms.TextInput(
+            attrs={"placeholder": "7322215365"}
+        ),  # почему работает? - работающий NIP 7322215365
     )
     message = forms.CharField(
         required=False,
-        widget=forms.Textarea(attrs={"placeholder": "Long and very interesting note for noting your long and intresting text" })
+        widget=forms.Textarea(
+            attrs={
+                "placeholder": "Long and very interesting note for noting your long and intresting text"
+            }
+        ),
     )
 
     "Разобраться все еще как работает, но есть понимание что делает"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -111,15 +116,16 @@ class AddRequestFormNull(TemplateForm):
 
 class AddRequestFormMain(TemplateForm):
     full_name = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={"placeholder": "John Johnson"})
+        required=False, widget=forms.TextInput(attrs={"placeholder": "John Johnson"})
     )
     address = forms.CharField(
         required=False,
-        widget=forms.Textarea(attrs={
-            "placeholder": "ulica Gen. Jozefa Hallera 76/49",
-            "rows": 2,
-            })
+        widget=forms.Textarea(
+            attrs={
+                "placeholder": "ulica Gen. Jozefa Hallera 76/49",
+                "rows": 2,
+            }
+        ),
     )
 
     class Meta:
@@ -136,33 +142,55 @@ class AddRequestFormMain(TemplateForm):
 
 
 class AddOferta(TemplateForm):
-    price = forms.DecimalField(required=False, widget=forms.NumberInput(attrs={"placeholder": "0"}))
+    price = forms.DecimalField(
+        required=False, widget=forms.NumberInput(attrs={"placeholder": "0"})
+    )
     notes = forms.CharField(
         required=False,
         widget=forms.Textarea(
             attrs={
                 "placeholder": "Long and very interesting note for noting your long and intresting text",
             }
-        )
+        ),
     )
+
     class Meta:
         model = Oferta
-        fields = ("from_main", "phone", "email", "company_name", "company_nip", "price", "notes")
+        fields = (
+            "from_main",
+            "phone",
+            "email",
+            "company_name",
+            "company_nip",
+            "price",
+            "notes",
+        )
 
 
 class AddZlecenie(TemplateForm):
-    price = forms.DecimalField(required=False, widget=forms.NumberInput(attrs={"placeholder": "0"}))
+    price = forms.DecimalField(
+        required=False, widget=forms.NumberInput(attrs={"placeholder": "0"})
+    )
     notes = forms.CharField(
         required=False,
         widget=forms.Textarea(
             attrs={
                 "placeholder": "Long and very interesting note for noting your long and intresting text",
             }
-        )
+        ),
     )
+
     class Meta:
         model = Zlecenie
-        fields = ("from_main", "phone", "email", "company_name", "company_nip", "price", "notes")
+        fields = (
+            "from_main",
+            "phone",
+            "email",
+            "company_name",
+            "company_nip",
+            "price",
+            "notes",
+        )
 
 
 class AddWniosek(TemplateForm):
@@ -172,8 +200,9 @@ class AddWniosek(TemplateForm):
             attrs={
                 "placeholder": "Long and very interesting note for noting your long and intresting text",
             }
-        )
+        ),
     )
+
     class Meta:
         model = Wniosek
         fields = ("from_main", "phone", "email", "company_name", "company_nip", "notes")
