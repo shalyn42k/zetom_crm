@@ -1,78 +1,78 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тренировка Django Forms</title>
-    <style>
-        body { font-family: sans-serif; margin: 40px; line-height: 1.6; background-color: #f4f7f6; }
-        .container { max-width: 500px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; }
-        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { padding: 10px 20px; background-color: #0984e3; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
-        button:hover { background-color: #74b9ff; }
-        .errorlist { color: #d63031; list-style: none; padding: 0; font-size: 14px; margin-bottom: 10px; }
-        .success { color: #27ae60; font-weight: bold; margin-bottom: 15px; }
-    </style>
-</head>
-<body>
+{% extends "admin/base_site.html" %}
+{% load static %}
 
-    <div class="container">
-        <h2>Отправка данных</h2>
- {% if message %}
-<div class="success">
-    {{ message }}
-</div>
-{% endif %}
-        {% if form.errors %}
-            <div class="errorlist">
-                Пожалуйста, исправьте ошибки в полях ниже.
-            </div>
-        {% endif %}
+{% block title %}Submit Request{% endblock %}
 
-        <form method="post">
-            {% csrf_token %}
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'zetom/css/email_form.css' %}">
+{% endblock %}
 
-            <div class="form-group">
-                <label for="id_phone">Ваш телефон:</label>
-                <input type="tel" id="id_phone" name="phone" 
-                       placeholder="+48 000 000 000" 
-                       value="{{ form.phone.value|default:'' }}">
-                {{ form.phone.errors }}
-            </div>
+{% block breadcrumbs %}{% endblock %}
 
-            <div class="form-group">
-                <label for="id_company_name">Имя компании:</label>
-                <input type="text" id="id_company_name" name="company_name" 
-                       placeholder="Zetom Sp. z o.o." required 
-                       value="{{ form.company_name.value|default:'' }}">
-                {{ form.company_name.errors }}
-            </div>
-
-            <div class="form-group">
-                <label for="id_email">Ваша почта:</label>
-                <input type="email" id="id_email" name="email" 
-                       placeholder="example@zetom.pl" required 
-                       value="{{ form.email.value|default:'' }}">
-                {{ form.email.errors }}
-            </div>
-
-            <div class="form-group">
-                <label for="id_company_nip">NIP компании:</label>
-                <input type="text" id="id_company_nip" name="company_nip" 
-                       placeholder="1234567890" required 
-                       value="{{ form.company_nip.value|default:'' }}">
-                
-                {% if form.company_nip.errors %}
-                    <div class="errorlist">
-                        {{ form.company_nip.errors }}
-                    </div>
-                {% endif %}
-            </div>
-            <button type="submit">Отправить заявку</button>
-        </form>
+{% block content %}
+<div class="email-form-card">
+    <div class="email-form-header">
+        <h2>Submit your request</h2>
+        <a href="{% url 'admin:index' %}" class="return-btn">← Return</a>
     </div>
+    <p class="subtitle">Fill in the details below and we will get back to you shortly.</p>
 
-</body>
-</html>
+    {% if message %}
+        <div class="notice">{{ message }}</div>
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        <ul class="errorlist">
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="id_phone">Phone</label>
+            <input type="tel" id="id_phone" name="phone" autocomplete="tel"
+                   placeholder="+48 000 000 000"
+                   value="{{ form.phone.value|default:'' }}">
+            {{ form.phone.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_company_name">Company name</label>
+            <input type="text" id="id_company_name" name="company_name" autocomplete="organization"
+                   placeholder="Zetom Sp. z o.o."
+                   value="{{ form.company_name.value|default:'' }}">
+            {{ form.company_name.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_email">Email</label>
+            <input type="email" id="id_email" name="email" autocomplete="email" required
+                   placeholder="example@zetom.pl"
+                   value="{{ form.email.value|default:'' }}">
+            {{ form.email.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_company_nip">Company NIP</label>
+            <input type="text" id="id_company_nip" name="company_nip" required
+                   placeholder="1234567890"
+                   value="{{ form.company_nip.value|default:'' }}">
+            {{ form.company_nip.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_message">Message</label>
+            <textarea id="id_message" name="message"
+                      placeholder="Long and very interesting note for noting your long and interesting text">{{ form.message.value|default:'' }}</textarea>
+            {{ form.message.errors }}
+        </div>
+
+        <button type="submit">Submit request</button>
+    </form>
+</div>
+{% endblock %}

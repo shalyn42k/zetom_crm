@@ -17,12 +17,12 @@ UNFOLD = {
     ],
     # Static files
     "SITE_ICON": {
-        "light": lambda request: static("zetom/img/zet1.avif"),
-        "dark": lambda request: static("zetom/img/zet1.avif"),
+        "light": lambda request: static("img/zet1.avif"),
+        "dark": lambda request: static("img/zet1.avif"),
     },
     "SITE_LOGO": {
-        "light": lambda request: static("zetom/img/logo.avif"),
-        "dark": lambda request: static("zetom/img/logo.avif"),
+        "light": lambda request: static("img/logo.avif"),
+        "dark": lambda request: static("img/logo.avif"),
     },
     "LOGIN": {
         # "image": lambda request: static("zetom/img/bg.jpg"),
