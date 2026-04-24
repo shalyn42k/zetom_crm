@@ -4,6 +4,8 @@ from django.core.validators import RegexValidator
 from django.db import models
 # Other imports
 from phonenumber_field.modelfields import PhoneNumberField
+# Other imports
+from safedelete.config import SOFT_DELETE_CASCADE
 from safedelete.models import SafeDeleteModel
 
 # Zetom app imports
@@ -11,6 +13,7 @@ from crm.zetom.services.statuses import ArchiveState, Status
 
 # Users app imports
 # from crm.users.models import Role, UserProfile
+
 
 
 class DepartmentsVariants(models.TextChoices):
@@ -21,6 +24,7 @@ class DepartmentsVariants(models.TextChoices):
 
 
 class RequestTemplate(SafeDeleteModel):
+    _safedelete_policy = SOFT_DELETE_CASCADE
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     phone = PhoneNumberField(null=False, blank=False)
@@ -30,7 +34,7 @@ class RequestTemplate(SafeDeleteModel):
         max_length=10,
         validators=[
             RegexValidator(
-                regex=r"^\d{10}$", message="Your NIP sucks man, It must be 10 digits yo"
+                regex=r"^\d{10}$"
             )
         ],
         blank=False,
