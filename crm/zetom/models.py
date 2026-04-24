@@ -31,7 +31,7 @@ class RequestTemplate(SafeDeleteModel):
         max_length=10,
         validators=[
             RegexValidator(
-                regex=r"^\d{10}$", message="Your NIP sucks man, It must be 10 digits yo"
+                regex=r"^\d{10}$"
             )
         ],
         blank=False,
