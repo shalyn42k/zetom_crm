@@ -2,9 +2,10 @@
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
-
 # Other imports
 from phonenumber_field.modelfields import PhoneNumberField
+# Other imports
+from safedelete.config import SOFT_DELETE_CASCADE
 from safedelete.models import SafeDeleteModel
 
 # Zetom app imports
@@ -13,8 +14,6 @@ from crm.zetom.services.statuses import ArchiveState, Status
 # Users app imports
 # from crm.users.models import Role, UserProfile
 
-# Other imports
-from safedelete.config import SOFT_DELETE_CASCADE
 
 
 class DepartmentsVariants(models.TextChoices):

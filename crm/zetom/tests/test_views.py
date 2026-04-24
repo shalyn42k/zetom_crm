@@ -5,9 +5,9 @@ from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from crm.notification.services.notification_service import send_notification_to_staff
+from crm.notification.services.notification_service import \
+    send_notification_to_staff
 from crm.zetom.models import RequestNull
-
 
 VALID_POST = {
     "phone": "+48501600300",

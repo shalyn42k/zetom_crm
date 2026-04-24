@@ -1,16 +1,9 @@
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from crm.zetom.models import (
-    DepartmentsVariants,
-    Oferta,
-    RequestMain,
-    RequestNull,
-    Wniosek,
-    Zlecenie,
-)
+from crm.zetom.models import (DepartmentsVariants, Oferta, RequestMain,
+                              RequestNull, Wniosek, Zlecenie)
 from crm.zetom.services.statuses import Status
-
 
 VALID_NULL_DATA = {
     "phone": "+48501600300",

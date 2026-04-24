@@ -2,15 +2,9 @@ from decimal import Decimal
 
 from django.test import TestCase
 
-from crm.zetom.forms import (
-    AddOferta,
-    AddRequestFormMain,
-    AddRequestFormNull,
-    AddWniosek,
-    AddZlecenie,
-)
+from crm.zetom.forms import (AddOferta, AddRequestFormMain, AddRequestFormNull,
+                             AddWniosek, AddZlecenie)
 from crm.zetom.models import RequestMain
-
 
 BASE_DATA = {
     "phone": "+48501600300",

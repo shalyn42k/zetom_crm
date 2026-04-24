@@ -4,9 +4,9 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from crm.zetom.models import Oferta, RequestMain, RequestNull, Wniosek, Zlecenie
+from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek,
+                              Zlecenie)
 from crm.zetom.services.statuses import Status
-
 
 BASE_DATA = {
     "phone": "+48501600300",

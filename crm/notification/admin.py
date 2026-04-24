@@ -2,8 +2,8 @@ from django.contrib import admin
 from unfold.admin import ModelAdmin
 
 from crm.notification.models import EmailNotification, Notification
-
 from crm.zetom.admin import BaseRequestAdmin
+
 
 @admin.register(Notification)
 class NotificationAdmin(BaseRequestAdmin):

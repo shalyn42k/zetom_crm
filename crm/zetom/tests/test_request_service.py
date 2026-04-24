@@ -1,15 +1,13 @@
 from django.http import Http404
 from django.test import TestCase
 
-from crm.zetom.models import Oferta, RequestMain, RequestNull, Wniosek, Zlecenie
-from crm.zetom.services.request_service import (
-    approve_null_action,
-    approve_oferta_action,
-    approve_wniosek_action,
-    approve_zlecenie_action,
-)
+from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek,
+                              Zlecenie)
+from crm.zetom.services.request_service import (approve_null_action,
+                                                approve_oferta_action,
+                                                approve_wniosek_action,
+                                                approve_zlecenie_action)
 from crm.zetom.services.statuses import Status
-
 
 BASE_DATA = {
     "phone": "+48501600300",

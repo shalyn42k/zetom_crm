@@ -3,14 +3,9 @@ from unittest.mock import MagicMock
 from django.test import TestCase
 
 from crm.zetom.models import Oferta, RequestMain, Wniosek, Zlecenie
-from crm.zetom.services.services import (
-    change_status,
-    handle_child_change,
-    save_child_with_status,
-    update_parent,
-)
+from crm.zetom.services.services import (change_status, handle_child_change,
+                                         save_child_with_status, update_parent)
 from crm.zetom.services.statuses import Status
-
 
 BASE_DATA = {
     "phone": "+48501600300",

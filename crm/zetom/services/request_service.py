@@ -2,7 +2,8 @@
 from django.shortcuts import get_object_or_404
 
 # Zetom app imports
-from crm.zetom.models import Oferta, RequestMain, RequestNull, Wniosek, Zlecenie
+from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek,
+                              Zlecenie)
 from crm.zetom.services.services import update_parent
 
 

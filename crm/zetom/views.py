@@ -1,11 +1,11 @@
 # Django imports
+from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-from django.contrib import messages
 
 # Notification app imports
-from crm.notification.services.notification_service import send_notification_to_staff
-
+from crm.notification.services.notification_service import \
+    send_notification_to_staff
 # Zetom app imports
 from crm.zetom.forms import AddRequestFormNull
 
