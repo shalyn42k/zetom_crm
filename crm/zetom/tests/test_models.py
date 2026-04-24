@@ -85,11 +85,32 @@ class ChildModelsTests(TestCase):
         self.assertEqual(wn.from_main, self.main)
         self.assertIn(wn, self.main.wniosek_set.all())
 
-    def test_children_cascade_when_main_deleted(self):
+    def test_children_soft_cascade_when_main_deleted(self):
+        """Default delete() on RequestMain should soft-cascade its children
+        via SOFT_DELETE_CASCADE policy — they disappear from default manager
+        but stay in the database under all_with_deleted()."""
         Oferta.objects.create(**VALID_NULL_DATA, from_main=self.main)
         Zlecenie.objects.create(**VALID_NULL_DATA, from_main=self.main)
         Wniosek.objects.create(**VALID_NULL_DATA, from_main=self.main)
-        self.main.delete(force_policy=0)
+
+        self.main.delete()
+
         self.assertEqual(Oferta.objects.count(), 0)
         self.assertEqual(Zlecenie.objects.count(), 0)
         self.assertEqual(Wniosek.objects.count(), 0)
+        self.assertEqual(Oferta.objects.all_with_deleted().count(), 1)
+        self.assertEqual(Zlecenie.objects.all_with_deleted().count(), 1)
+        self.assertEqual(Wniosek.objects.all_with_deleted().count(), 1)
+
+    def test_children_hard_cascade_when_main_hard_deleted(self):
+        """Sanity check that the DB-level CASCADE constraint is still in
+        place: forcing HARD_DELETE physically removes children too."""
+        Oferta.objects.create(**VALID_NULL_DATA, from_main=self.main)
+        Zlecenie.objects.create(**VALID_NULL_DATA, from_main=self.main)
+        Wniosek.objects.create(**VALID_NULL_DATA, from_main=self.main)
+
+        self.main.delete(force_policy=0)
+
+        self.assertEqual(Oferta.objects.all_with_deleted().count(), 0)
+        self.assertEqual(Zlecenie.objects.all_with_deleted().count(), 0)
+        self.assertEqual(Wniosek.objects.all_with_deleted().count(), 0)

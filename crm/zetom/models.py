@@ -13,6 +13,9 @@ from crm.zetom.services.statuses import ArchiveState, Status
 # Users app imports
 # from crm.users.models import Role, UserProfile
 
+# Other imports
+from safedelete.config import SOFT_DELETE_CASCADE
+
 
 class DepartmentsVariants(models.TextChoices):
     DEPARTMENT_0 = "DEPARTMENT_0", "department 1"
@@ -22,6 +25,7 @@ class DepartmentsVariants(models.TextChoices):
 
 
 class RequestTemplate(SafeDeleteModel):
+    _safedelete_policy = SOFT_DELETE_CASCADE
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     phone = PhoneNumberField(null=False, blank=False)
