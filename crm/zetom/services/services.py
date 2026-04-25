@@ -77,13 +77,25 @@ def update_parent(parent):
     if highest_status is not None:
         parent.status = highest_status
 
+
     # архивирование родителя
 
     # если есть хоть один не done активный
     if not children:
         parent.is_archived = True
     else:
-        parent.is_archived = all(c.status == Status.done for c in children)
+
+        all_done= all(c.status == Status.done for c in children )
+
+        if_all_done = (
+            parent.oferta_set.exists() and
+            parent.zlecenie_set.exists() and 
+            parent.wniosek_set.exists()
+        )
+        parent.is_archived = all_done and if_all_done
+
+        if highest_status == Status.done and if_all_done == False:
+           parent.status = Status.in_progress
 
     parent.save()
 

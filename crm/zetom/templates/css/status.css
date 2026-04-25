@@ -1,0 +1,17 @@
+.status {
+    padding: 5px 10px;
+    border: 2px solid;
+    border-radius: 5px;
+}
+
+.status-new {
+    border-color: gray;
+}
+
+.status-in-progress {
+    border-color: blue;
+}
+
+.status-done {
+    border-color: green;
+}
