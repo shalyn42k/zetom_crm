@@ -47,7 +47,7 @@ class BaseRequestAdmin(ModelAdmin):
         label={
             "new": "info",
             "in_progress": "warning",
-            "waiting": "danger",
+            "waiting": "secondary",
             "done": "success",
         },
         description="Status",
