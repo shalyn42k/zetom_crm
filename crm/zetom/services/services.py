@@ -77,6 +77,7 @@ def update_parent(parent):
     if highest_status is not None:
         parent.status = highest_status
 
+
     # архивирование родителя
 
     # если есть хоть один не done активный
@@ -92,6 +93,9 @@ def update_parent(parent):
             parent.wniosek_set.exists()
         )
         parent.is_archived = all_done and if_all_done
+
+        if highest_status == Status.done and if_all_done == False:
+           parent.status = Status.in_progress
 
     parent.save()
 

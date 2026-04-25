@@ -6,7 +6,7 @@ from django.db import transaction
 from django.shortcuts import redirect, render
 # Unfold imports
 from unfold.admin import ModelAdmin
-from unfold.decorators import action
+from unfold.decorators import action, display
 from unfold.enums import ActionVariant
 
 # Notification app imports
@@ -42,6 +42,24 @@ class BaseRequestAdmin(ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return user_has_perm(request.user, "delete_requests")
+
+    @display(
+        label={
+            "new": "info",
+            "in_progress": "warning",
+            "waiting": "danger",
+            "done": "success",
+        },
+        description="Status",
+    )
+    def colored_status(self, obj):
+        display_names = {
+            "new": "New",
+            "in_progress": "In Progress",
+            "waiting": "Waiting",
+            "done": "Done",
+        }
+        return obj.status, display_names.get(obj.status, obj.status)
 
 
 # AI-generated (unknown, legacy): LogEntryAdmin — read-only viewer for django admin log
@@ -87,7 +105,7 @@ class RequestNullAdmin(BaseRequestAdmin):
 @admin.register(RequestMain)
 class RequestMainAdmin(BaseRequestAdmin):
     form = AddRequestFormMain
-    list_display = ("created_at", "updated_at", "company_name", "status", "is_archived")
+    list_display = ("created_at", "updated_at", "company_name", "colored_status", "is_archived")
     fields = (
         "full_name",
         "phone",
@@ -135,10 +153,11 @@ class RequestMainAdmin(BaseRequestAdmin):
 
 
 # AI-suggested (claude-opus-4-7, 2026-04-23): save_model во всех трёх админках ниже делегирует в save_child_with_status — паттерн предложен Claude, код написал пользователь.
+@admin.register(Oferta)
 class OfertaAdmin(BaseRequestAdmin):
     actions = []
     form = AddOferta
-    list_display = ("created_at", "updated_at", "company_name", "status")
+    list_display = ("created_at", "updated_at", "company_name", "colored_status")
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
@@ -157,10 +176,11 @@ class OfertaAdmin(BaseRequestAdmin):
         if save_child_with_status(request, obj, form, change, messages):
             super().save_model(request, obj, form, change)
 
+@admin.register(Zlecenie)
 class ZlecenieAdmin(BaseRequestAdmin):
     actions = []
     form = AddZlecenie
-    list_display = ("created_at", "updated_at", "company_name", "status")
+    list_display = ("created_at", "updated_at", "company_name", "colored_status")
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
@@ -180,10 +200,12 @@ class ZlecenieAdmin(BaseRequestAdmin):
         if save_child_with_status(request, obj, form, change, messages):
             super().save_model(request, obj, form, change)
 
+
+@admin.register(Wniosek)
 class WniosekAdmin(BaseRequestAdmin):
     actions = []
     form = AddWniosek
-    list_display = ("created_at", "updated_at", "company_name", "status")
+    list_display = ("created_at", "updated_at", "company_name", "colored_status")
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
