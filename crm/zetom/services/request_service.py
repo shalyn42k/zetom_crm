@@ -36,6 +36,9 @@ def _approve_child(model, main_id, **extra):
         email=main_obj.email,
         **extra,
     )
+    
+    child.assigned_to.set(main_obj.assigned_to.all())
+
     update_parent(main_obj)
     return child
 
