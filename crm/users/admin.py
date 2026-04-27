@@ -30,9 +30,6 @@ class AdminUserProfile(ModelAdmin):
     list_display = ("user", "role")
     show_full_result_count = False
 
-    # -----------------------------
-    #  КЛЮЧЕВОЙ МЕТОД
-    # -----------------------------
     def get_fields(self, request, obj=None):
         # Если юзер открыл СВОЙ профиль → показываем текстовые поля
         if obj and obj.user == request.user:
@@ -40,7 +37,6 @@ class AdminUserProfile(ModelAdmin):
         # Если чужой профиль → обычные поля
         return ("user", "role")
 
-    # Текстовые поля (НЕ ForeignKey → нет ссылок)
     def user_display(self, obj):
         return obj.user.username
     user_display.short_description = "User"
