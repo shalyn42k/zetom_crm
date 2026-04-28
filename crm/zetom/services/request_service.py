@@ -18,6 +18,7 @@ def approve_null_action(null_id):
             "company_nip": null_obj.company_nip,
             "email": null_obj.email,
             "message": null_obj.message,
+            "department": None,
         },
     )
 
