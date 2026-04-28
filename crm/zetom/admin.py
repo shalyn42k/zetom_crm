@@ -169,7 +169,7 @@ class RequestMainAdmin(BaseRequestAdmin):
 class OfertaAdmin(BaseRequestAdmin):
     actions = []
     form = AddOferta
-    list_display = ("created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status")
+    list_display = ("from_main", "created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status")
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
@@ -193,7 +193,7 @@ class OfertaAdmin(BaseRequestAdmin):
 class ZlecenieAdmin(BaseRequestAdmin):
     actions = []
     form = AddZlecenie
-    list_display = ("created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status")
+    list_display = ("from_main", "created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status")
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
@@ -219,7 +219,7 @@ class ZlecenieAdmin(BaseRequestAdmin):
 class WniosekAdmin(BaseRequestAdmin):
     actions = []
     form = AddWniosek
-    list_display = ("created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status")
+    list_display = ("from_main", "created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status")
     readonly_fields = ("from_main",)
     fields = (
         "from_main",

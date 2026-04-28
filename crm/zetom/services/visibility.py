@@ -24,8 +24,8 @@ def visible_requests_for(user, qs):
         personal = Q(assigned_to=user)
 
         if profile.department:
-            pool = Q(assigned_to__isnull=True) & Q(department=profile.department)
-            return qs.filter(personal | pool).distinct()
+            same_dept = Q(department=profile.department)
+            return qs.filter(personal | same_dept).distinct()
 
         return qs.filter(personal).distinct()
 
