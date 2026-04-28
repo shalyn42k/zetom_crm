@@ -18,6 +18,7 @@ def approve_null_action(null_id):
             "company_nip": null_obj.company_nip,
             "email": null_obj.email,
             "message": null_obj.message,
+            "department": None,
         },
     )
 
@@ -36,6 +37,9 @@ def _approve_child(model, main_id, **extra):
         email=main_obj.email,
         **extra,
     )
+    
+    child.assigned_to.set(main_obj.assigned_to.all())
+
     update_parent(main_obj)
     return child
 

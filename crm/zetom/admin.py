@@ -25,6 +25,7 @@ from crm.zetom.services.request_service import (approve_null_action,
                                                 approve_zlecenie_action)
 from crm.zetom.services.services import (handle_child_change,
                                          save_child_with_status)
+from crm.zetom.services.visibility import visible_requests_for
 
 # Other imports
 
@@ -42,6 +43,16 @@ class BaseRequestAdmin(ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return user_has_perm(request.user, "delete_requests")
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        qs = visible_requests_for(request.user, qs)
+        return qs.prefetch_related("assigned_to")
+
+    @admin.display(description="Assigned")
+    def assignees_display(self, obj):
+        users = obj.assigned_to.all()
+        return ", ".join(u.username for u in users) or "—"
 
     @display(
         label={
@@ -105,11 +116,12 @@ class RequestNullAdmin(BaseRequestAdmin):
 @admin.register(RequestMain)
 class RequestMainAdmin(BaseRequestAdmin):
     form = AddRequestFormMain
-    list_display = ("created_at", "updated_at", "company_name", "colored_status", "is_archived")
+    list_display = ("created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status", "is_archived")
     fields = (
         "full_name",
         "phone",
         "department",
+        "assigned_to",
         "company_name",
         "company_nip",
         "email",
@@ -157,13 +169,14 @@ class RequestMainAdmin(BaseRequestAdmin):
 class OfertaAdmin(BaseRequestAdmin):
     actions = []
     form = AddOferta
-    list_display = ("created_at", "updated_at", "company_name", "colored_status")
+    list_display = ("from_main", "created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status")
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
         "phone",
         "status",
         "department",
+        "assigned_to",
         "email",
         "company_name",
         "company_nip",
@@ -180,7 +193,7 @@ class OfertaAdmin(BaseRequestAdmin):
 class ZlecenieAdmin(BaseRequestAdmin):
     actions = []
     form = AddZlecenie
-    list_display = ("created_at", "updated_at", "company_name", "colored_status")
+    list_display = ("from_main", "created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status")
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
@@ -188,6 +201,7 @@ class ZlecenieAdmin(BaseRequestAdmin):
         "phone",
         "status",
         "department",
+        "assigned_to",
         "email",
         "company_name",
         "company_nip",
@@ -205,7 +219,7 @@ class ZlecenieAdmin(BaseRequestAdmin):
 class WniosekAdmin(BaseRequestAdmin):
     actions = []
     form = AddWniosek
-    list_display = ("created_at", "updated_at", "company_name", "colored_status")
+    list_display = ("from_main", "created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status")
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
@@ -213,6 +227,7 @@ class WniosekAdmin(BaseRequestAdmin):
         "phone",
         "status",
         "department",
+        "assigned_to",
         "email",
         "company_name",
         "company_nip",
