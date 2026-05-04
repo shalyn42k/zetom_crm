@@ -1,0 +1,8 @@
+{% extends "unfold/layouts/change_list.html" %}
+
+{% block header_actions %}
+    <a href="{% url 'admin:auth_user_add' %}"
+       class="px-3 py-1 bg-blue-600 text-white rounded text-xl">
+        +
+    </a>
+{% endblock header_actions %}
