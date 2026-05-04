@@ -1,6 +1,7 @@
 # Django app imports
 from django.apps import AppConfig
 
+
 class ZetomConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "crm.zetom"

@@ -3,6 +3,7 @@ from django.db import models
 
 from crm.status_manager.services.statuses import RequestStatus
 
+
 class StatusHistory(models.Model):
     request = models.ForeignKey(
         "zetom.RequestMain",

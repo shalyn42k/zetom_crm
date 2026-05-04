@@ -1,10 +1,10 @@
 # Django imports
 from django.shortcuts import get_object_or_404
 
+from crm.status_manager.services.status_service import update_parent
 # Zetom app imports
 from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek,
                               Zlecenie)
-from crm.status_manager.services.status_service import update_parent
 
 
 def approve_null_action(null_id):

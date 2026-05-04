@@ -12,6 +12,11 @@ from unfold.enums import ActionVariant
 # Notification app imports
 from crm.notification.services.notification_service import \
     send_notification_approve_null
+from crm.status_manager.models import StatusHistory
+from crm.status_manager.services.status_service import (cancel_request,
+                                                        delete_request,
+                                                        handle_child_change,
+                                                        save_child_with_status)
 # Users app imports
 from crm.users.utils import user_has_perm
 # Zetom app imports
@@ -19,13 +24,10 @@ from crm.zetom.forms import (AddOferta, AddRequestFormMain, AddRequestFormNull,
                              AddWniosek, AddZlecenie)
 from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek,
                               Zlecenie)
-
-from crm.status_manager.models import StatusHistory                             
 from crm.zetom.services.request_service import (approve_null_action,
                                                 approve_oferta_action,
                                                 approve_wniosek_action,
                                                 approve_zlecenie_action)
-from crm.status_manager.services.status_service import (handle_child_change, cancel_request, delete_request, save_child_with_status)
 from crm.zetom.services.visibility import visible_requests_for
 
 # Other imports

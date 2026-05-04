@@ -2,8 +2,8 @@ from itertools import chain
 
 from django.db import transaction
 
-from crm.status_manager.services.statuses import RequestStatus, Status
 from crm.status_manager.models import StatusHistory
+from crm.status_manager.services.statuses import RequestStatus, Status
 
 
 def handle_child_change(child, new_status, reason, user):
