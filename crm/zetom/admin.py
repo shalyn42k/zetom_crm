@@ -12,6 +12,11 @@ from unfold.enums import ActionVariant
 # Notification app imports
 from crm.notification.services.notification_service import \
     send_notification_approve_null
+from crm.status_manager.models import StatusHistory
+from crm.status_manager.services.status_service import (cancel_request,
+                                                        delete_request,
+                                                        handle_child_change,
+                                                        save_child_with_status)
 # Users app imports
 from crm.users.utils import user_has_perm
 # Zetom app imports
@@ -23,13 +28,18 @@ from crm.zetom.services.request_service import (approve_null_action,
                                                 approve_oferta_action,
                                                 approve_wniosek_action,
                                                 approve_zlecenie_action)
-from crm.zetom.services.services import (handle_child_change,
-                                         save_child_with_status)
 from crm.zetom.services.visibility import visible_requests_for
 
 # Other imports
 
+class ReasonForm(forms.Form):
+    reason = forms.CharField(
+        widget=forms.Textarea,
+        label="Reason",
+        required=True,
+    )
 
+    
 class BaseRequestAdmin(ModelAdmin):
     # RBAC для запросов (общие разрешения для RequestNull, RequestMain, Oferta)
     def has_view_permission(self, request, obj=None):
@@ -116,8 +126,9 @@ class RequestNullAdmin(BaseRequestAdmin):
 @admin.register(RequestMain)
 class RequestMainAdmin(BaseRequestAdmin):
     form = AddRequestFormMain
-    list_display = ("created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status", "is_archived")
+    list_display = ("created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status" )
     fields = (
+        "status",
         "full_name",
         "phone",
         "department",
@@ -129,12 +140,53 @@ class RequestMainAdmin(BaseRequestAdmin):
         "message",
     )
     actions_detail = [
+        "cancel_action",
+        "delete_action",
         "request_info_action",
         "oferta_action",
         "zlecenie_action",
         "wniosek_action",
     ]
     warn_unsaved_form = True
+
+
+    @action(description="Cancel", icon="cancel", url_path="cancel")
+    def cancel_action(self, request, object_id):
+        obj = RequestMain.objects.get(pk=object_id)
+        form = ReasonForm(request.POST or None)
+
+        if request.method == "POST" and form.is_valid():
+            try:
+                cancel_request(obj, request.user, form.cleaned_data["reason"])
+            except ValueError as e:
+                messages.error(request, str(e))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        return render(request, "admin/zetom/requestmain/reason_form.html", {
+            "form": form,
+            "obj": obj,
+            **self.admin_site.each_context(request),
+        })
+
+    @action(description="Delete", icon="delete", url_path="delete")
+    def delete_action(self, request, object_id):
+        obj = RequestMain.objects.get(pk=object_id)
+        form = ReasonForm(request.POST or None)
+
+        if request.method == "POST" and form.is_valid():
+            try:
+                delete_request(obj, request.user, form.cleaned_data["reason"])
+            except ValueError as e:
+                messages.error(request, str(e))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        return render(request, "admin/zetom/requestmain/reason_form.html", {
+            "form": form,
+            "obj": obj,
+            **self.admin_site.each_context(request),
+        })
+
+
 
     @action(description="Oferta", icon="assignment", url_path="oferta")
     def oferta_action(self, request, object_id):
@@ -162,7 +214,6 @@ class RequestMainAdmin(BaseRequestAdmin):
             "admin/zetom/requestmain/request_info.html",
             self.admin_site.each_context(request),
         )
-
 
 # AI-suggested (claude-opus-4-7, 2026-04-23): save_model во всех трёх админках ниже делегирует в save_child_with_status — паттерн предложен Claude, код написал пользователь.
 @admin.register(Oferta)
@@ -238,3 +289,12 @@ class WniosekAdmin(BaseRequestAdmin):
     def save_model(self, request, obj, form, change):
         if save_child_with_status(request, obj, form, change, messages):
             super().save_model(request, obj, form, change)
+
+class StatusHistoryInline(admin.TabularInline):
+    model = StatusHistory
+    extra = 0
+    can_delete = False
+    readonly_fields = ("old_status", "new_status", "reason", "changed_by", "changed_at")
+
+    def has_add_permission(self, request, obj=None):
+        return False

@@ -1,6 +1,7 @@
 # Django app imports
 from django.apps import AppConfig
 
+
 class ZetomConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "crm.zetom"
@@ -8,4 +9,4 @@ class ZetomConfig(AppConfig):
     verbose_name = "Zetom CRM"
 
     def ready(self):
-        import crm.zetom.signals
+        import crm.status_manager.signals

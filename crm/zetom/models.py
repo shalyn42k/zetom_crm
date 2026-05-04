@@ -9,7 +9,7 @@ from safedelete.config import SOFT_DELETE_CASCADE
 from safedelete.models import SafeDeleteModel
 
 # Zetom app imports
-from crm.zetom.services.statuses import ArchiveState, Status
+from crm.status_manager.services.statuses import RequestStatus, Status
 
 # Users app imports
 # from crm.users.models import Role, UserProfile
@@ -69,8 +69,7 @@ class RequestNull(RequestTemplate):
 
 
 class RequestMain(RequestTemplate):
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
-    is_archived = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=RequestStatus.choices, default=RequestStatus.active)
     from_null = models.OneToOneField(
         RequestNull, on_delete=models.SET_NULL, null=True, blank=True
     )

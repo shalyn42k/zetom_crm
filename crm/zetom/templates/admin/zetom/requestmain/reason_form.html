@@ -1,0 +1,15 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h2>{{ obj }}</h2>
+<form method="post">
+    {% csrf_token %}
+    <p>
+        <label>Reason:</label><br>
+        <textarea name="reason" rows="4" cols="60" required style="background:#1e1e2e;color:#cdd6f4;border:1px solid #6c7086;padding:8px;border-radius:4px;"></textarea>
+    </p>
+    <p>
+        <button type="submit" style="margin-right:10px;">Confirm</button>
+        <a href="javascript:history.back()">Cancel</a>
+    </p>
+</form>
+{% endblock %}
