@@ -18,6 +18,7 @@
                     <th class="py-2">Username</th>
                     <th>Email</th>
                     <th>Роль</th>
+                    <th>Департамент</th>
                     <th></th>
                 </tr>
             </thead>
@@ -27,6 +28,7 @@
                     <td class="py-2">{{ u.username }}</td>
                     <td>{{ u.email }}</td>
                     <td>{{ u.userprofile.role }}</td>
+                    <td>{{ u.userprofile.get_department_display }}</td>
                     <td class="text-right">
                         <a href="{% url 'user_detail' u.id %}" class="text-blue-400 hover:underline">Просмотр</a> |
                         <a href="{% url 'user_edit' u.id %}" class="text-yellow-400 hover:underline">Редактировать</a> |

@@ -11,6 +11,7 @@
         <p><strong>Имя:</strong> {{ user.first_name }}</p>
         <p><strong>Фамилия:</strong> {{ user.last_name }}</p>
         <p><strong>Роль:</strong> {{ profile.role }}</p>
+        <p><strong>Департамент:</strong> {{ profile.get_department_display }}</p>
     </div>
 
     <div class="mt-6 flex gap-4">
