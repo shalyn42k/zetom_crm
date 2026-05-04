@@ -142,7 +142,6 @@ class RequestMainAdmin(BaseRequestAdmin):
     actions_detail = [
         "cancel_action",
         "delete_action",
-        "request_info_action",
         "oferta_action",
         "zlecenie_action",
         "wniosek_action",
@@ -206,14 +205,6 @@ class RequestMainAdmin(BaseRequestAdmin):
         messages.info(request, f"Redirecting to Wniosek: {object_id}")
         return redirect("admin:zetom_wniosek_change", wniosek.pk)
 
-    # AI-edited (claude-opus-4-7, 2026-04-21): simplified to render static design mockup only
-    @action(description="Request Info", icon="article", url_path="request-info")
-    def request_info_action(self, request, object_id):
-        return render(
-            request,
-            "admin/zetom/requestmain/request_info.html",
-            self.admin_site.each_context(request),
-        )
 
 # AI-suggested (claude-opus-4-7, 2026-04-23): save_model во всех трёх админках ниже делегирует в save_child_with_status — паттерн предложен Claude, код написал пользователь.
 @admin.register(Oferta)
