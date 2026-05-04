@@ -43,7 +43,7 @@ class UserEditView(View):
 
         form = CustomUserChangeForm(
             instance=user,
-            initial={"role": profile.role}
+            initial={"role": profile.role, "department": profile.department}
         )
 
         return render(request, "users/user_form.html", {"form": form, "mode": "edit"})

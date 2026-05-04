@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from crm.users.models import UserProfile, Role
+from crm.zetom.models import DepartmentsVariants
 
 
 # Базовый Tailwind стиль
@@ -23,6 +24,13 @@ class CustomUserCreateForm(forms.ModelForm):
     role = forms.ModelChoiceField(
         queryset=Role.objects.all(),
         label="Роль",
+        widget=forms.Select(attrs={"class": INPUT_CLASS})
+    )
+
+    department = forms.ChoiceField(
+        choices=DepartmentsVariants.choices,
+        label="Департамент",
+        required=False,
         widget=forms.Select(attrs={"class": INPUT_CLASS})
     )
 
@@ -69,7 +77,8 @@ class CustomUserCreateForm(forms.ModelForm):
             user.save()
             UserProfile.objects.create(
                 user=user,
-                role=self.cleaned_data["role"]
+                role=self.cleaned_data["role"],
+                department=self.cleaned_data.get("department") or None
             )
 
         return user
@@ -81,6 +90,13 @@ class CustomUserChangeForm(forms.ModelForm):
     role = forms.ModelChoiceField(
         queryset=Role.objects.all(),
         label="Роль",
+        required=False,
+        widget=forms.Select(attrs={"class": INPUT_CLASS})
+    )
+
+    department = forms.ChoiceField(
+        choices=[("", "---")] + list(DepartmentsVariants.choices),
+        label="Департамент",
         required=False,
         widget=forms.Select(attrs={"class": INPUT_CLASS})
     )
@@ -99,8 +115,11 @@ class CustomUserChangeForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         profile = getattr(self.instance, "profile", None)
-        if profile and profile.role:
-            self.fields["role"].initial = profile.role
+        if profile:
+            if profile.role:
+                self.fields["role"].initial = profile.role
+            if profile.department:
+                self.fields["department"].initial = profile.department
 
     def clean_email(self):
         email = self.cleaned_data["email"]
@@ -117,7 +136,14 @@ class CustomUserChangeForm(forms.ModelForm):
         role = self.cleaned_data.get("role")
         if role is not None:
             profile.role = role
-            profile.save()
+        
+        department = self.cleaned_data.get("department")
+        if department:
+            profile.department = department
+        elif department == "":
+            profile.department = None
+        
+        profile.save()
 
         return user
 
