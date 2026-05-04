@@ -8,4 +8,4 @@ class ZetomConfig(AppConfig):
     verbose_name = "Zetom CRM"
 
     def ready(self):
-        import crm.zetom.signals
+        import crm.status_manager.signals
