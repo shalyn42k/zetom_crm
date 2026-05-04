@@ -9,6 +9,7 @@ Django==5.2.13
 django-localflavor==5.0
 django-phonenumber-field==8.4.0
 django-safedelete==1.4.1
+django-simple-history==3.11.0
 django-unfold==0.89.0
 djlint==1.36.4
 docker==7.1.0
