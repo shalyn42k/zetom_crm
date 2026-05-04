@@ -64,15 +64,15 @@ class CustomUserAdmin(UserAdmin):
 # --- UserProfile кастомизация ---
 @admin.register(UserProfile)
 class AdminUserProfile(ModelAdmin):
-    list_display = ("user", "role")
+    list_display = ("user", "role", "department")
     show_full_result_count = False
 
     def get_fields(self, request, obj=None):
         # Если юзер открыл СВОЙ профиль → показываем текстовые поля
         if obj and obj.user == request.user:
-            return ("user_display", "role_display")
+            return ("user_display", "role_display", "department_display")
         # Если чужой профиль → обычные поля
-        return ("user", "role")
+        return ("user", "role", "department")
 
     def user_display(self, obj):
         return obj.user.username
