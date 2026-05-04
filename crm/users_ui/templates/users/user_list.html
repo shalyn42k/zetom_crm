@@ -1,0 +1,48 @@
+{% extends "unfold/layouts/base.html" %}
+
+{% block content %}
+<div class="p-6">
+
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Пользователи</h1>
+        <a href="{% url 'user_create' %}"
+           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">
+            Создать пользователя
+        </a>
+    </div>
+
+    <div class="bg-gray-900 rounded-lg p-4 shadow">
+        <table class="w-full text-left">
+            <thead class="border-b border-gray-700">
+                <tr>
+                    <th class="py-2">Username</th>
+                    <th>Email</th>
+                    <th>Роль</th>
+                    <th>Департамент</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr class="border-b border-gray-800">
+                    <td class="py-2">{{ u.username }}</td>
+                    <td>{{ u.email }}</td>
+                    <td>{{ u.userprofile.role }}</td>
+                    <td>{{ u.userprofile.get_department_display }}</td>
+                    <td class="text-right">
+                        <a href="{% url 'user_detail' u.id %}" class="text-blue-400 hover:underline">Просмотр</a> |
+                        <a href="{% url 'user_edit' u.id %}" class="text-yellow-400 hover:underline">Редактировать</a> |
+                        <a href="{% url 'user_delete' u.id %}" class="text-red-400 hover:underline">Удалить</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="py-4 text-center text-gray-400">Нет пользователей</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock content %}
