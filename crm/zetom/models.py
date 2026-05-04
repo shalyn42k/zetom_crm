@@ -25,6 +25,7 @@ class DepartmentsVariants(models.TextChoices):
 
 class RequestTemplate(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE
+    assigned_to = models.ManyToManyField(User, blank=True, related_name="+")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     phone = PhoneNumberField(null=False, blank=False)

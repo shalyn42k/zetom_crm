@@ -1,7 +1,7 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 
-from crm.users.models import Role, UserProfile
+from crm.users.models import Role
 from crm.users.utils import user_has_perm
 
 from django.contrib.auth.models import User
