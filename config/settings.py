@@ -37,6 +37,7 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
+    "simple_history",
     "unfold",  # before django.contrib.admin
     "unfold.contrib.filters",  # optional, if special filters are needed
     "unfold.contrib.forms",  # optional, if special form elements are needed
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "crm.users.apps.UsersConfig",
+    "crm.status_manager",
     "crm.zetom.apps.ZetomConfig",
     "crm.notification.apps.NotificationConfig",
     "phonenumber_field",  # библиотека для валидации телефона
@@ -60,6 +62,7 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
+    "simple_history.middleware.HistoryRequestMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
