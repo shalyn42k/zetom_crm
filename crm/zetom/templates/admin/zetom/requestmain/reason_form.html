@@ -1,15 +1,24 @@
 {% extends "admin/base_site.html" %}
+{% load crispy_forms_tags %}
+
 {% block content %}
-<h2>{{ obj }}</h2>
-<form method="post">
-    {% csrf_token %}
-    <p>
-        <label>Reason:</label><br>
-        <textarea name="reason" rows="4" cols="60" required style="background:#1e1e2e;color:#cdd6f4;border:1px solid #6c7086;padding:8px;border-radius:4px;"></textarea>
-    </p>
-    <p>
-        <button type="submit" style="margin-right:10px;">Confirm</button>
-        <a href="javascript:history.back()">Cancel</a>
-    </p>
-</form>
-{% endblock %}
+<div id="content-main">
+    <h2>{{ obj }}</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+
+        <div class="flex gap-2 mt-4">
+            <button type="submit"
+                    class="font-medium inline-flex items-center rounded-default justify-center cursor-pointer px-3 py-2 bg-primary-600 text-white hover:bg-primary-600/80">
+                Confirm
+            </button>
+            <a href="{% url 'admin:zetom_requestmain_change' obj.pk %}"
+               class="font-medium inline-flex items-center rounded-default justify-center cursor-pointer px-3 py-2 border border-base-200 text-important dark:border-base-700 dark:text-font-important-dark">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock content %}
