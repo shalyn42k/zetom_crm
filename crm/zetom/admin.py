@@ -4,6 +4,9 @@ from django.contrib import admin, messages
 from django.contrib.admin.models import LogEntry
 from django.db import transaction
 from django.shortcuts import redirect, render
+# Crispy imports
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Column, Div, Field, Layout, Row
 # Unfold imports
 from unfold.admin import ModelAdmin
 from unfold.decorators import action, display
@@ -17,13 +20,14 @@ from crm.status_manager.services.status_service import (cancel_request,
                                                         delete_request,
                                                         handle_child_change,
                                                         save_child_with_status)
+from crm.status_manager.services.statuses import RequestStatus
 # Users app imports
 from crm.users.utils import user_has_perm
 # Zetom app imports
 from crm.zetom.forms import (AddOferta, AddRequestFormMain, AddRequestFormNull,
                              AddWniosek, AddZlecenie)
-from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek,
-                              Zlecenie)
+from crm.zetom.models import (DepartmentsVariants, Oferta, RequestMain,
+                              RequestNull, Wniosek, Zlecenie)
 from crm.zetom.services.request_service import (approve_null_action,
                                                 approve_oferta_action,
                                                 approve_wniosek_action,
@@ -126,6 +130,7 @@ class RequestNullAdmin(BaseRequestAdmin):
 @admin.register(RequestMain)
 class RequestMainAdmin(BaseRequestAdmin):
     form = AddRequestFormMain
+    change_form_template = "admin/zetom/requestmain/change_form.html"
     list_display = ("created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status" )
     fields = (
         "status",
@@ -147,6 +152,42 @@ class RequestMainAdmin(BaseRequestAdmin):
         "wniosek_action",
     ]
     warn_unsaved_form = True
+
+    def render_change_form(self, request, context, *args, **kwargs):
+        obj = context.get("original")
+
+        adminform = context.get("adminform")
+        if adminform is not None:
+            form = adminform.form
+            helper = FormHelper()
+            helper.form_tag = False
+            helper.disable_csrf = True
+            helper.layout = Layout(
+                Row(
+                    Column("email", css_class="rm-col-6"),
+                    Column("phone", css_class="rm-col-6"),
+                    css_class="rm-row",
+                ),
+                Field("address"),
+                Field("message"),
+                Div(
+                    Field("company_name"),
+                    Field("company_nip"),
+                    Field("full_name"),
+                    css_class="rm-hidden-fields",
+                ),
+            )
+            form.helper = helper
+            context["form"] = form
+
+        context["status_choices"] = RequestStatus.choices
+        context["department_choices"] = DepartmentsVariants.choices
+        context["oferta"] = obj.oferta_set.first() if obj else None
+        context["zlecenie"] = obj.zlecenie_set.first() if obj else None
+        context["wniosek"] = obj.wniosek_set.first() if obj else None
+        context["client_files"] = []
+
+        return super().render_change_form(request, context, *args, **kwargs)
 
 
     @action(description="Cancel", icon="cancel", url_path="cancel")
