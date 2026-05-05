@@ -1,21 +1,14 @@
 {% load i18n %}
 {% comment %}
-Client card — visual placeholder for the future Client model.
-Currently reads denormalized company_name / company_nip / full_name from
-RequestTemplate. When a Client model lands, swap the data source here
-(avatar, client__name, client__nip, client__contact) but keep the dl/dt/dd
-structure — the card is meant as a "linked client" with pinned fields.
-"Add or change client" button opens client search/swap.
+Placeholder for the future Client model. Three fields below (NIP / Company /
+Contact person) are editable now — map to RequestTemplate.company_nip /
+company_name / full_name. When a Client FK lands, swap to read-only display.
 {% endcomment %}
 <section class="rm-card" aria-labelledby="rm-client-heading" id="client-card">
   <header class="rm-card__header">
     <h2 id="rm-client-heading" class="rm-card__title">
       {% trans "Client" %}
     </h2>
-    <button type="button" class="rm-btn rm-btn--ghost rm-btn--sm"
-            {# hx-get="{% url 'requests:client_search' %}" hx-target="#client-search-panel" hx-swap="innerHTML" #}>
-      {% trans "Add or change client" %}
-    </button>
   </header>
 
   <div class="rm-client">
@@ -33,26 +26,21 @@ structure — the card is meant as a "linked client" with pinned fields.
   <dl class="rm-linked-fields">
     <div class="rm-linked-field">
       <dt class="rm-linked-field__label">
-        <svg class="rm-icon rm-icon--sm" aria-hidden="true"><use href="#icon-link"/></svg>
-        {% trans "NIP" %}
+        <label for="{{ form.company_nip.id_for_label }}">{% trans "NIP" %}</label>
       </dt>
-      <dd class="rm-linked-field__value">{{ original.company_nip|default:"—" }}</dd>
+      <dd class="rm-linked-field__value">{{ form.company_nip }}</dd>
     </div>
     <div class="rm-linked-field">
       <dt class="rm-linked-field__label">
-        <svg class="rm-icon rm-icon--sm" aria-hidden="true"><use href="#icon-link"/></svg>
-        {% trans "Company" %}
+        <label for="{{ form.company_name.id_for_label }}">{% trans "Company" %}</label>
       </dt>
-      <dd class="rm-linked-field__value">{{ original.company_name|default:"—" }}</dd>
+      <dd class="rm-linked-field__value">{{ form.company_name }}</dd>
     </div>
     <div class="rm-linked-field">
       <dt class="rm-linked-field__label">
-        <svg class="rm-icon rm-icon--sm" aria-hidden="true"><use href="#icon-link"/></svg>
-        {% trans "Contact person" %}
+        <label for="{{ form.full_name.id_for_label }}">{% trans "Contact person" %}</label>
       </dt>
-      <dd class="rm-linked-field__value">{{ original.full_name|default:"—" }}</dd>
+      <dd class="rm-linked-field__value">{{ form.full_name }}</dd>
     </div>
   </dl>
-
-  <div id="client-search-panel" hidden></div>
 </section>

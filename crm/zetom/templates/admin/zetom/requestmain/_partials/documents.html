@@ -1,12 +1,10 @@
 {% load i18n %}
-{% comment %}Documents row — child docs (Oferta / Zlecenie / Wniosek). Reverse-FK lookups injected via render_change_form.{% endcomment %}
 <section class="rm-card rm-card--full" aria-labelledby="rm-docs-heading" id="documents">
   <header class="rm-card__header">
     <h2 id="rm-docs-heading" class="rm-card__title">{% trans "Documents" %}</h2>
   </header>
 
   <div class="rm-docs">
-    {# Oferta #}
     <article class="rm-doc">
       <div class="rm-doc__icon" aria-hidden="true">O</div>
       <div class="rm-doc__meta">
@@ -16,15 +14,18 @@
         </p>
       </div>
       {% if oferta %}
-        <a href="{{ oferta.get_admin_url }}" class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
+        <a href='{% url "admin:zetom_oferta_change" oferta.pk %}' class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
       {% else %}
-        <button type="button" class="rm-btn rm-btn--primary rm-btn--sm" disabled aria-disabled="true">
+        <button type="submit"
+                formaction='{% url "admin:zetom_requestmain_oferta_action" original.pk %}'
+                formmethod="post"
+                formnovalidate
+                class="rm-btn rm-btn--primary rm-btn--sm">
           {% trans "Create" %}
         </button>
       {% endif %}
     </article>
 
-    {# Zlecenie #}
     <article class="rm-doc">
       <div class="rm-doc__icon" aria-hidden="true">Z</div>
       <div class="rm-doc__meta">
@@ -34,15 +35,18 @@
         </p>
       </div>
       {% if zlecenie %}
-        <a href="{{ zlecenie.get_admin_url }}" class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
+        <a href='{% url "admin:zetom_zlecenie_change" zlecenie.pk %}' class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
       {% else %}
-        <button type="button" class="rm-btn rm-btn--primary rm-btn--sm" disabled aria-disabled="true">
+        <button type="submit"
+                formaction='{% url "admin:zetom_requestmain_zlecenie_action" original.pk %}'
+                formmethod="post"
+                formnovalidate
+                class="rm-btn rm-btn--primary rm-btn--sm">
           {% trans "Create" %}
         </button>
       {% endif %}
     </article>
 
-    {# Wniosek #}
     <article class="rm-doc">
       <div class="rm-doc__icon" aria-hidden="true">W</div>
       <div class="rm-doc__meta">
@@ -52,9 +56,13 @@
         </p>
       </div>
       {% if wniosek %}
-        <a href="{{ wniosek.get_admin_url }}" class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
+        <a href='{% url "admin:zetom_wniosek_change" wniosek.pk %}' class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
       {% else %}
-        <button type="button" class="rm-btn rm-btn--primary rm-btn--sm" disabled aria-disabled="true">
+        <button type="submit"
+                formaction='{% url "admin:zetom_requestmain_wniosek_action" original.pk %}'
+                formmethod="post"
+                formnovalidate
+                class="rm-btn rm-btn--primary rm-btn--sm">
           {% trans "Create" %}
         </button>
       {% endif %}

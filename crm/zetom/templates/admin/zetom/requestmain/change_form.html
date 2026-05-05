@@ -18,7 +18,18 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
 {% endblock extrahead %}
 
 {% block content %}
+{% if not original.pk %}
+  {{ block.super }}
+{% else %}
+<div id="content-main">
 <div class="rm-page">
+
+  {% if errors or adminform.form.non_field_errors %}
+    <div class="flex flex-col gap-4 *:mb-0">
+      {% include "unfold/helpers/messages/errornote.html" with errors=errors %}
+      {% include "unfold/helpers/messages/error.html" with errors=adminform.form.non_field_errors %}
+    </div>
+  {% endif %}
 
   {# -------- Header strip -------- #}
   <header class="rm-header">
@@ -31,13 +42,6 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
         <span class="rm-dot rm-dot--{{ original.status }}"></span>
         {{ original.get_status_display }}
       </span>
-    </div>
-    <div class="rm-header__right">
-      <button type="button" class="rm-btn rm-btn--ghost"
-              {# hx-get="{% url 'requests:history' original.pk %}" hx-target="#rm-modal" #}>
-        <svg class="rm-icon" aria-hidden="true"><use href="#icon-history"/></svg>
-        {% trans "History" %}
-      </button>
     </div>
   </header>
 
@@ -75,15 +79,7 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
       {% include "admin/zetom/requestmain/_partials/documents.html" %}
     </div>
   </form>
-
-  {# Modal mount point for HTMX-loaded panels (history, search, etc.) #}
-  <div id="rm-modal" hidden></div>
 </div>
-
-{# Inline icon sprite — keep small. Move to /static/zetom/img/icons.svg if it grows. #}
-<svg width="0" height="0" class="rm-svg-sprite" aria-hidden="true">
-  <symbol id="icon-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>
-  </symbol>
-</svg>
+</div>
+{% endif %}
 {% endblock content %}

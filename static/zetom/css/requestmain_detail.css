@@ -79,7 +79,7 @@ html.dark {
 
 /* ---------- Status dots + pills ---------- */
 .rm-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.rm-dot--active    { background: var(--rm-st-active);    box-shadow: 0 0 0 3px rgba(22,163,74,.2); }
+.rm-dot--active    { background: var(--rm-st-active); }
 .rm-dot--open      { background: var(--rm-st-open); }
 .rm-dot--closed    { background: var(--rm-st-closed); }
 .rm-dot--inactive  { background: var(--rm-st-inactive); }
@@ -100,6 +100,7 @@ html.dark {
 .rm-status-pill--deleted   { color: var(--rm-st-deleted); }
 
 /* ---------- Status grid (the 6-button picker) ---------- */
+.rm-status-form { display: grid; gap: 10px; }
 .rm-status-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
 }
@@ -115,11 +116,35 @@ html.dark {
   text-align: left;
 }
 .rm-status-btn:hover { color: var(--rm-text); }
-.rm-status-btn.is-active {
-  background: color-mix(in oklab, var(--rm-st-active) 12%, transparent);
-  border-color: var(--rm-st-active);
-  color: var(--rm-st-active);
+.rm-status-btn.is-active,
+.rm-status-btn:focus-within {
+  outline: 2px solid color-mix(in oklab, currentColor 40%, transparent);
+  outline-offset: 1px;
 }
+.rm-status-btn__input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Per-status selected fill — uses status color from --rm-st-{value} */
+.rm-status-btn--active:has(.rm-status-btn__input:checked)    { background: color-mix(in oklab, var(--rm-st-active)    14%, transparent); border-color: var(--rm-st-active);    color: var(--rm-st-active); }
+.rm-status-btn--open:has(.rm-status-btn__input:checked)      { background: color-mix(in oklab, var(--rm-st-open)      14%, transparent); border-color: var(--rm-st-open);      color: var(--rm-st-open); }
+.rm-status-btn--closed:has(.rm-status-btn__input:checked)    { background: color-mix(in oklab, var(--rm-st-closed)    18%, transparent); border-color: var(--rm-st-closed);    color: var(--rm-st-closed); }
+.rm-status-btn--inactive:has(.rm-status-btn__input:checked)  { background: color-mix(in oklab, var(--rm-st-inactive)  18%, transparent); border-color: var(--rm-st-inactive);  color: var(--rm-st-inactive); }
+.rm-status-btn--cancelled:has(.rm-status-btn__input:checked) { background: color-mix(in oklab, var(--rm-st-cancelled) 14%, transparent); border-color: var(--rm-st-cancelled); color: var(--rm-st-cancelled); }
+.rm-status-btn--deleted:has(.rm-status-btn__input:checked)   { background: color-mix(in oklab, var(--rm-st-deleted)   14%, transparent); border-color: var(--rm-st-deleted);   color: var(--rm-st-deleted); }
+
+/* Icon slot: dot by default, checkmark when selected */
+.rm-status-btn__icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; flex-shrink: 0;
+}
+.rm-status-btn__check {
+  display: none; width: 14px; height: 14px; color: currentColor;
+}
+.rm-status-btn:has(.rm-status-btn__input:checked) .rm-dot { display: none; }
+.rm-status-btn:has(.rm-status-btn__input:checked) .rm-status-btn__check { display: inline-block; }
 
 /* ---------- Avatars + chips ---------- */
 .rm-avatar {
