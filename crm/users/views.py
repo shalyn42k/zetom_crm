@@ -13,6 +13,7 @@ from crm.users.models import UserProfile
 
 class UserListView(View):
     """Список всех пользователей"""
+
     def get(self, request):
         users = User.objects.all().select_related("userprofile")
         return render(request, "users/user_list.html", {"users": users})
@@ -20,6 +21,7 @@ class UserListView(View):
 
 class UserCreateView(View):
     """Создание нового пользователя"""
+
     def get(self, request):
         form = CustomUserCreateForm()
         return render(request, "users/user_form.html", {"form": form, "mode": "create"})
@@ -37,6 +39,7 @@ class UserCreateView(View):
 
 class UserEditView(View):
     """Редактирование пользователя"""
+
     def get(self, request, pk):
         user = get_object_or_404(User, pk=pk)
         profile = UserProfile.objects.get(user=user)
@@ -68,6 +71,7 @@ class UserEditView(View):
 
 class UserDeleteView(View):
     """Удаление пользователя"""
+
     def get(self, request, pk):
         user = get_object_or_404(User, pk=pk)
         return render(request, "users/user_confirm_delete.html", {"user": user})
@@ -81,6 +85,7 @@ class UserDeleteView(View):
 
 class UserDetailView(View):
     """Просмотр профиля пользователя"""
+
     def get(self, request, pk):
         user = get_object_or_404(User, pk=pk)
         profile = UserProfile.objects.get(user=user)
@@ -89,6 +94,7 @@ class UserDetailView(View):
 
 class UserProfileEditView(View):
     """Редактирование своего профиля"""
+
     def get(self, request):
         form = UserProfileEditForm(instance=request.user)
         return render(request, "users/user_profile_edit.html", {"form": form})
