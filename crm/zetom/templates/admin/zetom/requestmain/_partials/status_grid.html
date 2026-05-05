@@ -1,0 +1,21 @@
+{% load i18n %}
+{# Status grid — maps to RequestStatus choices. Single-select. #}
+<section class="rm-card" aria-labelledby="rm-status-heading" id="status-grid">
+  <header class="rm-card__header">
+    <h2 id="rm-status-heading" class="rm-card__title">{% trans "Status" %}</h2>
+  </header>
+
+  <div class="rm-status-grid" role="radiogroup" aria-label="{% trans 'Request status' %}">
+    {% for value, label in status_choices %}
+      <button type="button"
+              role="radio"
+              aria-checked="{% if original.status == value %}true{% else %}false{% endif %}"
+              class="rm-status-btn{% if original.status == value %} is-active{% endif %}"
+              data-status="{{ value }}"
+              {# hx-post="{% url 'requests:set_status' original.pk %}" hx-vals='{"status": "{{ value }}"}' hx-target="#status-grid" #}>
+        <span class="rm-dot rm-dot--{{ value }}" aria-hidden="true"></span>
+        {{ label }}
+      </button>
+    {% endfor %}
+  </div>
+</section>

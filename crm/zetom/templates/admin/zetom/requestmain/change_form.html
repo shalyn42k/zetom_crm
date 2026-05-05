@@ -1,0 +1,89 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static crispy_forms_tags unfold %}
+
+{% comment %}
+Custom change-view for RequestMain.
+Two columns: left = client info, right = users/status/depts.
+Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
+{% endcomment %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'zetom/css/requestmain_detail.css' %}">
+{% endblock extrastyle %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {# HTMX is loaded once globally via Unfold settings; do not re-include here. #}
+{% endblock extrahead %}
+
+{% block content %}
+<div class="rm-page">
+
+  {# -------- Header strip -------- #}
+  <header class="rm-header">
+    <div class="rm-header__title">
+      <h1 class="rm-h1">
+        {% trans "Request" %} — {{ original.company_name|default:"—" }}
+      </h1>
+      <span class="rm-tag">REQ-{{ original.created_at|date:"Y" }}-{{ original.pk|stringformat:"04d" }}</span>
+      <span class="rm-status-pill rm-status-pill--{{ original.status }}">
+        <span class="rm-dot rm-dot--{{ original.status }}"></span>
+        {{ original.get_status_display }}
+      </span>
+    </div>
+    <div class="rm-header__right">
+      <button type="button" class="rm-btn rm-btn--ghost"
+              {# hx-get="{% url 'requests:history' original.pk %}" hx-target="#rm-modal" #}>
+        <svg class="rm-icon" aria-hidden="true"><use href="#icon-history"/></svg>
+        {% trans "History" %}
+      </button>
+    </div>
+  </header>
+
+  {% if original.from_null %}
+    <p class="rm-callout">
+      {% blocktrans with ref=original.from_null %}
+        Originated from validation window: <strong>{{ ref }}</strong>
+      {% endblocktrans %}
+    </p>
+  {% endif %}
+
+  {% if original.deleted %}
+    <p class="rm-callout rm-callout--danger">
+      {% trans "This request is soft-deleted. Restore it before editing." %}
+    </p>
+  {% endif %}
+
+  {# -------- Main two-column grid -------- #}
+  <form method="post" enctype="multipart/form-data" class="rm-grid"
+        id="{{ opts.model_name }}_form" novalidate>
+    {% csrf_token %}
+
+    <div class="rm-col rm-col--left">
+      {% include "admin/zetom/requestmain/_partials/client_card.html" %}
+      {% include "admin/zetom/requestmain/_partials/client_information.html" %}
+    </div>
+
+    <aside class="rm-col rm-col--right">
+      {% include "admin/zetom/requestmain/_partials/assigned_users.html" %}
+      {% include "admin/zetom/requestmain/_partials/status_grid.html" %}
+      {% include "admin/zetom/requestmain/_partials/departments.html" %}
+    </aside>
+
+    <div class="rm-col rm-col--full">
+      {% include "admin/zetom/requestmain/_partials/documents.html" %}
+    </div>
+  </form>
+
+  {# Modal mount point for HTMX-loaded panels (history, search, etc.) #}
+  <div id="rm-modal" hidden></div>
+</div>
+
+{# Inline icon sprite — keep small. Move to /static/zetom/img/icons.svg if it grows. #}
+<svg width="0" height="0" class="rm-svg-sprite" aria-hidden="true">
+  <symbol id="icon-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>
+  </symbol>
+</svg>
+{% endblock content %}

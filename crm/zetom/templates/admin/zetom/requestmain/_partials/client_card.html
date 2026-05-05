@@ -1,0 +1,58 @@
+{% load i18n %}
+{% comment %}
+Client card — visual placeholder for the future Client model.
+Currently reads denormalized company_name / company_nip / full_name from
+RequestTemplate. When a Client model lands, swap the data source here
+(avatar, client__name, client__nip, client__contact) but keep the dl/dt/dd
+structure — the card is meant as a "linked client" with pinned fields.
+"Add or change client" button opens client search/swap.
+{% endcomment %}
+<section class="rm-card" aria-labelledby="rm-client-heading" id="client-card">
+  <header class="rm-card__header">
+    <h2 id="rm-client-heading" class="rm-card__title">
+      {% trans "Client" %}
+    </h2>
+    <button type="button" class="rm-btn rm-btn--ghost rm-btn--sm"
+            {# hx-get="{% url 'requests:client_search' %}" hx-target="#client-search-panel" hx-swap="innerHTML" #}>
+      {% trans "Add or change client" %}
+    </button>
+  </header>
+
+  <div class="rm-client">
+    <div class="rm-avatar rm-avatar--lg" aria-hidden="true">
+      {{ original.company_name|slice:":1"|upper|default:"?" }}
+    </div>
+    <div class="rm-client__meta">
+      <div class="rm-client__name">{{ original.company_name|default:"—" }}</div>
+      <div class="rm-client__sub">
+        {% if original.company_nip %}NIP {{ original.company_nip }}{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <dl class="rm-linked-fields">
+    <div class="rm-linked-field">
+      <dt class="rm-linked-field__label">
+        <svg class="rm-icon rm-icon--sm" aria-hidden="true"><use href="#icon-link"/></svg>
+        {% trans "NIP" %}
+      </dt>
+      <dd class="rm-linked-field__value">{{ original.company_nip|default:"—" }}</dd>
+    </div>
+    <div class="rm-linked-field">
+      <dt class="rm-linked-field__label">
+        <svg class="rm-icon rm-icon--sm" aria-hidden="true"><use href="#icon-link"/></svg>
+        {% trans "Company" %}
+      </dt>
+      <dd class="rm-linked-field__value">{{ original.company_name|default:"—" }}</dd>
+    </div>
+    <div class="rm-linked-field">
+      <dt class="rm-linked-field__label">
+        <svg class="rm-icon rm-icon--sm" aria-hidden="true"><use href="#icon-link"/></svg>
+        {% trans "Contact person" %}
+      </dt>
+      <dd class="rm-linked-field__value">{{ original.full_name|default:"—" }}</dd>
+    </div>
+  </dl>
+
+  <div id="client-search-panel" hidden></div>
+</section>

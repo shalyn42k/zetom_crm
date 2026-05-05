@@ -1,0 +1,32 @@
+{% load i18n crispy_forms_tags %}
+{# Editable client information — driven by RequestMainForm + crispy. #}
+<section class="rm-card" aria-labelledby="rm-client-info-heading" id="client-information">
+  <header class="rm-card__header">
+    <h2 id="rm-client-info-heading" class="rm-card__title">
+      {% trans "Client information" %}
+    </h2>
+  </header>
+
+  {% crispy form %}
+
+  {# Files from client (read-only attachment list — wire up later via HTMX). #}
+  <div class="rm-files" id="client-files">
+    <h3 class="rm-card__subtitle">{% trans "Files from client" %}</h3>
+    {% if client_files %}
+      <ul class="rm-files__list">
+        {% for f in client_files %}
+          <li class="rm-file rm-file--{{ f.kind }}">
+            <span class="rm-file__icon" aria-hidden="true">{{ f.kind|upper }}</span>
+            <span class="rm-file__meta">
+              <span class="rm-file__name">{{ f.name }}</span>
+              <span class="rm-file__sub">{{ f.size|filesizeformat }}</span>
+            </span>
+            <a href="{{ f.url }}" class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "Download" %}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="rm-empty">{% trans "No files attached." %}</p>
+    {% endif %}
+  </div>
+</section>

@@ -1,0 +1,43 @@
+{% load i18n %}
+{# Assigned users — render M2M assigned_to as chips. First user gets "Owner" badge. #}
+<section class="rm-card" aria-labelledby="rm-users-heading" id="assigned-users">
+  <header class="rm-card__header">
+    <h2 id="rm-users-heading" class="rm-card__title">
+      {% trans "Assigned users" %}
+      <span class="rm-counter">{{ original.assigned_to.count }}</span>
+    </h2>
+  </header>
+
+  <ul class="rm-user-list">
+    {% for u in original.assigned_to.all %}
+      <li class="rm-user">
+        <span class="rm-avatar" aria-hidden="true">
+          {{ u.first_name|slice:":1"|default:u.username|slice:":1"|upper }}
+        </span>
+        <span class="rm-user__meta">
+          <span class="rm-user__name">
+            {{ u.get_full_name|default:u.username }}
+            {% if forloop.first %}<span class="rm-badge rm-badge--owner">{% trans "Owner" %}</span>{% endif %}
+          </span>
+          <span class="rm-user__sub">
+            {% if u.profile.role %}{{ u.profile.role.name }}{% endif %}
+            {% if u.profile.department %} · {{ u.profile.get_department_display }}{% endif %}
+          </span>
+        </span>
+        <button type="button" class="rm-iconbtn"
+                {# hx-delete="{% url 'requests:unassign_user' original.pk u.pk %}" hx-target="#assigned-users" #}
+                aria-label="{% trans 'Remove user' %}">
+          <svg class="rm-icon rm-icon--sm" aria-hidden="true"><use href="#icon-x"/></svg>
+        </button>
+      </li>
+    {% empty %}
+      <li class="rm-empty">{% trans "No users assigned yet." %}</li>
+    {% endfor %}
+  </ul>
+
+  <button type="button" class="rm-btn rm-btn--ghost rm-btn--block"
+          {# hx-get="{% url 'requests:user_search' original.pk %}" hx-target="#user-search-panel" #}>
+    + {% trans "Add user" %}
+  </button>
+  <div id="user-search-panel" hidden></div>
+</section>

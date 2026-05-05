@@ -1,0 +1,63 @@
+{% load i18n %}
+{% comment %}Documents row — child docs (Oferta / Zlecenie / Wniosek). Reverse-FK lookups injected via render_change_form.{% endcomment %}
+<section class="rm-card rm-card--full" aria-labelledby="rm-docs-heading" id="documents">
+  <header class="rm-card__header">
+    <h2 id="rm-docs-heading" class="rm-card__title">{% trans "Documents" %}</h2>
+  </header>
+
+  <div class="rm-docs">
+    {# Oferta #}
+    <article class="rm-doc">
+      <div class="rm-doc__icon" aria-hidden="true">O</div>
+      <div class="rm-doc__meta">
+        <h3 class="rm-doc__title">{% trans "Oferta" %}</h3>
+        <p class="rm-doc__sub">
+          {% if oferta %}{{ oferta.created_at|date:"Y-m-d" }} · #{{ oferta.pk }}{% else %}{% trans "Not created" %}{% endif %}
+        </p>
+      </div>
+      {% if oferta %}
+        <a href="{{ oferta.get_admin_url }}" class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
+      {% else %}
+        <button type="button" class="rm-btn rm-btn--primary rm-btn--sm" disabled aria-disabled="true">
+          {% trans "Create" %}
+        </button>
+      {% endif %}
+    </article>
+
+    {# Zlecenie #}
+    <article class="rm-doc">
+      <div class="rm-doc__icon" aria-hidden="true">Z</div>
+      <div class="rm-doc__meta">
+        <h3 class="rm-doc__title">{% trans "Zlecenie" %}</h3>
+        <p class="rm-doc__sub">
+          {% if zlecenie %}{{ zlecenie.created_at|date:"Y-m-d" }} · #{{ zlecenie.pk }}{% else %}{% trans "Not created" %}{% endif %}
+        </p>
+      </div>
+      {% if zlecenie %}
+        <a href="{{ zlecenie.get_admin_url }}" class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
+      {% else %}
+        <button type="button" class="rm-btn rm-btn--primary rm-btn--sm" disabled aria-disabled="true">
+          {% trans "Create" %}
+        </button>
+      {% endif %}
+    </article>
+
+    {# Wniosek #}
+    <article class="rm-doc">
+      <div class="rm-doc__icon" aria-hidden="true">W</div>
+      <div class="rm-doc__meta">
+        <h3 class="rm-doc__title">{% trans "Wniosek" %}</h3>
+        <p class="rm-doc__sub">
+          {% if wniosek %}{{ wniosek.created_at|date:"Y-m-d" }} · #{{ wniosek.pk }}{% else %}{% trans "Not created" %}{% endif %}
+        </p>
+      </div>
+      {% if wniosek %}
+        <a href="{{ wniosek.get_admin_url }}" class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
+      {% else %}
+        <button type="button" class="rm-btn rm-btn--primary rm-btn--sm" disabled aria-disabled="true">
+          {% trans "Create" %}
+        </button>
+      {% endif %}
+    </article>
+  </div>
+</section>
