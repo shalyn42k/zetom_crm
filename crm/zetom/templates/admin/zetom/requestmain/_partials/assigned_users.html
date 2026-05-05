@@ -1,5 +1,4 @@
 {% load i18n %}
-{# Read-only list of M2M assigned_to. Edit-via-UI not wired yet. #}
 <section class="rm-card" aria-labelledby="rm-users-heading" id="assigned-users">
   <header class="rm-card__header">
     <h2 id="rm-users-heading" class="rm-card__title">
@@ -24,9 +23,34 @@
             {% if u.profile.department %} · {{ u.profile.get_department_display }}{% endif %}
           </span>
         </span>
+        <button type="submit"
+                formaction='{% url "admin:zetom_requestmain_unassign_user" original.pk u.pk %}'
+                formmethod="post"
+                formnovalidate
+                class="rm-iconbtn"
+                aria-label='{% trans "Remove user" %}'>
+          ×
+        </button>
       </li>
     {% empty %}
       <li class="rm-empty">{% trans "No users assigned yet." %}</li>
     {% endfor %}
   </ul>
+
+  {% if available_users %}
+    <div class="rm-user-add">
+      <select name="user_id" class="rm-select">
+        {% for u in available_users %}
+          <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit"
+              formaction='{% url "admin:zetom_requestmain_assign_user" original.pk %}'
+              formmethod="post"
+              formnovalidate
+              class="rm-btn rm-btn--primary rm-btn--sm">
+        + {% trans "Add user" %}
+      </button>
+    </div>
+  {% endif %}
 </section>

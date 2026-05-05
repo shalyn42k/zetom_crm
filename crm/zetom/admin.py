@@ -2,6 +2,7 @@
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin.models import LogEntry
+from django.contrib.auth.models import User
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.urls import path
@@ -172,6 +173,15 @@ class RequestMainAdmin(BaseRequestAdmin):
         context["oferta"] = obj.oferta_set.first() if has_obj else None
         context["zlecenie"] = obj.zlecenie_set.first() if has_obj else None
         context["wniosek"] = obj.wniosek_set.first() if has_obj else None
+        if has_obj:
+            assigned_ids = obj.assigned_to.values_list("id", flat=True)
+            context["available_users"] = (
+                User.objects.filter(is_active=True)
+                .exclude(id__in=assigned_ids)
+                .order_by("username")
+            )
+        else:
+            context["available_users"] = User.objects.none()
         context["client_files"] = []
 
         return super().render_change_form(request, context, *args, **kwargs)
@@ -201,8 +211,58 @@ class RequestMainAdmin(BaseRequestAdmin):
                 view(self.wniosek_action),
                 name="zetom_requestmain_wniosek_action",
             ),
+            path(
+                "<path:object_id>/assign-user/",
+                view(self.assign_user_action),
+                name="zetom_requestmain_assign_user",
+            ),
+            path(
+                "<path:object_id>/unassign-user/<int:user_id>/",
+                view(self.unassign_user_action),
+                name="zetom_requestmain_unassign_user",
+            ),
         ]
         return custom + urls
+
+    def assign_user_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        obj = RequestMain.objects.get(pk=object_id)
+        user_id = request.POST.get("user_id")
+        if not user_id:
+            messages.error(request, "No user selected.")
+            return redirect("admin:zetom_requestmain_change", object_id)
+        try:
+            user = User.objects.get(pk=user_id, is_active=True)
+        except User.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        obj.assigned_to.add(user)
+        messages.success(
+            request,
+            f"Assigned {user.get_full_name() or user.username}.",
+        )
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    def unassign_user_action(self, request, object_id, user_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        obj = RequestMain.objects.get(pk=object_id)
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        obj.assigned_to.remove(user)
+        messages.success(
+            request,
+            f"Removed {user.get_full_name() or user.username}.",
+        )
+        return redirect("admin:zetom_requestmain_change", object_id)
 
     def apply_status_action(self, request, object_id):
         if request.method != "POST":
