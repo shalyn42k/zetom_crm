@@ -7,6 +7,7 @@
 
     <form method="post">
         {% csrf_token %}
+        {% if new_status %}<input type="hidden" name="new_status" value="{{ new_status }}">{% endif %}
         {{ form|crispy }}
 
         <div class="flex gap-2 mt-4">
