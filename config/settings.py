@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "unfold.contrib.import_export",  # optional, if django-import-export package is used
     "unfold.contrib.guardian",  # optional, if django-guardian package is used
     "unfold.contrib.simple_history",
+    "crispy_forms",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -158,6 +159,10 @@ LANGUAGES = (
 
 # настройка дефолтного региона для библиотеки для валидации телефонов
 PHONENUMBER_DEFAULT_REGION = "PL"
+
+# crispy-forms: используем template pack от Unfold, чтобы рендер совпадал со стилем админки
+CRISPY_ALLOWED_TEMPLATE_PACKS = "unfold_crispy"
+CRISPY_TEMPLATE_PACK = "unfold_crispy"
 
 
 # Static files (CSS, JavaScript, Images)
