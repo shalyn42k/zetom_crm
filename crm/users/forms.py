@@ -45,7 +45,6 @@ class CustomUserCreateForm(forms.ModelForm):
             "last_name": forms.TextInput(attrs={"class": INPUT_CLASS}),
         }
 
-    # --- Валидация ---
     def clean_username(self):
         username = self.cleaned_data["username"]
         if User.objects.filter(username=username).exists():
@@ -68,7 +67,6 @@ class CustomUserCreateForm(forms.ModelForm):
 
         return cleaned
 
-    # --- Создание User + UserProfile ---
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password"])
@@ -131,20 +129,18 @@ class CustomUserChangeForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=commit)
 
-        # Обновляем профиль
         profile, _ = UserProfile.objects.get_or_create(user=user)
         role = self.cleaned_data.get("role")
         if role is not None:
             profile.role = role
-        
+
         department = self.cleaned_data.get("department")
         if department:
             profile.department = department
         elif department == "":
             profile.department = None
-        
-        profile.save()
 
+        profile.save()
         return user
 
 

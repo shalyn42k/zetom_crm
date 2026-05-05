@@ -59,7 +59,6 @@ INSTALLED_APPS = [
     "phonenumber_field",  # библиотека для валидации телефона
     "localflavor",  # библиотеки для валидациия NIP
     "safedelete",  # библиотека для безопасного удаления данных в таблицах
-    "crm.users_ui.apps.UsersUiConfig",
 ]
 
 

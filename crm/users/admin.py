@@ -1,18 +1,106 @@
 from django.contrib import admin
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
-from crm.users.models import Role
+from crm.users.models import Role, UserProfile
 from crm.users.utils import user_has_perm
+from crm.users.forms import CustomUserChangeForm, CustomUserCreateForm
 
 from django.contrib.auth.models import User
-from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+
+
+class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
+    add_form = CustomUserCreateForm
+    form = CustomUserChangeForm
+    
+    fieldsets = (
+        (None, {"fields": ("username", "password")} ),
+        ("Личные данные", {"fields": ("first_name", "last_name", "email")} ),
+        ("Профиль", {"fields": ("role", "department")} ),
+        ("Параметры доступа", {"fields": ("is_active", "is_staff", "is_superuser")} ),
+        ("Важные даты", {"fields": ("last_login", "date_joined")} ),
+    )
+
+    add_fieldsets = (
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "username",
+                    "email",
+                    "first_name",
+                    "last_name",
+                    "password",
+                    "password_confirm",
+                    "role",
+                    "department",
+                ),
+            },
+        ),
+    )
+    
+    list_display = (
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "get_role",
+        "get_department",
+        "is_staff",
+    )
+    list_select_related = ("profile",)
+
+    def get_fieldsets(self, request, obj=None):
+        if not obj:
+            return self.add_fieldsets
+        return self.fieldsets
+
+    def get_form(self, request, obj=None, **kwargs):
+        defaults = {}
+        if obj is None:
+            defaults["form"] = self.add_form
+        else:
+            defaults["form"] = self.form
+        defaults.update(kwargs)
+        return super().get_form(request, obj, **defaults)
+
+    def get_role(self, obj):
+        return obj.profile.role if hasattr(obj, "profile") and obj.profile.role else None
+    get_role.short_description = "Роль"
+    get_role.admin_order_field = "profile__role__name"
+
+    def get_department(self, obj):
+        return obj.profile.get_department_display() if hasattr(obj, "profile") else None
+    get_department.short_description = "Департамент"
+    get_department.admin_order_field = "profile__department"
+
+    def has_add_permission(self, request):
+        return True
+
+    def has_change_permission(self, request, obj=None):
+        return True
+
+    def has_delete_permission(self, request, obj=None):
+        return True
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        profile, _ = UserProfile.objects.get_or_create(user=obj)
+        if "role" in form.cleaned_data:
+            profile.role = form.cleaned_data.get("role")
+        if "department" in form.cleaned_data:
+            department = form.cleaned_data.get("department")
+            profile.department = department if department else None
+        profile.save()
+
 
 admin.site.unregister(User)
-admin.site.register(User, UserAdmin)
+admin.site.register(User, CustomUserAdmin)
 
 
 @admin.register(Role)
-class AdminRole(ModelAdmin):
+class AdminRole(UnfoldModelAdmin):
     list_display = ("code", "name")
 
     def has_view_permission(self, request, obj=None):
@@ -31,4 +119,19 @@ class AdminRole(ModelAdmin):
         return None
 
 
- 
+@admin.register(UserProfile)
+class AdminUserProfile(UnfoldModelAdmin):
+    list_display = ("user", "role", "department")
+    search_fields = ("user__username", "user__email", "role__name", "department")
+
+    def has_view_permission(self, request, obj=None):
+        return user_has_perm(request.user, "view_users")
+
+    def has_change_permission(self, request, obj=None):
+        return user_has_perm(request.user, "edit_users")
+
+    def has_add_permission(self, request):
+        return user_has_perm(request.user, "edit_users")
+
+    def has_delete_permission(self, request, obj=None):
+        return user_has_perm(request.user, "edit_users")
