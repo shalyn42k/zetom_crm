@@ -26,10 +26,8 @@ from crm.users.utils import user_has_perm
 # Zetom app imports
 from crm.zetom.forms import (AddOferta, AddRequestFormMain, AddRequestFormNull,
                              AddWniosek, AddZlecenie)
-from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek, DeletedRequest,
+from crm.zetom.models import (DepartmentsVariants, Oferta, RequestMain, RequestNull, Wniosek, DeletedRequest,
                               Zlecenie)
-from crm.zetom.models import (DepartmentsVariants, Oferta, RequestMain,
-                              RequestNull, Wniosek, Zlecenie)
 from crm.zetom.services.request_service import (approve_null_action,
                                                 approve_oferta_action,
                                                 approve_wniosek_action,
@@ -145,7 +143,7 @@ class StatusHistoryInline(admin.TabularInline):
 @admin.register(RequestMain)
 class RequestMainAdmin(BaseRequestAdmin):
     form = AddRequestFormMain
-    inlines = [StatusHistoryInline] # показывает историю в админке 
+    #inlines = [StatusHistoryInline] # показывает историю в админке 
     change_form_template = "admin/zetom/requestmain/change_form.html"
     list_display = ("created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status" )
     fields = (
@@ -159,23 +157,6 @@ class RequestMainAdmin(BaseRequestAdmin):
         "message",
     )
     warn_unsaved_form = True
-    
-
-
-    def save_model(self, request, obj, form, change):   # прсто изменений в выпадающем списке статусов, сохроняется в истории 
-        if change and "status" in form.changed_data:
-           old_status = RequestMain.objects.get(pk=obj.pk).status
-           super().save_model(request, obj, form, change)
-           StatusHistory.objects.create(
-               request=obj,
-               old_status=old_status,
-               new_status=obj.status,
-               reason="",
-              changed_by=request.user,
-           )
-        else:
-           super().save_model(request, obj, form, change)
-
 
     def render_change_form(self, request, context, *args, **kwargs):
         obj = context.get("original")
@@ -201,9 +182,9 @@ class RequestMainAdmin(BaseRequestAdmin):
         context["status_choices"] = RequestStatus.choices
         context["department_choices"] = DepartmentsVariants.choices
         has_obj = obj is not None and obj.pk is not None
-        context["oferta"] = obj.oferta_set.first() if has_obj else None
-        context["zlecenie"] = obj.zlecenie_set.first() if has_obj else None
-        context["wniosek"] = obj.wniosek_set.first() if has_obj else None
+        context["ofertas"] = obj.oferta_set.order_by("-created_at") if has_obj else []
+        context["zlecenia"] = obj.zlecenie_set.order_by("-created_at") if has_obj else []
+        context["wnioski"] = obj.wniosek_set.order_by("-created_at") if has_obj else []
         if has_obj:
             assigned_ids = obj.assigned_to.values_list("id", flat=True)
             context["available_users"] = (
@@ -295,12 +276,6 @@ class RequestMainAdmin(BaseRequestAdmin):
         )
         return redirect("admin:zetom_requestmain_change", object_id)
 
-        if request.method == "POST" and form.is_valid():
-            try:
-               delete_request(obj, request.user, form.cleaned_data["reason"])
-               return redirect("admin:zetom_requestmain_changelist")  # после удаления на переносит список остальных заявок 
-            except ValueError as e:
-                messages.error(request, str(e))
     def apply_status_action(self, request, object_id):
         if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
@@ -324,6 +299,8 @@ class RequestMainAdmin(BaseRequestAdmin):
             return redirect("admin:zetom_requestmain_change", object_id)
 
         messages.success(request, f"Status changed to {new_status}.")
+        if new_status == RequestStatus.deleted:
+            return redirect("admin:zetom_requestmain_changelist")
         return redirect("admin:zetom_requestmain_change", object_id)
 
 
