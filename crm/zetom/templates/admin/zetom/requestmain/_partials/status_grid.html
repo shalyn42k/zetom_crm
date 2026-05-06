@@ -1,0 +1,33 @@
+{% load i18n %}
+<section class="rm-card" aria-labelledby="rm-status-heading" id="status-grid">
+  <header class="rm-card__header">
+    <h2 id="rm-status-heading" class="rm-card__title">{% trans "Status" %}</h2>
+  </header>
+
+  <div class="rm-status-grid" role="radiogroup" aria-label='{% trans "Request status" %}'>
+    {% for value, label in status_choices %}
+      <label class="rm-status-btn rm-status-btn--{{ value }}">
+        <input type="radio"
+               name="new_status"
+               value="{{ value }}"
+               class="rm-status-btn__input"
+               {% if original.status == value %}checked{% endif %}>
+        <span class="rm-status-btn__icon" aria-hidden="true">
+          <span class="rm-dot rm-dot--{{ value }}"></span>
+          <svg class="rm-status-btn__check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12l5 5L20 7"/>
+          </svg>
+        </span>
+        {{ label }}
+      </label>
+    {% endfor %}
+  </div>
+
+  <button type="submit"
+          formaction='{% url "admin:zetom_requestmain_apply_status" original.pk %}'
+          formmethod="post"
+          formnovalidate
+          class="rm-btn rm-btn--primary rm-btn--block">
+    {% trans "Apply" %}
+  </button>
+</section>

@@ -17,10 +17,15 @@ from crm.status_manager.services.statuses import RequestStatus, Status
 
 
 class DepartmentsVariants(models.TextChoices):
-    DEPARTMENT_0 = "DEPARTMENT_0", "department 1"
-    DEPARTMENT_1 = "DEPARTMENT_1", "department 2"
-    DEPARTMENT_2 = "DEPARTMENT_2", "department 3"
-    DEPARTMENT_3 = "DEPARTMENT_3", "department 4"
+    DEPARTMENT_0 = "DEPARTMENT_0", "Zespół ds. Badań"
+    DEPARTMENT_1 = "DEPARTMENT_1", "Zespół ds. Wzorcowań"
+    DEPARTMENT_2 = "DEPARTMENT_2", "Pracownia Długości i Kąta"
+    DEPARTMENT_3 = "DEPARTMENT_3", "Pracownia Elektrotechniczna"
+    DEPARTMENT_4 = "DEPARTMENT_4", "Pracownia Mechaniczna"
+    DEPARTMENT_5 = "DEPARTMENT_5", "Pracownia Urządzeń Grzewczych"
+    DEPARTMENT_6 = "DEPARTMENT_6", "Biuro Techniczne"
+
+
 
 
 class RequestTemplate(SafeDeleteModel):

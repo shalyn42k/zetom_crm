@@ -6,6 +6,7 @@ click==8.3.1
 colorama==0.4.6
 cssbeautifier==1.15.4
 Django==5.2.13
+django-crispy-forms==2.6
 django-localflavor==5.0
 django-phonenumber-field==8.4.0
 django-safedelete==1.4.1

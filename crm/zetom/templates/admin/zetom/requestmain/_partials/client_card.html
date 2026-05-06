@@ -1,0 +1,46 @@
+{% load i18n %}
+{% comment %}
+Placeholder for the future Client model. Three fields below (NIP / Company /
+Contact person) are editable now — map to RequestTemplate.company_nip /
+company_name / full_name. When a Client FK lands, swap to read-only display.
+{% endcomment %}
+<section class="rm-card" aria-labelledby="rm-client-heading" id="client-card">
+  <header class="rm-card__header">
+    <h2 id="rm-client-heading" class="rm-card__title">
+      {% trans "Client" %}
+    </h2>
+  </header>
+
+  <div class="rm-client">
+    <div class="rm-avatar rm-avatar--lg" aria-hidden="true">
+      {{ original.company_name|slice:":1"|upper|default:"?" }}
+    </div>
+    <div class="rm-client__meta">
+      <div class="rm-client__name">{{ original.company_name|default:"—" }}</div>
+      <div class="rm-client__sub">
+        {% if original.company_nip %}NIP {{ original.company_nip }}{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <dl class="rm-linked-fields">
+    <div class="rm-linked-field">
+      <dt class="rm-linked-field__label">
+        <label for="{{ form.company_nip.id_for_label }}">{% trans "NIP" %}</label>
+      </dt>
+      <dd class="rm-linked-field__value">{{ form.company_nip }}</dd>
+    </div>
+    <div class="rm-linked-field">
+      <dt class="rm-linked-field__label">
+        <label for="{{ form.company_name.id_for_label }}">{% trans "Company" %}</label>
+      </dt>
+      <dd class="rm-linked-field__value">{{ form.company_name }}</dd>
+    </div>
+    <div class="rm-linked-field">
+      <dt class="rm-linked-field__label">
+        <label for="{{ form.full_name.id_for_label }}">{% trans "Contact person" %}</label>
+      </dt>
+      <dd class="rm-linked-field__value">{{ form.full_name }}</dd>
+    </div>
+  </dl>
+</section>

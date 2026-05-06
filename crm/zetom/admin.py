@@ -2,8 +2,13 @@
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin.models import LogEntry
+from django.contrib.auth.models import User
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.urls import path
+# Crispy imports
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Column, Field, Layout, Row
 # Unfold imports
 from unfold.admin import ModelAdmin
 from unfold.decorators import action, display
@@ -13,9 +18,7 @@ from unfold.enums import ActionVariant
 from crm.notification.services.notification_service import \
     send_notification_approve_null
 from crm.status_manager.models import StatusHistory
-from crm.status_manager.services.status_service import (cancel_request,
-                                                        delete_request,
-                                                        handle_child_change,
+from crm.status_manager.services.status_service import (handle_child_change,
                                                         save_child_with_status)
 from crm.status_manager.services.statuses import RequestStatus
 # Users app imports
@@ -25,10 +28,14 @@ from crm.zetom.forms import (AddOferta, AddRequestFormMain, AddRequestFormNull,
                              AddWniosek, AddZlecenie)
 from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek, DeletedRequest,
                               Zlecenie)
+from crm.zetom.models import (DepartmentsVariants, Oferta, RequestMain,
+                              RequestNull, Wniosek, Zlecenie)
 from crm.zetom.services.request_service import (approve_null_action,
                                                 approve_oferta_action,
                                                 approve_wniosek_action,
                                                 approve_zlecenie_action)
+from crm.zetom.services.status_orchestration import (ReasonRequired,
+                                                     apply_status_change)
 from crm.zetom.services.visibility import visible_requests_for
 
 
@@ -139,27 +146,18 @@ class StatusHistoryInline(admin.TabularInline):
 class RequestMainAdmin(BaseRequestAdmin):
     form = AddRequestFormMain
     inlines = [StatusHistoryInline] # показывает историю в админке 
+    change_form_template = "admin/zetom/requestmain/change_form.html"
     list_display = ("created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status" )
     fields = (
-        "status",
         "full_name",
         "phone",
         "department",
-        "assigned_to",
         "company_name",
         "company_nip",
         "email",
         "address",
         "message",
     )
-    actions_detail = [
-        "cancel_action",
-        "delete_action",
-        "request_info_action",
-        "oferta_action",
-        "zlecenie_action",
-        "wniosek_action",
-    ]
     warn_unsaved_form = True
     
 
@@ -179,29 +177,123 @@ class RequestMainAdmin(BaseRequestAdmin):
            super().save_model(request, obj, form, change)
 
 
+    def render_change_form(self, request, context, *args, **kwargs):
+        obj = context.get("original")
 
-    @action(description="Cancel", icon="cancel", url_path="cancel")
-    def cancel_action(self, request, object_id):
-        obj = RequestMain.objects.get(pk=object_id)
-        form = ReasonForm(request.POST or None)
+        adminform = context.get("adminform")
+        if adminform is not None:
+            form = adminform.form
+            helper = FormHelper()
+            helper.form_tag = False
+            helper.disable_csrf = True
+            helper.layout = Layout(
+                Row(
+                    Column("email", css_class="rm-col-6"),
+                    Column("phone", css_class="rm-col-6"),
+                    css_class="rm-row",
+                ),
+                Field("address"),
+                Field("message"),
+            )
+            form.helper = helper
+            context["form"] = form
 
-        if request.method == "POST" and form.is_valid():
-            try:
-                cancel_request(obj, request.user, form.cleaned_data["reason"])
-            except ValueError as e:
-                messages.error(request, str(e))
+        context["status_choices"] = RequestStatus.choices
+        context["department_choices"] = DepartmentsVariants.choices
+        has_obj = obj is not None and obj.pk is not None
+        context["oferta"] = obj.oferta_set.first() if has_obj else None
+        context["zlecenie"] = obj.zlecenie_set.first() if has_obj else None
+        context["wniosek"] = obj.wniosek_set.first() if has_obj else None
+        if has_obj:
+            assigned_ids = obj.assigned_to.values_list("id", flat=True)
+            context["available_users"] = (
+                User.objects.filter(is_active=True)
+                .exclude(id__in=assigned_ids)
+                .order_by("username")
+            )
+        else:
+            context["available_users"] = User.objects.none()
+        context["client_files"] = []
+
+        return super().render_change_form(request, context, *args, **kwargs)
+
+
+    def get_urls(self):
+        urls = super().get_urls()
+        view = self.admin_site.admin_view
+        custom = [
+            path(
+                "<path:object_id>/apply-status/",
+                view(self.apply_status_action),
+                name="zetom_requestmain_apply_status",
+            ),
+            path(
+                "<path:object_id>/oferta/",
+                view(self.oferta_action),
+                name="zetom_requestmain_oferta_action",
+            ),
+            path(
+                "<path:object_id>/zlecenie/",
+                view(self.zlecenie_action),
+                name="zetom_requestmain_zlecenie_action",
+            ),
+            path(
+                "<path:object_id>/wniosek/",
+                view(self.wniosek_action),
+                name="zetom_requestmain_wniosek_action",
+            ),
+            path(
+                "<path:object_id>/assign-user/",
+                view(self.assign_user_action),
+                name="zetom_requestmain_assign_user",
+            ),
+            path(
+                "<path:object_id>/unassign-user/<int:user_id>/",
+                view(self.unassign_user_action),
+                name="zetom_requestmain_unassign_user",
+            ),
+        ]
+        return custom + urls
+
+    def assign_user_action(self, request, object_id):
+        if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
 
-        return render(request, "admin/zetom/requestmain/reason_form.html", {
-            "form": form,
-            "obj": obj,
-            **self.admin_site.each_context(request),
-        })
-
-    @action(description="Delete", icon="delete", url_path="delete")
-    def delete_action(self, request, object_id):
         obj = RequestMain.objects.get(pk=object_id)
-        form = ReasonForm(request.POST or None)
+        user_id = request.POST.get("user_id")
+        if not user_id:
+            messages.error(request, "No user selected.")
+            return redirect("admin:zetom_requestmain_change", object_id)
+        try:
+            user = User.objects.get(pk=user_id, is_active=True)
+        except User.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        obj.assigned_to.add(user)
+        messages.success(
+            request,
+            f"Assigned {user.get_full_name() or user.username}.",
+        )
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    def unassign_user_action(self, request, object_id, user_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        obj = RequestMain.objects.get(pk=object_id)
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            messages.error(request, "User not found.")
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        obj.assigned_to.remove(user)
+        messages.success(
+            request,
+            f"Removed {user.get_full_name() or user.username}.",
+        )
+        return redirect("admin:zetom_requestmain_change", object_id)
 
         if request.method == "POST" and form.is_valid():
             try:
@@ -209,42 +301,47 @@ class RequestMainAdmin(BaseRequestAdmin):
                return redirect("admin:zetom_requestmain_changelist")  # после удаления на переносит список остальных заявок 
             except ValueError as e:
                 messages.error(request, str(e))
+    def apply_status_action(self, request, object_id):
+        if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
 
-        return render(request, "admin/zetom/requestmain/reason_form.html", {
-            "form": form,
-            "obj": obj,
-            **self.admin_site.each_context(request),
-        })
+        obj = RequestMain.objects.get(pk=object_id)
+        new_status = request.POST.get("new_status")
+        reason = request.POST.get("reason") or None
+
+        try:
+            apply_status_change(obj, request.user, new_status, reason=reason)
+        except ReasonRequired:
+            form = ReasonForm()
+            return render(request, "admin/zetom/requestmain/reason_form.html", {
+                "form": form,
+                "obj": obj,
+                "new_status": new_status,
+                **self.admin_site.each_context(request),
+            })
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        messages.success(request, f"Status changed to {new_status}.")
+        return redirect("admin:zetom_requestmain_change", object_id)
 
 
-
-    @action(description="Oferta", icon="assignment", url_path="oferta")
     def oferta_action(self, request, object_id):
         oferta = approve_oferta_action(object_id)
         messages.info(request, f"Redirecting to Oferta: {object_id}")
         return redirect("admin:zetom_oferta_change", oferta.pk)
 
-    @action(description="Zlecenie", icon="assignment", url_path="zlecenie")
     def zlecenie_action(self, request, object_id):
         zlecenie = approve_zlecenie_action(object_id)
         messages.info(request, f"Redirecting to Zlecenie: {object_id}")
         return redirect("admin:zetom_zlecenie_change", zlecenie.pk)
 
-    @action(description="Wniosek", icon="assignment", url_path="wniosek")
     def wniosek_action(self, request, object_id):
         wniosek = approve_wniosek_action(object_id)
         messages.info(request, f"Redirecting to Wniosek: {object_id}")
         return redirect("admin:zetom_wniosek_change", wniosek.pk)
 
-    # AI-edited (claude-opus-4-7, 2026-04-21): simplified to render static design mockup only
-    @action(description="Request Info", icon="article", url_path="request-info")
-    def request_info_action(self, request, object_id):
-        return render(
-            request,
-            "admin/zetom/requestmain/request_info.html",
-            self.admin_site.each_context(request),
-        )
 
 # AI-suggested (claude-opus-4-7, 2026-04-23): save_model во всех трёх админках ниже делегирует в save_child_with_status — паттерн предложен Claude, код написал пользователь.
 @admin.register(Oferta)
