@@ -52,9 +52,18 @@ def apply_status_change(obj, user, new_status, reason=None):
             cancel_request(obj, user, reason)
         elif new_status == RequestStatus.deleted:
             delete_request(obj, user, reason)
+            obj.delete()
         else:
             inactive_request(obj, user, reason)
         return
 
+    old_status = obj.status
     obj.status = new_status
     obj.save()
+    StatusHistory.objects.create(
+        request=obj,
+        old_status=old_status,
+        new_status=new_status,
+        reason="",
+        changed_by=user,
+    )
