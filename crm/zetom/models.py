@@ -119,3 +119,9 @@ class Wniosek(RequestTemplate):
     class Meta:
         verbose_name = "Wniosek Information"
         verbose_name_plural = "Wniosek Information"
+
+class DeletedRequest(RequestMain):  # proxy может открывать те же данные и в других классах 
+    class Meta:
+        proxy = True
+        verbose_name = "Deleted Request"
+        verbose_name_plural = "Deleted Requests"

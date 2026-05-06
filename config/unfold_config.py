@@ -125,6 +125,16 @@ UNFOLD = {
                 "title": "Requests",
                 "collapsible": True,
                 "items": [
+
+                    {
+                        "title": "Trash",
+                        "icon": "delete",
+                        "link": reverse_lazy("admin:zetom_deletedrequest_changelist"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_requests"
+                        ),
+                    },
+
                     {
                         "title": "Information",
                         "icon": "folder",

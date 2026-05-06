@@ -26,6 +26,8 @@ from crm.users.utils import user_has_perm
 # Zetom app imports
 from crm.zetom.forms import (AddOferta, AddRequestFormMain, AddRequestFormNull,
                              AddWniosek, AddZlecenie)
+from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek, DeletedRequest,
+                              Zlecenie)
 from crm.zetom.models import (DepartmentsVariants, Oferta, RequestMain,
                               RequestNull, Wniosek, Zlecenie)
 from crm.zetom.services.request_service import (approve_null_action,
@@ -36,7 +38,7 @@ from crm.zetom.services.status_orchestration import (ReasonRequired,
                                                      apply_status_change)
 from crm.zetom.services.visibility import visible_requests_for
 
-# Other imports
+
 
 class ReasonForm(forms.Form):
     reason = forms.CharField(
@@ -98,7 +100,7 @@ class LogEntryAdmin(ModelAdmin):  # Используем ModelAdmin от Unfold 
 
     # RBAC
     def has_view_permission(self, request, obj=None):
-        return user_has_perm(request.user, "view_admin_panel")
+       return True
 
     def has_add_permission(self, request):
         return False
@@ -129,9 +131,21 @@ class RequestNullAdmin(BaseRequestAdmin):
         return redirect("admin:zetom_requestmain_change", new_main_record.pk)
 
 
+class StatusHistoryInline(admin.TabularInline):
+    model = StatusHistory
+    extra = 0
+    can_delete = False
+    readonly_fields = ("old_status", "new_status", "reason", "changed_by", "changed_at")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+
 @admin.register(RequestMain)
 class RequestMainAdmin(BaseRequestAdmin):
     form = AddRequestFormMain
+    inlines = [StatusHistoryInline] # показывает историю в админке 
     change_form_template = "admin/zetom/requestmain/change_form.html"
     list_display = ("created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status" )
     fields = (
@@ -145,6 +159,23 @@ class RequestMainAdmin(BaseRequestAdmin):
         "message",
     )
     warn_unsaved_form = True
+    
+
+
+    def save_model(self, request, obj, form, change):   # прсто изменений в выпадающем списке статусов, сохроняется в истории 
+        if change and "status" in form.changed_data:
+           old_status = RequestMain.objects.get(pk=obj.pk).status
+           super().save_model(request, obj, form, change)
+           StatusHistory.objects.create(
+               request=obj,
+               old_status=old_status,
+               new_status=obj.status,
+               reason="",
+              changed_by=request.user,
+           )
+        else:
+           super().save_model(request, obj, form, change)
+
 
     def render_change_form(self, request, context, *args, **kwargs):
         obj = context.get("original")
@@ -264,6 +295,12 @@ class RequestMainAdmin(BaseRequestAdmin):
         )
         return redirect("admin:zetom_requestmain_change", object_id)
 
+        if request.method == "POST" and form.is_valid():
+            try:
+               delete_request(obj, request.user, form.cleaned_data["reason"])
+               return redirect("admin:zetom_requestmain_changelist")  # после удаления на переносит список остальных заявок 
+            except ValueError as e:
+                messages.error(request, str(e))
     def apply_status_action(self, request, object_id):
         if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
@@ -381,11 +418,44 @@ class WniosekAdmin(BaseRequestAdmin):
         if save_child_with_status(request, obj, form, change, messages):
             super().save_model(request, obj, form, change)
 
-class StatusHistoryInline(admin.TabularInline):
-    model = StatusHistory
-    extra = 0
-    can_delete = False
-    readonly_fields = ("old_status", "new_status", "reason", "changed_by", "changed_at")
+@admin.register(DeletedRequest)
+class DeletedRequestAdmin(ModelAdmin):
+    list_display = ("created_at", "company_name", "department")
+    actions_detail = ["restore_action"]
+    readonly_fields = (
+        "status", "full_name", "phone", "department", "assigned_to",
+        "company_name", "company_nip", "email", "address", "message",
+    )
+    fields = (
+        "status", "full_name", "phone", "department", "assigned_to",
+        "company_name", "company_nip", "email", "address", "message",
+    )
 
-    def has_add_permission(self, request, obj=None):
+    def get_queryset(self, request):
+        return RequestMain.deleted_objects.all()
+
+    def has_add_permission(self, request):
         return False
+
+    def has_change_permission(self, request, obj=None):
+        return user_has_perm(request.user, "view_requests")  # ← разрешить для action
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    @action(description="Restore", icon="restore", url_path="restore")
+    def restore_action(self, request, object_id):
+        obj = RequestMain.deleted_objects.get(pk=object_id)
+        obj.undelete()
+        obj.status = RequestStatus.active
+        obj.save()
+        StatusHistory.objects.create(
+            request=obj,
+            old_status=RequestStatus.deleted,
+            new_status=RequestStatus.active,
+            reason="Restored from trash",
+            changed_by=request.user,
+        )
+        return redirect("admin:zetom_requestmain_changelist")
+
+        

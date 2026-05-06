@@ -107,6 +107,7 @@ def delete_request(request_obj, user, reason):
     old_status = request_obj.status
     request_obj.status = RequestStatus.deleted
     request_obj.save()
+    request_obj.delete() 
     StatusHistory.objects.create(
         request=request_obj,
         old_status=old_status,

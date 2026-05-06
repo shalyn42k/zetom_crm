@@ -9,9 +9,9 @@ class Status(models.TextChoices):
 
 
 class RequestStatus(models.TextChoices):
-    active = "active"
-    open = "open"
-    closed = "closed"
-    inactive = "inactive"
-    cancelled = "cancelled"
-    deleted = "deleted"
+    active = "active", "Active"
+    open = "open", "Open"
+    closed = "closed", "Closed"
+    inactive = "inactive", "Inactive"
+    cancelled = "cancelled", "Cancelled"
+    deleted = "deleted", "Deleted"
