@@ -1,33 +1,43 @@
 {% load i18n %}
-{% comment %}
-Departments — RequestTemplate.department is a single CharField (not M2M).
-Render the currently assigned department as a chip, with a select to change it.
-{% endcomment %}
 <section class="rm-card" aria-labelledby="rm-dept-heading" id="departments">
   <header class="rm-card__header">
-    <h2 id="rm-dept-heading" class="rm-card__title">{% trans "Department" %}</h2>
+    <h2 id="rm-dept-heading" class="rm-card__title">
+      {% trans "Departments" %}
+      <span class="rm-counter">{{ assigned_departments|length }}</span>
+    </h2>
   </header>
 
-  {% if original.department %}
-    <div class="rm-dept-chip">
-      <span class="rm-dept-chip__dot" aria-hidden="true"></span>
-      <div class="rm-dept-chip__meta">
-        <div class="rm-dept-chip__name">{{ original.get_department_display }}</div>
-        <div class="rm-dept-chip__sub">{% trans "Currently assigned" %}</div>
-      </div>
-    </div>
-  {% else %}
-    <p class="rm-empty">{% trans "No department assigned." %}</p>
-  {% endif %}
+  <ul class="rm-dept-list">
+    {% for code, label in assigned_departments %}
+      <li class="rm-dept-row {% if code == user_department %}rm-dept-row--mine{% endif %}">
+        <span class="rm-avatar" aria-hidden="true">{{ label|slice:":1"|upper }}</span>
+        <span class="rm-dept-row__name">{{ label }}</span>
+        <button type="submit"
+                formaction='{% url "admin:zetom_requestmain_remove_department" original.pk code %}'
+                formmethod="post"
+                formnovalidate
+                class="rm-iconbtn"
+                aria-label='{% trans "Remove department" %}'>×</button>
+      </li>
+    {% empty %}
+      <li class="rm-empty">{% trans "No departments assigned yet." %}</li>
+    {% endfor %}
+  </ul>
 
-  <label class="rm-field">
-    <span class="rm-field__label">{% trans "Reassign department" %}</span>
-    <select name="department" class="rm-select"
-            {# hx-post="{% url 'requests:set_department' original.pk %}" hx-trigger="change" hx-target="#departments" #}>
-      <option value="">— {% trans "None" %} —</option>
-      {% for value, label in department_choices %}
-        <option value="{{ value }}" {% if original.department == value %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
-  </label>
+  {% if available_departments %}
+    <div class="rm-dept-add">
+      <select name="dept_code" class="rm-select">
+        {% for code, label in available_departments %}
+          <option value="{{ code }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit"
+              formaction='{% url "admin:zetom_requestmain_add_department" original.pk %}'
+              formmethod="post"
+              formnovalidate
+              class="rm-btn rm-btn--primary rm-btn--sm">
+        + {% trans "Add" %}
+      </button>
+    </div>
+  {% endif %}
 </section>

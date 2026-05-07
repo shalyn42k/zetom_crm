@@ -70,6 +70,11 @@ class BaseRequestAdmin(ModelAdmin):
         users = obj.assigned_to.all()
         return ", ".join(u.username for u in users) or "—"
 
+    @admin.display(description="Departments")
+    def display_departments(self, obj):
+        labels = dict(DepartmentsVariants.choices)
+        return ", ".join(labels.get(code, code) for code in obj.departments) or "—"
+
     @display(
         label={
             "new": "info",
@@ -145,11 +150,11 @@ class RequestMainAdmin(BaseRequestAdmin):
     form = AddRequestFormMain
     #inlines = [StatusHistoryInline] # показывает историю в админке 
     change_form_template = "admin/zetom/requestmain/change_form.html"
-    list_display = ("created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status" )
+    list_display = ("created_at", "updated_at", "company_name", "display_departments", "assignees_display", "colored_status" )
     fields = (
         "full_name",
         "phone",
-        "department",
+        "departments",
         "company_name",
         "company_nip",
         "email",
@@ -180,7 +185,6 @@ class RequestMainAdmin(BaseRequestAdmin):
             context["form"] = form
 
         context["status_choices"] = RequestStatus.choices
-        context["department_choices"] = DepartmentsVariants.choices
         has_obj = obj is not None and obj.pk is not None
         context["ofertas"] = obj.oferta_set.order_by("-created_at") if has_obj else []
         context["zlecenia"] = obj.zlecenie_set.order_by("-created_at") if has_obj else []
@@ -192,8 +196,21 @@ class RequestMainAdmin(BaseRequestAdmin):
                 .exclude(id__in=assigned_ids)
                 .order_by("username")
             )
+            assigned_codes = list(obj.departments or [])
+            dept_labels = dict(DepartmentsVariants.choices)
+            context["assigned_departments"] = [
+                (code, dept_labels.get(code, code)) for code in assigned_codes
+            ]
+            context["available_departments"] = [
+                (code, label) for code, label in DepartmentsVariants.choices
+                if code not in assigned_codes
+            ]
         else:
             context["available_users"] = User.objects.none()
+            context["assigned_departments"] = []
+            context["available_departments"] = []
+        profile = getattr(request.user, "profile", None)
+        context["user_department"] = profile.department if profile else None
         context["client_files"] = []
 
         return super().render_change_form(request, context, *args, **kwargs)
@@ -233,8 +250,49 @@ class RequestMainAdmin(BaseRequestAdmin):
                 view(self.unassign_user_action),
                 name="zetom_requestmain_unassign_user",
             ),
+            path(
+                "<path:object_id>/add-department/",
+                view(self.add_department_action),
+                name="zetom_requestmain_add_department",
+            ),
+            path(
+                "<path:object_id>/remove-department/<str:dept_code>/",
+                view(self.remove_department_action),
+                name="zetom_requestmain_remove_department",
+            ),
         ]
         return custom + urls
+
+    def add_department_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        obj = RequestMain.objects.get(pk=object_id)
+        code = request.POST.get("dept_code")
+        if code not in DepartmentsVariants.values:
+            messages.error(request, "Invalid department.")
+            return redirect("admin:zetom_requestmain_change", object_id)
+        if code in (obj.departments or []):
+            messages.info(request, "Already assigned.")
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        obj.departments = list(obj.departments or []) + [code]
+        obj.save(update_fields=["departments"])
+        label = dict(DepartmentsVariants.choices).get(code, code)
+        messages.success(request, f"Added {label}.")
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    def remove_department_action(self, request, object_id, dept_code):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        obj = RequestMain.objects.get(pk=object_id)
+        if dept_code in (obj.departments or []):
+            obj.departments = [c for c in obj.departments if c != dept_code]
+            obj.save(update_fields=["departments"])
+            label = dict(DepartmentsVariants.choices).get(dept_code, dept_code)
+            messages.success(request, f"Removed {label}.")
+        return redirect("admin:zetom_requestmain_change", object_id)
 
     def assign_user_action(self, request, object_id):
         if request.method != "POST":
@@ -325,13 +383,13 @@ class RequestMainAdmin(BaseRequestAdmin):
 class OfertaAdmin(BaseRequestAdmin):
     actions = []
     form = AddOferta
-    list_display = ("from_main", "created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status")
+    list_display = ("from_main", "created_at", "updated_at", "company_name", "display_departments", "assignees_display", "colored_status")
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
         "phone",
         "status",
-        "department",
+        "departments",
         "assigned_to",
         "email",
         "company_name",
@@ -349,14 +407,14 @@ class OfertaAdmin(BaseRequestAdmin):
 class ZlecenieAdmin(BaseRequestAdmin):
     actions = []
     form = AddZlecenie
-    list_display = ("from_main", "created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status")
+    list_display = ("from_main", "created_at", "updated_at", "company_name", "display_departments", "assignees_display", "colored_status")
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
         "deadline",
         "phone",
         "status",
-        "department",
+        "departments",
         "assigned_to",
         "email",
         "company_name",
@@ -375,14 +433,14 @@ class ZlecenieAdmin(BaseRequestAdmin):
 class WniosekAdmin(BaseRequestAdmin):
     actions = []
     form = AddWniosek
-    list_display = ("from_main", "created_at", "updated_at", "company_name", "department", "assignees_display", "colored_status")
+    list_display = ("from_main", "created_at", "updated_at", "company_name", "display_departments", "assignees_display", "colored_status")
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
         "application_number",
         "phone",
         "status",
-        "department",
+        "departments",
         "assigned_to",
         "email",
         "company_name",
@@ -397,19 +455,24 @@ class WniosekAdmin(BaseRequestAdmin):
 
 @admin.register(DeletedRequest)
 class DeletedRequestAdmin(ModelAdmin):
-    list_display = ("created_at", "company_name", "department")
+    list_display = ("created_at", "company_name", "display_departments")
     actions_detail = ["restore_action"]
     readonly_fields = (
-        "status", "full_name", "phone", "department", "assigned_to",
+        "status", "full_name", "phone", "departments", "assigned_to",
         "company_name", "company_nip", "email", "address", "message",
     )
     fields = (
-        "status", "full_name", "phone", "department", "assigned_to",
+        "status", "full_name", "phone", "departments", "assigned_to",
         "company_name", "company_nip", "email", "address", "message",
     )
 
     def get_queryset(self, request):
         return RequestMain.deleted_objects.all()
+
+    @admin.display(description="Departments")
+    def display_departments(self, obj):
+        labels = dict(DepartmentsVariants.choices)
+        return ", ".join(labels.get(code, code) for code in obj.departments) or "—"
 
     def has_add_permission(self, request):
         return False

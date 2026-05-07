@@ -24,7 +24,7 @@
       </div>
       {% if ofertas %}
         <div class="rm-doc__actions">
-          <a x-bind:href="url" class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
+          <a x-bind:href="url" class="rm-btn rm-btn--sm">{% trans "View" %}</a>
           <button type="submit"
                   formaction='{% url "admin:zetom_requestmain_oferta_action" original.pk %}'
                   formmethod="post"
@@ -62,7 +62,7 @@
       </div>
       {% if zlecenia %}
         <div class="rm-doc__actions">
-          <a x-bind:href="url" class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
+          <a x-bind:href="url" class="rm-btn rm-btn--sm">{% trans "View" %}</a>
           <button type="submit"
                   formaction='{% url "admin:zetom_requestmain_zlecenie_action" original.pk %}'
                   formmethod="post"
@@ -100,7 +100,7 @@
       </div>
       {% if wnioski %}
         <div class="rm-doc__actions">
-          <a x-bind:href="url" class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
+          <a x-bind:href="url" class="rm-btn rm-btn--sm">{% trans "View" %}</a>
           <button type="submit"
                   formaction='{% url "admin:zetom_requestmain_wniosek_action" original.pk %}'
                   formmethod="post"
