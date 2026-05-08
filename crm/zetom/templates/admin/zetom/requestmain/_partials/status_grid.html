@@ -1,9 +1,11 @@
 {% load i18n %}
-<section class="rm-card" aria-labelledby="rm-status-heading" id="status-grid">
-  <header class="rm-card__header">
+<section class="rm-card rm-card--collapsible" aria-labelledby="rm-status-heading" id="status-grid" x-data="{ open: $persist(true).as('rm-status-{{ request.user.id }}-{{ original.pk }}') }">
+  <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
     <h2 id="rm-status-heading" class="rm-card__title">{% trans "Status" %}</h2>
+    <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
   </header>
 
+  <div x-show="open" x-cloak>
   <div class="rm-status-grid" role="radiogroup" aria-label='{% trans "Request status" %}'>
     {% for value, label in status_choices %}
       <label class="rm-status-btn rm-status-btn--{{ value }}">
@@ -30,4 +32,5 @@
           class="rm-btn rm-btn--primary rm-btn--block">
     {% trans "Apply" %}
   </button>
+  </div>
 </section>
