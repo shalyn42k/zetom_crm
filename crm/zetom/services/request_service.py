@@ -3,8 +3,8 @@ from django.shortcuts import get_object_or_404
 
 from crm.status_manager.services.status_service import update_parent
 # Zetom app imports
-from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek,
-                              Zlecenie)
+from crm.zetom.models import (Oferta, RequestMain, RequestNull, RequestSource,
+                              Wniosek, Zlecenie)
 
 
 def approve_null_action(null_id):
@@ -13,12 +13,15 @@ def approve_null_action(null_id):
     main_obj, created = RequestMain.objects.update_or_create(
         from_null=null_obj,
         defaults={
+            "first_name": null_obj.first_name,
+            "last_name": null_obj.last_name,
             "phone": null_obj.phone,
             "company_name": null_obj.company_name,
             "company_nip": null_obj.company_nip,
             "email": null_obj.email,
             "message": null_obj.message,
             "departments": [],
+            "source": null_obj.source,
         },
     )
 
@@ -35,6 +38,7 @@ def _approve_child(model, main_id, **extra):
         company_name=main_obj.company_name,
         company_nip=main_obj.company_nip,
         email=main_obj.email,
+        source=RequestSource.PARENT,
         **extra,
     )
     

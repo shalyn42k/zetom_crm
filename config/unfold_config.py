@@ -144,7 +144,7 @@ UNFOLD = {
                         ),
                     },
                     {
-                        "title": "Oferta Information",
+                        "title": "Offers",
                         "icon": "description",
                         "link": reverse_lazy("admin:zetom_oferta_changelist"),
                         "permission": lambda request: user_has_perm(
@@ -152,12 +152,12 @@ UNFOLD = {
                         ),
                     },
                     {
-                        "title": "Zlecenie Information",
+                        "title": "Orders",
                         "icon": "description",
                         "link": reverse_lazy("admin:zetom_zlecenie_changelist"),
                     },
                     {
-                        "title": "Wniosek Information",
+                        "title": "Applications",
                         "icon": "description",
                         "link": reverse_lazy("admin:zetom_wniosek_changelist"),
                     },

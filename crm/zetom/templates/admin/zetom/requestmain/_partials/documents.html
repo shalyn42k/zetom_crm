@@ -9,7 +9,7 @@
     <article class="rm-doc"{% if ofertas %} x-data="{ url: '{{ first_oferta_url }}' }"{% endif %}>
       <div class="rm-doc__icon" aria-hidden="true">O</div>
       <div class="rm-doc__meta">
-        <h3 class="rm-doc__title">{% trans "Oferta" %}</h3>
+        <h3 class="rm-doc__title">{% trans "Offer" %}</h3>
         {% if ofertas %}
           <select x-model="url" class="rm-select rm-select--sm">
             {% for o in ofertas %}
@@ -30,7 +30,7 @@
                   formmethod="post"
                   formnovalidate
                   class="rm-btn rm-btn--primary rm-btn--sm"
-                  aria-label='{% trans "Create new oferta" %}'>+</button>
+                  aria-label='{% trans "Create new offer" %}'>+</button>
         </div>
       {% else %}
         <button type="submit"
@@ -47,7 +47,7 @@
     <article class="rm-doc"{% if zlecenia %} x-data="{ url: '{{ first_zlecenie_url }}' }"{% endif %}>
       <div class="rm-doc__icon" aria-hidden="true">Z</div>
       <div class="rm-doc__meta">
-        <h3 class="rm-doc__title">{% trans "Zlecenie" %}</h3>
+        <h3 class="rm-doc__title">{% trans "Order" %}</h3>
         {% if zlecenia %}
           <select x-model="url" class="rm-select rm-select--sm">
             {% for z in zlecenia %}
@@ -68,7 +68,7 @@
                   formmethod="post"
                   formnovalidate
                   class="rm-btn rm-btn--primary rm-btn--sm"
-                  aria-label='{% trans "Create new zlecenie" %}'>+</button>
+                  aria-label='{% trans "Create new order" %}'>+</button>
         </div>
       {% else %}
         <button type="submit"
@@ -85,7 +85,7 @@
     <article class="rm-doc"{% if wnioski %} x-data="{ url: '{{ first_wniosek_url }}' }"{% endif %}>
       <div class="rm-doc__icon" aria-hidden="true">W</div>
       <div class="rm-doc__meta">
-        <h3 class="rm-doc__title">{% trans "Wniosek" %}</h3>
+        <h3 class="rm-doc__title">{% trans "Application" %}</h3>
         {% if wnioski %}
           <select x-model="url" class="rm-select rm-select--sm">
             {% for w in wnioski %}
@@ -106,7 +106,7 @@
                   formmethod="post"
                   formnovalidate
                   class="rm-btn rm-btn--primary rm-btn--sm"
-                  aria-label='{% trans "Create new wniosek" %}'>+</button>
+                  aria-label='{% trans "Create new application" %}'>+</button>
         </div>
       {% else %}
         <button type="submit"

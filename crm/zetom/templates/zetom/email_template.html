@@ -6,11 +6,60 @@
 {% block extrastyle %}
     {{ block.super }}
     <link rel="stylesheet" href="{% static 'zetom/css/email_form.css' %}">
+    <style>
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background-image:
+                linear-gradient(rgba(8, 12, 22, 0.62), rgba(8, 12, 22, 0.62)),
+                url("{% static 'zetom/img/bg.png' %}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        /* Wipe every Unfold/admin background, then restore only what we want visible. */
+        html, body, body * {
+            background-color: transparent !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+        }
+        /* Hide the Unfold topbar / breadcrumbs container — not needed on this page. */
+        body header,
+        body nav,
+        body div.container.h-16 {
+            display: none !important;
+        }
+        body .email-form-card { background-color: var(--zf-surface) !important; }
+        body .email-form-card .form-group input,
+        body .email-form-card .form-group textarea {
+            background-color: var(--zf-input-bg) !important;
+            border-color: var(--zf-border-strong) !important;
+        }
+        body .email-form-card .form-group input:focus,
+        body .email-form-card .form-group textarea:focus {
+            border-color: #5a5aff !important;
+            box-shadow: 0 0 0 2px rgba(90, 90, 255, 0.25) !important;
+        }
+        html.dark body .email-form-card .form-group input:focus,
+        html.dark body .email-form-card .form-group textarea:focus {
+            border-color: #7a7aff !important;
+            box-shadow: 0 0 0 2px rgba(122, 122, 255, 0.3) !important;
+        }
+        body .email-form-card button[type="submit"] { background-color: var(--zf-primary) !important; }
+        body .email-form-card button[type="submit"]:hover { background-color: var(--zf-primary-hover) !important; }
+        body .email-form-card,
+        body .email-form-card .return-btn {
+            box-shadow: var(--zf-shadow-lg) !important;
+        }
+    </style>
 {% endblock %}
 
 {% block breadcrumbs %}{% endblock %}
 
 {% block content %}
+<div class="email-page">
 <div class="email-form-card">
     <div class="email-form-header">
         <h2>Submit your request</h2>
@@ -33,46 +82,59 @@
     <form method="post" novalidate>
         {% csrf_token %}
 
-        <div class="form-group">
-            <label for="id_phone">Phone</label>
-            <input type="tel" id="id_phone" name="phone" autocomplete="tel"
-                   placeholder="+48 000 000 000"
-                   value="{{ form.phone.value|default:'' }}">
-            {{ form.phone.errors }}
+        <div class="email-form-row">
+            <div class="form-group">
+                <label for="id_first_name">First name</label>
+                <input type="text" id="id_first_name" name="first_name" autocomplete="given-name" required
+                       placeholder="John"
+                       value="{{ form.first_name.value|default:'' }}">
+                {{ form.first_name.errors }}
+            </div>
+
+            <div class="form-group">
+                <label for="id_last_name">Last name</label>
+                <input type="text" id="id_last_name" name="last_name" autocomplete="family-name" required
+                       placeholder="Johnson"
+                       value="{{ form.last_name.value|default:'' }}">
+                {{ form.last_name.errors }}
+            </div>
         </div>
 
         <div class="form-group">
             <label for="id_company_name">Company name</label>
-            <input type="text" id="id_company_name" name="company_name" autocomplete="organization"
+            <input type="text" id="id_company_name" name="company_name" autocomplete="off"
                    placeholder="Zetom Sp. z o.o."
                    value="{{ form.company_name.value|default:'' }}">
             {{ form.company_name.errors }}
         </div>
 
-        <div class="form-group">
-            <label for="id_email">Email</label>
-            <input type="email" id="id_email" name="email" autocomplete="email" required
-                   placeholder="example@zetom.pl"
-                   value="{{ form.email.value|default:'' }}">
-            {{ form.email.errors }}
-        </div>
+        <div class="email-form-row">
+            <div class="form-group">
+                <label for="id_phone">Phone</label>
+                <input type="tel" id="id_phone" name="phone" autocomplete="tel" required
+                       placeholder="+48 000 000 000"
+                       value="{{ form.phone.value|default:'' }}">
+                {{ form.phone.errors }}
+            </div>
 
-        <div class="form-group">
-            <label for="id_company_nip">Company NIP</label>
-            <input type="text" id="id_company_nip" name="company_nip" required
-                   placeholder="1234567890"
-                   value="{{ form.company_nip.value|default:'' }}">
-            {{ form.company_nip.errors }}
+            <div class="form-group">
+                <label for="id_email">Email</label>
+                <input type="email" id="id_email" name="email" autocomplete="email" required
+                       placeholder="example@zetom.pl"
+                       value="{{ form.email.value|default:'' }}">
+                {{ form.email.errors }}
+            </div>
         </div>
 
         <div class="form-group">
             <label for="id_message">Message</label>
-            <textarea id="id_message" name="message"
+            <textarea id="id_message" name="message" autocomplete="off"
                       placeholder="Long and very interesting note for noting your long and interesting text">{{ form.message.value|default:'' }}</textarea>
             {{ form.message.errors }}
         </div>
 
         <button type="submit">Submit request</button>
     </form>
+</div>
 </div>
 {% endblock %}

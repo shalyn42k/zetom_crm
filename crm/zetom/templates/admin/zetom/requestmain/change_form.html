@@ -18,9 +18,6 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
 {% endblock extrahead %}
 
 {% block content %}
-{% if not original.pk %}
-  {{ block.super }}
-{% else %}
 <div id="content-main">
 <div class="rm-page">
 
@@ -34,14 +31,21 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
   {# -------- Header strip -------- #}
   <header class="rm-header">
     <div class="rm-header__title">
-      <h1 class="rm-h1">
-        {% trans "Request" %} — {{ original.company_name|default:"—" }}
-      </h1>
-      <span class="rm-tag">REQ-{{ original.created_at|date:"Y" }}-{{ original.pk|stringformat:"04d" }}</span>
-      <span class="rm-status-pill rm-status-pill--{{ original.status }}">
-        <span class="rm-dot rm-dot--{{ original.status }}"></span>
-        {{ original.get_status_display }}
-      </span>
+      {% if original.pk %}
+        <h1 class="rm-h1">
+          {% trans "Request" %} — {{ original.company_name|default:"—" }}
+        </h1>
+        <span class="rm-tag">REQ-{{ original.created_at|date:"Y" }}-{{ original.pk|stringformat:"04d" }}</span>
+        <span class="rm-status-pill rm-status-pill--{{ original.status }}">
+          <span class="rm-dot rm-dot--{{ original.status }}"></span>
+          {{ original.get_status_display }}
+        </span>
+        {% if source_display %}
+          <span class="rm-tag rm-tag--source">{{ source_display }}</span>
+        {% endif %}
+      {% else %}
+        <h1 class="rm-h1">{% trans "New request" %}</h1>
+      {% endif %}
     </div>
   </header>
 
@@ -59,7 +63,7 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
     </p>
   {% endif %}
 
-  {# -------- Main two-column grid -------- #}
+  {# -------- Form (full layout for change-view, compact for add-view) -------- #}
   <form method="post" enctype="multipart/form-data" class="rm-grid"
         id="{{ opts.model_name }}_form" novalidate>
     {% csrf_token %}
@@ -67,19 +71,23 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
     <div class="rm-col rm-col--left">
       {% include "admin/zetom/requestmain/_partials/client_card.html" %}
       {% include "admin/zetom/requestmain/_partials/client_information.html" %}
+      {% if not original.pk %}
+        {% include "admin/zetom/requestmain/_partials/source_picker.html" %}
+      {% endif %}
     </div>
 
-    <aside class="rm-col rm-col--right">
-      {% include "admin/zetom/requestmain/_partials/assigned_users.html" %}
-      {% include "admin/zetom/requestmain/_partials/status_grid.html" %}
-      {% include "admin/zetom/requestmain/_partials/departments.html" %}
-    </aside>
+    {% if original.pk %}
+      <aside class="rm-col rm-col--right">
+        {% include "admin/zetom/requestmain/_partials/assigned_users.html" %}
+        {% include "admin/zetom/requestmain/_partials/status_grid.html" %}
+        {% include "admin/zetom/requestmain/_partials/departments.html" %}
+      </aside>
 
-    <div class="rm-col rm-col--full">
-      {% include "admin/zetom/requestmain/_partials/documents.html" %}
-    </div>
+      <div class="rm-col rm-col--full">
+        {% include "admin/zetom/requestmain/_partials/documents.html" %}
+      </div>
+    {% endif %}
   </form>
 </div>
 </div>
-{% endif %}
 {% endblock content %}

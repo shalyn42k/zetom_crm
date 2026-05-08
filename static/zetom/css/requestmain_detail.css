@@ -64,6 +64,16 @@ html.dark {
   border: 1px solid var(--rm-card-border); border-radius: 6px;
   color: var(--rm-text-muted);
 }
+.rm-tag--source {
+  font-family: inherit;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  font-size: 11px; font-weight: 600;
+}
+
+.rm-doc-summary {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  font-size: 13px; color: var(--rm-text);
+}
 
 /* ---------- Cards ---------- */
 .rm-card {
@@ -166,6 +176,8 @@ html.dark {
 }
 .rm-linked-field__label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--rm-text-muted); margin: 0; }
 .rm-linked-field__value { margin: 0; font-size: 13px; color: var(--rm-text); }
+.rm-linked-field__value--split { display: flex; gap: 8px; }
+.rm-linked-field__value--split > * { flex: 1; min-width: 0; }
 
 /* ---------- User list ---------- */
 .rm-user-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
