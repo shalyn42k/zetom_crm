@@ -1,0 +1,9 @@
+{% load i18n %}
+<section class="rm-card" aria-labelledby="rm-source-heading" id="source-picker">
+  <header class="rm-card__header">
+    <h2 id="rm-source-heading" class="rm-card__title">
+      {% trans "How was this request received?" %}
+    </h2>
+  </header>
+  {{ form.source }}
+</section>

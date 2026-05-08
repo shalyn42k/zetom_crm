@@ -1,0 +1,156 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'zetom/css/requestmain_detail.css' %}">
+{% endblock extrastyle %}
+
+{% block content %}
+<div id="content-main">
+<div class="rm-page">
+
+  <p class="rm-callout rm-callout--danger">
+    {% trans "This request is in the trash. Use the Restore action to bring it back." %}
+  </p>
+
+  <header class="rm-header">
+    <div class="rm-header__title">
+      <h1 class="rm-h1">{% trans "Request" %} — {{ original.company_name|default:"—" }}</h1>
+      <span class="rm-tag">REQ-{{ original.created_at|date:"Y" }}-{{ original.pk|stringformat:"04d" }}</span>
+      <span class="rm-status-pill rm-status-pill--{{ original.status }}">
+        <span class="rm-dot rm-dot--{{ original.status }}"></span>
+        {{ original.get_status_display }}
+      </span>
+      {% if source_display %}
+        <span class="rm-tag rm-tag--source">{{ source_display }}</span>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="rm-grid">
+    <div class="rm-col rm-col--left">
+      <section class="rm-card">
+        <header class="rm-card__header">
+          <h2 class="rm-card__title">{% trans "Client" %}</h2>
+        </header>
+        <div class="rm-client">
+          <div class="rm-avatar rm-avatar--lg" aria-hidden="true">
+            {{ original.company_name|slice:":1"|upper|default:"?" }}
+          </div>
+          <div class="rm-client__meta">
+            <div class="rm-client__name">{{ original.company_name|default:"—" }}</div>
+            <div class="rm-client__sub">
+              {% if original.company_nip %}NIP {{ original.company_nip }}{% endif %}
+            </div>
+          </div>
+        </div>
+        <dl class="rm-linked-fields">
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "NIP" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.company_nip|default:"—" }}</dd>
+          </div>
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "Company" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.company_name|default:"—" }}</dd>
+          </div>
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "First name" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.first_name|default:"—" }}</dd>
+          </div>
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "Last name" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.last_name|default:"—" }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="rm-card">
+        <header class="rm-card__header">
+          <h2 class="rm-card__title">{% trans "Client information" %}</h2>
+        </header>
+        <dl class="rm-linked-fields">
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "Email" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.email|default:"—" }}</dd>
+          </div>
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "Phone" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.phone|default:"—" }}</dd>
+          </div>
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "Address" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.address|default:"—" }}</dd>
+          </div>
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "Message" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.message|default:"—"|linebreaksbr }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+
+    <aside class="rm-col rm-col--right">
+      <section class="rm-card">
+        <header class="rm-card__header">
+          <h2 class="rm-card__title">
+            {% trans "Assigned users" %}
+            <span class="rm-counter">{{ assigned_users_qs|length }}</span>
+          </h2>
+        </header>
+        <ul class="rm-user-list">
+          {% for u in assigned_users_qs %}
+            <li class="rm-user">
+              <span class="rm-avatar" aria-hidden="true">
+                {{ u.first_name|slice:":1"|default:u.username|slice:":1"|upper }}
+              </span>
+              <span class="rm-user__meta">
+                <span class="rm-user__name">{{ u.get_full_name|default:u.username }}</span>
+                <span class="rm-user__sub">
+                  {% if u.profile.role %}{{ u.profile.role.name }}{% endif %}
+                  {% if u.profile.department %} · {{ u.profile.get_department_display }}{% endif %}
+                </span>
+              </span>
+            </li>
+          {% empty %}
+            <li class="rm-empty">{% trans "No users assigned." %}</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="rm-card">
+        <header class="rm-card__header">
+          <h2 class="rm-card__title">
+            {% trans "Departments" %}
+            <span class="rm-counter">{{ assigned_departments|length }}</span>
+          </h2>
+        </header>
+        <ul class="rm-dept-list">
+          {% for code, label in assigned_departments %}
+            <li class="rm-dept-row {% if code == user_department %}rm-dept-row--mine{% endif %}">
+              <span class="rm-avatar" aria-hidden="true">{{ label|slice:":1"|upper }}</span>
+              <span class="rm-dept-row__name">{{ label }}</span>
+            </li>
+          {% empty %}
+            <li class="rm-empty">{% trans "No departments." %}</li>
+          {% endfor %}
+        </ul>
+      </section>
+    </aside>
+
+    <div class="rm-col rm-col--full">
+      <section class="rm-card rm-card--full">
+        <header class="rm-card__header">
+          <h2 class="rm-card__title">{% trans "Documents" %}</h2>
+        </header>
+        <div class="rm-doc-summary">
+          <span>O · {% trans "Offer" %}: {{ ofertas|length }}</span>
+          <span>Z · {% trans "Order" %}: {{ zlecenia|length }}</span>
+          <span>W · {% trans "Application" %}: {{ wnioski|length }}</span>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock content %}

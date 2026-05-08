@@ -1,3 +1,11 @@
+.email-page {
+    min-height: calc(100vh - 64px);
+    padding: 40px 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
 .email-form-card {
     --zf-radius: 6px;
     --zf-surface: #ffffff;
@@ -16,9 +24,11 @@
     --zf-error-text: oklch(45% .2 25);
     --zf-error-border: oklch(80% .15 25);
     --zf-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.06);
+    --zf-input-bg: #f6f8fb;
 
+    width: 100%;
     max-width: 560px;
-    margin: 24px auto;
+    margin: 0;
     background: var(--zf-surface);
     padding: 32px;
     border: 1px solid var(--zf-border);
@@ -29,6 +39,7 @@
 
 html.dark .email-form-card {
     --zf-surface: oklch(21% .034 264.665);
+    --zf-input-bg: oklch(25% .033 256.848);
     --zf-border: oklch(27.8% .033 256.848);
     --zf-border-strong: oklch(37.3% .034 259.733);
     --zf-text: oklch(96.7% .003 264.542);
@@ -125,6 +136,22 @@ html.dark .email-form-card {
     margin-bottom: 18px;
 }
 
+.email-form-card .email-form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 0;
+}
+.email-form-card .email-form-row .form-group {
+    flex: 1;
+    min-width: 0;
+}
+@media (max-width: 600px) {
+    .email-form-card .email-form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}
+
 .email-form-card .form-group label {
     display: block;
     font-size: 13px;
@@ -140,12 +167,26 @@ html.dark .email-form-card {
     font-size: 14px;
     font-family: inherit;
     color: var(--zf-text);
-    background-color: var(--zf-surface);
+    background-color: var(--zf-input-bg);
     border: 1px solid var(--zf-border-strong);
     border-radius: var(--zf-radius);
     transition: border-color 120ms ease, box-shadow 120ms ease;
     outline: none;
     box-sizing: border-box;
+}
+
+body .email-form-card .form-group input:-webkit-autofill,
+body .email-form-card .form-group input:-webkit-autofill:hover,
+body .email-form-card .form-group input:-webkit-autofill:focus,
+body .email-form-card .form-group input:-webkit-autofill:active,
+body .email-form-card .form-group textarea:-webkit-autofill,
+body .email-form-card .form-group textarea:-webkit-autofill:hover,
+body .email-form-card .form-group textarea:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--zf-input-bg) inset !important;
+    box-shadow: 0 0 0 1000px var(--zf-input-bg) inset !important;
+    -webkit-text-fill-color: var(--zf-text) !important;
+    caret-color: var(--zf-text) !important;
+    transition: background-color 9999s ease-in-out 0s !important;
 }
 
 .email-form-card .form-group input::placeholder,
@@ -159,9 +200,20 @@ html.dark .email-form-card {
 }
 
 .email-form-card .form-group input:focus,
-.email-form-card .form-group textarea:focus {
-    border-color: var(--zf-primary);
-    box-shadow: 0 0 0 3px var(--zf-primary-ring);
+.email-form-card .form-group input:focus-visible,
+.email-form-card .form-group textarea:focus,
+.email-form-card .form-group textarea:focus-visible {
+    border-color: #5a5aff !important;
+    box-shadow: 0 0 0 2px rgba(90, 90, 255, 0.25) !important;
+    outline: none !important;
+}
+
+html.dark .email-form-card .form-group input:focus,
+html.dark .email-form-card .form-group input:focus-visible,
+html.dark .email-form-card .form-group textarea:focus,
+html.dark .email-form-card .form-group textarea:focus-visible {
+    border-color: #7a7aff !important;
+    box-shadow: 0 0 0 2px rgba(122, 122, 255, 0.3) !important;
 }
 
 .email-form-card .form-group textarea {
