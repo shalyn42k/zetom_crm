@@ -75,6 +75,20 @@ html.dark {
   font-size: 13px; color: var(--rm-text);
 }
 
+.rm-doc-row__codes {
+  flex: 1; min-width: 0;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  align-items: center;
+}
+.rm-doc-chip {
+  display: inline-flex; align-items: center;
+  padding: 3px 8px; border-radius: 6px;
+  border: 1px solid var(--rm-card-border);
+  background: var(--rm-card-bg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px; color: var(--rm-text);
+}
+
 /* ---------- Cards ---------- */
 .rm-card {
   background: var(--rm-card-bg);

@@ -8,6 +8,8 @@ For cancelled / deleted we delegate to the existing status_manager services.
 inactive_request lives here because status_manager has no helper for it yet
 and is owned by another dev — the local function mirrors the pattern.
 """
+from django.db import transaction
+
 from crm.status_manager.models import StatusHistory
 from crm.status_manager.services.status_service import (cancel_request,
                                                         delete_request)
@@ -39,6 +41,7 @@ def inactive_request(obj, user, reason):
     )
 
 
+@transaction.atomic
 def apply_status_change(obj, user, new_status, reason=None):
     if new_status not in RequestStatus.values:
         raise ValueError("Invalid status")

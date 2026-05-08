@@ -143,10 +143,49 @@
         <header class="rm-card__header">
           <h2 class="rm-card__title">{% trans "Documents" %}</h2>
         </header>
-        <div class="rm-doc-summary">
-          <span>O · {% trans "Offer" %}: {{ ofertas|length }}</span>
-          <span>Z · {% trans "Order" %}: {{ zlecenia|length }}</span>
-          <span>W · {% trans "Application" %}: {{ wnioski|length }}</span>
+        <div class="rm-doc-list">
+          <div class="rm-doc-row">
+            <span class="rm-doc__icon" aria-hidden="true">O</span>
+            <span class="rm-doc-row__label">
+              {% trans "Offer" %}
+              <span class="rm-counter">{{ ofertas|length }}</span>
+            </span>
+            <span class="rm-doc-row__codes">
+              {% for o in ofertas %}
+                <span class="rm-doc-chip">OFR-{{ o.created_at|date:"Y" }}-{{ o.pk|stringformat:"04d" }}</span>
+              {% empty %}
+                <span class="rm-empty">{% trans "—" %}</span>
+              {% endfor %}
+            </span>
+          </div>
+          <div class="rm-doc-row">
+            <span class="rm-doc__icon" aria-hidden="true">Z</span>
+            <span class="rm-doc-row__label">
+              {% trans "Order" %}
+              <span class="rm-counter">{{ zlecenia|length }}</span>
+            </span>
+            <span class="rm-doc-row__codes">
+              {% for z in zlecenia %}
+                <span class="rm-doc-chip">ZLC-{{ z.created_at|date:"Y" }}-{{ z.pk|stringformat:"04d" }}</span>
+              {% empty %}
+                <span class="rm-empty">{% trans "—" %}</span>
+              {% endfor %}
+            </span>
+          </div>
+          <div class="rm-doc-row">
+            <span class="rm-doc__icon" aria-hidden="true">W</span>
+            <span class="rm-doc-row__label">
+              {% trans "Application" %}
+              <span class="rm-counter">{{ wnioski|length }}</span>
+            </span>
+            <span class="rm-doc-row__codes">
+              {% for w in wnioski %}
+                <span class="rm-doc-chip">WNI-{{ w.created_at|date:"Y" }}-{{ w.pk|stringformat:"04d" }}</span>
+              {% empty %}
+                <span class="rm-empty">{% trans "—" %}</span>
+              {% endfor %}
+            </span>
+          </div>
         </div>
       </section>
     </div>

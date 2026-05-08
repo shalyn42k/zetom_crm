@@ -175,6 +175,30 @@ class RequestMainAdmin(BaseRequestAdmin):
         extra_context["show_save_and_continue"] = False
         return super().changeform_view(request, object_id, form_url, extra_context)
 
+    def _flip_to_deleted(self, request, obj):
+        if obj.status != RequestStatus.deleted:
+            old_status = obj.status
+            obj.status = RequestStatus.deleted
+            obj.save(update_fields=["status"])
+            StatusHistory.objects.create(
+                request=obj,
+                old_status=old_status,
+                new_status=RequestStatus.deleted,
+                reason="Deleted via admin",
+                changed_by=request.user,
+            )
+
+    @transaction.atomic
+    def delete_model(self, request, obj):
+        self._flip_to_deleted(request, obj)
+        super().delete_model(request, obj)
+
+    @transaction.atomic
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            self._flip_to_deleted(request, obj)
+        super().delete_queryset(request, queryset)
+
     def response_change(self, request, obj):
         if "_continue" not in request.POST and "_addanother" not in request.POST and "_saveasnew" not in request.POST:
             return redirect("admin:zetom_requestmain_change", obj.pk)
@@ -499,12 +523,28 @@ class DeletedRequestAdmin(ModelAdmin):
     def get_queryset(self, request):
         return RequestMain.deleted_objects.all()
 
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["show_save"] = False
+        extra_context["show_save_and_continue"] = False
+        extra_context["show_save_and_add_another"] = False
+        extra_context["show_delete"] = False
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
     def render_change_form(self, request, context, *args, **kwargs):
         obj = context.get("original")
         if obj is not None:
-            context["ofertas"] = obj.oferta_set.order_by("-created_at")
-            context["zlecenia"] = obj.zlecenie_set.order_by("-created_at")
-            context["wnioski"] = obj.wniosek_set.order_by("-created_at")
+            # SOFT_DELETE_CASCADE soft-deletes children too — read via all_objects
+            # so we still see what was attached at the moment of deletion.
+            context["ofertas"] = (
+                Oferta.all_objects.filter(from_main=obj).order_by("-created_at")
+            )
+            context["zlecenia"] = (
+                Zlecenie.all_objects.filter(from_main=obj).order_by("-created_at")
+            )
+            context["wnioski"] = (
+                Wniosek.all_objects.filter(from_main=obj).order_by("-created_at")
+            )
             dept_labels = dict(DepartmentsVariants.choices)
             context["assigned_departments"] = [
                 (code, dept_labels.get(code, code)) for code in (obj.departments or [])
@@ -530,6 +570,7 @@ class DeletedRequestAdmin(ModelAdmin):
         return False
 
     @action(description="Restore", icon="restore", url_path="restore")
+    @transaction.atomic
     def restore_action(self, request, object_id):
         obj = RequestMain.deleted_objects.get(pk=object_id)
         obj.undelete()
