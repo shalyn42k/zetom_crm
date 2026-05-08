@@ -130,6 +130,9 @@ class RequestNullAdmin(BaseRequestAdmin):
     )
     actions_detail = ["approve_action"]
 
+    def has_add_permission(self, request):
+        return False
+
     @action(
         description="Approve",
         variant=ActionVariant.SUCCESS,
