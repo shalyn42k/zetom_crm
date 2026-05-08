@@ -24,7 +24,7 @@ def visible_requests_for(user, qs):
         personal = Q(assigned_to=user)
 
         if profile.department:
-            same_dept = Q(department=profile.department)
+            same_dept = Q(departments__contains=[profile.department])
             return qs.filter(personal | same_dept).distinct()
 
         return qs.filter(personal).distinct()

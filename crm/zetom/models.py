@@ -1,5 +1,6 @@
 # Django imports
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import ArrayField
 from django.core.validators import RegexValidator
 from django.db import models
 # Other imports
@@ -47,11 +48,9 @@ class RequestTemplate(SafeDeleteModel):
         null=False,
     )
     message = models.TextField(null=True, blank=True)
-    department = models.CharField(
-        max_length=30,
-        choices=DepartmentsVariants,
-        default=DepartmentsVariants.DEPARTMENT_0,
-        null=True,
+    departments = ArrayField(
+        models.CharField(max_length=30, choices=DepartmentsVariants.choices),
+        default=list,
         blank=True,
     )
 

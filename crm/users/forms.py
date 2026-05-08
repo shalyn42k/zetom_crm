@@ -1,8 +1,8 @@
 from django import forms
 from django.contrib.auth.models import User
-from crm.users.models import UserProfile, Role
-from crm.zetom.models import DepartmentsVariants
 
+from crm.users.models import Role, UserProfile
+from crm.zetom.models import DepartmentsVariants
 
 # Базовый Tailwind стиль
 INPUT_CLASS = "w-full px-3 py-2 rounded border border-gray-700 bg-gray-900 text-white"

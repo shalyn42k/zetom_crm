@@ -5,16 +5,33 @@
   </header>
 
   <div class="rm-docs">
-    <article class="rm-doc">
+    {% if ofertas %}{% url "admin:zetom_oferta_change" ofertas.0.pk as first_oferta_url %}{% endif %}
+    <article class="rm-doc"{% if ofertas %} x-data="{ url: '{{ first_oferta_url }}' }"{% endif %}>
       <div class="rm-doc__icon" aria-hidden="true">O</div>
       <div class="rm-doc__meta">
         <h3 class="rm-doc__title">{% trans "Oferta" %}</h3>
-        <p class="rm-doc__sub">
-          {% if oferta %}{{ oferta.created_at|date:"Y-m-d" }} · #{{ oferta.pk }}{% else %}{% trans "Not created" %}{% endif %}
-        </p>
+        {% if ofertas %}
+          <select x-model="url" class="rm-select rm-select--sm">
+            {% for o in ofertas %}
+              <option value='{% url "admin:zetom_oferta_change" o.pk %}'>
+                OFR-{{ o.created_at|date:"Y" }}-{{ o.pk|stringformat:"04d" }}
+              </option>
+            {% endfor %}
+          </select>
+        {% else %}
+          <p class="rm-doc__sub">{% trans "Not created" %}</p>
+        {% endif %}
       </div>
-      {% if oferta %}
-        <a href='{% url "admin:zetom_oferta_change" oferta.pk %}' class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
+      {% if ofertas %}
+        <div class="rm-doc__actions">
+          <a x-bind:href="url" class="rm-btn rm-btn--sm">{% trans "View" %}</a>
+          <button type="submit"
+                  formaction='{% url "admin:zetom_requestmain_oferta_action" original.pk %}'
+                  formmethod="post"
+                  formnovalidate
+                  class="rm-btn rm-btn--primary rm-btn--sm"
+                  aria-label='{% trans "Create new oferta" %}'>+</button>
+        </div>
       {% else %}
         <button type="submit"
                 formaction='{% url "admin:zetom_requestmain_oferta_action" original.pk %}'
@@ -26,16 +43,33 @@
       {% endif %}
     </article>
 
-    <article class="rm-doc">
+    {% if zlecenia %}{% url "admin:zetom_zlecenie_change" zlecenia.0.pk as first_zlecenie_url %}{% endif %}
+    <article class="rm-doc"{% if zlecenia %} x-data="{ url: '{{ first_zlecenie_url }}' }"{% endif %}>
       <div class="rm-doc__icon" aria-hidden="true">Z</div>
       <div class="rm-doc__meta">
         <h3 class="rm-doc__title">{% trans "Zlecenie" %}</h3>
-        <p class="rm-doc__sub">
-          {% if zlecenie %}{{ zlecenie.created_at|date:"Y-m-d" }} · #{{ zlecenie.pk }}{% else %}{% trans "Not created" %}{% endif %}
-        </p>
+        {% if zlecenia %}
+          <select x-model="url" class="rm-select rm-select--sm">
+            {% for z in zlecenia %}
+              <option value='{% url "admin:zetom_zlecenie_change" z.pk %}'>
+                ZLC-{{ z.created_at|date:"Y" }}-{{ z.pk|stringformat:"04d" }}
+              </option>
+            {% endfor %}
+          </select>
+        {% else %}
+          <p class="rm-doc__sub">{% trans "Not created" %}</p>
+        {% endif %}
       </div>
-      {% if zlecenie %}
-        <a href='{% url "admin:zetom_zlecenie_change" zlecenie.pk %}' class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
+      {% if zlecenia %}
+        <div class="rm-doc__actions">
+          <a x-bind:href="url" class="rm-btn rm-btn--sm">{% trans "View" %}</a>
+          <button type="submit"
+                  formaction='{% url "admin:zetom_requestmain_zlecenie_action" original.pk %}'
+                  formmethod="post"
+                  formnovalidate
+                  class="rm-btn rm-btn--primary rm-btn--sm"
+                  aria-label='{% trans "Create new zlecenie" %}'>+</button>
+        </div>
       {% else %}
         <button type="submit"
                 formaction='{% url "admin:zetom_requestmain_zlecenie_action" original.pk %}'
@@ -47,16 +81,33 @@
       {% endif %}
     </article>
 
-    <article class="rm-doc">
+    {% if wnioski %}{% url "admin:zetom_wniosek_change" wnioski.0.pk as first_wniosek_url %}{% endif %}
+    <article class="rm-doc"{% if wnioski %} x-data="{ url: '{{ first_wniosek_url }}' }"{% endif %}>
       <div class="rm-doc__icon" aria-hidden="true">W</div>
       <div class="rm-doc__meta">
         <h3 class="rm-doc__title">{% trans "Wniosek" %}</h3>
-        <p class="rm-doc__sub">
-          {% if wniosek %}{{ wniosek.created_at|date:"Y-m-d" }} · #{{ wniosek.pk }}{% else %}{% trans "Not created" %}{% endif %}
-        </p>
+        {% if wnioski %}
+          <select x-model="url" class="rm-select rm-select--sm">
+            {% for w in wnioski %}
+              <option value='{% url "admin:zetom_wniosek_change" w.pk %}'>
+                WNI-{{ w.created_at|date:"Y" }}-{{ w.pk|stringformat:"04d" }}
+              </option>
+            {% endfor %}
+          </select>
+        {% else %}
+          <p class="rm-doc__sub">{% trans "Not created" %}</p>
+        {% endif %}
       </div>
-      {% if wniosek %}
-        <a href='{% url "admin:zetom_wniosek_change" wniosek.pk %}' class="rm-btn rm-btn--ghost rm-btn--sm">{% trans "View" %}</a>
+      {% if wnioski %}
+        <div class="rm-doc__actions">
+          <a x-bind:href="url" class="rm-btn rm-btn--sm">{% trans "View" %}</a>
+          <button type="submit"
+                  formaction='{% url "admin:zetom_requestmain_wniosek_action" original.pk %}'
+                  formmethod="post"
+                  formnovalidate
+                  class="rm-btn rm-btn--primary rm-btn--sm"
+                  aria-label='{% trans "Create new wniosek" %}'>+</button>
+        </div>
       {% else %}
         <button type="submit"
                 formaction='{% url "admin:zetom_requestmain_wniosek_action" original.pk %}'
