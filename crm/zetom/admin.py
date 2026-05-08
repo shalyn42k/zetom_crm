@@ -1,4 +1,7 @@
 # Django imports
+# Crispy imports
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Column, Field, Layout, Row
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin.models import LogEntry
@@ -6,9 +9,6 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.urls import path
-# Crispy imports
-from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Column, Field, Layout, Row
 # Unfold imports
 from unfold.admin import ModelAdmin
 from unfold.decorators import action, display
@@ -26,8 +26,8 @@ from crm.users.utils import user_has_perm
 # Zetom app imports
 from crm.zetom.forms import (AddOferta, AddRequestFormMain, AddRequestFormNull,
                              AddWniosek, AddZlecenie)
-from crm.zetom.models import (DepartmentsVariants, Oferta, RequestMain, RequestNull, Wniosek, DeletedRequest,
-                              Zlecenie)
+from crm.zetom.models import (DeletedRequest, DepartmentsVariants, Oferta,
+                              RequestMain, RequestNull, Wniosek, Zlecenie)
 from crm.zetom.services.request_service import (approve_null_action,
                                                 approve_oferta_action,
                                                 approve_wniosek_action,
@@ -35,7 +35,6 @@ from crm.zetom.services.request_service import (approve_null_action,
 from crm.zetom.services.status_orchestration import (ReasonRequired,
                                                      apply_status_change)
 from crm.zetom.services.visibility import visible_requests_for
-
 
 
 class ReasonForm(forms.Form):

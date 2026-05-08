@@ -1,12 +1,11 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
+from django.contrib.auth.models import User
 from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
+from crm.users.forms import CustomUserChangeForm, CustomUserCreateForm
 from crm.users.models import Role, UserProfile
 from crm.users.utils import user_has_perm
-from crm.users.forms import CustomUserChangeForm, CustomUserCreateForm
-
-from django.contrib.auth.models import User
-from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
 
 class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):

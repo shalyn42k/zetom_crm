@@ -4,7 +4,6 @@
 import django.contrib.postgres.fields
 from django.db import migrations, models
 
-
 DEPARTMENT_CHOICES = [
     ("DEPARTMENT_0", "Zespół ds. Badań"),
     ("DEPARTMENT_1", "Zespół ds. Wzorcowań"),
