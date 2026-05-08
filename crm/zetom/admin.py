@@ -510,7 +510,6 @@ class DeletedRequestAdmin(ModelAdmin):
     change_form_template = "admin/zetom/deletedrequest/change_form.html"
     list_display = ("created_at", "company_name", "display_departments", "source")
     list_filter = ("source",)
-    actions_detail = ["restore_action"]
     readonly_fields = (
         "status", "first_name", "last_name", "phone", "departments", "assigned_to",
         "company_name", "company_nip", "email", "address", "message", "source",
@@ -569,9 +568,27 @@ class DeletedRequestAdmin(ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-    @action(description="Restore", icon="restore", url_path="restore")
+    def get_urls(self):
+        urls = super().get_urls()
+        view = self.admin_site.admin_view
+        custom = [
+            path(
+                "<path:object_id>/restore/",
+                view(self.restore_action),
+                name="zetom_deletedrequest_restore",
+            ),
+            path(
+                "<path:object_id>/hard-delete/",
+                view(self.hard_delete_action),
+                name="zetom_deletedrequest_hard_delete",
+            ),
+        ]
+        return custom + urls
+
     @transaction.atomic
     def restore_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_deletedrequest_change", object_id)
         obj = RequestMain.deleted_objects.get(pk=object_id)
         obj.undelete()
         obj.status = RequestStatus.active
@@ -583,4 +600,15 @@ class DeletedRequestAdmin(ModelAdmin):
             reason="Restored from trash",
             changed_by=request.user,
         )
-        return redirect("admin:zetom_requestmain_changelist")
+        messages.success(request, "Request restored.")
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    @transaction.atomic
+    def hard_delete_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_deletedrequest_change", object_id)
+        from safedelete.config import HARD_DELETE
+        obj = RequestMain.deleted_objects.get(pk=object_id)
+        obj.delete(force_policy=HARD_DELETE)
+        messages.success(request, "Request permanently deleted.")
+        return redirect("admin:zetom_deletedrequest_changelist")

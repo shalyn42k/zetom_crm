@@ -6,12 +6,35 @@
   <link rel="stylesheet" href="{% static 'zetom/css/requestmain_detail.css' %}">
 {% endblock extrastyle %}
 
+{% block submit_buttons_bottom %}
+  <div id="submit-row" class="relative lg:sticky lg:bottom-0 z-40">
+    <div class="backdrop-blur-xs bg-white/80 rounded-b-default pb-4 px-4 dark:bg-base-900/80 lg:border-t lg:border-base-200 relative lg:py-0 dark:border-base-800">
+      <div class="flex flex-col-reverse gap-3 items-center mx-auto lg:flex-row-reverse container lg:h-[64px]">
+        <form method="post" action='{% url "admin:zetom_deletedrequest_restore" original.pk %}' class="w-full lg:w-auto">
+          {% csrf_token %}
+          <button type="submit" class="w-full lg:w-auto font-medium inline-flex items-center gap-1 rounded-default justify-center cursor-pointer px-3 py-2 bg-primary-600 border border-primary-600 text-white hover:bg-primary-600/80">
+            <span class="material-symbols-outlined -ml-0.5">restore</span>
+            {% trans "Restore" %}
+          </button>
+        </form>
+        <form method="post" action='{% url "admin:zetom_deletedrequest_hard_delete" original.pk %}' class="w-full lg:w-auto" onsubmit="return confirm('Permanently delete this request? This cannot be undone.');">
+          {% csrf_token %}
+          <button type="submit" class="w-full lg:w-auto font-medium inline-flex items-center gap-1 rounded-default justify-center cursor-pointer px-3 py-2 bg-red-600 border border-red-600 text-white hover:bg-red-600/80">
+            <span class="material-symbols-outlined -ml-0.5">delete_forever</span>
+            {% trans "Hard delete" %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock submit_buttons_bottom %}
+
 {% block content %}
 <div id="content-main">
 <div class="rm-page">
 
   <p class="rm-callout rm-callout--danger">
-    {% trans "This request is in the trash. Use the Restore action to bring it back." %}
+    {% trans "This request is in the trash. Use Restore to bring it back, or Hard delete to remove it permanently." %}
   </p>
 
   <header class="rm-header">
