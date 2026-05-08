@@ -1,0 +1,41 @@
+{% load i18n humanize %}
+<section class="rm-card rm-card--collapsible" aria-labelledby="rm-history-heading" id="history" x-data="{ open: $persist(false).as('rm-history-{{ request.user.id }}-{{ original.pk }}') }">
+  <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+    <h2 id="rm-history-heading" class="rm-card__title">
+      <svg class="rm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>
+      </svg>
+      {% trans "History" %}
+      <span class="rm-counter">{{ history_entries|length }}</span>
+    </h2>
+    <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+  </header>
+
+  <div x-show="open" x-cloak>
+  <ul class="rm-history-list">
+    {% for entry in history_entries %}
+      <li class="rm-history-row">
+        <span class="rm-history-dot rm-dot--{{ entry.new_status }}" aria-hidden="true"></span>
+        <div class="rm-history-row__body">
+          <div class="rm-history-row__title">
+            <span class="rm-history-row__action">{% trans "Status changed to" %}</span>
+            <span class="rm-status-pill rm-status-pill--{{ entry.new_status }} rm-status-pill--sm">
+              {{ entry.get_new_status_display }}
+            </span>
+          </div>
+          {% if entry.reason %}
+            <div class="rm-history-row__reason">"{{ entry.reason }}"</div>
+          {% endif %}
+          <div class="rm-history-row__sub">
+            <strong>{{ entry.changed_by.username|default:"—" }}</strong>
+            <span class="rm-history-row__sep">·</span>
+            <span title="{{ entry.changed_at|date:'Y-m-d H:i' }}">{{ entry.changed_at|naturaltime }}</span>
+          </div>
+        </div>
+      </li>
+    {% empty %}
+      <li class="rm-empty">{% trans "No status changes yet." %}</li>
+    {% endfor %}
+  </ul>
+  </div>
+</section>

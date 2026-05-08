@@ -235,6 +235,10 @@ class RequestMainAdmin(BaseRequestAdmin):
         context["ofertas"] = obj.oferta_set.order_by("-created_at") if has_obj else []
         context["zlecenia"] = obj.zlecenie_set.order_by("-created_at") if has_obj else []
         context["wnioski"] = obj.wniosek_set.order_by("-created_at") if has_obj else []
+        context["history_entries"] = (
+            obj.status_history.select_related("changed_by").order_by("-changed_at")
+            if has_obj else []
+        )
         if has_obj:
             assigned_ids = obj.assigned_to.values_list("id", flat=True)
             context["available_users"] = (
