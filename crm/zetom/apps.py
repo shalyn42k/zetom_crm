@@ -9,4 +9,5 @@ class ZetomConfig(AppConfig):
     verbose_name = "Zetom CRM"
 
     def ready(self):
-        import crm.status_manager.signals
+        # Side-effect import — registers post_softdelete signal handlers.
+        import crm.status_manager.signals  # noqa: F401

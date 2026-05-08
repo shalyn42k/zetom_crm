@@ -5,8 +5,8 @@ service and decides whether a reason must be collected first.
 
 Reason-required statuses (per product spec): inactive, cancelled, deleted.
 For cancelled / deleted we delegate to the existing status_manager services.
-inactive_request lives here because status_manager has no helper for it yet
-and is owned by another dev — the local function mirrors the pattern.
+_inactive_request lives here because status_manager has no helper for it
+yet and is owned by another dev — the local function mirrors the pattern.
 """
 from django.db import transaction
 
@@ -26,7 +26,7 @@ class ReasonRequired(Exception):
     """Signal to caller: this transition needs a reason; show the reason form."""
 
 
-def inactive_request(obj, user, reason):
+def _inactive_request(obj, user, reason):
     if obj.status == RequestStatus.inactive:
         raise ValueError("already inactive")
     old_status = obj.status
@@ -57,7 +57,7 @@ def apply_status_change(obj, user, new_status, reason=None):
             delete_request(obj, user, reason)
             obj.delete()
         else:
-            inactive_request(obj, user, reason)
+            _inactive_request(obj, user, reason)
         return
 
     old_status = obj.status

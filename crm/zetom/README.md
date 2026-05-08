@@ -199,7 +199,7 @@ crm/zetom/
 │   │   └── change_form.html       # trash read-only view + submit-bar
 │   └── zetom/email_template.html  # public site form
 │
-├── static/zetom/                  # public form CSS, bg.png
+├── static/zetom/                  # public form CSS + bg.png
 └── migrations/0001_initial.py     # single squashed migration
 ```
 
