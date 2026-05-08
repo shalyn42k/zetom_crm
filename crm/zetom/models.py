@@ -12,28 +12,34 @@ from safedelete.models import SafeDeleteModel
 # Zetom app imports
 from crm.status_manager.services.statuses import RequestStatus, Status
 
-# Users app imports
-# from crm.users.models import Role, UserProfile
-
-
 
 class DepartmentsVariants(models.TextChoices):
-    DEPARTMENT_0 = "DEPARTMENT_0", "Zespół ds. Badań"
-    DEPARTMENT_1 = "DEPARTMENT_1", "Zespół ds. Wzorcowań"
-    DEPARTMENT_2 = "DEPARTMENT_2", "Pracownia Długości i Kąta"
-    DEPARTMENT_3 = "DEPARTMENT_3", "Pracownia Elektrotechniczna"
-    DEPARTMENT_4 = "DEPARTMENT_4", "Pracownia Mechaniczna"
-    DEPARTMENT_5 = "DEPARTMENT_5", "Pracownia Urządzeń Grzewczych"
-    DEPARTMENT_6 = "DEPARTMENT_6", "Biuro Techniczne"
+    DEPARTMENT_0 = "DEPARTMENT_0", "Research Team"
+    DEPARTMENT_1 = "DEPARTMENT_1", "Calibration Team"
+    DEPARTMENT_2 = "DEPARTMENT_2", "Length and Angle Lab"
+    DEPARTMENT_3 = "DEPARTMENT_3", "Electrical Lab"
+    DEPARTMENT_4 = "DEPARTMENT_4", "Mechanical Lab"
+    DEPARTMENT_5 = "DEPARTMENT_5", "Heating Equipment Lab"
+    DEPARTMENT_6 = "DEPARTMENT_6", "Technical Office"
 
+class RequestSource(models.TextChoices):
+    PHONE = "phone", "Phone"
+    EMAIL = "email", "Email"
+    SITE = "site", "Site"
+    PARENT = "main", "Parent"
+    MANUAL = "manual", "Manual"
+    OTHER = "other", "Other"
 
 
 
 class RequestTemplate(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE
+    source = models.CharField(choices=RequestSource.choices, default=RequestSource.OTHER, null=False, blank=False)
     assigned_to = models.ManyToManyField(User, blank=True, related_name="+")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    first_name = models.CharField(max_length=50, blank=True, null=True)
+    last_name = models.CharField(max_length=50, blank=True, null=True)
     phone = PhoneNumberField(null=False, blank=False)
     company_name = models.CharField(max_length=50, blank=True, null=True)
     email = models.EmailField(max_length=100, null=False, blank=False)
@@ -44,8 +50,8 @@ class RequestTemplate(SafeDeleteModel):
                 regex=r"^\d{10}$"
             )
         ],
-        blank=False,
-        null=False,
+        blank=True,
+        null=True,
     )
     message = models.TextField(null=True, blank=True)
     departments = ArrayField(
@@ -56,6 +62,10 @@ class RequestTemplate(SafeDeleteModel):
 
     class Meta:
         abstract = True
+
+    @property
+    def full_name(self):
+        return " ".join(filter(None, (self.first_name, self.last_name)))
 
     def __str__(self):
         return f"{self.company_name}"
@@ -72,7 +82,6 @@ class RequestMain(RequestTemplate):
     from_null = models.OneToOneField(
         RequestNull, on_delete=models.SET_NULL, null=True, blank=True
     )
-    full_name = models.CharField(max_length=50, null=True, blank=True)
     address = models.CharField(max_length=228, null=True, blank=True)
 
     class Meta:
@@ -89,8 +98,8 @@ class Oferta(RequestTemplate):
     notes = models.TextField(null=True, blank=True)
 
     class Meta:
-        verbose_name = "Oferta Information"
-        verbose_name_plural = "Oferta Information"
+        verbose_name = "Offer"
+        verbose_name_plural = "Offers"
 
 
 class Zlecenie(RequestTemplate):
@@ -103,8 +112,8 @@ class Zlecenie(RequestTemplate):
     deadline = models.DateField(null=True, blank=True)
 
     class Meta:
-        verbose_name = "Zlecenie Information"
-        verbose_name_plural = "Zlecenie Information"
+        verbose_name = "Order"
+        verbose_name_plural = "Orders"
 
 
 class Wniosek(RequestTemplate):
@@ -116,8 +125,8 @@ class Wniosek(RequestTemplate):
     application_number = models.CharField(max_length=20, null=True, blank=True)
 
     class Meta:
-        verbose_name = "Wniosek Information"
-        verbose_name_plural = "Wniosek Information"
+        verbose_name = "Application"
+        verbose_name_plural = "Applications"
 
 class DeletedRequest(RequestMain):  # proxy может открывать те же данные и в других классах 
     class Meta:
