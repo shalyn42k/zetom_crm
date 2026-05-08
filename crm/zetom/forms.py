@@ -111,13 +111,25 @@ class TemplateForm(forms.ModelForm):
 class AddRequestFormNull(TemplateForm):
     class Meta:
         model = RequestNull
-        fields = ("phone", "company_name", "email", "company_nip", "message")
+        fields = (
+            "first_name",
+            "last_name",
+            "phone",
+            "email",
+            "company_name",
+            "message",
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop("company_nip", None)
+        self.fields["first_name"].required = True
+        self.fields["last_name"].required = True
+        self.fields["first_name"].widget.attrs.setdefault("placeholder", "John")
+        self.fields["last_name"].widget.attrs.setdefault("placeholder", "Johnson")
 
 
 class AddRequestFormMain(TemplateForm):
-    full_name = forms.CharField(
-        required=False, widget=forms.TextInput(attrs={"placeholder": "John Johnson"})
-    )
     address = forms.CharField(
         required=False,
         widget=forms.Textarea(
@@ -131,14 +143,21 @@ class AddRequestFormMain(TemplateForm):
     class Meta:
         model = RequestMain
         fields = (
+            "first_name",
+            "last_name",
             "phone",
             "company_name",
             "email",
             "company_nip",
-            "full_name",
             "address",
             "message",
+            "source",
         )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["first_name"].widget.attrs.setdefault("placeholder", "John")
+        self.fields["last_name"].widget.attrs.setdefault("placeholder", "Johnson")
 
 
 class AddOferta(TemplateForm):
@@ -164,6 +183,7 @@ class AddOferta(TemplateForm):
             "company_nip",
             "price",
             "notes",
+            "source",
         )
 
 
@@ -190,6 +210,7 @@ class AddZlecenie(TemplateForm):
             "company_nip",
             "price",
             "notes",
+            "source",
         )
 
 
@@ -205,4 +226,4 @@ class AddWniosek(TemplateForm):
 
     class Meta:
         model = Wniosek
-        fields = ("from_main", "phone", "email", "company_name", "company_nip", "notes")
+        fields = ("from_main", "phone", "email", "company_name", "company_nip", "notes", "source")

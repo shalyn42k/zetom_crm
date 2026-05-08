@@ -27,7 +27,8 @@ from crm.users.utils import user_has_perm
 from crm.zetom.forms import (AddOferta, AddRequestFormMain, AddRequestFormNull,
                              AddWniosek, AddZlecenie)
 from crm.zetom.models import (DeletedRequest, DepartmentsVariants, Oferta,
-                              RequestMain, RequestNull, Wniosek, Zlecenie)
+                              RequestMain, RequestNull, RequestSource, Wniosek,
+                              Zlecenie)
 from crm.zetom.services.request_service import (approve_null_action,
                                                 approve_oferta_action,
                                                 approve_wniosek_action,
@@ -117,7 +118,16 @@ class LogEntryAdmin(ModelAdmin):  # Используем ModelAdmin от Unfold 
 @admin.register(RequestNull)
 class RequestNullAdmin(BaseRequestAdmin):
     form = AddRequestFormNull
-    list_display = ("created_at", "updated_at", "company_name")
+    list_display = ("created_at", "updated_at", "company_name", "source")
+    list_filter = ("source",)
+    fields = (
+        "first_name",
+        "last_name",
+        "phone",
+        "email",
+        "company_name",
+        "message",
+    )
     actions_detail = ["approve_action"]
 
     @action(
@@ -133,25 +143,15 @@ class RequestNullAdmin(BaseRequestAdmin):
         return redirect("admin:zetom_requestmain_change", new_main_record.pk)
 
 
-class StatusHistoryInline(admin.TabularInline):
-    model = StatusHistory
-    extra = 0
-    can_delete = False
-    readonly_fields = ("old_status", "new_status", "reason", "changed_by", "changed_at")
-
-    def has_add_permission(self, request, obj=None):
-        return False
-
-
-
 @admin.register(RequestMain)
 class RequestMainAdmin(BaseRequestAdmin):
     form = AddRequestFormMain
-    #inlines = [StatusHistoryInline] # показывает историю в админке 
     change_form_template = "admin/zetom/requestmain/change_form.html"
-    list_display = ("created_at", "updated_at", "company_name", "display_departments", "assignees_display", "colored_status" )
+    list_display = ("created_at", "updated_at", "company_name", "display_departments", "assignees_display", "colored_status", "source")
+    list_filter = ("source",)
     fields = (
-        "full_name",
+        "first_name",
+        "last_name",
         "phone",
         "departments",
         "company_name",
@@ -159,8 +159,12 @@ class RequestMainAdmin(BaseRequestAdmin):
         "email",
         "address",
         "message",
+        "source",
     )
     warn_unsaved_form = True
+
+    def get_changeform_initial_data(self, request):
+        return {"source": RequestSource.PHONE}
 
     def render_change_form(self, request, context, *args, **kwargs):
         obj = context.get("original")
@@ -210,7 +214,7 @@ class RequestMainAdmin(BaseRequestAdmin):
             context["available_departments"] = []
         profile = getattr(request.user, "profile", None)
         context["user_department"] = profile.department if profile else None
-        context["client_files"] = []
+        context["source_display"] = obj.get_source_display() if has_obj else ""
 
         return super().render_change_form(request, context, *args, **kwargs)
 
@@ -382,7 +386,8 @@ class RequestMainAdmin(BaseRequestAdmin):
 class OfertaAdmin(BaseRequestAdmin):
     actions = []
     form = AddOferta
-    list_display = ("from_main", "created_at", "updated_at", "company_name", "display_departments", "assignees_display", "colored_status")
+    list_display = ("from_main", "created_at", "updated_at", "company_name", "display_departments", "assignees_display", "colored_status", "source")
+    list_filter = ("source",)
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
@@ -395,6 +400,7 @@ class OfertaAdmin(BaseRequestAdmin):
         "company_nip",
         "price",
         "notes",
+        "source",
     )
     warn_unsaved_form = True
 
@@ -406,7 +412,8 @@ class OfertaAdmin(BaseRequestAdmin):
 class ZlecenieAdmin(BaseRequestAdmin):
     actions = []
     form = AddZlecenie
-    list_display = ("from_main", "created_at", "updated_at", "company_name", "display_departments", "assignees_display", "colored_status")
+    list_display = ("from_main", "created_at", "updated_at", "company_name", "display_departments", "assignees_display", "colored_status", "source")
+    list_filter = ("source",)
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
@@ -420,6 +427,7 @@ class ZlecenieAdmin(BaseRequestAdmin):
         "company_nip",
         "price",
         "notes",
+        "source",
     )
     warn_unsaved_form = True
 
@@ -432,7 +440,8 @@ class ZlecenieAdmin(BaseRequestAdmin):
 class WniosekAdmin(BaseRequestAdmin):
     actions = []
     form = AddWniosek
-    list_display = ("from_main", "created_at", "updated_at", "company_name", "display_departments", "assignees_display", "colored_status")
+    list_display = ("from_main", "created_at", "updated_at", "company_name", "display_departments", "assignees_display", "colored_status", "source")
+    list_filter = ("source",)
     readonly_fields = ("from_main",)
     fields = (
         "from_main",
@@ -445,6 +454,7 @@ class WniosekAdmin(BaseRequestAdmin):
         "company_name",
         "company_nip",
         "notes",
+        "source",
     )
     warn_unsaved_form = True
 
@@ -454,19 +464,37 @@ class WniosekAdmin(BaseRequestAdmin):
 
 @admin.register(DeletedRequest)
 class DeletedRequestAdmin(ModelAdmin):
-    list_display = ("created_at", "company_name", "display_departments")
+    change_form_template = "admin/zetom/deletedrequest/change_form.html"
+    list_display = ("created_at", "company_name", "display_departments", "source")
+    list_filter = ("source",)
     actions_detail = ["restore_action"]
     readonly_fields = (
-        "status", "full_name", "phone", "departments", "assigned_to",
-        "company_name", "company_nip", "email", "address", "message",
+        "status", "first_name", "last_name", "phone", "departments", "assigned_to",
+        "company_name", "company_nip", "email", "address", "message", "source",
     )
     fields = (
-        "status", "full_name", "phone", "departments", "assigned_to",
-        "company_name", "company_nip", "email", "address", "message",
+        "status", "first_name", "last_name", "phone", "departments", "assigned_to",
+        "company_name", "company_nip", "email", "address", "message", "source",
     )
 
     def get_queryset(self, request):
         return RequestMain.deleted_objects.all()
+
+    def render_change_form(self, request, context, *args, **kwargs):
+        obj = context.get("original")
+        if obj is not None:
+            context["ofertas"] = obj.oferta_set.order_by("-created_at")
+            context["zlecenia"] = obj.zlecenie_set.order_by("-created_at")
+            context["wnioski"] = obj.wniosek_set.order_by("-created_at")
+            dept_labels = dict(DepartmentsVariants.choices)
+            context["assigned_departments"] = [
+                (code, dept_labels.get(code, code)) for code in (obj.departments or [])
+            ]
+            context["assigned_users_qs"] = obj.assigned_to.all()
+            context["source_display"] = obj.get_source_display()
+        profile = getattr(request.user, "profile", None)
+        context["user_department"] = profile.department if profile else None
+        return super().render_change_form(request, context, *args, **kwargs)
 
     @admin.display(description="Departments")
     def display_departments(self, obj):
@@ -496,5 +524,3 @@ class DeletedRequestAdmin(ModelAdmin):
             changed_by=request.user,
         )
         return redirect("admin:zetom_requestmain_changelist")
-
-        

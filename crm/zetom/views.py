@@ -8,13 +8,16 @@ from crm.notification.services.notification_service import \
     send_notification_to_staff
 # Zetom app imports
 from crm.zetom.forms import AddRequestFormNull
+from crm.zetom.models import RequestSource
 
 
 def email_template(request):
     if request.method == "POST":
         form = AddRequestFormNull(request.POST)
         if form.is_valid():
-            new_request = form.save()
+            new_request = form.save(commit=False)
+            new_request.source = RequestSource.SITE
+            new_request.save()
             try:
                 send_notification_to_staff(new_request)
             except Exception as e:
