@@ -169,6 +169,22 @@ class RequestMainAdmin(BaseRequestAdmin):
     def get_changeform_initial_data(self, request):
         return {"source": RequestSource.PHONE}
 
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["show_save_and_add_another"] = False
+        extra_context["show_save_and_continue"] = False
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+    def response_change(self, request, obj):
+        if "_continue" not in request.POST and "_addanother" not in request.POST and "_saveasnew" not in request.POST:
+            return redirect("admin:zetom_requestmain_change", obj.pk)
+        return super().response_change(request, obj)
+
+    def response_add(self, request, obj, post_url_continue=None):
+        if "_continue" not in request.POST and "_addanother" not in request.POST:
+            return redirect("admin:zetom_requestmain_change", obj.pk)
+        return super().response_add(request, obj, post_url_continue)
+
     def render_change_form(self, request, context, *args, **kwargs):
         obj = context.get("original")
 
@@ -369,19 +385,19 @@ class RequestMainAdmin(BaseRequestAdmin):
 
 
     def oferta_action(self, request, object_id):
-        oferta = approve_oferta_action(object_id)
-        messages.info(request, f"Redirecting to Oferta: {object_id}")
-        return redirect("admin:zetom_oferta_change", oferta.pk)
+        approve_oferta_action(object_id)
+        messages.success(request, "Offer created.")
+        return redirect("admin:zetom_requestmain_change", object_id)
 
     def zlecenie_action(self, request, object_id):
-        zlecenie = approve_zlecenie_action(object_id)
-        messages.info(request, f"Redirecting to Zlecenie: {object_id}")
-        return redirect("admin:zetom_zlecenie_change", zlecenie.pk)
+        approve_zlecenie_action(object_id)
+        messages.success(request, "Order created.")
+        return redirect("admin:zetom_requestmain_change", object_id)
 
     def wniosek_action(self, request, object_id):
-        wniosek = approve_wniosek_action(object_id)
-        messages.info(request, f"Redirecting to Wniosek: {object_id}")
-        return redirect("admin:zetom_wniosek_change", wniosek.pk)
+        approve_wniosek_action(object_id)
+        messages.success(request, "Application created.")
+        return redirect("admin:zetom_requestmain_change", object_id)
 
 
 # AI-suggested (claude-opus-4-7, 2026-04-23): save_model во всех трёх админках ниже делегирует в save_child_with_status — паттерн предложен Claude, код написал пользователь.
