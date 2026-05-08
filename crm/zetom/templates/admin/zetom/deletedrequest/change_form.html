@@ -114,104 +114,114 @@
     </div>
 
     <aside class="rm-col rm-col--right">
-      <section class="rm-card">
-        <header class="rm-card__header">
+      <section class="rm-card rm-card--collapsible" id="trash-users" x-data="{ open: $persist(true).as('rm-trash-users-{{ request.user.id }}-{{ original.pk }}') }">
+        <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
           <h2 class="rm-card__title">
             {% trans "Assigned users" %}
             <span class="rm-counter">{{ assigned_users_qs|length }}</span>
           </h2>
+          <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
         </header>
-        <ul class="rm-user-list">
-          {% for u in assigned_users_qs %}
-            <li class="rm-user">
-              <span class="rm-avatar" aria-hidden="true">
-                {{ u.first_name|slice:":1"|default:u.username|slice:":1"|upper }}
-              </span>
-              <span class="rm-user__meta">
-                <span class="rm-user__name">{{ u.get_full_name|default:u.username }}</span>
-                <span class="rm-user__sub">
-                  {% if u.profile.role %}{{ u.profile.role.name }}{% endif %}
-                  {% if u.profile.department %} · {{ u.profile.get_department_display }}{% endif %}
+        <div x-show="open" x-cloak>
+          <ul class="rm-user-list">
+            {% for u in assigned_users_qs %}
+              <li class="rm-user">
+                <span class="rm-avatar" aria-hidden="true">
+                  {{ u.first_name|slice:":1"|default:u.username|slice:":1"|upper }}
                 </span>
-              </span>
-            </li>
-          {% empty %}
-            <li class="rm-empty">{% trans "No users assigned." %}</li>
-          {% endfor %}
-        </ul>
+                <span class="rm-user__meta">
+                  <span class="rm-user__name">{{ u.get_full_name|default:u.username }}</span>
+                  <span class="rm-user__sub">
+                    {% if u.profile.role %}{{ u.profile.role.name }}{% endif %}
+                    {% if u.profile.department %} · {{ u.profile.get_department_display }}{% endif %}
+                  </span>
+                </span>
+              </li>
+            {% empty %}
+              <li class="rm-empty">{% trans "No users assigned." %}</li>
+            {% endfor %}
+          </ul>
+        </div>
       </section>
 
-      <section class="rm-card">
-        <header class="rm-card__header">
+      <section class="rm-card rm-card--collapsible" id="trash-departments" x-data="{ open: $persist(false).as('rm-trash-departments-{{ request.user.id }}-{{ original.pk }}') }">
+        <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
           <h2 class="rm-card__title">
             {% trans "Departments" %}
             <span class="rm-counter">{{ assigned_departments|length }}</span>
           </h2>
+          <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
         </header>
-        <ul class="rm-dept-list">
-          {% for code, label in assigned_departments %}
-            <li class="rm-dept-row {% if code == user_department %}rm-dept-row--mine{% endif %}">
-              <span class="rm-avatar" aria-hidden="true">{{ label|slice:":1"|upper }}</span>
-              <span class="rm-dept-row__name">{{ label }}</span>
-            </li>
-          {% empty %}
-            <li class="rm-empty">{% trans "No departments." %}</li>
-          {% endfor %}
-        </ul>
+        <div x-show="open" x-cloak>
+          <ul class="rm-dept-list">
+            {% for code, label in assigned_departments %}
+              <li class="rm-dept-row {% if code == user_department %}rm-dept-row--mine{% endif %}">
+                <span class="rm-avatar" aria-hidden="true">{{ label|slice:":1"|upper }}</span>
+                <span class="rm-dept-row__name">{{ label }}</span>
+              </li>
+            {% empty %}
+              <li class="rm-empty">{% trans "No departments." %}</li>
+            {% endfor %}
+          </ul>
+        </div>
       </section>
-    </aside>
 
-    <div class="rm-col rm-col--full">
-      <section class="rm-card rm-card--full">
-        <header class="rm-card__header">
-          <h2 class="rm-card__title">{% trans "Documents" %}</h2>
+      <section class="rm-card rm-card--collapsible" id="trash-documents" x-data="{ open: $persist(false).as('rm-trash-documents-{{ request.user.id }}-{{ original.pk }}') }">
+        <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+          <h2 class="rm-card__title">
+            {% trans "Documents" %}
+            <span class="rm-counter">{{ ofertas|length|add:zlecenia|length|add:wnioski|length }}</span>
+          </h2>
+          <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
         </header>
-        <div class="rm-doc-list">
-          <div class="rm-doc-row">
-            <span class="rm-doc__icon" aria-hidden="true">O</span>
-            <span class="rm-doc-row__label">
-              {% trans "Offer" %}
-              <span class="rm-counter">{{ ofertas|length }}</span>
-            </span>
-            <span class="rm-doc-row__codes">
-              {% for o in ofertas %}
-                <span class="rm-doc-chip">OFR-{{ o.created_at|date:"Y" }}-{{ o.pk|stringformat:"04d" }}</span>
-              {% empty %}
-                <span class="rm-empty">{% trans "—" %}</span>
-              {% endfor %}
-            </span>
-          </div>
-          <div class="rm-doc-row">
-            <span class="rm-doc__icon" aria-hidden="true">Z</span>
-            <span class="rm-doc-row__label">
-              {% trans "Order" %}
-              <span class="rm-counter">{{ zlecenia|length }}</span>
-            </span>
-            <span class="rm-doc-row__codes">
-              {% for z in zlecenia %}
-                <span class="rm-doc-chip">ZLC-{{ z.created_at|date:"Y" }}-{{ z.pk|stringformat:"04d" }}</span>
-              {% empty %}
-                <span class="rm-empty">{% trans "—" %}</span>
-              {% endfor %}
-            </span>
-          </div>
-          <div class="rm-doc-row">
-            <span class="rm-doc__icon" aria-hidden="true">W</span>
-            <span class="rm-doc-row__label">
-              {% trans "Application" %}
-              <span class="rm-counter">{{ wnioski|length }}</span>
-            </span>
-            <span class="rm-doc-row__codes">
-              {% for w in wnioski %}
-                <span class="rm-doc-chip">WNI-{{ w.created_at|date:"Y" }}-{{ w.pk|stringformat:"04d" }}</span>
-              {% empty %}
-                <span class="rm-empty">{% trans "—" %}</span>
-              {% endfor %}
-            </span>
+        <div x-show="open" x-cloak>
+          <div class="rm-doc-list">
+            <div class="rm-doc-row">
+              <span class="rm-doc__icon" aria-hidden="true">O</span>
+              <span class="rm-doc-row__label">
+                {% trans "Offer" %}
+                <span class="rm-counter">{{ ofertas|length }}</span>
+              </span>
+              <span class="rm-doc-row__codes">
+                {% for o in ofertas %}
+                  <span class="rm-doc-chip">OFR-{{ o.created_at|date:"Y" }}-{{ o.pk|stringformat:"04d" }}</span>
+                {% empty %}
+                  <span class="rm-empty">{% trans "—" %}</span>
+                {% endfor %}
+              </span>
+            </div>
+            <div class="rm-doc-row">
+              <span class="rm-doc__icon" aria-hidden="true">Z</span>
+              <span class="rm-doc-row__label">
+                {% trans "Order" %}
+                <span class="rm-counter">{{ zlecenia|length }}</span>
+              </span>
+              <span class="rm-doc-row__codes">
+                {% for z in zlecenia %}
+                  <span class="rm-doc-chip">ZLC-{{ z.created_at|date:"Y" }}-{{ z.pk|stringformat:"04d" }}</span>
+                {% empty %}
+                  <span class="rm-empty">{% trans "—" %}</span>
+                {% endfor %}
+              </span>
+            </div>
+            <div class="rm-doc-row">
+              <span class="rm-doc__icon" aria-hidden="true">W</span>
+              <span class="rm-doc-row__label">
+                {% trans "Application" %}
+                <span class="rm-counter">{{ wnioski|length }}</span>
+              </span>
+              <span class="rm-doc-row__codes">
+                {% for w in wnioski %}
+                  <span class="rm-doc-chip">WNI-{{ w.created_at|date:"Y" }}-{{ w.pk|stringformat:"04d" }}</span>
+                {% empty %}
+                  <span class="rm-empty">{% trans "—" %}</span>
+                {% endfor %}
+              </span>
+            </div>
           </div>
         </div>
       </section>
-    </div>
+    </aside>
   </div>
 </div>
 </div>
