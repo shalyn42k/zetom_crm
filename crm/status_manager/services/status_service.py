@@ -51,7 +51,7 @@ def update_parent(parent):
     )
 
     if not children:
-        parent.status = RequestStatus.inactive
+        parent.status = RequestStatus.active
         parent.save()
         return
 
