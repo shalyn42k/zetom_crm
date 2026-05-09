@@ -10,5 +10,6 @@ from . import log  # noqa: F401
 from . import requestmain  # noqa: F401
 from . import requestnull  # noqa: F401
 from .base import BaseRequestAdmin, DepartmentsDisplayMixin, ReasonForm
+from . import cancelledrequest# noqa: F401
 
 __all__ = ["BaseRequestAdmin", "DepartmentsDisplayMixin", "ReasonForm"]
