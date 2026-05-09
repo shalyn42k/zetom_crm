@@ -1,12 +1,14 @@
 {% load i18n %}
-<section class="rm-card" aria-labelledby="rm-dept-heading" id="departments">
-  <header class="rm-card__header">
+<section class="rm-card rm-card--collapsible" aria-labelledby="rm-dept-heading" id="departments" x-data="{ open: $persist(false).as('rm-departments-{{ request.user.id }}-{{ original.pk }}') }">
+  <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
     <h2 id="rm-dept-heading" class="rm-card__title">
       {% trans "Departments" %}
       <span class="rm-counter">{{ assigned_departments|length }}</span>
     </h2>
+    <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
   </header>
 
+  <div x-show="open" x-cloak>
   <ul class="rm-dept-list">
     {% for code, label in assigned_departments %}
       <li class="rm-dept-row {% if code == user_department %}rm-dept-row--mine{% endif %}">
@@ -40,4 +42,5 @@
       </button>
     </div>
   {% endif %}
+  </div>
 </section>

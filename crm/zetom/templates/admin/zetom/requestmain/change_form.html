@@ -81,11 +81,9 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
         {% include "admin/zetom/requestmain/_partials/assigned_users.html" %}
         {% include "admin/zetom/requestmain/_partials/status_grid.html" %}
         {% include "admin/zetom/requestmain/_partials/departments.html" %}
-      </aside>
-
-      <div class="rm-col rm-col--full">
         {% include "admin/zetom/requestmain/_partials/documents.html" %}
-      </div>
+        {% include "admin/zetom/requestmain/_partials/history_card.html" %}
+      </aside>
     {% endif %}
   </form>
 </div>

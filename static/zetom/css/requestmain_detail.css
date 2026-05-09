@@ -75,6 +75,67 @@ html.dark {
   font-size: 13px; color: var(--rm-text);
 }
 
+/* ---------- History timeline ---------- */
+.rm-history-list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 0;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.rm-history-row {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rm-card-border);
+}
+.rm-history-row:last-child { border-bottom: none; }
+
+.rm-history-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 6px;
+  background: var(--rm-text-muted);
+}
+
+.rm-history-row__body { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.rm-history-row__title {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 12.5px;
+}
+.rm-history-row__action { color: var(--rm-text-muted); }
+
+.rm-history-row__reason {
+  font-size: 12px; color: var(--rm-text-muted);
+  font-style: italic;
+  padding-left: 2px;
+}
+
+.rm-history-row__sub {
+  font-size: 11.5px; color: var(--rm-text-muted);
+}
+.rm-history-row__sub strong { color: var(--rm-text); font-weight: 500; }
+.rm-history-row__sep { margin: 0 4px; opacity: 0.6; }
+
+/* Compact pill variant for inline use (history rows) */
+.rm-status-pill--sm {
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.rm-doc-row__codes {
+  flex: 1; min-width: 0;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  align-items: center;
+}
+.rm-doc-chip {
+  display: inline-flex; align-items: center;
+  padding: 3px 8px; border-radius: 6px;
+  border: 1px solid var(--rm-card-border);
+  background: var(--rm-card-bg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px; color: var(--rm-text);
+}
+
 /* ---------- Cards ---------- */
 .rm-card {
   background: var(--rm-card-bg);
@@ -84,6 +145,31 @@ html.dark {
   display: grid; gap: 12px;
 }
 .rm-card__header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* Collapsible card — header acts as a toggle button */
+[x-cloak] { display: none !important; }
+.rm-card--collapsible { gap: 0; }
+.rm-card--collapsible > * + * { margin-top: 12px; }
+.rm-card--collapsible > .rm-card__header + * { margin-top: 12px; }
+.rm-card--collapsible:has(.rm-card__toggle[aria-expanded="false"]) > .rm-card__header + * { margin-top: 0; }
+.rm-card__toggle {
+  cursor: pointer;
+  user-select: none;
+  margin: -16px -16px 0;
+  padding: 16px;
+  border-radius: var(--rm-card-radius);
+}
+.rm-card__toggle:hover { background: var(--rm-bg-soft); }
+.rm-card__toggle:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--rm-st-active) 40%, transparent);
+  outline-offset: -2px;
+}
+.rm-card__chevron {
+  width: 16px; height: 16px; flex-shrink: 0;
+  color: var(--rm-text-muted);
+  transition: transform 200ms ease;
+}
+.rm-card__chevron--open { transform: rotate(180deg); }
 .rm-card__title { margin: 0; font-size: 14px; font-weight: 600; color: var(--rm-text); }
 .rm-card__subtitle { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--rm-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 
@@ -179,8 +265,27 @@ html.dark {
 .rm-linked-field__value--split { display: flex; gap: 8px; }
 .rm-linked-field__value--split > * { flex: 1; min-width: 0; }
 
+/* ---------- Scrollable list (shared) ---------- */
+.rm-user-list,
+.rm-dept-list,
+.rm-history-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rm-card-border) transparent;
+}
+.rm-user-list::-webkit-scrollbar,
+.rm-dept-list::-webkit-scrollbar,
+.rm-history-list::-webkit-scrollbar { width: 6px; }
+.rm-user-list::-webkit-scrollbar-thumb,
+.rm-dept-list::-webkit-scrollbar-thumb,
+.rm-history-list::-webkit-scrollbar-thumb {
+  background: var(--rm-card-border); border-radius: 3px;
+}
+
 /* ---------- User list ---------- */
-.rm-user-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rm-user-list {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;
+  max-height: 220px; overflow-y: auto;
+}
 .rm-user { display: flex; align-items: center; gap: 10px; padding: 6px; border-radius: 6px; }
 .rm-user:hover { background: var(--rm-bg-soft); }
 .rm-user-add { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
@@ -245,7 +350,10 @@ html.dark {
 .rm-file__sub  { font-size: 11.5px; color: var(--rm-text-muted); }
 
 /* ---------- Departments ---------- */
-.rm-dept-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.rm-dept-list {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;
+  max-height: 220px; overflow-y: auto;
+}
 .rm-dept-row {
   display: flex; align-items: center; gap: 10px;
   padding: 6px; border-radius: 6px;
@@ -268,9 +376,8 @@ html.dark {
 .rm-dept-add { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
 .rm-dept-add .rm-select { flex: 1; min-width: 0; }
 
-/* ---------- Documents row ---------- */
-.rm-docs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-@media (max-width: 700px) { .rm-docs { grid-template-columns: 1fr; } }
+/* ---------- Documents (now in right column — vertical stack) ---------- */
+.rm-docs { display: grid; grid-template-columns: 1fr; gap: 8px; }
 .rm-doc {
   display: flex; align-items: center; gap: 12px;
   padding: 12px; border-radius: 8px;

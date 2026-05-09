@@ -1,9 +1,15 @@
 {% load i18n %}
-<section class="rm-card rm-card--full" aria-labelledby="rm-docs-heading" id="documents">
-  <header class="rm-card__header">
-    <h2 id="rm-docs-heading" class="rm-card__title">{% trans "Documents" %}</h2>
+{% with docs_count=ofertas|length|add:zlecenia|length|add:wnioski|length %}
+<section class="rm-card rm-card--collapsible" aria-labelledby="rm-docs-heading" id="documents" x-data="{ open: $persist(false).as('rm-documents-{{ request.user.id }}-{{ original.pk }}') }">
+  <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+    <h2 id="rm-docs-heading" class="rm-card__title">
+      {% trans "Documents" %}
+      <span class="rm-counter">{{ docs_count }}</span>
+    </h2>
+    <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
   </header>
 
+  <div x-show="open" x-cloak>
   <div class="rm-docs">
     {% if ofertas %}{% url "admin:zetom_oferta_change" ofertas.0.pk as first_oferta_url %}{% endif %}
     <article class="rm-doc"{% if ofertas %} x-data="{ url: '{{ first_oferta_url }}' }"{% endif %}>
@@ -119,4 +125,6 @@
       {% endif %}
     </article>
   </div>
+  </div>
 </section>
+{% endwith %}
