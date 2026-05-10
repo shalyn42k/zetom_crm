@@ -25,8 +25,8 @@ class Role(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
-    # Добавил поле из zetom для того чтобы отображался выбор департаментов для пользователей
     department = models.CharField(choices=DepartmentsVariants, null=True, blank=True, max_length=40)
+    job_title = models.CharField(max_length=100, null=True, blank=True)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):

@@ -28,6 +28,7 @@ from .base import BaseRequestAdmin, ReasonForm
 
 @admin.register(RequestMain)
 class RequestMainAdmin(BaseRequestAdmin):
+    
     form = AddRequestFormMain
     change_form_template = "admin/zetom/requestmain/change_form.html"
     list_display = (
@@ -49,10 +50,16 @@ class RequestMainAdmin(BaseRequestAdmin):
     )
     warn_unsaved_form = True
 
-    # ---------- Form / submit-bar tweaks ----------
+    class Media:
+        js = [
+            "client/client_autofill.js",
+            "client/client_search.js",
+        ]
 
+    # ---------- Form / submit-bar tweaks ----------
     def get_changeform_initial_data(self, request):
         return {"source": RequestSource.PHONE}
+
 
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
         extra_context = extra_context or {}

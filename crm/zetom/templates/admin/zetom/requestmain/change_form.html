@@ -22,7 +22,7 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
 <div class="rm-page">
 
   {% if errors or adminform.form.non_field_errors %}
-    <div class="flex flex-col gap-4 *:mb-0">
+    <div class="flex flex-col gap-4">
       {% include "unfold/helpers/messages/errornote.html" with errors=errors %}
       {% include "unfold/helpers/messages/error.html" with errors=adminform.form.non_field_errors %}
     </div>
@@ -89,3 +89,8 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
 </div>
 </div>
 {% endblock content %}
+
+{% block extra_js %}
+  {{ block.super }}
+  <script src="{% static 'clients/client_autofill.js' %}"></script>
+{% endblock extra_js %}

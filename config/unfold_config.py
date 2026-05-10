@@ -15,7 +15,7 @@ UNFOLD = {
             "link": reverse_lazy("zetom:index"),
         },
     ],
-    # Static files
+
     "SITE_ICON": {
         "light": lambda request: static("img/zet1.avif"),
         "dark": lambda request: static("img/zet1.avif"),
@@ -24,17 +24,16 @@ UNFOLD = {
         "light": lambda request: static("img/logo.avif"),
         "dark": lambda request: static("img/logo.avif"),
     },
-    "LOGIN": {
-        # "image": lambda request: static("zetom/img/bg.jpg"),
-        # "redirect_after": lambda request: reverse_lazy("admin:APP_MODEL_changelist"),
-        # "form": "app.forms.CustomLoginForm",
-    },
+
+    "LOGIN": {},
+
     "SITE_URL": "/",
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
     "SHOW_BACK_BUTTON": True,
-    "SHOW_LANGUAGES": False,  # включить когда будет настроен перевод
+    "SHOW_LANGUAGES": False, #включить когда будет перевод
     "BORDER_RADIUS": "6px",
+
     "COLORS": {
         "base": {
             "50": "oklch(98.5% .002 247.839)",
@@ -71,6 +70,7 @@ UNFOLD = {
             "important-dark": "var(--color-base-100)",
         },
     },
+
     "EXTENSIONS": {
         "modeltranslation": {
             "flags": {
@@ -81,10 +81,12 @@ UNFOLD = {
             },
         },
     },
+
     "SIDEBAR": {
         "show_search": True,
         "filter": "dcrm.unfold_sidebar.filter_sidebar_items",
         "navigation": [
+
             {
                 "title": "Developer Interface",
                 "collapsible": True,
@@ -121,11 +123,26 @@ UNFOLD = {
                     },
                 ],
             },
+
+            {
+                "title": "Clients",
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": "Clients",
+                        "icon": "account_circle",
+                        "link": reverse_lazy("admin:clients_client_changelist"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_clients"
+                        ),
+                    },
+                ],
+            },
+
             {
                 "title": "Requests",
                 "collapsible": True,
                 "items": [
-
                     {
                         "title": "Trash",
                         "icon": "delete",
@@ -134,7 +151,6 @@ UNFOLD = {
                             request.user, "view_requests"
                         ),
                     },
-
                     {
                         "title": "Information",
                         "icon": "folder",
@@ -163,6 +179,7 @@ UNFOLD = {
                     },
                 ],
             },
+
             {
                 "title": "Admin",
                 "collapsible": True,
