@@ -17,8 +17,8 @@ UNFOLD = {
     ],
 
     "SITE_ICON": {
-        "light": lambda request: static("img/zet1.avif"),
-        "dark": lambda request: static("img/zet1.avif"),
+        "light": lambda request: static("img/icon.png"),
+        "dark": lambda request: static("img/icon.png"),
     },
     "SITE_LOGO": {
         "light": lambda request: static("img/logo.avif"),
