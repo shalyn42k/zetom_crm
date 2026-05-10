@@ -1,5 +1,9 @@
 from django.db import models
 
+from phonenumber_field.modelfields import PhoneNumberField
+
+
+
 class Client(models.Model):
     first_name = models.CharField("First name", max_length=100, blank=True, null=True)
     last_name = models.CharField("Last name", max_length=100, blank=True, null=True)
@@ -8,7 +12,7 @@ class Client(models.Model):
     company_nip = models.CharField("NIP", max_length=20, blank=True, null=True, db_index=True)
 
     email = models.EmailField("Email", blank=True, null=True)
-    phone = models.CharField("Phone", max_length=50, blank=True, null=True)
+    phone = PhoneNumberField(null=True, blank=True)
 
     address = models.TextField("Address", blank=True, null=True)
 

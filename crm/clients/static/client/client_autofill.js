@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (field && value) field.value = value;
         });
     };
-
+Т
     if (clientSelect) {
         clientSelect.addEventListener("change", function () {
             const selectedOption = this.options[this.selectedIndex];
