@@ -34,6 +34,13 @@ class CustomUserCreateForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": INPUT_CLASS})
     )
 
+    job_title = forms.CharField(
+        label="Должность",
+        required=False,
+        widget=forms.TextInput(attrs={"class": INPUT_CLASS})
+    )
+
+
     class Meta:
         model = User
         fields = ["username", "email", "first_name", "last_name"]
@@ -76,7 +83,8 @@ class CustomUserCreateForm(forms.ModelForm):
             UserProfile.objects.create(
                 user=user,
                 role=self.cleaned_data["role"],
-                department=self.cleaned_data.get("department") or None
+                department=self.cleaned_data.get("department") or None,
+                job_title=self.cleaned_data.get("job_title") or None,
             )
 
         return user
@@ -99,6 +107,12 @@ class CustomUserChangeForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": INPUT_CLASS})
     )
 
+    job_title = forms.CharField(
+        label="Должность",
+        required=False,
+        widget=forms.TextInput(attrs={"class": INPUT_CLASS})
+    )
+
     class Meta:
         model = User
         fields = ["username", "email", "first_name", "last_name"]
@@ -118,6 +132,8 @@ class CustomUserChangeForm(forms.ModelForm):
                 self.fields["role"].initial = profile.role
             if profile.department:
                 self.fields["department"].initial = profile.department
+            if profile.job_title:
+                self.fields["job_title"].initial = profile.job_title
 
     def clean_email(self):
         email = self.cleaned_data["email"]
@@ -139,6 +155,12 @@ class CustomUserChangeForm(forms.ModelForm):
             profile.department = department
         elif department == "":
             profile.department = None
+
+        job_title = self.cleaned_data.get("job_title")
+        if job_title:
+            profile.job_title = job_title
+        elif job_title == "":
+            profile.job_title = None
 
         profile.save()
         return user

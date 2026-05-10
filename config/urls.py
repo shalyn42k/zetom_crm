@@ -22,4 +22,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("zetom/", include("crm.zetom.urls")),
     path("users/", include("crm.users.urls")),
+    path("clients/", include("crm.clients.urls")),
 ]

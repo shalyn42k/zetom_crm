@@ -27,6 +27,12 @@ When a Client FK lands, swap to read-only display.
   <dl class="rm-linked-fields">
     <div class="rm-linked-field">
       <dt class="rm-linked-field__label">
+        <label for="{{ form.client.id_for_label }}">{% trans "Client" %}</label>
+      </dt>
+      <dd class="rm-linked-field__value">{{ form.client }}</dd>
+    </div>
+    <div class="rm-linked-field">
+      <dt class="rm-linked-field__label">
         <label for="{{ form.company_nip.id_for_label }}">{% trans "NIP" %}</label>
       </dt>
       <dd class="rm-linked-field__value">{{ form.company_nip }}</dd>
