@@ -15,7 +15,7 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
     fieldsets = (
         (None, {"fields": ("username", "password")} ),
         ("Личные данные", {"fields": ("first_name", "last_name", "email")} ),
-        ("Профиль", {"fields": ("role", "department")} ),
+        ("Профиль", {"fields": ("role", "department", "job_title")} ),
         ("Параметры доступа", {"fields": ("is_active", "is_staff", "is_superuser")} ),
         ("Важные даты", {"fields": ("last_login", "date_joined")} ),
     )
@@ -34,6 +34,7 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
                     "password_confirm",
                     "role",
                     "department",
+                    "job_title",
                 ),
             },
         ),
@@ -46,6 +47,7 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
         "last_name",
         "get_role",
         "get_department",
+        "get_job_title",
         "is_staff",
     )
     list_select_related = ("profile",)
@@ -74,6 +76,11 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
     get_department.short_description = "Департамент"
     get_department.admin_order_field = "profile__department"
 
+    def get_job_title(self, obj):
+        return obj.profile.job_title if hasattr(obj, "profile") else None
+    get_job_title.short_description = "Должность"
+    get_job_title.admin_order_field = "profile__job_title"
+
     def has_add_permission(self, request):
         return True
 
@@ -91,6 +98,9 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
         if "department" in form.cleaned_data:
             department = form.cleaned_data.get("department")
             profile.department = department if department else None
+        if "job_title" in form.cleaned_data:
+            job_title = form.cleaned_data.get("job_title")
+            profile.job_title = job_title if job_title else None
         profile.save()
 
 
@@ -120,7 +130,7 @@ class AdminRole(UnfoldModelAdmin):
 
 @admin.register(UserProfile)
 class AdminUserProfile(UnfoldModelAdmin):
-    list_display = ("user", "role", "department")
+    list_display = ("user", "role", "department", "job_title")
     search_fields = ("user__username", "user__email", "role__name", "department")
 
     def has_view_permission(self, request, obj=None):

@@ -5,11 +5,16 @@ from localflavor.pl.forms import PLNIPField
 from phonenumber_field.formfields import PhoneNumberField
 
 # Zetom app imports
-from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek,
-                              Zlecenie)
+from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek, Zlecenie)
+
+# Client module import
+from crm.clients.fields import ClientField
 
 
 class TemplateForm(forms.ModelForm):
+    # NEW FIELD
+    client = ClientField()
+
     phone = PhoneNumberField(
         region="PL",
         required=True,
@@ -28,8 +33,9 @@ class TemplateForm(forms.ModelForm):
         required=True,
         widget=forms.TextInput(
             attrs={"placeholder": "7322215365"}
-        ),  # почему работает? - работающий NIP 7322215365
+        ),
     )
+
     message = forms.CharField(
         required=False,
         widget=forms.Textarea(
@@ -38,8 +44,6 @@ class TemplateForm(forms.ModelForm):
             }
         ),
     )
-
-    "Разобраться все еще как работает, но есть понимание что делает"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -52,9 +56,10 @@ class AddRequestFormNull(TemplateForm):
     class Meta:
         model = RequestNull
         fields = (
+            "client",          # NEW
             "first_name",
             "last_name",
-            "phone",
+           "phone",
             "email",
             "company_name",
             "message",
@@ -83,6 +88,7 @@ class AddRequestFormMain(TemplateForm):
     class Meta:
         model = RequestMain
         fields = (
+            "client",          # NEW
             "first_name",
             "last_name",
             "phone",
@@ -116,6 +122,7 @@ class AddOferta(TemplateForm):
     class Meta:
         model = Oferta
         fields = (
+            "client",          # NEW
             "from_main",
             "phone",
             "email",
@@ -143,6 +150,7 @@ class AddZlecenie(TemplateForm):
     class Meta:
         model = Zlecenie
         fields = (
+            "client",          # NEW
             "from_main",
             "phone",
             "email",
@@ -166,4 +174,13 @@ class AddWniosek(TemplateForm):
 
     class Meta:
         model = Wniosek
-        fields = ("from_main", "phone", "email", "company_name", "company_nip", "notes", "source")
+        fields = (
+            "client",          # NEW
+            "from_main",
+            "phone",
+            "email",
+            "company_name",
+            "company_nip",
+            "notes",
+            "source",
+        )

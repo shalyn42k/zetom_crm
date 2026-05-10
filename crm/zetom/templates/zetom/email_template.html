@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load static %}
 
-{% block title %}Submit Request{% endblock %}
+{% block title %}Submit Request{% endblock title %}
 
 {% block extrastyle %}
     {{ block.super }}
@@ -19,52 +19,67 @@
             background-position: center;
             background-repeat: no-repeat;
         }
-        /* Wipe every Unfold/admin background, then restore only what we want visible. */
+
+        /* Remove Unfold/Admin backgrounds */
         html, body, body * {
             background-color: transparent !important;
             border-color: transparent !important;
             box-shadow: none !important;
         }
-        /* Hide the Unfold topbar / breadcrumbs container — not needed on this page. */
+
+        /* Hide Unfold topbar / breadcrumbs */
         body header,
         body nav,
         body div.container.h-16 {
             display: none !important;
         }
+
+        /* Restore card styling */
         body .email-form-card { background-color: var(--zf-surface) !important; }
         body .email-form-card .form-group input,
         body .email-form-card .form-group textarea {
             background-color: var(--zf-input-bg) !important;
             border-color: var(--zf-border-strong) !important;
         }
+
         body .email-form-card .form-group input:focus,
         body .email-form-card .form-group textarea:focus {
             border-color: #5a5aff !important;
             box-shadow: 0 0 0 2px rgba(90, 90, 255, 0.25) !important;
         }
+
         html.dark body .email-form-card .form-group input:focus,
         html.dark body .email-form-card .form-group textarea:focus {
             border-color: #7a7aff !important;
             box-shadow: 0 0 0 2px rgba(122, 122, 255, 0.3) !important;
         }
-        body .email-form-card button[type="submit"] { background-color: var(--zf-primary) !important; }
-        body .email-form-card button[type="submit"]:hover { background-color: var(--zf-primary-hover) !important; }
+
+        body .email-form-card button[type="submit"] {
+            background-color: var(--zf-primary) !important;
+        }
+
+        body .email-form-card button[type="submit"]:hover {
+            background-color: var(--zf-primary-hover) !important;
+        }
+
         body .email-form-card,
         body .email-form-card .return-btn {
             box-shadow: var(--zf-shadow-lg) !important;
         }
     </style>
-{% endblock %}
+{% endblock extrastyle %}
 
-{% block breadcrumbs %}{% endblock %}
+{% block breadcrumbs %}{% endblock breadcrumbs %}
 
 {% block content %}
 <div class="email-page">
 <div class="email-form-card">
+
     <div class="email-form-header">
         <h2>Submit your request</h2>
         <a href="{% url 'admin:index' %}" class="return-btn">← Return</a>
     </div>
+
     <p class="subtitle">Fill in the details below and we will get back to you shortly.</p>
 
     {% if message %}
@@ -85,7 +100,7 @@
         <div class="email-form-row">
             <div class="form-group">
                 <label for="id_first_name">First name</label>
-                <input type="text" id="id_first_name" name="first_name" autocomplete="given-name" required
+                <input type="text" id="id_first_name" name="first_name" required
                        placeholder="John"
                        value="{{ form.first_name.value|default:'' }}">
                 {{ form.first_name.errors }}
@@ -93,7 +108,7 @@
 
             <div class="form-group">
                 <label for="id_last_name">Last name</label>
-                <input type="text" id="id_last_name" name="last_name" autocomplete="family-name" required
+                <input type="text" id="id_last_name" name="last_name" required
                        placeholder="Johnson"
                        value="{{ form.last_name.value|default:'' }}">
                 {{ form.last_name.errors }}
@@ -102,7 +117,7 @@
 
         <div class="form-group">
             <label for="id_company_name">Company name</label>
-            <input type="text" id="id_company_name" name="company_name" autocomplete="off"
+            <input type="text" id="id_company_name" name="company_name"
                    placeholder="Zetom Sp. z o.o."
                    value="{{ form.company_name.value|default:'' }}">
             {{ form.company_name.errors }}
@@ -111,7 +126,7 @@
         <div class="email-form-row">
             <div class="form-group">
                 <label for="id_phone">Phone</label>
-                <input type="tel" id="id_phone" name="phone" autocomplete="tel" required
+                <input type="tel" id="id_phone" name="phone" required
                        placeholder="+48 000 000 000"
                        value="{{ form.phone.value|default:'' }}">
                 {{ form.phone.errors }}
@@ -119,7 +134,7 @@
 
             <div class="form-group">
                 <label for="id_email">Email</label>
-                <input type="email" id="id_email" name="email" autocomplete="email" required
+                <input type="email" id="id_email" name="email" required
                        placeholder="example@zetom.pl"
                        value="{{ form.email.value|default:'' }}">
                 {{ form.email.errors }}
@@ -128,13 +143,14 @@
 
         <div class="form-group">
             <label for="id_message">Message</label>
-            <textarea id="id_message" name="message" autocomplete="off"
+            <textarea id="id_message" name="message"
                       placeholder="Long and very interesting note for noting your long and interesting text">{{ form.message.value|default:'' }}</textarea>
             {{ form.message.errors }}
         </div>
 
         <button type="submit">Submit request</button>
     </form>
+
 </div>
 </div>
-{% endblock %}
+{% endblock content %}
