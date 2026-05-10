@@ -28,6 +28,14 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
     </div>
   {% endif %}
 
+  {% if adminform.form.errors %}
+    <ul class="rm-form-errors">
+      {% for field, errs in adminform.form.errors.items %}
+        <li><strong>{{ field }}:</strong> {{ errs|join:", " }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
   {# -------- Header strip -------- #}
   <header class="rm-header">
     <div class="rm-header__title">

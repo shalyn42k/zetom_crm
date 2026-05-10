@@ -64,6 +64,15 @@ class RequestMainAdmin(BaseRequestAdmin):
     def get_changeform_initial_data(self, request):
         return {"source": RequestSource.PHONE}
 
+    def get_fields(self, request, obj=None):
+        # source выбирается только при создании; на странице редактирования
+        # для него нет виджета в шаблоне, поэтому убираем поле из формы,
+        # иначе оно валится с "This field is required" при каждом Save.
+        fields = list(super().get_fields(request, obj))
+        if obj is not None and "source" in fields:
+            fields.remove("source")
+        return fields
+
 
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
         extra_context = extra_context or {}
