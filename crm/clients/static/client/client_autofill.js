@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
         "id_phone": "phone",
         "id_email": "email",
         "id_company_name": "company_name",
-        "id_company_nip": "nip",
+        "id_company_nip": "company_nip",
         "id_address": "address",
         "id_first_name": "first_name",
         "id_last_name": "last_name",
@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (field && value) field.value = value;
         });
     };
-Т
+
     if (clientSelect) {
         clientSelect.addEventListener("change", function () {
             const selectedOption = this.options[this.selectedIndex];
