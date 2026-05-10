@@ -133,3 +133,9 @@ class DeletedRequest(RequestMain):  # proxy может открывать те �
         proxy = True
         verbose_name = "Deleted Request"
         verbose_name_plural = "Deleted Requests"
+
+class CancelledRequest(RequestMain):
+    class Meta:
+        proxy = True
+        verbose_name = "Cancelled Request"
+        verbose_name_plural = "Cancelled Requests"

@@ -135,6 +135,16 @@ UNFOLD = {
                         ),
                     },
 
+
+                    {
+                        "title": "Cancelled",
+                        "icon": "cancel",
+                        "link": reverse_lazy("admin:zetom_cancelledrequest_changelist"),
+                        "permission": lambda request: user_has_perm(
+                           request.user, "view_requests"
+                        ),
+                    },
+
                     {
                         "title": "Information",
                         "icon": "folder",

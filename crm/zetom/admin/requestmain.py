@@ -24,7 +24,7 @@ from crm.zetom.services.status_orchestration import (ReasonRequired,
                                                      apply_status_change)
 
 from .base import BaseRequestAdmin, ReasonForm
-
+from crm.status_manager.services.statuses import RequestStatus
 
 @admin.register(RequestMain)
 class RequestMainAdmin(BaseRequestAdmin):
@@ -50,6 +50,11 @@ class RequestMainAdmin(BaseRequestAdmin):
     warn_unsaved_form = True
 
     # ---------- Form / submit-bar tweaks ----------
+
+    def get_queryset(self, request):
+       qs = super().get_queryset(request)
+       return qs.exclude(status__in=[RequestStatus.cancelled, RequestStatus.deleted])
+
 
     def get_changeform_initial_data(self, request):
         return {"source": RequestSource.PHONE}
