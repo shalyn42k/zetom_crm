@@ -35,7 +35,14 @@ class RequestMainAdmin(BaseRequestAdmin):
         "created_at", "updated_at", "company_name",
         "display_departments", "assignees_display", "colored_status", "source",
     )
-    list_filter = ("source",)
+    search_fields = (
+      "first_name",
+      "last_name",
+      "company_name",
+      "company_nip",
+      "email",
+    )
+    list_filter = ("source", "status")
     fields = (
         "first_name",
         "last_name",
