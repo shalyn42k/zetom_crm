@@ -1,0 +1,55 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static %}
+
+{% comment %}
+  Кастомный change-view для auth.User (header-tabs).
+  Переопределяем только блок field_sets — это блок внутри стандартного
+  <form>, который рендерит Unfold. CSRF и кнопка Save остаются от Unfold,
+  ничего не дублируем.
+
+  Активный таб берём из ?tab=… с дефолтом "profile". На скрытых табах
+  поля остаются в DOM (атрибут [hidden]), чтобы единый submit формы
+  не терял значения.
+{% endcomment %}
+
+{% block extrastyle %}{{ block.super }}
+  <link rel="stylesheet" href="{% static 'users/css/userprofile_detail.css' %}">
+{% endblock extrastyle %}
+
+{% block field_sets %}
+{% with active_tab=request.GET.tab|default:"profile" %}
+<div class="up-page">
+
+  {% include "admin/auth/user/_partials/header_strip.html" %}
+  {% include "admin/auth/user/_partials/tabs_nav.html" %}
+
+  <div class="up-tab-body">
+    <section class="up-tab-panel" role="tabpanel" aria-labelledby="tab-btn-profile"
+             {% if active_tab != "profile" %}hidden{% endif %}>
+      {% include "admin/auth/user/_partials/tab_profile.html" %}
+    </section>
+
+    <section class="up-tab-panel" role="tabpanel" aria-labelledby="tab-btn-permissions"
+             {% if active_tab != "permissions" %}hidden{% endif %}>
+      {% include "admin/auth/user/_partials/tab_permissions.html" %}
+    </section>
+
+    <section class="up-tab-panel" role="tabpanel" aria-labelledby="tab-btn-departments"
+             {% if active_tab != "departments" %}hidden{% endif %}>
+      {% include "admin/auth/user/_partials/tab_departments.html" %}
+    </section>
+
+    <section class="up-tab-panel" role="tabpanel" aria-labelledby="tab-btn-notifications"
+             {% if active_tab != "notifications" %}hidden{% endif %}>
+      {% include "admin/auth/user/_partials/tab_notifications.html" %}
+    </section>
+
+    <section class="up-tab-panel" role="tabpanel" aria-labelledby="tab-btn-security"
+             {% if active_tab != "security" %}hidden{% endif %}>
+      {% include "admin/auth/user/_partials/tab_security.html" %}
+    </section>
+  </div>
+
+</div>
+{% endwith %}
+{% endblock field_sets %}

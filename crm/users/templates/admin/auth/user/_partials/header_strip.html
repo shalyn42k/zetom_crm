@@ -1,0 +1,37 @@
+{% load i18n %}
+{# Шапка-strip: аватар-инициалы, имя, бейдж роли, мета. #}
+<header class="up-strip">
+  <div class="up-avatar" aria-hidden="true">
+    {% if original.first_name %}{{ original.first_name|slice:":1"|upper }}{% else %}{{ original.username|slice:":1"|upper }}{% endif %}
+  </div>
+
+  <div class="up-strip__meta">
+    <h1 class="up-strip__name">{{ original.get_full_name|default:original.username }}</h1>
+    <p class="up-strip__sub">
+      <span>{{ original.username }}</span>
+      {% if original.email %}
+        <span class="up-sep" aria-hidden="true">·</span>
+        <span>{{ original.email }}</span>
+      {% endif %}
+      {% if original.profile.role %}
+        <span class="up-sep" aria-hidden="true">·</span>
+        <span class="up-badge up-badge--role-{{ original.profile.role.code|lower }}">{{ original.profile.role.name }}</span>
+      {% elif original.is_staff %}
+        <span class="up-sep" aria-hidden="true">·</span>
+        <span class="up-badge up-badge--role-staff">{% trans "Staff" %}</span>
+      {% endif %}
+      {% if original.profile.department %}
+        <span class="up-sep" aria-hidden="true">·</span>
+        <span>{{ original.profile.get_department_display }}</span>
+      {% endif %}
+    </p>
+    <p class="up-strip__dates">
+      {% if original.date_joined %}
+        <span>{% trans "Joined" %}: {{ original.date_joined|date:"d.m.Y" }}</span>
+      {% endif %}
+      {% if original.last_login %}
+        <span>{% trans "Last login" %}: {{ original.last_login|date:"d.m.Y H:i" }}</span>
+      {% endif %}
+    </p>
+  </div>
+</header>

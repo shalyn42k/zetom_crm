@@ -1,0 +1,231 @@
+/* =============================================================
+   UserProfile admin detail — page-scoped styles (header-tabs).
+   All classes prefixed `up-` (UserProfile).
+   Colors live as CSS variables so `html.dark` (set by Unfold's
+   theme toggle) flips the palette automatically.
+   ============================================================= */
+
+:root {
+  --up-role-admin:    #16a34a;
+  --up-role-staff:    #3b82f6;
+  --up-role-viewer:   #6b7280;
+  --up-perm-allowed:  #16a34a;
+  --up-perm-limited:  #f59e0b;
+  --up-perm-denied:   #ef4444;
+
+  --up-card-bg:       #ffffff;
+  --up-card-border:   #e2e8f0;
+  --up-card-radius:   10px;
+  --up-text:          #0f172a;
+  --up-text-muted:    #64748b;
+  --up-bg-soft:       #f8fafc;
+  --up-accent:        var(--up-role-admin);
+}
+
+html.dark {
+  --up-card-bg:       #0f172a;
+  --up-card-border:   #1e293b;
+  --up-text:          #e2e8f0;
+  --up-text-muted:    #94a3b8;
+  --up-bg-soft:       #1e293b;
+}
+
+/* ---------- Page layout ---------- */
+.up-page { display: grid; gap: 16px; }
+
+/* ---------- Profile strip ---------- */
+.up-strip {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--up-card-bg);
+  border: 1px solid var(--up-card-border);
+  border-radius: var(--up-card-radius);
+  padding: 16px;
+}
+.up-strip__meta { flex: 1; min-width: 0; }
+.up-strip__name { margin: 0; font-size: 20px; font-weight: 600; color: var(--up-text); }
+.up-strip__sub {
+  margin: 4px 0 0; font-size: 13px; color: var(--up-text-muted);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.up-strip__dates {
+  margin: 4px 0 0; font-size: 11.5px; color: var(--up-text-muted);
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.up-sep { color: var(--up-card-border); }
+
+/* ---------- Avatar ---------- */
+.up-avatar {
+  width: 56px; height: 56px; border-radius: 12px;
+  background: var(--up-bg-soft); color: var(--up-text);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 20px; flex-shrink: 0;
+}
+
+/* ---------- Tabs nav ---------- */
+.up-tabs {
+  display: flex; gap: 2px;
+  border-bottom: 1px solid var(--up-card-border);
+  background: var(--up-card-bg);
+  padding: 0 8px;
+  border-radius: var(--up-card-radius) var(--up-card-radius) 0 0;
+  margin: 0;
+}
+.up-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 12px 14px;
+  font-size: 13px; font-weight: 500;
+  color: var(--up-text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+  transition: color .12s ease, border-color .12s ease;
+}
+.up-tab:hover { color: var(--up-text); }
+.up-tab.is-active {
+  color: var(--up-accent);
+  border-bottom-color: var(--up-accent);
+}
+.up-tab:focus-visible {
+  outline: 2px solid var(--up-accent); outline-offset: 2px;
+}
+
+/* ---------- Tab body / cards ---------- */
+.up-tab-body { display: grid; gap: 16px; }
+.up-card {
+  background: var(--up-card-bg);
+  border: 1px solid var(--up-card-border);
+  border-radius: var(--up-card-radius);
+  padding: 16px;
+  display: grid; gap: 12px;
+}
+.up-card__title { margin: 0; font-size: 15px; font-weight: 600; color: var(--up-text); }
+.up-card__subtitle {
+  font-size: 12px; font-weight: 600; color: var(--up-text-muted);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+
+/* ---------- Badges ---------- */
+.up-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 100px;
+  font-size: 11px; font-weight: 600;
+  background: var(--up-bg-soft); color: var(--up-text-muted);
+}
+.up-badge--role-admin   { color: var(--up-role-admin);   background: color-mix(in oklab, var(--up-role-admin) 14%, transparent); }
+.up-badge--role-staff   { color: var(--up-role-staff);   background: color-mix(in oklab, var(--up-role-staff) 14%, transparent); }
+.up-badge--role-viewer  { color: var(--up-role-viewer);  background: color-mix(in oklab, var(--up-role-viewer) 14%, transparent); }
+.up-badge--perm-allowed { color: var(--up-perm-allowed); background: color-mix(in oklab, var(--up-perm-allowed) 14%, transparent); }
+.up-badge--perm-limited { color: var(--up-perm-limited); background: color-mix(in oklab, var(--up-perm-limited) 14%, transparent); }
+.up-badge--perm-denied  { color: var(--up-perm-denied);  background: color-mix(in oklab, var(--up-perm-denied)  14%, transparent); }
+
+/* ---------- Permission rows ---------- */
+.up-roles { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.up-perm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.up-perm {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border: 1px solid var(--up-card-border); border-radius: 8px;
+}
+.up-perm__icon {
+  width: 24px; height: 24px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; flex-shrink: 0;
+}
+.up-perm__icon--allowed { background: color-mix(in oklab, var(--up-perm-allowed) 14%, transparent); color: var(--up-perm-allowed); }
+.up-perm__meta { flex: 1; min-width: 0; }
+.up-perm__name { font-size: 13px; font-weight: 500; color: var(--up-text); }
+.up-perm__code { font-size: 11.5px; color: var(--up-text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* ---------- Department chip ---------- */
+.up-dept-chip {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 8px;
+  background: var(--up-bg-soft); border: 1px solid var(--up-card-border);
+}
+.up-dept-chip--primary { border-color: color-mix(in oklab, var(--up-accent) 30%, transparent); }
+.up-dept-chip__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--up-accent); flex-shrink: 0; }
+.up-dept-chip__meta { flex: 1; min-width: 0; }
+.up-dept-chip__name { font-size: 13px; font-weight: 600; color: var(--up-text); }
+.up-dept-chip__sub  { font-size: 11.5px; color: var(--up-text-muted); }
+
+/* ---------- Notifications switch row ---------- */
+.up-notif-group { display: grid; gap: 8px; }
+.up-switch {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  border: 1px solid var(--up-card-border); border-radius: 8px;
+}
+.up-switch__meta { flex: 1; min-width: 0; }
+.up-switch__title { display: block; font-size: 13px; font-weight: 500; color: var(--up-text); }
+.up-switch__sub   { display: block; font-size: 11.5px; color: var(--up-text-muted); }
+
+/* ---------- Form helpers ---------- */
+.up-row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 10px; }
+.up-col-6  { grid-column: span 6; }
+.up-col-12 { grid-column: span 12; }
+@media (max-width: 600px) { .up-col-6 { grid-column: span 12; } }
+
+.up-field { display: grid; gap: 4px; }
+.up-field__label { font-size: 12px; color: var(--up-text-muted); font-weight: 500; }
+.up-field__help  { font-size: 11.5px; color: var(--up-text-muted); }
+.up-field__errors { font-size: 11.5px; color: var(--up-perm-denied); margin: 0; padding: 0; list-style: none; }
+
+.up-field input[type="text"],
+.up-field input[type="email"],
+.up-field input[type="password"],
+.up-field input[type="url"],
+.up-field input[type="number"],
+.up-field textarea,
+.up-field select,
+.up-select {
+  width: 100%; padding: 8px 10px; border-radius: 6px;
+  border: 1px solid var(--up-card-border);
+  background: var(--up-card-bg); color: var(--up-text);
+  font-size: 13px; font-family: inherit;
+}
+.up-field input:focus, .up-field textarea:focus, .up-field select:focus, .up-select:focus {
+  outline: 2px solid color-mix(in oklab, var(--up-accent) 40%, transparent); outline-offset: 1px;
+}
+.up-field input[readonly], .up-field input:disabled {
+  background: var(--up-bg-soft); color: var(--up-text-muted); cursor: not-allowed;
+}
+
+/* ---------- Subgroup wrapper (subtitle + content) ---------- */
+.up-subgroup { display: grid; gap: 6px; }
+
+/* ---------- Access flags (Permissions tab editable checkboxes) ---------- */
+.up-checks { display: grid; gap: 8px; }
+.up-check {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--up-card-border);
+  background: var(--up-bg-soft);
+  cursor: pointer;
+}
+.up-check input[type="checkbox"] {
+  width: 16px; height: 16px;
+  accent-color: var(--up-accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.up-check__meta { display: grid; gap: 2px; min-width: 0; }
+.up-check__title { font-size: 13px; font-weight: 500; color: var(--up-text); }
+.up-check__sub   { font-size: 11.5px; color: var(--up-text-muted); }
+
+/* ---------- Misc ---------- */
+.up-empty { font-size: 12.5px; color: var(--up-text-muted); margin: 0; }
+.up-callout {
+  padding: 10px 12px; border-radius: 8px;
+  background: var(--up-bg-soft); border: 1px solid var(--up-card-border);
+  font-size: 13px; color: var(--up-text-muted); margin: 0;
+}
+.up-link-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 6px;
+  font-size: 13px; font-weight: 500;
+  background: var(--up-accent); color: #fff; text-decoration: none;
+  border: 1px solid var(--up-accent);
+}
+.up-link-btn:hover { filter: brightness(.95); color: #fff; }
+
+/* Hide non-active tab panels but keep their inputs in the DOM,
+   so the single admin <form> still submits all values. */
+.up-tab-panel[hidden] { display: none !important; }

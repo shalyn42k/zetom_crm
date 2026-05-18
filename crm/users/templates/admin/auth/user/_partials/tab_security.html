@@ -1,0 +1,19 @@
+{% load i18n %}
+{% comment %}
+  Security tab — ссылка на стандартную страницу смены пароля
+  Django-админки. Никакой собственной формы тут не нужно: всё
+  сделано "из коробки" в /admin/auth/user/<id>/password/.
+{% endcomment %}
+<div class="up-card" aria-labelledby="up-sec-heading">
+  <h2 id="up-sec-heading" class="up-card__title">{% trans "Security" %}</h2>
+
+  <p class="up-callout">
+    {% trans "Password is stored as a salted hash. Use the dedicated change form to set a new one." %}
+  </p>
+
+  <div>
+    <a class="up-link-btn" href="{% url 'admin:auth_user_password_change' original.pk %}">
+      {% trans "Change password" %} →
+    </a>
+  </div>
+</div>
