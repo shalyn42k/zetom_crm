@@ -174,6 +174,8 @@ LANGUAGES = (
     ("pl", _("Polish")),
 )
 
+LOCALE_PATHS = [BASE_DIR / "locale"]
+
 # настройка дефолтного региона для библиотеки для валидации телефонов
 PHONENUMBER_DEFAULT_REGION = "PL"
 

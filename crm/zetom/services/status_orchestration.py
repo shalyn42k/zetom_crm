@@ -27,8 +27,6 @@ class ReasonRequired(Exception):
 
 
 def _inactive_request(obj, user, reason):
-    if obj.status == RequestStatus.inactive:
-        raise ValueError("already inactive")
     old_status = obj.status
     obj.status = RequestStatus.inactive
     obj.save()

@@ -408,3 +408,97 @@ html.dark {
 
 /* Hidden SVG sprite — only holds <symbol> defs reused via <use href="#..."> */
 .rm-svg-sprite { position: absolute; }
+
+/* ---------- Actions card: action list + mail modal ---------- */
+
+/* Каждая строка экшена — как карточка пользователя: иконка, мета, кнопка. */
+.rm-action-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.rm-action {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border: 1px solid var(--rm-card-border);
+  border-radius: 8px; background: var(--rm-card-bg);
+}
+.rm-action__icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; flex-shrink: 0;
+  border-radius: 6px; background: var(--rm-bg-soft);
+  font-size: 14px; color: var(--rm-text);
+}
+.rm-action__meta { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.rm-action__name { font-size: 13px; font-weight: 600; color: var(--rm-text); }
+.rm-action__sub  { font-size: 12px; color: var(--rm-text-muted); }
+
+/* Modal */
+.rm-modal {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.rm-modal__backdrop {
+  position: absolute; inset: 0; background: rgba(15, 23, 42, 0.55);
+}
+.rm-modal__panel {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 560px;
+  max-height: calc(100vh - 40px); overflow-y: auto;
+  background: var(--rm-card-bg);
+  border: 1px solid var(--rm-card-border);
+  border-radius: var(--rm-card-radius);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+  padding: 16px;
+}
+.rm-modal__header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.rm-modal__title { margin: 0; font-size: 16px; font-weight: 600; color: var(--rm-text); }
+.rm-modal__close {
+  width: 28px; height: 28px; border: 0; background: transparent;
+  font-size: 22px; line-height: 1; color: var(--rm-text-muted); cursor: pointer;
+  border-radius: 6px;
+}
+.rm-modal__close:hover { background: var(--rm-bg-soft); color: var(--rm-text); }
+
+.rm-tabs {
+  display: flex; gap: 4px; padding: 4px;
+  background: var(--rm-bg-soft);
+  border-radius: 8px; margin-bottom: 16px;
+}
+.rm-tabs__tab {
+  flex: 1; padding: 6px 10px; border: 0; background: transparent;
+  border-radius: 6px; cursor: pointer; font: inherit; color: var(--rm-text-muted);
+}
+.rm-tabs__tab--active {
+  background: var(--rm-card-bg); color: var(--rm-text);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.rm-modal__form { display: flex; flex-direction: column; gap: 14px; }
+.rm-modal__hint { margin: 0; font-size: 13px; color: var(--rm-text-muted); }
+.rm-modal__group { display: flex; flex-direction: column; gap: 6px; }
+.rm-modal__legend { font-size: 12px; font-weight: 600; color: var(--rm-text-muted);
+                    text-transform: uppercase; letter-spacing: 0.04em; }
+
+.rm-label { font-size: 13px; font-weight: 500; color: var(--rm-text); }
+
+.rm-input, .rm-textarea {
+  width: 100%; padding: 8px 10px;
+  border: 1px solid var(--rm-card-border); border-radius: 6px;
+  background: var(--rm-card-bg); color: var(--rm-text); font: inherit;
+}
+.rm-textarea { resize: vertical; min-height: 120px; }
+.rm-input:focus, .rm-textarea:focus, .rm-select:focus { outline: 2px solid #3b82f6; outline-offset: 1px; }
+
+.rm-radio {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border: 1px solid var(--rm-card-border);
+  border-radius: 6px; cursor: pointer;
+}
+.rm-radio + .rm-radio { margin-top: 6px; }
+.rm-radio:has(input:disabled) { opacity: 0.6; cursor: not-allowed; }
+.rm-radio__hint { margin-left: auto; font-size: 12px; color: var(--rm-text-muted); }
+
+.rm-modal__footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding-top: 8px; border-top: 1px solid var(--rm-card-border);
+}

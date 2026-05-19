@@ -1,0 +1,45 @@
+{% load i18n %}
+{% comment %}
+  Notifications tab — ЗАГЛУШКА. Модели preferences нет, toggles
+  задизейблены. См. TODO.md.
+{% endcomment %}
+<div class="up-card" aria-labelledby="up-notif-heading">
+  <h2 id="up-notif-heading" class="up-card__title">{% trans "Notification preferences" %}</h2>
+
+  <p class="up-callout">
+    {% trans "Notification preferences are not persisted yet. UI is ready; backend model is pending." %}
+  </p>
+
+  <div class="up-notif-group">
+    <h3 class="up-card__subtitle">{% trans "Requests" %}</h3>
+    <label class="up-switch">
+      <span class="up-switch__meta">
+        <span class="up-switch__title">{% trans "New request assigned to me" %}</span>
+        <span class="up-switch__sub">{% trans "Assignment events" %}</span>
+      </span>
+      <input type="checkbox" disabled checked aria-describedby="up-stub-note">
+    </label>
+    <label class="up-switch">
+      <span class="up-switch__meta">
+        <span class="up-switch__title">{% trans "Request status changed" %}</span>
+        <span class="up-switch__sub">{% trans "Active ↔ Archive" %}</span>
+      </span>
+      <input type="checkbox" disabled checked aria-describedby="up-stub-note">
+    </label>
+  </div>
+
+  <div class="up-notif-group">
+    <h3 class="up-card__subtitle">{% trans "Documents" %}</h3>
+    <label class="up-switch">
+      <span class="up-switch__meta">
+        <span class="up-switch__title">{% trans "Document ready for review" %}</span>
+        <span class="up-switch__sub">{% trans "Waiting status reached" %}</span>
+      </span>
+      <input type="checkbox" disabled aria-describedby="up-stub-note">
+    </label>
+  </div>
+
+  <p id="up-stub-note" class="up-empty">
+    {% trans "Toggles are disabled until the preferences model is added." %}
+  </p>
+</div>

@@ -1,0 +1,74 @@
+{% load i18n %}
+{% comment %}
+  Permissions tab:
+  - Role — editable select (поле формы adminform.form.role)
+  - Access flags (is_active/is_staff/is_superuser) — editable чекбоксы
+    из adminform.form, добавлены в CustomUserChangeForm.Meta.fields.
+  - Permission list — read-only, из role.permissions.all().
+{% endcomment %}
+<div class="up-card" aria-labelledby="up-perm-heading">
+  <h2 id="up-perm-heading" class="up-card__title">{% trans "Permissions & roles" %}</h2>
+
+  {% with f=adminform.form.role %}
+    <label class="up-field">
+      <span class="up-field__label">{{ f.label }}</span>
+      {{ f }}
+      {% if f.errors %}<ul class="up-field__errors">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    </label>
+  {% endwith %}
+
+  <div class="up-subgroup">
+    <span class="up-card__subtitle">{% trans "Account status" %}</span>
+    <div class="up-checks">
+      {% with f=adminform.form.is_active %}
+        <label class="up-check">
+          {{ f }}
+          <span class="up-check__meta">
+            <span class="up-check__title">{% trans "Active" %}</span>
+            <span class="up-check__sub">{% trans "User can log in" %}</span>
+          </span>
+        </label>
+      {% endwith %}
+      {% with f=adminform.form.is_staff %}
+        <label class="up-check">
+          {{ f }}
+          <span class="up-check__meta">
+            <span class="up-check__title">{% trans "Staff" %}</span>
+            <span class="up-check__sub">{% trans "Access to the admin site" %}</span>
+          </span>
+        </label>
+      {% endwith %}
+      {% with f=adminform.form.is_superuser %}
+        <label class="up-check">
+          {{ f }}
+          <span class="up-check__meta">
+            <span class="up-check__title">{% trans "Superuser" %}</span>
+            <span class="up-check__sub">{% trans "All permissions without explicit grants" %}</span>
+          </span>
+        </label>
+      {% endwith %}
+    </div>
+  </div>
+
+  <div class="up-subgroup">
+    <span class="up-card__subtitle">{% trans "Role permissions" %}</span>
+    <ul class="up-perm-list">
+      {% if original.profile.role %}
+        {% for perm in original.profile.role.permissions.all %}
+          <li class="up-perm">
+            <span class="up-perm__icon up-perm__icon--allowed" aria-hidden="true">✓</span>
+            <div class="up-perm__meta">
+              <div class="up-perm__name">{{ perm.name }}</div>
+              <div class="up-perm__code">{{ perm.code }}</div>
+            </div>
+            <span class="up-badge up-badge--perm-allowed">{% trans "Allowed" %}</span>
+          </li>
+        {% empty %}
+          <li><p class="up-empty">{% trans "Role has no permissions assigned." %}</p></li>
+        {% endfor %}
+      {% else %}
+        <li><p class="up-empty">{% trans "No role assigned — pick one above to see its permissions." %}</p></li>
+      {% endif %}
+    </ul>
+  </div>
+</div>

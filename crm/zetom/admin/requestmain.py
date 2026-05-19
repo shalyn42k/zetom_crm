@@ -24,7 +24,6 @@ from crm.zetom.services.status_orchestration import (ReasonRequired,
                                                      apply_status_change)
 
 from .base import BaseRequestAdmin, ReasonForm
-from crm.status_manager.services.statuses import RequestStatus
 
 @admin.register(RequestMain)
 class RequestMainAdmin(BaseRequestAdmin):
@@ -88,18 +87,10 @@ class RequestMainAdmin(BaseRequestAdmin):
         return super().changeform_view(request, object_id, form_url, extra_context)
 
     def response_change(self, request, obj):
-        if (
-            "_continue" not in request.POST
-            and "_addanother" not in request.POST
-            and "_saveasnew" not in request.POST
-        ):
-            return redirect("admin:zetom_requestmain_change", obj.pk)
-        return super().response_change(request, obj)
+        return redirect("admin:zetom_requestmain_change", obj.pk)
 
     def response_add(self, request, obj, post_url_continue=None):
-        if "_continue" not in request.POST and "_addanother" not in request.POST:
-            return redirect("admin:zetom_requestmain_change", obj.pk)
-        return super().response_add(request, obj, post_url_continue)
+        return redirect("admin:zetom_requestmain_change", obj.pk)
 
     # ---------- Delete (status flip + safedelete) ----------
 

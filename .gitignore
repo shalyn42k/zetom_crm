@@ -210,3 +210,6 @@ __marimo__/
 
 # Local design handoff package — kept for reference, not tracked
 handoff/
+
+# Lab2 — временно, не трекать
+DOCS/lab2/

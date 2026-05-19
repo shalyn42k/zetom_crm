@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import User
+from django.http import HttpResponseRedirect
 from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from crm.users.forms import CustomUserChangeForm, CustomUserCreateForm
@@ -12,12 +13,15 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
     add_form = CustomUserCreateForm
     form = CustomUserChangeForm
     
+    # NB: fieldsets теперь не задают вёрстку (её делает кастомный
+    # change_form.html), а лишь источник для modelform_factory:
+    # Django из них собирает список полей формы. Поэтому здесь должны
+    # быть только поля, которые реально есть в CustomUserChangeForm.
+    # password меняется через /admin/auth/user/<pk>/password/,
+    # last_login/date_joined проставляются Django'й автоматически.
     fieldsets = (
-        (None, {"fields": ("username", "password")} ),
-        ("Личные данные", {"fields": ("first_name", "last_name", "email")} ),
-        ("Профиль", {"fields": ("role", "department", "job_title")} ),
-        ("Параметры доступа", {"fields": ("is_active", "is_staff", "is_superuser")} ),
-        ("Важные даты", {"fields": ("last_login", "date_joined")} ),
+        ("Личные данные", {"fields": ("username", "first_name", "last_name", "email", "job_title")} ),
+        ("Доступ", {"fields": ("role", "department", "is_active", "is_staff", "is_superuser")} ),
     )
 
     add_fieldsets = (
@@ -89,6 +93,20 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return True
+
+    def response_post_save_change(self, request, obj):
+        """After plain "Save" stay on the change page (preserve ?tab=…).
+
+        Default Django behavior is to redirect to the changelist —
+        неудобно, когда работаешь по нескольким табам подряд.
+        Кнопки "Save and add another" / "Save and continue editing"
+        ведут себя как обычно — обрабатывает super().response_change.
+        """
+        url = request.path
+        tab = request.GET.get("tab")
+        if tab:
+            url += f"?tab={tab}"
+        return HttpResponseRedirect(url)
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

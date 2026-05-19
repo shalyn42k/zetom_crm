@@ -31,7 +31,7 @@ UNFOLD = {
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
     "SHOW_BACK_BUTTON": True,
-    "SHOW_LANGUAGES": False, #включить когда будет перевод
+    "SHOW_LANGUAGES": True,
     "BORDER_RADIUS": "6px",
 
     "COLORS": {

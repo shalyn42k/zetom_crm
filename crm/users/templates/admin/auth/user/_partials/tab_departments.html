@@ -1,0 +1,30 @@
+{% load i18n %}
+{% comment %}
+  Departments tab — единый select (UserProfile.department).
+  Поле department приходит из adminform.form. Текущее назначение
+  показано как chip над селектом.
+{% endcomment %}
+<div class="up-card" aria-labelledby="up-dept-heading">
+  <h2 id="up-dept-heading" class="up-card__title">{% trans "Department assignment" %}</h2>
+
+  {% if original.profile.department %}
+    <div class="up-dept-chip up-dept-chip--primary">
+      <span class="up-dept-chip__dot" aria-hidden="true"></span>
+      <div class="up-dept-chip__meta">
+        <div class="up-dept-chip__name">{{ original.profile.get_department_display }}</div>
+        <div class="up-dept-chip__sub">{% trans "Currently assigned" %}</div>
+      </div>
+      <span class="up-badge up-badge--role-admin">{% trans "Primary" %}</span>
+    </div>
+  {% else %}
+    <p class="up-empty">{% trans "No department assigned." %}</p>
+  {% endif %}
+
+  {% with f=adminform.form.department %}
+    <label class="up-field">
+      <span class="up-field__label">{% trans "Change department" %}</span>
+      {{ f }}
+      {% if f.errors %}<ul class="up-field__errors">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    </label>
+  {% endwith %}
+</div>

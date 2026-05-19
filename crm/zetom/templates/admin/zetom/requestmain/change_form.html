@@ -72,7 +72,7 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
   {% endif %}
 
   {# -------- Form (full layout for change-view, compact for add-view) -------- #}
-  <form method="post" enctype="multipart/form-data" class="rm-grid"
+  <form method="post" class="rm-grid"
         id="{{ opts.model_name }}_form" novalidate>
     {% csrf_token %}
 
@@ -86,6 +86,7 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
 
     {% if original.pk %}
       <aside class="rm-col rm-col--right">
+        {% include "admin/zetom/requestmain/_partials/actions_card.html" %}
         {% include "admin/zetom/requestmain/_partials/assigned_users.html" %}
         {% include "admin/zetom/requestmain/_partials/status_grid.html" %}
         {% include "admin/zetom/requestmain/_partials/departments.html" %}
@@ -100,5 +101,4 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
 
 {% block extra_js %}
   {{ block.super }}
-  <script src="{% static 'clients/client_autofill.js' %}"></script>
 {% endblock extra_js %}
