@@ -1,10 +1,8 @@
-from django.db.models.signals import post_delete
 from django.dispatch import receiver  # вызов функции с сигналом
 from safedelete.signals import \
     post_softdelete  # сигнал который срабатывает после удаления
 
-from crm.status_manager.services.status_service import (delete_request,
-                                                        update_parent)
+from crm.status_manager.services.status_service import update_parent
 from crm.zetom.models import Oferta, Wniosek, Zlecenie
 
 

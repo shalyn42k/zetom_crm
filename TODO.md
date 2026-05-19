@@ -1,7 +1,7 @@
 # TODO
 
 Общий список того, что нужно сделать/доделать по проекту.
-Формат: `- [ ] заголовок` — открытая задача, `- [x]` — закрытая.
+Формат: `- [ ] заголовок` — открытая задача. Закрытые удаляются.
 Под пунктом — короткий контекст (1–3 строки), если он не очевиден из заголовка.
 
 ---
@@ -25,26 +25,6 @@
 - [ ] `views.email_template` редиректит публичного юзера в админку
   - [views.py:25](crm/zetom/views.py#L25) — `redirect("admin:zetom_requestnull_change", ...)`. Анонимный юзер с сайта упирается в логин. Нужен thank-you page.
 
-## Zetom: мёртвый код
-
-- [ ] Убрать дубль `from crm.status_manager.services.statuses import RequestStatus` в [requestmain.py:27](crm/zetom/admin/requestmain.py#L27)
-
-- [ ] Снести недостижимую ветку `if obj.status == RequestStatus.inactive: raise` в `_inactive_request` ([status_orchestration.py:30-31](crm/zetom/services/status_orchestration.py#L30-L31))
-  - До неё не доходит — `apply_status_change` уже отсекает «уже в этом статусе» выше.
-
-- [ ] Упростить `response_change`/`response_add` до безусловного редиректа на change view
-  - Ветка `if "_continue" not in request.POST and ...` ([requestmain.py:90-102](crm/zetom/admin/requestmain.py#L90-L102)) всегда True — кнопки `_continue`/`_addanother` в шаблоне скрыты.
-
-- [ ] Убрать неиспользуемый `from django.db.models.signals import post_delete` в [signals.py:1](crm/status_manager/signals.py#L1)
-
-- [ ] Убрать `enctype="multipart/form-data"` из формы в [change_form.html:75](crm/zetom/templates/admin/zetom/requestmain/change_form.html#L75) — файловых полей нет
-
-- [ ] `client_autofill.js` грузится дважды
-  - Один раз из `Media` в админе, второй раз вручную в [change_form.html:103](crm/zetom/templates/admin/zetom/requestmain/change_form.html#L103) (с другим путём, возможно битым). Оставить только `Media`.
-
-- [ ] Удалить устаревший комментарий в [client_card.html:2-7](crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html#L2-L7)
-  - Текст про «Placeholder for the future Client model» — `ClientField` уже подключён через `TemplateForm`.
-
 ## Zetom: рефакторинг
 
 - [ ] Объединить `CancelledRequestAdmin` и `DeletedRequestAdmin` в общий `BaseArchiveAdmin`
@@ -67,6 +47,11 @@
 
 - [ ] Вынести placeholder `"Long and very interesting note … intresting text"` в константу
   - Повторяется в [forms.py](crm/zetom/forms.py) несколько раз, ещё и с опечаткой `intresting`.
+
+- [ ] Ленивый поиск (autocomplete по вводу) для Client и Assigned users в форме RequestMain
+  - Сейчас `{{ form.client }}` в [client_card.html:26](crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html#L26) и `<select name="user_id">` в [assigned_users.html:44-48](crm/zetom/templates/admin/zetom/requestmain/_partials/assigned_users.html#L44-L48) — обычные `<select>` со всеми записями. Departments не трогаем — оставляем дропдаун.
+  - План: два JSON-эндпоинта в `RequestMainAdmin` (`clients/search/?q=`, `users/search/?q=&request=<pk>` с исключением уже назначенных), лимит ~20. На фронте — общий Alpine-комбобокс (Alpine уже подключён в `assigned_users.html`): input с дебаунсом, выпадашка, скрытый id-инпут.
+  - Открытые вопросы: формат строки для клиента (`Company — NIP …`?), что показывать для юзера кроме ФИО, исключать ли назначенных, нужна ли пагинация при скролле.
 
 - [ ] Решить, нужен ли FSM-переход обратно в `Status.new` для детей
   - В [status_service.py:23-28](crm/status_manager/services/status_service.py#L23-L28) ни один из переходов не ведёт в `new` — статус становится недостижим после первой смены.
@@ -102,9 +87,6 @@
   - Сейчас перебиваем своим CSS на странице User change-form, но в светлой теме это хрупко.
   - Заменить на theme-aware (`bg-white dark:bg-gray-900 text-gray-900 dark:text-white`) или убрать background/color вообще, оставив только layout-классы.
   - Зона авторов `users`.
-
-- [x] Редактируемые `is_active`, `is_staff`, `is_superuser` в Permissions-табе
-  - 2026-05-18: добавлено в `CustomUserChangeForm.Meta.fields`, рендерится чекбоксами на Permissions-табе.
 
 ---
 
