@@ -1,0 +1,240 @@
+{% load i18n %}
+{% comment %}
+  Actions-карточка для формы RequestMain.
+
+  Состоит из двух частей:
+    1) Сама карточка-дропдаун в правой колонке (rm-card + Alpine).
+    2) Модалка, телепортируемая в <body>, чтобы НЕ оказаться вложенной
+       формой внутри основной <form class="rm-grid">. Внутри модалки —
+       две формы (документ / свободное сообщение).
+
+  Контекст из RequestMainAdmin.render_change_form:
+    original, ofertas, zlecenia, wnioski.
+
+  TODO для бэкенда:
+    Когда появятся URL'ы в RequestMainAdmin.get_urls():
+      - zetom_requestmain_mail_document
+      - zetom_requestmain_mail_freeform
+    подставить их в action="" у обеих форм ниже (см. метки [TODO-URL]).
+    Сейчас action оставлен пустым — форма отправит POST на change-view,
+    Django ответит как на обычное сохранение. До подключения view'ов
+    модалкой можно пользоваться только визуально.
+{% endcomment %}
+
+<section class="rm-card rm-card--collapsible"
+         aria-labelledby="rm-actions-heading" id="actions"
+         x-data="rmActions()"
+         @keydown.escape.window="modal.open && (modal.open = false)">
+  <header class="rm-card__header rm-card__toggle" role="button" tabindex="0"
+          :aria-expanded="open"
+          @click="open = !open"
+          @keydown.enter.prevent="open = !open"
+          @keydown.space.prevent="open = !open">
+    <h2 id="rm-actions-heading" class="rm-card__title">{% trans "Actions" %}</h2>
+    <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }"
+         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  </header>
+
+  <div x-show="open" x-cloak>
+    {% comment %}Каждый экшен — отдельная строка в списке. Расширяется
+       добавлением новой <li class="rm-action">. Кнопка триггерит модалку
+       либо submit'ит форму на свой URL — на стиль это не влияет.{% endcomment %}
+    <ul class="rm-action-list">
+      <li class="rm-action">
+        <span class="rm-action__icon" aria-hidden="true">✉</span>
+        <span class="rm-action__meta">
+          <span class="rm-action__name">{% trans "Send mail" %}</span>
+          <span class="rm-action__sub">{% trans "Mail a document to staff or a free message to client" %}</span>
+        </span>
+        <button type="button"
+                class="rm-btn rm-btn--primary rm-btn--sm"
+                @click="openMail()">
+          {% trans "Open" %}
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  {# ----------- Модалка ----------- #}
+  <template x-teleport="body">
+    <div class="rm-modal" x-show="modal.open" x-cloak
+         role="dialog" aria-modal="true" aria-labelledby="rm-mail-modal-title">
+      <div class="rm-modal__backdrop" @click="modal.open = false"></div>
+
+      <div class="rm-modal__panel" @click.stop>
+        <header class="rm-modal__header">
+          <h2 id="rm-mail-modal-title" class="rm-modal__title">
+            {% trans "Send mail" %}
+          </h2>
+          <button type="button" class="rm-modal__close"
+                  @click="modal.open = false" aria-label='{% trans "Close" %}'>×</button>
+        </header>
+
+        {# Переключатель режима: документ / свободное сообщение #}
+        <div class="rm-tabs" role="tablist">
+          <button type="button" class="rm-tabs__tab"
+                  :class="{ 'rm-tabs__tab--active': modal.mode === 'document' }"
+                  role="tab" :aria-selected="modal.mode === 'document'"
+                  @click="modal.mode = 'document'">
+            {% trans "Document" %}
+          </button>
+          <button type="button" class="rm-tabs__tab"
+                  :class="{ 'rm-tabs__tab--active': modal.mode === 'freeform' }"
+                  role="tab" :aria-selected="modal.mode === 'freeform'"
+                  @click="modal.mode = 'freeform'">
+            {% trans "Free message" %}
+          </button>
+        </div>
+
+        {# ------- Режим: документ ------- #}
+        <form method="post"
+              action=""  {# [TODO-URL] {% url "admin:zetom_requestmain_mail_document" original.pk %} #}
+              class="rm-modal__form"
+              x-show="modal.mode === 'document'" x-cloak>
+          {% csrf_token %}
+
+          <p class="rm-modal__hint">
+            {% trans "The selected document will be e-mailed to staff. Its status will flip from In progress → Waiting." %}
+          </p>
+
+          <fieldset class="rm-modal__group">
+            <legend class="rm-modal__legend">{% trans "Document type" %}</legend>
+            <label class="rm-radio">
+              <input type="radio" name="kind" value="zlecenie"
+                     x-model="modal.kind"
+                     {% if not zlecenia %}disabled{% endif %}>
+              <span>{% trans "Order (Zlecenie)" %}</span>
+              {% if not zlecenia %}<span class="rm-radio__hint">{% trans "none yet" %}</span>{% endif %}
+            </label>
+            <label class="rm-radio">
+              <input type="radio" name="kind" value="oferta"
+                     x-model="modal.kind"
+                     {% if not ofertas %}disabled{% endif %}>
+              <span>{% trans "Offer (Oferta)" %}</span>
+              {% if not ofertas %}<span class="rm-radio__hint">{% trans "none yet" %}</span>{% endif %}
+            </label>
+            <label class="rm-radio">
+              <input type="radio" name="kind" value="wniosek"
+                     x-model="modal.kind"
+                     {% if not wnioski %}disabled{% endif %}>
+              <span>{% trans "Application (Wniosek)" %}</span>
+              {% if not wnioski %}<span class="rm-radio__hint">{% trans "none yet" %}</span>{% endif %}
+            </label>
+          </fieldset>
+
+          {% comment %}Селект конкретного документа этого типа.
+             Показывается только когда выбран соответствующий радио.{% endcomment %}
+          <div class="rm-modal__group" x-show="modal.kind === 'zlecenie'" x-cloak>
+            <label class="rm-label" for="rm-mail-zlecenie">{% trans "Pick order" %}</label>
+            <select name="document_id" id="rm-mail-zlecenie" class="rm-select"
+                    :required="modal.kind === 'zlecenie'">
+              {% for z in zlecenia %}
+                <option value="{{ z.pk }}">
+                  ZLC-{{ z.created_at|date:"Y" }}-{{ z.pk|stringformat:"04d" }}
+                  · {{ z.get_status_display }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="rm-modal__group" x-show="modal.kind === 'oferta'" x-cloak>
+            <label class="rm-label" for="rm-mail-oferta">{% trans "Pick offer" %}</label>
+            <select name="document_id" id="rm-mail-oferta" class="rm-select"
+                    :required="modal.kind === 'oferta'">
+              {% for o in ofertas %}
+                <option value="{{ o.pk }}">
+                  OFR-{{ o.created_at|date:"Y" }}-{{ o.pk|stringformat:"04d" }}
+                  · {{ o.get_status_display }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="rm-modal__group" x-show="modal.kind === 'wniosek'" x-cloak>
+            <label class="rm-label" for="rm-mail-wniosek">{% trans "Pick application" %}</label>
+            <select name="document_id" id="rm-mail-wniosek" class="rm-select"
+                    :required="modal.kind === 'wniosek'">
+              {% for w in wnioski %}
+                <option value="{{ w.pk }}">
+                  WNI-{{ w.created_at|date:"Y" }}-{{ w.pk|stringformat:"04d" }}
+                  · {{ w.get_status_display }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <footer class="rm-modal__footer">
+            <button type="button" class="rm-btn"
+                    @click="modal.open = false">{% trans "Cancel" %}</button>
+            <button type="submit" class="rm-btn rm-btn--primary"
+                    :disabled="!modal.kind">{% trans "Send to staff" %}</button>
+          </footer>
+        </form>
+
+        {# ------- Режим: свободное сообщение ------- #}
+        <form method="post"
+              action=""  {# [TODO-URL] {% url "admin:zetom_requestmain_mail_freeform" original.pk %} #}
+              class="rm-modal__form"
+              x-show="modal.mode === 'freeform'" x-cloak>
+          {% csrf_token %}
+
+          <p class="rm-modal__hint">
+            {% blocktrans with email=original.email %}
+              Message will be sent to client: <strong>{{ email }}</strong>
+            {% endblocktrans %}
+          </p>
+
+          <div class="rm-modal__group">
+            <label class="rm-label" for="rm-mail-subject">{% trans "Subject" %}</label>
+            <input id="rm-mail-subject" name="subject" type="text"
+                   class="rm-input" maxlength="200" required
+                   x-model="modal.subject">
+          </div>
+
+          <div class="rm-modal__group">
+            <label class="rm-label" for="rm-mail-body">{% trans "Message" %}</label>
+            <textarea id="rm-mail-body" name="body" class="rm-textarea"
+                      rows="8" required x-model="modal.body"></textarea>
+          </div>
+
+          <footer class="rm-modal__footer">
+            <button type="button" class="rm-btn"
+                    @click="modal.open = false">{% trans "Cancel" %}</button>
+            <button type="submit" class="rm-btn rm-btn--primary"
+                    :disabled="!modal.subject.trim() || !modal.body.trim()">
+              {% trans "Send to client" %}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  </template>
+</section>
+
+<script>
+  // Регистрируется ровно один раз на страницу. Если карточка
+  // встретится повторно — Alpine просто переиспользует функцию.
+  if (!window.rmActions) {
+    window.rmActions = function () {
+      return {
+        // collapsible: разворот карточки. По умолчанию открыта — экшенов мало.
+        open: true,
+        modal: {
+          open: false,
+          mode: 'document',  // 'document' | 'freeform'
+          kind: '',          // 'zlecenie' | 'oferta' | 'wniosek'
+          subject: '',
+          body: '',
+        },
+        openMail() {
+          this.modal.open = true;
+          this.modal.mode = 'document';
+          this.modal.kind = '';
+        },
+      };
+    };
+  }
+</script>

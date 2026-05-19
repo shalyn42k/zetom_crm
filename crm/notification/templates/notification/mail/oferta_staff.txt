@@ -1,0 +1,25 @@
+{% comment %}Письмо стаффу: пользователь нажал "Mail" по существующей Oferta.
+   Контекст рендера:
+       document  — Oferta
+       parent    — document.from_main (RequestMain)
+       sender    — request.user
+   Первая строка — тема. Шаблон-черновик.{% endcomment %}
+Коммерческое предложение готово к рассмотрению: OFR-{{ document.created_at|date:"Y" }}-{{ document.pk|stringformat:"04d" }} ({{ parent.company_name|default:"—" }})
+
+Здравствуйте.
+
+По заявке REQ-{{ parent.created_at|date:"Y" }}-{{ parent.pk|stringformat:"04d" }} от {{ parent.company_name|default:"клиента" }} подготовлено коммерческое предложение (Oferta).
+
+Реквизиты предложения:
+  Номер: OFR-{{ document.created_at|date:"Y" }}-{{ document.pk|stringformat:"04d" }}
+  Контактное лицо: {{ document.full_name|default:parent.full_name }}
+  Телефон: {{ document.phone|default:parent.phone }}
+  Email клиента: {{ document.email|default:parent.email }}
+{% if document.price %}  Сумма предложения: {{ document.price }} PLN{% endif %}
+
+Заметки по предложению:
+{{ document.notes|default:"—" }}
+
+После отправки этого письма статус предложения в CRM меняется на "Ожидание" (waiting).
+
+Инициатор отправки: {{ sender.get_full_name|default:sender.username }}
