@@ -1,21 +1,31 @@
+"""auth.User admin override.
+
+Class body is the team's existing CustomUserAdmin, split out of the
+old single-file `admin.py` into this package. New methods added during
+the Departments-tab work are marked with `# claude`; the rest is the
+team's own code.
+"""
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
+from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from crm.users.forms import CustomUserChangeForm, CustomUserCreateForm
-from crm.users.models import Role, UserProfile
-from crm.users.utils import user_has_perm
+from crm.users.models import UserProfile
+from crm.zetom.models import DepartmentsVariants
+
+from ._dept_actions import DepartmentActionsMixin
 
 
-class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
+class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin):
     add_form = CustomUserCreateForm
     form = CustomUserChangeForm
 
     fieldsets = (
         ("Личные данные", {"fields": ("username", "first_name", "last_name", "email", "job_title")}),
-        ("Доступ", {"fields": ("role", "department", "is_active", "is_staff", "is_superuser")}),
+        ("Доступ", {"fields": ("role", "is_active", "is_staff", "is_superuser")}),
     )
 
     add_fieldsets = (
@@ -31,7 +41,7 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
                     "password",
                     "password_confirm",
                     "role",
-                    "department",
+                    "departments",
                     "job_title",
                 ),
             },
@@ -44,7 +54,7 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
         "first_name",
         "last_name",
         "get_role",
-        "get_department",
+        "get_departments",
         "get_job_title",
         "is_staff",
     )
@@ -62,26 +72,29 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
         obj.is_staff = True  # ← принудительно включаем staff
         super().save_model(request, obj, form, change)
 
-        profile, _ = UserProfile.objects.get_or_create(user=obj)
+        profile, _created = UserProfile.objects.get_or_create(user=obj)
         if "role" in form.cleaned_data:
             profile.role = form.cleaned_data.get("role")
-        if "department" in form.cleaned_data:
-            department = form.cleaned_data.get("department")
-            profile.department = department if department else None
         if "job_title" in form.cleaned_data:
             job_title = form.cleaned_data.get("job_title")
             profile.job_title = job_title if job_title else None
         profile.save()
+        # NB: departments / main_departments умышленно НЕ трогаются здесь —
+        # ими управляет вкладка Departments через HTMX-эндпоинты, иначе
+        # сабмит outer-формы перезатёр бы свежие изменения вкладки. — claude
 
     def get_role(self, obj):
         return obj.profile.role if hasattr(obj, "profile") and obj.profile.role else None
     get_role.short_description = "Роль"
     get_role.admin_order_field = "profile__role__name"
 
-    def get_department(self, obj):
-        return obj.profile.get_department_display() if hasattr(obj, "profile") else None
-    get_department.short_description = "Департамент"
-    get_department.admin_order_field = "profile__department"
+    # claude
+    def get_departments(self, obj):
+        if not hasattr(obj, "profile") or not obj.profile.departments:
+            return None
+        labels = dict(DepartmentsVariants.choices)
+        return ", ".join(labels.get(code, code) for code in obj.profile.departments)
+    get_departments.short_description = _("Departments")
 
     def get_job_title(self, obj):
         return obj.profile.job_title if hasattr(obj, "profile") else None
@@ -104,44 +117,14 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
             url += f"?tab={tab}"
         return HttpResponseRedirect(url)
 
+    # claude — впрыскиваем контекст для Departments-вкладки на первый GET,
+    # чтобы партиал отрисовался без JS.
+    def render_change_form(self, request, context, *args, **kwargs):
+        obj = context.get("original")
+        if obj is not None:
+            context.update(self._build_dept_context(request, obj))
+        return super().render_change_form(request, context, *args, **kwargs)
+
 
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
-
-
-@admin.register(Role)
-class AdminRole(UnfoldModelAdmin):
-    list_display = ("code", "name")
-
-    def has_view_permission(self, request, obj=None):
-        return user_has_perm(request.user, "view_roles")
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def get_list_display_links(self, request, list_display):
-        return None
-
-
-@admin.register(UserProfile)
-class AdminUserProfile(UnfoldModelAdmin):
-    list_display = ("user", "role", "department", "job_title")
-    search_fields = ("user__username", "user__email", "role__name", "department")
-
-    def has_view_permission(self, request, obj=None):
-        return user_has_perm(request.user, "view_users")
-
-    def has_change_permission(self, request, obj=None):
-        return user_has_perm(request.user, "edit_users")
-
-    def has_add_permission(self, request):
-        return user_has_perm(request.user, "edit_users")
-
-    def has_delete_permission(self, request, obj=None):
-        return user_has_perm(request.user, "edit_users")

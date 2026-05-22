@@ -1,0 +1,20 @@
+{% load i18n %}
+{% for dept in available_departments %}
+  <li class="up-picker-row" role="option">
+    <span class="up-picker-row__icon" aria-hidden="true">
+      {{ dept.label|slice:":1"|upper }}
+    </span>
+    <span class="up-picker-row__main">
+      <span class="up-picker-row__name">{{ dept.label }}</span>
+    </span>
+    <button type="button"
+            class="up-btn up-btn--sm up-btn--primary"
+            hx-post="{% url 'admin:auth_user_add_department' original.pk %}"
+            hx-vals='{"code": "{{ dept.code }}"}'
+            hx-target="#dept-tab" hx-swap="outerHTML">
+      {% trans "Add" %}
+    </button>
+  </li>
+{% empty %}
+  <li class="up-picker-empty">{% trans "All departments already assigned." %}</li>
+{% endfor %}

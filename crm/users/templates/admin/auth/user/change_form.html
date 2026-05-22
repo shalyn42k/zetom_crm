@@ -16,6 +16,22 @@
   <link rel="stylesheet" href="{% static 'users/css/userprofile_detail.css' %}">
 {% endblock extrastyle %}
 
+{% block extrahead %}{{ block.super }}
+  <script>
+    // claude: collapsible nodes in the Departments tab tree (right column).
+    // Toggles .is-open on the <li> ancestor when [data-tree-toggle] is clicked.
+    // Uses event delegation so it survives HTMX swaps of #dept-tab.
+    document.addEventListener("click", function (e) {
+      var trigger = e.target.closest("[data-tree-toggle]");
+      if (!trigger) return;
+      var node = trigger.closest(".up-dept-tree__node");
+      if (!node) return;
+      node.classList.toggle("is-open");
+      node.setAttribute("aria-expanded", node.classList.contains("is-open"));
+    });
+  </script>
+{% endblock extrahead %}
+
 {% block field_sets %}
 {% with active_tab=request.GET.tab|default:"profile" %}
 <div class="up-page">

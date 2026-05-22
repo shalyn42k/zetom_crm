@@ -1,5 +1,7 @@
 from django import forms
+from django.contrib.auth import password_validation
 from django.contrib.auth.models import User
+from django.utils.translation import gettext_lazy as _
 
 from crm.users.models import Role, UserProfile
 from crm.zetom.models import DepartmentsVariants
@@ -27,11 +29,11 @@ class CustomUserCreateForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": INPUT_CLASS})
     )
 
-    department = forms.ChoiceField(
+    departments = forms.MultipleChoiceField(
         choices=DepartmentsVariants.choices,
-        label="Департамент",
+        label=_("Departments"),
         required=False,
-        widget=forms.Select(attrs={"class": INPUT_CLASS})
+        widget=forms.SelectMultiple(attrs={"class": INPUT_CLASS})
     )
 
     job_title = forms.CharField(
@@ -85,7 +87,7 @@ class CustomUserCreateForm(forms.ModelForm):
             UserProfile.objects.create(
                 user=user,
                 role=self.cleaned_data["role"],
-                department=self.cleaned_data.get("department") or None,
+                departments=self.cleaned_data.get("departments") or [],
                 job_title=self.cleaned_data.get("job_title") or None,
             )
 
@@ -102,17 +104,27 @@ class CustomUserChangeForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": INPUT_CLASS})
     )
 
-    department = forms.ChoiceField(
-        choices=[("", "---")] + list(DepartmentsVariants.choices),
-        label="Департамент",
-        required=False,
-        widget=forms.Select(attrs={"class": INPUT_CLASS})
-    )
-
     job_title = forms.CharField(
         label="Должность",
         required=False,
         widget=forms.TextInput(attrs={"class": INPUT_CLASS})
+    )
+
+    # claude — поля смены пароля прямо в основной форме User'а, чтобы
+    # Save во вкладке Security сабмитился вместе со всем остальным.
+    new_password1 = forms.CharField(
+        label=_("New password"),
+        required=False,
+        strip=False,
+        widget=forms.PasswordInput(attrs={"class": INPUT_CLASS, "autocomplete": "new-password"}),
+        help_text=password_validation.password_validators_help_text_html(),
+    )
+    new_password2 = forms.CharField(
+        label=_("New password confirmation"),
+        required=False,
+        strip=False,
+        widget=forms.PasswordInput(attrs={"class": INPUT_CLASS, "autocomplete": "new-password"}),
+        help_text=_("Enter the same password as before, for verification."),
     )
 
     class Meta:
@@ -135,8 +147,6 @@ class CustomUserChangeForm(forms.ModelForm):
         if profile:
             if profile.role:
                 self.fields["role"].initial = profile.role
-            if profile.department:
-                self.fields["department"].initial = profile.department
             if profile.job_title:
                 self.fields["job_title"].initial = profile.job_title
 
@@ -149,19 +159,36 @@ class CustomUserChangeForm(forms.ModelForm):
             raise forms.ValidationError("Email уже используется.")
         return email
 
+    # claude — валидация пары new_password1/new_password2:
+    # пустые поля пропускаем (пароль не трогаем); если заполнены — проверяем
+    # совпадение и крутим стандартные AUTH_PASSWORD_VALIDATORS.
+    def clean(self):
+        cleaned = super().clean()
+        p1 = cleaned.get("new_password1") or ""
+        p2 = cleaned.get("new_password2") or ""
+        if not p1 and not p2:
+            return cleaned
+        if p1 != p2:
+            self.add_error("new_password2", _("The two password fields didn’t match."))
+            return cleaned
+        try:
+            password_validation.validate_password(p1, self.instance)
+        except forms.ValidationError as exc:
+            self.add_error("new_password1", exc)
+        return cleaned
+
     def save(self, commit=True):
+        # claude — set_password перед super().save(), чтобы хеш записался
+        # вместе с остальными полями User'а; пустой пароль = «не менять».
+        new_password = self.cleaned_data.get("new_password1") or ""
+        if new_password:
+            self.instance.set_password(new_password)
         user = super().save(commit=commit)
 
-        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile, _created = UserProfile.objects.get_or_create(user=user)
         role = self.cleaned_data.get("role")
         if role is not None:
             profile.role = role
-
-        department = self.cleaned_data.get("department")
-        if department:
-            profile.department = department
-        elif department == "":
-            profile.department = None
 
         job_title = self.cleaned_data.get("job_title")
         if job_title:
