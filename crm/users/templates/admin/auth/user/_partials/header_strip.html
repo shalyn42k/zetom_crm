@@ -20,9 +20,9 @@
         <span class="up-sep" aria-hidden="true">·</span>
         <span class="up-badge up-badge--role-staff">{% trans "Staff" %}</span>
       {% endif %}
-      {% if original.profile.department %}
+      {% if original.profile.departments %}
         <span class="up-sep" aria-hidden="true">·</span>
-        <span>{{ original.profile.get_department_display }}</span>
+        <span>{{ original.profile.departments_summary }}</span>
       {% endif %}
     </p>
     <p class="up-strip__dates">

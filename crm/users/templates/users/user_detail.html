@@ -1,4 +1,5 @@
 {% extends "unfold/layouts/base.html" %}
+{% load i18n %}
 
 {% block content %}
 <div class="p-6 max-w-xl mx-auto">
@@ -11,7 +12,7 @@
         <p><strong>Имя:</strong> {{ user.first_name }}</p>
         <p><strong>Фамилия:</strong> {{ user.last_name }}</p>
         <p><strong>Роль:</strong> {{ profile.role }}</p>
-        <p><strong>Департамент:</strong> {{ profile.get_department_display }}</p>
+        <p><strong>{% trans "Departments" %}:</strong> {{ profile.departments|join:", " }}</p>
     </div>
 
     <div class="mt-6 flex gap-4">

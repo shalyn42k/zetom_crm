@@ -1,19 +1,41 @@
 {% load i18n %}
 {% comment %}
-  Security tab — ссылка на стандартную страницу смены пароля
-  Django-админки. Никакой собственной формы тут не нужно: всё
-  сделано "из коробки" в /admin/auth/user/<id>/password/.
+  Security tab — поля смены пароля встроены в основную форму юзера.
+  Save-кнопка снизу (от Django/Unfold) сабмитит всё вместе:
+  identity + role + password. Если поля пароля пустые — пароль не трогается.
 {% endcomment %}
-<div class="up-card" aria-labelledby="up-sec-heading">
+<div class="up-card up-card--narrow" id="sec-tab" aria-labelledby="up-sec-heading">
   <h2 id="up-sec-heading" class="up-card__title">{% trans "Security" %}</h2>
 
   <p class="up-callout">
-    {% trans "Password is stored as a salted hash. Use the dedicated change form to set a new one." %}
+    {% trans "Leave fields empty to keep the current password. Fill both to set a new one — it will be saved together with the rest of the user’s data." %}
   </p>
 
-  <div>
-    <a class="up-link-btn" href="{% url 'admin:auth_user_password_change' original.pk %}">
-      {% trans "Change password" %} →
-    </a>
+  <div class="up-form-stack">
+    {% with f1=adminform.form.new_password1 %}
+      <label class="up-field">
+        <span class="up-field__label">{{ f1.label }}</span>
+        {{ f1 }}
+        {% if f1.help_text %}<span class="up-field__help">{{ f1.help_text|safe }}</span>{% endif %}
+        {% if f1.errors %}
+          <ul class="up-field__errors">
+            {% for e in f1.errors %}<li>{{ e }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+      </label>
+    {% endwith %}
+
+    {% with f2=adminform.form.new_password2 %}
+      <label class="up-field">
+        <span class="up-field__label">{{ f2.label }}</span>
+        {{ f2 }}
+        {% if f2.help_text %}<span class="up-field__help">{{ f2.help_text }}</span>{% endif %}
+        {% if f2.errors %}
+          <ul class="up-field__errors">
+            {% for e in f2.errors %}<li>{{ e }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+      </label>
+    {% endwith %}
   </div>
 </div>

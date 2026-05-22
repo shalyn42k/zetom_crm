@@ -17,13 +17,15 @@ from crm.status_manager.models import StatusHistory
 from crm.status_manager.services.statuses import RequestStatus
 from crm.zetom.forms import AddRequestFormMain
 from crm.zetom.models import DepartmentsVariants, RequestMain, RequestSource
-from crm.zetom.services.request_service import (approve_oferta_action,
-                                                approve_wniosek_action,
-                                                approve_zlecenie_action)
-from crm.zetom.services.status_orchestration import (ReasonRequired,
-                                                     apply_status_change)
+from crm.zetom.services.request_service import (
+    approve_oferta_action, approve_wniosek_action, approve_zlecenie_action,
+)
+from crm.zetom.services.status_orchestration import (
+    ReasonRequired, apply_status_change,
+)
 
 from .base import BaseRequestAdmin, ReasonForm
+
 
 @admin.register(RequestMain)
 class RequestMainAdmin(BaseRequestAdmin):
@@ -171,7 +173,9 @@ class RequestMainAdmin(BaseRequestAdmin):
             context["assigned_departments"] = []
             context["available_departments"] = []
         profile = getattr(request.user, "profile", None)
-        context["user_department"] = profile.department if profile else None
+        # claude — было user_department (одиночка). Стало списком, шаблон
+        # подсвечивает «свои» чипы через `{% if code in user_departments %}`.
+        context["user_departments"] = profile.departments if profile else []
         context["source_display"] = obj.get_source_display() if has_obj else ""
 
         return super().render_change_form(request, context, *args, **kwargs)

@@ -7,19 +7,19 @@
 {% endblock extrastyle %}
 
 {% block submit_buttons_bottom %}
-  <div id="submit-row">
-    <div class="pb-4 px-4">
-      <div class="flex flex-col gap-3 items-center">
-        <form method="post" action='{% url "admin:zetom_deletedrequest_restore" original.pk %}' class="w-full">
+  <div id="submit-row" class="relative lg:sticky lg:bottom-0 z-40">
+    <div class="backdrop-blur-xs bg-white/80 rounded-b-default pb-4 px-4 dark:bg-base-900/80 lg:border-t lg:border-base-200 relative lg:py-0 dark:border-base-800">
+      <div class="flex flex-col-reverse gap-3 items-center mx-auto lg:flex-row-reverse container lg:h-[64px]">
+        <form method="post" action='{% url "admin:zetom_deletedrequest_restore" original.pk %}' class="w-full lg:w-auto">
           {% csrf_token %}
-          <button type="submit" class="w-full font-medium inline-flex items-center gap-1 px-3 py-2 bg-blue-600 border border-blue-600 text-white">
+          <button type="submit" class="w-full lg:w-auto font-medium inline-flex items-center gap-1 rounded-default justify-center cursor-pointer px-3 py-2 bg-primary-600 border border-primary-600 text-white hover:bg-primary-600/80">
             <span class="material-symbols-outlined -ml-0.5">restore</span>
             {% trans "Restore" %}
           </button>
         </form>
-        <form method="post" action='{% url "admin:zetom_deletedrequest_hard_delete" original.pk %}' class="w-full" onsubmit="return confirm('Permanently delete this request? This cannot be undone.');">
+        <form method="post" action='{% url "admin:zetom_deletedrequest_hard_delete" original.pk %}' class="w-full lg:w-auto" onsubmit="return confirm('{% trans "Permanently delete this request? This cannot be undone." %}');">
           {% csrf_token %}
-          <button type="submit" class="w-full font-medium inline-flex items-center gap-1 px-3 py-2 bg-red-600 border border-red-600 text-white">
+          <button type="submit" class="w-full lg:w-auto font-medium inline-flex items-center gap-1 rounded-default justify-center cursor-pointer px-3 py-2 bg-red-600 border border-red-600 text-white hover:bg-red-600/80">
             <span class="material-symbols-outlined -ml-0.5">delete_forever</span>
             {% trans "Hard delete" %}
           </button>
@@ -133,7 +133,7 @@
                   <span class="rm-user__name">{{ u.get_full_name|default:u.username }}</span>
                   <span class="rm-user__sub">
                     {% if u.profile.role %}{{ u.profile.role.name }}{% endif %}
-                    {% if u.profile.department %} · {{ u.profile.get_department_display }}{% endif %}
+                    {% if u.profile.departments %} · {{ u.profile.departments|join:", " }}{% endif %}
                   </span>
                 </span>
               </li>
@@ -155,7 +155,7 @@
         <div x-show="open" x-cloak>
           <ul class="rm-dept-list">
             {% for code, label in assigned_departments %}
-              <li class="rm-dept-row {% if code == user_department %}rm-dept-row--mine{% endif %}">
+              <li class="rm-dept-row {% if code in user_departments %}rm-dept-row--mine{% endif %}">
                 <span class="rm-avatar" aria-hidden="true">{{ label|slice:":1"|upper }}</span>
                 <span class="rm-dept-row__name">{{ label }}</span>
               </li>

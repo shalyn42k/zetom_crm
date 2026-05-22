@@ -23,8 +23,10 @@ def visible_requests_for(user, qs):
     if profile.is_role("specialist"):
         personal = Q(assigned_to=user)
 
-        if profile.department:
-            same_dept = Q(departments__contains=[profile.department])
+        # claude — было: одиночное profile.department + departments__contains=[code].
+        # Теперь юзер может состоять в N отделах → пересечение через __overlap.
+        if profile.departments:
+            same_dept = Q(departments__overlap=profile.departments)
             return qs.filter(personal | same_dept).distinct()
 
         return qs.filter(personal).distinct()

@@ -11,7 +11,7 @@
   <div x-show="open" x-cloak>
   <ul class="rm-dept-list">
     {% for code, label in assigned_departments %}
-      <li class="rm-dept-row {% if code == user_department %}rm-dept-row--mine{% endif %}">
+      <li class="rm-dept-row {% if code in user_departments %}rm-dept-row--mine{% endif %}">
         <span class="rm-avatar" aria-hidden="true">{{ label|slice:":1"|upper }}</span>
         <span class="rm-dept-row__name">{{ label }}</span>
         <button type="submit"

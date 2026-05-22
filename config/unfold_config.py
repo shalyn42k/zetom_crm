@@ -1,5 +1,5 @@
 ﻿from django.templatetags.static import static
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
 from crm.users.utils import user_has_perm
@@ -8,6 +8,8 @@ UNFOLD = {
     "SITE_TITLE": "Zetom CRM",
     "SITE_HEADER": "Zetom CRM",
     "SITE_SUBHEADER": "Control Panel",
+
+# дропдаун сверху
     "SITE_DROPDOWN": [
         {
             "icon": "mail",
@@ -15,6 +17,20 @@ UNFOLD = {
             "link": reverse_lazy("zetom:index"),
         },
     ],
+
+# дропдаун снизу
+    "ACCOUNT": {
+        "navigation": [
+            {
+                "title": _("View profile"),
+            "link": lambda request: reverse(
+                    "admin:auth_user_change",
+                    args=[request.user.pk],
+                ),
+            },
+
+        ],
+    },
 
     "SITE_ICON": {
         "light": lambda request: static("img/icon.png"),
@@ -27,7 +43,7 @@ UNFOLD = {
 
     "LOGIN": {},
 
-    "SITE_URL": "/",
+    "SITE_URL": "https://www.zetom.eu/",
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
     "SHOW_BACK_BUTTON": True,
