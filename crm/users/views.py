@@ -5,8 +5,9 @@ from django.views import View
 
 from crm.users.models import UserProfile
 
-from .forms import (CustomUserChangeForm, CustomUserCreateForm,
-                    UserProfileEditForm)
+from .forms import (
+    CustomUserChangeForm, CustomUserCreateForm, UserProfileEditForm,
+)
 
 
 class UserListView(View):
@@ -44,7 +45,7 @@ class UserEditView(View):
 
         form = CustomUserChangeForm(
             instance=user,
-            initial={"role": profile.role, "department": profile.department}
+            initial={"role": profile.role, "departments": profile.departments}
         )
 
         return render(request, "users/user_form.html", {"form": form, "mode": "edit"})

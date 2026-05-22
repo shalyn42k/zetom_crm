@@ -22,7 +22,7 @@
           </span>
           <span class="rm-user__sub">
             {% if u.profile.role %}{{ u.profile.role.name }}{% endif %}
-            {% if u.profile.department %} · {{ u.profile.get_department_display }}{% endif %}
+            {% if u.profile.departments %} · {{ u.profile.departments|join:", " }}{% endif %}
           </span>
         </span>
         <button type="submit"

@@ -13,8 +13,10 @@ from unfold.admin import ModelAdmin
 from crm.status_manager.models import StatusHistory
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
-from crm.zetom.models import (DeletedRequest, DepartmentsVariants, Oferta,
-                              RequestMain, Wniosek, Zlecenie)
+from crm.zetom.models import (
+    DeletedRequest, DepartmentsVariants, Oferta, RequestMain, Wniosek,
+    Zlecenie,
+)
 
 from .base import DepartmentsDisplayMixin
 
@@ -79,7 +81,9 @@ class DeletedRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             context["assigned_users_qs"] = obj.assigned_to.all()
             context["source_display"] = obj.get_source_display()
         profile = getattr(request.user, "profile", None)
-        context["user_department"] = profile.department if profile else None
+        # claude — было user_department (одиночка). Теперь список, чтобы
+        # шаблон умел подсветить чипы через `{% if code in user_departments %}`.
+        context["user_departments"] = profile.departments if profile else []
         return super().render_change_form(request, context, *args, **kwargs)
 
     # ---------- Custom URLs ----------
