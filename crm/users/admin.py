@@ -12,16 +12,10 @@ from crm.users.utils import user_has_perm
 class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
     add_form = CustomUserCreateForm
     form = CustomUserChangeForm
-    
-    # NB: fieldsets теперь не задают вёрстку (её делает кастомный
-    # change_form.html), а лишь источник для modelform_factory:
-    # Django из них собирает список полей формы. Поэтому здесь должны
-    # быть только поля, которые реально есть в CustomUserChangeForm.
-    # password меняется через /admin/auth/user/<pk>/password/,
-    # last_login/date_joined проставляются Django'й автоматически.
+
     fieldsets = (
-        ("Личные данные", {"fields": ("username", "first_name", "last_name", "email", "job_title")} ),
-        ("Доступ", {"fields": ("role", "department", "is_active", "is_staff", "is_superuser")} ),
+        ("Личные данные", {"fields": ("username", "first_name", "last_name", "email", "job_title")}),
+        ("Доступ", {"fields": ("role", "department", "is_active", "is_staff", "is_superuser")}),
     )
 
     add_fieldsets = (
@@ -43,7 +37,7 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
             },
         ),
     )
-    
+
     list_display = (
         "username",
         "email",
@@ -56,19 +50,28 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
     )
     list_select_related = ("profile",)
 
-    def get_fieldsets(self, request, obj=None):
-        if not obj:
-            return self.add_fieldsets
-        return self.fieldsets
-
+    # 🔥 ДЕЛАЕМ is_staff НЕДОСТУПНЫМ ДЛЯ ИЗМЕНЕНИЯ
     def get_form(self, request, obj=None, **kwargs):
-        defaults = {}
-        if obj is None:
-            defaults["form"] = self.add_form
-        else:
-            defaults["form"] = self.form
-        defaults.update(kwargs)
-        return super().get_form(request, obj, **defaults)
+        form = super().get_form(request, obj, **kwargs)
+        if "is_staff" in form.base_fields:
+            form.base_fields["is_staff"].disabled = True  # ← выключаем редактирование
+        return form
+
+    # 🔥 ДЕЛАЕМ is_staff ВСЕГДА TRUE
+    def save_model(self, request, obj, form, change):
+        obj.is_staff = True  # ← принудительно включаем staff
+        super().save_model(request, obj, form, change)
+
+        profile, _ = UserProfile.objects.get_or_create(user=obj)
+        if "role" in form.cleaned_data:
+            profile.role = form.cleaned_data.get("role")
+        if "department" in form.cleaned_data:
+            department = form.cleaned_data.get("department")
+            profile.department = department if department else None
+        if "job_title" in form.cleaned_data:
+            job_title = form.cleaned_data.get("job_title")
+            profile.job_title = job_title if job_title else None
+        profile.save()
 
     def get_role(self, obj):
         return obj.profile.role if hasattr(obj, "profile") and obj.profile.role else None
@@ -95,31 +98,11 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
         return True
 
     def response_post_save_change(self, request, obj):
-        """After plain "Save" stay on the change page (preserve ?tab=…).
-
-        Default Django behavior is to redirect to the changelist —
-        неудобно, когда работаешь по нескольким табам подряд.
-        Кнопки "Save and add another" / "Save and continue editing"
-        ведут себя как обычно — обрабатывает super().response_change.
-        """
         url = request.path
         tab = request.GET.get("tab")
         if tab:
             url += f"?tab={tab}"
         return HttpResponseRedirect(url)
-
-    def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
-        profile, _ = UserProfile.objects.get_or_create(user=obj)
-        if "role" in form.cleaned_data:
-            profile.role = form.cleaned_data.get("role")
-        if "department" in form.cleaned_data:
-            department = form.cleaned_data.get("department")
-            profile.department = department if department else None
-        if "job_title" in form.cleaned_data:
-            job_title = form.cleaned_data.get("job_title")
-            profile.job_title = job_title if job_title else None
-        profile.save()
 
 
 admin.site.unregister(User)
