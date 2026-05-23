@@ -90,6 +90,88 @@
 
 ---
 
+## Notification
+
+### Косметика для users-таба (мелочи после head-разделения)
+
+- [ ] CSS для `.up-badge--head` (новая бейджка "Head" на странице User → Departments)
+  - Сейчас рендерится рядом с `.up-badge--primary`, но стилей нет — выглядит как голый текст.
+  - Подобрать цвет, отличный от Primary и Secondary.
+
+- [ ] Иконка кнопки grant/revoke head
+  - Сейчас стоит `♛` (Unicode crown). Возможно стоит заменить на SVG/lucide-icon, как остальные кнопки админки.
+
+### Сервисный слой
+
+- [ ] `crm/notification/services/recipients.py` — `dep_heads_or_admins(request_main) -> list[User]`
+  - Пересечение `request_main.departments` с маркером headship (см. блокер выше), fallback на админов.
+  - Пока поля нет — временная заглушка: всегда возвращает админов.
+
+- [ ] `crm/notification/services/mail_service.py` — `render_and_send_mail(template_name, context, recipients, actor=None)`
+  - Рендер через `render_to_string`, первая строка = subject, остальное = body.
+  - Создаёт `EmailNotification(status=PENDING)`, шлёт через `send_mail`, при успехе → `SENT` + `sent_at`, при исключении → `FAILED` + `status_reason`. Исключение НЕ пробрасывает (чтобы SMTP-фейл не валил view/сигнал).
+  - В `payload` сохранять денормализованную копию контекста (id + ключевые поля), не сериализуемые объекты выкидывать.
+
+- [ ] `crm/notification/services/inapp_service.py` — `create_inapp(kind, template_name, context, recipients, actor=None, target=None)`
+  - Создаёт `Notification` на каждого получателя. Если передан `target` — заполняет `target_content_type`/`target_object_id` через `ContentType.objects.get_for_model`.
+  - Рендер происходит на стороне UI при выводе, поэтому `payload` должен быть самодостаточен.
+
+- [ ] Рефактор `crm/notification/services/notification_service.py`
+  - Существующие `send_notification_to_staff` и `send_notification_approve_null` перевести на `render_and_send_mail` + `recipients.dep_heads_or_admins`.
+  - Убрать хардкод `tymirapps@gmail.com`.
+
+### Шаблоны
+
+- [ ] Перетасовать существующие письма в `templates/notification/mail/`
+  - `client_in_progress.txt` → `mail/client/document_in_progress.txt`.
+  - Три `*_staff.txt` (oferta/zlecenie/wniosek) → объединить в `mail/staff/document_outgoing.txt` с веткой по `document_kind`.
+
+- [ ] Новые mail-шаблоны
+  - `mail/staff/request_new.txt` — то, что сейчас делает `send_notification_to_staff` вручную.
+  - `mail/staff/request_validated.txt` — то, что сейчас делает `send_notification_approve_null` вручную.
+  - `mail/staff/request_stale_reminder.txt` — напоминание стафу о залежавшемся Req.
+  - `mail/client/request_stale_reminder.txt` — напоминание клиенту (опционально, по флагу `NOTIFICATION_REMIND_TO_CLIENT`).
+
+- [ ] Inapp-шаблоны в `templates/notification/inapp/staff/`
+  - `request_status_changed.txt` — RequestMain сменил `RequestStatus`. Контекст: `request`, `old_status`, `new_status`, `actor`.
+  - `request_assigned.txt` — над Req назначили исполнителя (переезд из mail).
+  - `review_requested.txt` — specialist дёрнул вышестоящего на проверку. Контекст: `request`, `document?`, `requester`, `target`, `note`.
+  - `review_resolved.txt` — ответ ревьюера (`decision`, `note`).
+
+### Сигналы
+
+- [ ] Реализовать тело `crm/notification/signals.py` (там пока только docstring)
+  - `pre_save`/`post_save` на Oferta/Zlecenie/Wniosek: при переходе в `Status.in_progress` отправлять `mail/client/document_in_progress.txt`.
+  - `pre_save`/`post_save` на RequestMain: при смене `status` создавать inapp `request_status_changed` для dep_head'ов/админов. `actor` пробрасывать через `instance._actor`, выставленный во view (сигнал юзера сам не знает).
+  - Подключить `signals` в `apps.py.ready()`.
+
+### Settings и напоминания
+
+- [ ] Добавить в `settings.py`:
+  - `NOTIFICATION_STALE_AFTER = timedelta(...)` — через сколько Req считается залежавшимся.
+  - `NOTIFICATION_REMIND_TO_CLIENT = False` — слать ли клиенту напоминания.
+
+- [ ] Management-команда `python manage.py send_stale_reminders`
+  - Выбирает RequestMain с `updated_at < now - NOTIFICATION_STALE_AFTER` и не в финальных статусах.
+  - Шлёт `mail/staff/request_stale_reminder.txt` стафу, по флагу — и клиенту.
+
+### Админка и счётчик
+
+- [ ] Переписать `crm/notification/admin.py` под новые поля
+  - `Notification`: показывать `kind`, `recipient`, `template_name`, `is_read`, `created_at`. Фильтр по `kind` и `is_read`.
+  - `EmailNotification`: `recipient_email`, `status`, `subject`, `sent_at`. Фильтр по `status`.
+
+- [ ] Счётчик непрочитанных возле ACCOUNT
+  - Context processor или middleware: `Notification.objects.filter(recipient=user, is_read=False).count()`.
+  - Прокинуть в шаблон шапки Unfold.
+
+- [ ] Кастомная страница inbox для inapp-уведомлений
+  - Отдельная вью со списком `Notification` текущего юзера, кнопка "mark all read", переход по `target`.
+
+## RBAC
+
+Полный хендофф вынесен в [DOCS/rbac.md](DOCS/rbac.md) — матрица прав, текущее состояние кода, открытые дизайн-вопросы и план работ для разработчика.
+
 ## Прочее
 
 <!-- Сюда добавлять задачи по другим модулям -->
