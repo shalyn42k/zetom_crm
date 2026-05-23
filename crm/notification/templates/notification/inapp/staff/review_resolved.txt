@@ -1,0 +1,11 @@
+{% load i18n %}{% comment %}Inapp-уведомление специалисту: его запрос на проверку разрешён.
+   Контекст рендера (из Notification.payload):
+       request_id     — pk RequestMain
+       request_label  — короткая строка-заголовок
+       resolver_name  — имя/username ревьюера
+       decision       — "approved" | "rejected"
+       note           — комментарий ревьюера (может быть пустой)
+   Первая строка — title.{% endcomment %}{% blocktrans %}Review on {{ request_label }}: {{ decision }}{% endblocktrans %}
+
+{% blocktrans %}{{ resolver_name }} {{ decision }} your review request.{% endblocktrans %}
+{% if note %}{{ note }}{% endif %}

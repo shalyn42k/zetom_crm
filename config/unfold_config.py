@@ -2,7 +2,24 @@
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
+from crm.notification.utils import unread_count
 from crm.users.utils import user_has_perm
+
+
+# claude — формат строки "Notifications (3)" / "Notifications" для ACCOUNT dropdown
+def _notifications_title(request):
+    count = unread_count(getattr(request, "user", None))
+    base = _("Notifications")
+    return f"{base} ({count})" if count else base
+
+
+# claude — link на changelist Notification, отфильтрованный по recipient=user и непрочитанным
+def _notifications_link(request):
+    base = reverse("admin:notification_notification_changelist")
+    user_id = getattr(getattr(request, "user", None), "id", None)
+    if user_id is None:
+        return base
+    return f"{base}?recipient__id__exact={user_id}&is_read__exact=0"
 
 UNFOLD = {
     "SITE_TITLE": "Zetom CRM",
@@ -23,12 +40,17 @@ UNFOLD = {
         "navigation": [
             {
                 "title": _("View profile"),
-            "link": lambda request: reverse(
+                "link": lambda request: reverse(
                     "admin:auth_user_change",
                     args=[request.user.pk],
                 ),
             },
-
+            # claude
+            {
+                "title": _notifications_title,
+                "link": _notifications_link,
+                "icon": "notifications",
+            },
         ],
     },
 
