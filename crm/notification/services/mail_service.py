@@ -1,36 +1,105 @@
+"""Низкоуровневая обёртка над django.core.mail.send_mail.
+
+Единственная точка реальной отправки в модуле notification. Принимает уже
+отрендеренные subject/body, шаблонной логики тут нет — это уровень
+request_mail.py. На каждое письмо создаёт запись `EmailNotification` со
+статусом PENDING → SENT/FAILED для аудита; SMTP-исключения гасятся, чтобы
+не валить вызывающий view/сигнал.
 """
-Низкоуровневая обёртка над django.core.mail.send_mail.
+# Stdlib
+import logging
 
-Зачем этот файл:
-    Единственная точка, через которую модуль notification реально отправляет
-    письма. Всё остальное (request_mail.py, view'ы из zetom, сигналы) должно
-    звать функции отсюда, а не звать send_mail напрямую.
+# Django imports
+from django.conf import settings
+from django.core.mail import send_mail
+from django.utils import timezone
 
-    Это даёт три вещи:
-    - один источник истины по from-адресу (settings.EMAIL_HOST_USER) и
-      fail_silently;
-    - одно место, где позже можно подмешать логирование в EmailNotification
-      или, если понадобится, переключиться на очередь;
-    - адреса получателей (стафф) задаются здесь же — пока их физически нет,
-      оставляем константу STAFF_RECIPIENTS пустой и помечаем TODO.
+# Local imports
+from crm.notification.models import EmailNotification, EmailStatus
 
-Что должно жить здесь:
-    STAFF_RECIPIENTS: list[str]
-        Пока пустой список. Когда появятся реальные адреса персонала —
-        наполняется здесь, чтобы request_mail.py и сигналы не дублировали
-        захардкоженные строки.
+# claude
+logger = logging.getLogger(__name__)
 
-    def send_to_client(*, to: str, subject: str, body: str) -> None
-        Тонкая обёртка над send_mail для писем клиенту.
-        Принимает уже отрендеренные subject/body, никакой шаблонной логики
-        здесь нет.
 
-    def send_to_staff(*, subject: str, body: str) -> None
-        То же самое, но в STAFF_RECIPIENTS. Если список пуст — функция
-        должна тихо ничего не делать (или писать warning в лог),
-        чтобы не валить флоу при ещё-не-настроенном стаффе.
+# claude
+def _send(*, recipients, subject, body, template_name="", payload=None, actor=None):
+    """One EmailNotification per recipient + send_mail per recipient.
 
-Что НЕ должно жить здесь:
-    Рендер шаблонов, выбор какому документу какое письмо соответствует,
-    проверки статусов — это всё уровень request_mail.py.
-"""
+    Records are created in PENDING before the SMTP call. On success — flip to
+    SENT and stamp sent_at. On failure — flip to FAILED and store the exception
+    string in status_reason. Exception is logged but NOT re-raised: SMTP fail
+    must not break the calling view or signal.
+
+    Per-recipient send_mail loop (vs one send_mail with the full list) so the
+    log table tells us exactly which addresses succeeded.
+    """
+    if not recipients:
+        logger.warning(
+            "notification.mail: skipping send, no recipients "
+            "(subject=%r, template=%r)",
+            subject,
+            template_name,
+        )
+        return []
+
+    records = []
+    for email in recipients:
+        record = EmailNotification.objects.create(
+            recipient_email=email,
+            actor=actor,
+            template_name=template_name,
+            subject=subject,
+            payload=payload or {},
+            status=EmailStatus.PENDING,
+        )
+        try:
+            send_mail(
+                subject,
+                body,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+        except Exception as exc:
+            record.status = EmailStatus.FAILED
+            record.status_reason = str(exc)
+            record.save(update_fields=["status", "status_reason"])
+            logger.exception("notification.mail: failed to send to %s", email)
+        else:
+            record.status = EmailStatus.SENT
+            record.sent_at = timezone.now()
+            record.save(update_fields=["status", "sent_at"])
+        records.append(record)
+    return records
+
+
+# claude
+def send_to_client(*, to, subject, body, template_name="", payload=None, actor=None):
+    """Send a single email to a client address."""
+    return _send(
+        recipients=[to],
+        subject=subject,
+        body=body,
+        template_name=template_name,
+        payload=payload,
+        actor=actor,
+    )
+
+
+# claude
+def send_to_staff(*, subject, body, recipients, template_name="", payload=None, actor=None):
+    """Send an email to staff.
+
+    `recipients` is required and is expected to be resolved dynamically via
+    `services/recipients.py` (dep_heads_or_admins_emails / specialists / etc.)
+    for the specific Req context. Empty list is allowed — `_send` will skip
+    with a warning instead of raising.
+    """
+    return _send(
+        recipients=recipients,
+        subject=subject,
+        body=body,
+        template_name=template_name,
+        payload=payload,
+        actor=actor,
+    )

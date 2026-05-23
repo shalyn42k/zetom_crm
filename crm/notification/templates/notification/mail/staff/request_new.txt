@@ -1,0 +1,19 @@
+{% load i18n %}{% comment %}Письмо стаффу: пришла новая заявка с публичной формы.
+   Зовётся из views.email_template, когда AddRequestFormNull
+   успешно сохранена. RequestNull ещё не валидирован — задача
+   стаффа: открыть Validation Window и подтвердить/отклонить.
+   Контекст рендера:
+       request — RequestNull
+   Первая строка — тема. Шаблон-черновик.{% endcomment %}{% trans "New request from the site" %} REQ-{{ request.created_at|date:"Y" }}-{{ request.pk|stringformat:"04d" }}{% if request.company_name %} ({{ request.company_name }}){% endif %}
+
+{% trans "Hello," %}
+
+{% trans "A new request just arrived from the public site form and is waiting for validation." %}
+
+  {% trans "Internal number:" %} REQ-{{ request.created_at|date:"Y" }}-{{ request.pk|stringformat:"04d" }}
+  {% trans "Company:" %} {{ request.company_name|default:"—" }}
+  {% trans "Contact:" %} {{ request.full_name|default:"—" }}
+  {% trans "Phone:" %} {{ request.phone|default:"—" }}
+  {% trans "Email:" %} {{ request.email|default:"—" }}
+
+{% trans "Open the Validation Window in CRM to approve or reject this request." %}

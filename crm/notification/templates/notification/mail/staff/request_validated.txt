@@ -1,0 +1,18 @@
+{% load i18n %}{% comment %}Письмо стаффу: Null-заявка прошла валидацию и стала RequestMain.
+   Зовётся из admin.RequestNullAdmin при подтверждении валидации.
+   С этого момента можно начинать работу по заявке.
+   Контекст рендера:
+       request — RequestMain
+   Первая строка — тема. Шаблон-черновик.{% endcomment %}{% trans "Request validated, ready to start" %} REQ-{{ request.created_at|date:"Y" }}-{{ request.pk|stringformat:"04d" }}{% if request.company_name %} ({{ request.company_name }}){% endif %}
+
+{% trans "Hello," %}
+
+{% trans "A request has just been validated and is ready to be worked on." %}
+
+  {% trans "Internal number:" %} REQ-{{ request.created_at|date:"Y" }}-{{ request.pk|stringformat:"04d" }}
+  {% trans "Company:" %} {{ request.company_name|default:"—" }}
+  {% trans "Contact:" %} {{ request.full_name|default:"—" }}
+  {% trans "Phone:" %} {{ request.phone|default:"—" }}
+  {% trans "Email:" %} {{ request.email|default:"—" }}
+
+{% trans "Check your messages in CRM to start working on this request." %}

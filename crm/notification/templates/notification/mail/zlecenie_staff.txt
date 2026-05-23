@@ -24,4 +24,4 @@
 
 После отправки этого письма статус заказа в CRM меняется на "Ожидание" (waiting).
 
-Инициатор отправки: {{ sender.get_full_name|default:sender.username }}
+Инициатор отправки: {% if sender %}{{ sender.get_full_name|default:sender.username }}{% else %}система{% endif %}
