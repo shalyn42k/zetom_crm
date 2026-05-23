@@ -29,10 +29,17 @@ class Role(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     # tymir — заменил одиночное `department` (CharField) на `departments` (ArrayField)
-    # и завёл `main_departments` для отметки primary-отделов (dep_head может быть
-    # primary в нескольких). Инвариант `main_departments ⊆ departments` валидируется
-    # в clean() (см. ниже).
+    # и завёл `main_departments` для отметки primary-отделов (просто "основные
+    # отделы юзера", НЕ headship). Headship хранится отдельно в `head_of_departments`
+    # и выдаётся админом. Инварианты `main_departments ⊆ departments` и
+    # `head_of_departments ⊆ departments` валидируются в clean() (см. ниже).
     main_departments = ArrayField(
+        models.CharField(max_length=30, choices=DepartmentsVariants.choices),
+        default=list,
+        blank=True,
+    )
+    # claude
+    head_of_departments = ArrayField(
         models.CharField(max_length=30, choices=DepartmentsVariants.choices),
         default=list,
         blank=True,
@@ -54,12 +61,21 @@ class UserProfile(models.Model):
     # claude
     def clean(self):
         super().clean()
-        invalid = set(self.main_departments or []) - set(self.departments or [])
-        if invalid:
+        depts = set(self.departments or [])
+        invalid_main = set(self.main_departments or []) - depts
+        if invalid_main:
             raise ValidationError({
                 "main_departments": _(
                     "A department can be marked as main only if the user already "
                     "belongs to it."
+                ),
+            })
+        invalid_head = set(self.head_of_departments or []) - depts
+        if invalid_head:
+            raise ValidationError({
+                "head_of_departments": _(
+                    "A department can be marked as head-of only if the user "
+                    "already belongs to it."
                 ),
             })
 

@@ -1,0 +1,49 @@
+{% comment %}Override of unfold/helpers/navigation_user.html — adds an unread-notifications
+badge over the sidebar avatar. Count comes from `notifications_unread_count`
+(context processor in crm.notification). When the count drops to 0 the badge
+disappears entirely.{% endcomment %}
+<div class="border-t border-base-200 px-6 py-3 relative dark:border-base-800" x-data="{ openUserLinks: false }">
+    <nav class="absolute bg-white border border-base-200 flex flex-col leading-none py-1 rounded-default shadow-lg bottom-[73px] left-3 right-3 z-50 dark:bg-base-800 dark:border-base-700" x-cloak x-show="openUserLinks" x-transition x-on:click.outside="openUserLinks = false">
+        {% include "unfold/helpers/theme_switch.html" %}
+
+        {% include "unfold/helpers/language_switch.html" %}
+
+        {% if extra_userlinks %}
+            {{ extra_userlinks }}
+        {% endif %}
+
+        {% include "unfold/helpers/account_links.html" %}
+    </nav>
+
+    <div class="cursor-pointer flex flex-row gap-3 items-center min-h-[64px] -mx-6 -my-3 px-6 py-3 hover:bg-base-100 dark:hover:bg-base-800" x-on:click="openUserLinks = !openUserLinks" x-bind:class="{'bg-base-100 dark:bg-base-800': openUserLinks}">
+        {# claude — relative wrapper + absolute badge over the avatar #}
+        <div class="relative shrink-0">
+            {% include "unfold/helpers/avatar.html" with user=request.user %}
+            {% if notifications_unread_count %}
+                <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1
+                             flex items-center justify-center
+                             rounded-full bg-red-600 text-white text-[10px] font-semibold
+                             leading-none ring-2 ring-white dark:ring-base-900"
+                      aria-label="Unread notifications">
+                    {{ notifications_unread_count }}
+                </span>
+            {% endif %}
+        </div>
+
+        <div class="flex flex-col select-none min-w-0">
+            <div class="font-semibold text-important tracking-tight truncate">
+                {{ user.get_full_name|default:user.get_username }}
+            </div>
+
+            {% if user.email %}
+                <div class="text-subtle text-xs truncate">
+                    {{ user.email }}
+                </div>
+            {% endif %}
+        </div>
+
+        <span class="material-symbols-outlined ml-auto select-none text-font-default-light dark:text-font-default-dark">
+            unfold_more
+        </span>
+    </div>
+</div>

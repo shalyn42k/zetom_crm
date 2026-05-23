@@ -1,38 +1,52 @@
-# Django imports
-from django.conf import settings
-from django.core.mail import send_mail
+"""Thin wrappers для двух исторических точек интеграции:
+сайтовая форма (RequestNull → стафф) и admin-валидация (RequestMain → стафф).
 
-# Zetom app imports
+Оставлены отдельно от request_mail.py для обратной совместимости имён,
+импортируемых из crm/zetom. Никакой бизнес-логики тут нет — только сборка
+контекста и зов mail_service с получателями из services/recipients.
+"""
+# Django imports
+from django.template.loader import render_to_string
+
+# Local imports
+from crm.notification.services import mail_service
+from crm.notification.services.recipients import dep_heads_or_admins_emails
+from crm.notification.services.request_mail import _split_subject_body
 from crm.zetom.models import RequestMain, RequestNull
 
+REQUEST_NEW_TEMPLATE = "notification/mail/staff/request_new.txt"
+REQUEST_VALIDATED_TEMPLATE = "notification/mail/staff/request_validated.txt"
 
+
+# claude
 def send_notification_to_staff(request_object: RequestNull):
-    subject = f"New notification from Zetom CRM, request №{request_object.id} from {request_object.company_name}"
+    """Triggered by the public site form (`views.email_template`).
 
-    message = (
-        f"Check new request №{request_object.id}\n"
-        f"Company: {request_object.company_name}\n"
-        f"For more detailed information please check it in CRM.\n"
+    RequestNull has no departments resolution path yet — until the staff
+    validates it, we have no way to pick a dep_head. Fallback to admins
+    via `dep_heads_or_admins_emails` (which on empty `departments` already
+    falls back to admins).
+    """
+    rendered = render_to_string(REQUEST_NEW_TEMPLATE, {"request": request_object})
+    subject, body = _split_subject_body(rendered)
+    mail_service.send_to_staff(
+        subject=subject,
+        body=body,
+        recipients=dep_heads_or_admins_emails(request_object),
+        template_name=REQUEST_NEW_TEMPLATE,
+        payload={"request_id": request_object.pk, "stage": "new"},
     )
 
-    send_mail(
-        subject,
-        message,
-        settings.EMAIL_HOST_USER,  # здесь переменная от которой отправляется
-        ["tymirapps@gmail.com"],  # это стафф кому отправляется
-        fail_silently=False,
-    )
 
-
+# claude
 def send_notification_approve_null(request_object: RequestMain):
-    subject = f"Request - {request_object.id} was fully approved, you can now start your work!"
-
-    message = f"Check your messages at Zetom CRM to view new request for work!\n"
-
-    send_mail(
-        subject,
-        message,
-        settings.EMAIL_HOST_USER,
-        ["tymirapps@gmail.com"],  # это стафф кому отправляется
-        fail_silently=False,
+    """Triggered when staff validates a RequestNull and a RequestMain is born."""
+    rendered = render_to_string(REQUEST_VALIDATED_TEMPLATE, {"request": request_object})
+    subject, body = _split_subject_body(rendered)
+    mail_service.send_to_staff(
+        subject=subject,
+        body=body,
+        recipients=dep_heads_or_admins_emails(request_object),
+        template_name=REQUEST_VALIDATED_TEMPLATE,
+        payload={"request_id": request_object.pk, "stage": "validated"},
     )

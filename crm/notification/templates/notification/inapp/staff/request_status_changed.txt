@@ -1,0 +1,11 @@
+{% load i18n %}{% comment %}Inapp-уведомление стаффу: RequestMain сменил статус.
+   Шаблон рендерится при отображении в UI, не в момент создания записи.
+   Контекст рендера (из Notification.payload):
+       request_id     — pk RequestMain
+       request_label  — короткая строка-заголовок, e.g. "REQ-2026-0042 — Acme"
+       old_status     — старое значение RequestStatus
+       new_status     — новое значение RequestStatus
+       actor_name     — кто инициировал (или "system")
+   Первая строка — title уведомления.{% endcomment %}{% blocktrans %}Request {{ request_label }}: status changed{% endblocktrans %}
+
+{% blocktrans %}{{ actor_name }} changed status from "{{ old_status }}" to "{{ new_status }}".{% endblocktrans %}

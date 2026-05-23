@@ -2,22 +2,27 @@
 {% comment %}
   Departments tab — 2-column layout.
 
-  LEFT  : the user's own departments (primary + secondaries)
-          with add/remove + promote/demote controls.
-  RIGHT : a tree of those same departments, expanded to show
-          teammates inside each one. The current user is marked
-          with a "You" tag; department heads with a "Head" tag.
+  LEFT  : the user's own departments with add/remove + promote/demote
+          controls. Admins additionally see grant/revoke head controls.
+  RIGHT : a tree of those same departments, expanded to show teammates
+          inside each one. The current user is marked with a "You" tag;
+          department heads with a "Head" tag.
 
   Data model:
-    - `UserProfile.departments`      — ArrayField of codes (all assigned)
-    - `UserProfile.main_departments` — ArrayField of codes (subset; "primary")
+    - `UserProfile.departments`         — ArrayField of codes (all assigned)
+    - `UserProfile.main_departments`    — ArrayField of codes (subset; "primary",
+                                          i.e. user's main department, NOT headship)
+    - `UserProfile.head_of_departments` — ArrayField of codes (subset; headship,
+                                          granted explicitly by an admin)
 
-  is_primary in this template = code is in user.profile.main_departments.
-  Multiple primaries are allowed (dep_heads of several departments).
+  is_primary = code in main_departments.
+  is_head    = code in head_of_departments.
+  These are orthogonal: one user can be primary in dept X without being head,
+  or head of dept Y where it's only secondary for them.
 
-  Safety rule: a primary department cannot be removed directly — user must
-  demote it from primary first, then remove. Enforced both in the UI
-  (button disabled with tooltip) and on the server (view rejects).
+  Safety rules: a primary or head department cannot be removed directly —
+  user must demote / revoke first. Enforced in UI (button disabled) and on
+  the server (view rejects).
 {% endcomment %}
 
 <section class="up-dept-grid" id="dept-tab"
@@ -49,8 +54,34 @@
               {% else %}
                 <span class="up-badge up-badge--muted">{% trans "Secondary" %}</span>
               {% endif %}
+              {% if dept.is_head %}
+                <span class="up-badge up-badge--head">{% trans "Head" %}</span>
+              {% endif %}
             </div>
           </div>
+
+          {% if can_grant_head %}
+            {% if dept.is_head %}
+              <button type="button"
+                      class="up-iconbtn up-iconbtn--ghost"
+                      hx-post="{% url 'admin:auth_user_revoke_head_department' original.pk dept.code %}"
+                      hx-target="#dept-tab" hx-swap="outerHTML"
+                      hx-confirm="{% trans "Revoke head status for this department?" %}"
+                      title="{% trans "Revoke head status" %}"
+                      aria-label="{% trans "Revoke head status" %}">
+                <span aria-hidden="true">♛</span>
+              </button>
+            {% else %}
+              <button type="button"
+                      class="up-iconbtn up-iconbtn--ghost"
+                      hx-post="{% url 'admin:auth_user_grant_head_department' original.pk dept.code %}"
+                      hx-target="#dept-tab" hx-swap="outerHTML"
+                      title="{% trans "Grant head status" %}"
+                      aria-label="{% trans "Grant head status" %}">
+                <span aria-hidden="true">♛</span>
+              </button>
+            {% endif %}
+          {% endif %}
 
           {% if dept.is_primary %}
             <button type="button"
@@ -67,6 +98,23 @@
                     disabled
                     aria-disabled="true"
                     title="{% trans "Primary department cannot be removed. Demote it first." %}">
+              <span aria-hidden="true">×</span>
+              <span class="up-visually-hidden">{% trans "Cannot remove" %}</span>
+            </button>
+          {% elif dept.is_head %}
+            <button type="button"
+                    class="up-iconbtn up-iconbtn--ghost"
+                    hx-post="{% url 'admin:auth_user_promote_department' original.pk dept.code %}"
+                    hx-target="#dept-tab" hx-swap="outerHTML"
+                    title="{% trans "Promote to primary" %}"
+                    aria-label="{% trans "Promote to primary" %}">
+              <span aria-hidden="true">↑</span>
+            </button>
+            <button type="button"
+                    class="up-iconbtn up-iconbtn--ghost"
+                    disabled
+                    aria-disabled="true"
+                    title="{% trans "Head department cannot be removed. Revoke head status first." %}">
               <span aria-hidden="true">×</span>
               <span class="up-visually-hidden">{% trans "Cannot remove" %}</span>
             </button>
@@ -114,7 +162,7 @@
       {% endif %}
 
       <p class="up-help">
-        {% trans "Primary departments mark the user as a department head (dep_head). Secondary departments grant view & assist access." %}
+        {% trans "Primary marks the user's main department. Head status is granted separately by an admin and identifies the department lead." %}
       </p>
     </div>
   </article>
