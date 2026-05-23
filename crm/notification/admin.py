@@ -7,9 +7,9 @@ from crm.zetom.admin import BaseRequestAdmin
 
 @admin.register(Notification)
 class NotificationAdmin(BaseRequestAdmin):
-    list_display = ("created_at", "user")
+    list_display = ["created_at"]
 
 
 @admin.register(EmailNotification)
 class EmailNotificationAdmin(BaseRequestAdmin):
-    list_display = ["created_at", "user"]
+    list_display = ["created_at"]
