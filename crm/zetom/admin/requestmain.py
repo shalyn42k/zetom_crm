@@ -25,10 +25,11 @@ from crm.zetom.services.status_orchestration import (
 )
 
 from .base import BaseRequestAdmin, ReasonForm
+from .requestmain_mail import RequestMailMixin
 
 
 @admin.register(RequestMain)
-class RequestMainAdmin(BaseRequestAdmin):
+class RequestMainAdmin(RequestMailMixin, BaseRequestAdmin):
     
     form = AddRequestFormMain
     change_form_template = "admin/zetom/requestmain/change_form.html"
