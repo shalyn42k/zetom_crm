@@ -7,3 +7,7 @@ class NotificationConfig(AppConfig):
     name = "crm.notification"
     label = "notification"
     verbose_name = "notifications"
+
+    # claude
+    def ready(self):
+        from . import signals  # noqa: F401

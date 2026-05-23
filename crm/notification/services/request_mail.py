@@ -1,64 +1,143 @@
+"""Высокоуровневые сценарии рассылки по RequestMain и дочкам (Oferta/Zlecenie/Wniosek).
+
+Точка входа для view'ев "Actions → Mail" и автотриггеров из сигналов.
+Здесь живут выбор шаблона, рендер, резолв получателей и пост-эффекты
+(например, флип статуса документа `in_progress → waiting`). Реальной
+отправкой занимается mail_service; никаких прямых send_mail тут нет.
 """
-Высокоуровневые сценарии рассылки, привязанные к RequestMain и его дочкам
-(Oferta / Zlecenie / Wniosek).
+# Django imports
+from django.template.loader import render_to_string
 
-Зачем этот файл:
-    Кнопка "Actions → Mail" из формы RequestMain и автотриггеры из сигналов
-    зовут одни и те же функции отсюда. Разница только в источнике вызова.
-    Так логика "какой шаблон + куда отправлять + что после этого менять"
-    не дублируется между view и signal.
+# Local imports
+from crm.notification.services import mail_service
+from crm.notification.services.recipients import dep_heads_or_admins_emails
+from crm.status_manager.services.statuses import Status
 
-Зависимости:
-    - mail_service.send_to_client / send_to_staff — единственный способ
-      реально что-то отправить;
-    - django.template.loader.render_to_string — рендер .txt шаблонов из
-      crm/notification/templates/notification/mail/;
-    - crm.zetom.models — только для type-hints; импорт делать локально
-      внутри функций, чтобы не плодить циклические импорты при загрузке
-      приложений.
+# claude — Dispatch tables keyed by document class name (string).
+# Using type(...).__name__ avoids importing the zetom models here (the
+# top-level docstring asks to keep cross-app imports local) and lets the
+# dispatch grow without restructuring the file.
+_STAFF_TEMPLATE = {
+    "Oferta": "notification/mail/oferta_staff.txt",
+    "Zlecenie": "notification/mail/zlecenie_staff.txt",
+    "Wniosek": "notification/mail/wniosek_staff.txt",
+}
+_DOC_PREFIX = {
+    "Oferta": "OFR",
+    "Zlecenie": "ZLC",
+    "Wniosek": "WNI",
+}
+_DOC_KIND_RU = {
+    "Oferta": "оферта",
+    "Zlecenie": "заказ",
+    "Wniosek": "заявление",
+}
 
-Что должно жить здесь:
+CLIENT_IN_PROGRESS_TEMPLATE = "notification/mail/client_in_progress.txt"
 
-    def send_document_to_staff(document) -> None
-        Используется триггером А (кнопка "Mail" в попапе формы RequestMain,
-        когда выбран существующий документ Zlecenie / Oferta / Wniosek).
-        Шаги:
-          1. По типу document'а выбрать шаблон:
-             Zlecenie  -> notification/mail/zlecenie_staff.txt
-             Oferta    -> notification/mail/oferta_staff.txt
-             Wniosek   -> notification/mail/wniosek_staff.txt
-          2. Контекст шаблона: сам document + его from_main.
-          3. Отрендерить subject (первая строка шаблона) + body.
-          4. mail_service.send_to_staff(...).
-          5. Сменить статус документа: in_progress -> waiting.
-             Если статус НЕ in_progress — ничего не менять и не отправлять
-             (валидация уровня view должна была это поймать, но дублируем
-             как защиту).
 
-    def send_document_to_client(document) -> None
-        Используется триггером Б (документ перешёл в in_progress).
-        Шаги:
-          1. Найти email клиента: document.email -> fallback document.from_main.email.
-          2. Шаблон: notification/mail/client_in_progress.txt.
-             Один шаблон на все три типа, тип документа — переменная
-             в контексте, чтобы тело адаптировалось.
-          3. mail_service.send_to_client(...).
+# claude
+def _document_kind(document):
+    return type(document).__name__
 
-    def send_freeform_to_client(*, request_main, subject, body, from_user) -> None
-        Используется кнопкой "Mail → Freeform" в попапе.
-        Шаги:
-          1. Адрес: request_main.email.
-          2. Никакого шаблона — subject/body берутся как есть из попапа
-             (валидация и санитайзинг — на уровне Django формы во view).
-          3. mail_service.send_to_client(...).
-          4. from_user пока не используется в теле письма, но принимаем его
-             на будущее: захотим записать в EmailNotification.user, или
-             добавить подпись "Отправлено: <username>".
 
-Что НЕ должно жить здесь:
-    - Прямые вызовы send_mail (только через mail_service).
-    - Любая работа с request/POST — это уровень view'а в zetom.
-    - Транзакции по смене статуса с записью в StatusHistory: смену статуса
-      из in_progress -> waiting делаем простым save(update_fields=[...]),
-      а уже сигнал из status_manager сам напишет в историю.
-"""
+# claude
+def _document_code(document):
+    """Short human code like OFR-2026-0042; used in client template subjects."""
+    prefix = _DOC_PREFIX.get(_document_kind(document), "DOC")
+    year = document.created_at.year
+    return f"{prefix}-{year}-{document.pk:04d}"
+
+
+# claude
+def _split_subject_body(rendered):
+    """Convention: first non-empty line is the subject, the rest is the body.
+
+    Leading whitespace (typical leftover from a `{% comment %}` block at the
+    top of the file) is stripped before splitting.
+    """
+    stripped = rendered.lstrip()
+    if "\n" in stripped:
+        subject, body = stripped.split("\n", 1)
+    else:
+        subject, body = stripped, ""
+    return subject.strip(), body.lstrip("\n")
+
+
+# claude
+def send_document_to_staff(document, actor=None):
+    if document.status != Status.in_progress:
+        return
+
+    kind = _document_kind(document)
+    template_name = _STAFF_TEMPLATE.get(kind)
+    if template_name is None:
+        return
+
+    parent = document.from_main
+    rendered = render_to_string(template_name, {
+        "document": document,
+        "parent": parent,
+        "sender": actor,
+    })
+    subject, body = _split_subject_body(rendered)
+
+    recipients = dep_heads_or_admins_emails(parent) if parent else []
+    mail_service.send_to_staff(
+        subject=subject,
+        body=body,
+        recipients=recipients,
+        template_name=template_name,
+        payload={
+            "document_id": document.pk,
+            "document_kind": kind,
+            "request_id": parent.pk if parent else None,
+        },
+        actor=actor,
+    )
+
+    document.status = Status.waiting
+    document.save(update_fields=["status"])
+
+
+# claude
+def send_document_to_client(document):
+    parent = document.from_main
+    to = document.email or (parent.email if parent else "")
+    if not to:
+        return
+
+    kind = _document_kind(document)
+    rendered = render_to_string(CLIENT_IN_PROGRESS_TEMPLATE, {
+        "document": document,
+        "parent": parent,
+        "document_kind": _DOC_KIND_RU.get(kind, kind.lower()),
+        "document_code": _document_code(document),
+    })
+    subject, body = _split_subject_body(rendered)
+
+    mail_service.send_to_client(
+        to=to,
+        subject=subject,
+        body=body,
+        template_name=CLIENT_IN_PROGRESS_TEMPLATE,
+        payload={
+            "document_id": document.pk,
+            "document_kind": kind,
+            "request_id": parent.pk if parent else None,
+        },
+    )
+
+
+# claude
+def send_freeform_to_client(*, request_main, subject, body, from_user):
+    if not request_main.email:
+        return
+    mail_service.send_to_client(
+        to=request_main.email,
+        subject=subject,
+        body=body,
+        template_name="",
+        payload={"request_id": request_main.pk},
+        actor=from_user,
+    )

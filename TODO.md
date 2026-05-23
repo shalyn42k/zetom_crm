@@ -92,81 +92,106 @@
 
 ## Notification
 
+### Mail-направление (готово)
+
+- [x] `services/recipients.py` — `dep_heads_or_admins(req)` + `*_emails(req)`.
+- [x] `services/mail_service.py` — `send_to_client` / `send_to_staff` с логом в `EmailNotification`. Убран `STAFF_RECIPIENTS` (статическая константа адресов) — получателей всегда резолвит `recipients.py` под конкретный кейс.
+- [x] `services/request_mail.py` — `send_document_to_staff`, `send_document_to_client`, `send_freeform_to_client`.
+- [x] `services/notification_service.py` — рефакторнут; имена сохранены, хардкод `tymirapps@gmail.com` ушёл.
+- [x] `zetom/admin/requestmain_mail.py` — `RequestMailMixin` подключён к `RequestMainAdmin`; два POST-эндпоинта (`/mail/document/`, `/mail/freeform/`).
+- [x] Шаблоны `mail/staff/request_new.txt`, `mail/staff/request_validated.txt`.
+
+### Матрица: триггер → канал → получатели
+
+| # | Триггер | Канал | Получатели | Шаблон | Статус |
+|---|---|---|---|---|---|
+| 1 | Сайтовая форма → `RequestNull` | mail | dep_heads(Req.depts) → admins | `mail/staff/request_new.txt` | done |
+| 2 | Null валидирован → `RequestMain` | mail | dep_heads(Req.depts) → admins | `mail/staff/request_validated.txt` | done |
+| 3 | Document → `in_progress` (signal) | mail | client (`document.email` → `parent.email`) | `mail/client_in_progress.txt` | done |
+| 4 | "Mail" по document (staff action) | mail | dep_heads(Req.depts) → admins | `mail/{oferta,zlecenie,wniosek}_staff.txt` | done |
+| 5 | Freeform mail (staff action) | mail | client (`request_main.email`) | — (raw subject/body) | done |
+| 6 | Req stale (cron) | mail | dep_heads(Req.depts) → admins | `mail/staff/request_stale_reminder.txt` | pending |
+| 6.1 | Req stale + `NOTIFICATION_REMIND_TO_CLIENT` | mail | client | `mail/client/request_stale_reminder.txt` | pending |
+| 7 | RequestMain `status` changed | inapp | dep_heads(Req.depts) → admins (assigned specialists позже) | `inapp/staff/request_status_changed.txt` | done |
+| 8 | Specialist назначен на Req | inapp | назначенный specialist | `inapp/staff/request_assigned.txt` | pending |
+| 9 | Specialist запросил review | inapp | dep_heads(Req.depts) → admins | `inapp/staff/review_requested.txt` | pending |
+| 10 | Review resolved | inapp | автор запроса (specialist) | `inapp/staff/review_resolved.txt` | pending |
+| 11 | Req cancelled / deleted | inapp | dep_heads(Req.depts) + assigned specialists | тот же `request_status_changed.txt` | pending |
+| 12 | Document deleted | inapp | dep_heads(Req.depts) → admins | `inapp/staff/request_status_changed.txt` (или новый kind) | pending |
+
+Правила резолва "→":
+- "X → Y" значит "сначала X; если пусто — Y".
+- "X + Y" значит "и X, и Y вместе (после де-дупа)".
+- "client" определяется по полю `email` на самом объекте (с fallback на родителя для дочек).
+
+### Расширение `recipients.py`
+
+Сейчас один публичный резолвер `dep_heads_or_admins`. По матрице выше нужны ещё:
+
+- [ ] `assigned_specialists(req) -> list[User]` — все `assigned_to` со статусом active. Для триггеров #7, #8, #10, #11.
+- [ ] `users_with_role(code) -> list[User]` — `Role.code == code`, `is_active=True`. Для review-флоу: например, "resolvers" = `users_with_role("department_head")` + `users_with_role("admin")`. Базовый кирпич для будущих сценариев.
+- [ ] `notify_set_for_status_change(req) -> list[User]` — композитная функция: dep_heads(Req.depts) + admins + assigned_specialists, через `set()` чтобы не дублировать. Триггер #7.
+- [ ] *(опционально)* `recipients_for(req, *, include_dep_heads=True, include_specialists=False, include_admins_fallback=True) -> list[User]` — универсальный сборщик. Делать только когда наберём 3+ композитных вариантов и появится реальная польза от унификации.
+
+Под каждый новый резолвер — `*_emails` обёртка для mail-канала.
+
 ### Косметика для users-таба (мелочи после head-разделения)
 
-- [ ] CSS для `.up-badge--head` (новая бейджка "Head" на странице User → Departments)
-  - Сейчас рендерится рядом с `.up-badge--primary`, но стилей нет — выглядит как голый текст.
-  - Подобрать цвет, отличный от Primary и Secondary.
+- [ ] CSS для `.up-badge--head` (рендерится как голый текст без стилей).
+- [ ] Иконка кнопки grant/revoke head — заменить `♛` на SVG/lucide.
 
-- [ ] Иконка кнопки grant/revoke head
-  - Сейчас стоит `♛` (Unicode crown). Возможно стоит заменить на SVG/lucide-icon, как остальные кнопки админки.
+### Inapp-направление (готово)
 
-### Сервисный слой
+- [x] `services/inapp_service.py` — `create_inapp(kind, template_name, payload, recipients, actor=None, target=None)`. Один `Notification` на получателя, GFK на `target`.
+- [x] Inapp-шаблоны в `templates/notification/inapp/staff/`: `request_status_changed.txt`, `request_assigned.txt`, `review_requested.txt`, `review_resolved.txt`.
+- [x] `signals.py` — два связки в одном файле:
+  - Документы (Oferta/Zlecenie/Wniosek) → `in_progress` → mail клиенту.
+  - RequestMain → смена `status` → inapp dep_heads(Req.depts) + fallback админы. `actor` пробрасывается через `instance._actor` из view.
+  - Подключено в `apps.py.ready()`.
+- [x] `notification/admin.py` переписан под новые поля. Записи read-only (защита от ручной правки лога).
+- [x] Счётчик непрочитанных в ACCOUNT-dropdown (Unfold). Title динамически собирается "Notifications (N)", link ведёт на changelist `Notification` отфильтрованный по `recipient=user, is_read=0`.
 
-- [ ] `crm/notification/services/recipients.py` — `dep_heads_or_admins(request_main) -> list[User]`
-  - Пересечение `request_main.departments` с маркером headship (см. блокер выше), fallback на админов.
-  - Пока поля нет — временная заглушка: всегда возвращает админов.
+#### Inapp: что осталось
 
-- [ ] `crm/notification/services/mail_service.py` — `render_and_send_mail(template_name, context, recipients, actor=None)`
-  - Рендер через `render_to_string`, первая строка = subject, остальное = body.
-  - Создаёт `EmailNotification(status=PENDING)`, шлёт через `send_mail`, при успехе → `SENT` + `sent_at`, при исключении → `FAILED` + `status_reason`. Исключение НЕ пробрасывает (чтобы SMTP-фейл не валил view/сигнал).
-  - В `payload` сохранять денормализованную копию контекста (id + ключевые поля), не сериализуемые объекты выкидывать.
+- [ ] Сигнал на M2M `RequestMain.assigned_to.add(user)` → inapp `request_assigned` для добавленного юзера.
+  - Через `m2m_changed`, фильтр `action == "post_add"`. На каждый pk из `pk_set` — отдельная запись.
 
-- [ ] `crm/notification/services/inapp_service.py` — `create_inapp(kind, template_name, context, recipients, actor=None, target=None)`
-  - Создаёт `Notification` на каждого получателя. Если передан `target` — заполняет `target_content_type`/`target_object_id` через `ContentType.objects.get_for_model`.
-  - Рендер происходит на стороне UI при выводе, поэтому `payload` должен быть самодостаточен.
+- [ ] Кастомная inbox-страница (опционально, поверх admin changelist)
+  - Сейчас работает changelist в админке `/admin/notification/notification/?recipient__id__exact=<me>&is_read__exact=0`. Этого, возможно, достаточно для MVP.
+  - Если нужен отдельный UI — view со списком, кнопка "mark all read", переход по `target` через `ContentType.objects.get_for_id(target_content_type_id).get_object_for_this_type(pk=target_object_id)`.
+  - Шаблон `Notification` рендерится в UI лениво: `from django.template.loader import render_to_string; render_to_string(n.template_name, n.payload)`. Первая строка — title, остальное — body.
 
-- [ ] Рефактор `crm/notification/services/notification_service.py`
-  - Существующие `send_notification_to_staff` и `send_notification_approve_null` перевести на `render_and_send_mail` + `recipients.dep_heads_or_admins`.
-  - Убрать хардкод `tymirapps@gmail.com`.
+- [ ] Триггеры review_requested / review_resolved — нужны UI-кнопки в RequestMainAdmin
+  - Endpoint `request_review` (POST) — specialist шлёт запрос; кладёт inapp с kind=REVIEW_REQUEST для dep_heads(Req) → admins.
+  - Endpoint `resolve_review` (POST) — head/admin принимает решение approved/rejected; кладёт inapp с kind=REVIEW_RESOLVED на автора запроса.
+  - Триггеры покрыты пермишенами `request_review` / `resolve_review` из [DOCS/rbac.md](DOCS/rbac.md).
 
-### Шаблоны
+### Шаблоны: реорг и напоминания
 
-- [ ] Перетасовать существующие письма в `templates/notification/mail/`
-  - `client_in_progress.txt` → `mail/client/document_in_progress.txt`.
-  - Три `*_staff.txt` (oferta/zlecenie/wniosek) → объединить в `mail/staff/document_outgoing.txt` с веткой по `document_kind`.
+- [ ] Перетасовать существующие письма
+  - `client_in_progress.txt` → `mail/client/document_in_progress.txt` (обновить путь в `request_mail.CLIENT_IN_PROGRESS_TEMPLATE`).
+  - Три `*_staff.txt` (oferta/zlecenie/wniosek) → объединить в `mail/staff/document_outgoing.txt` с веткой по `document_kind` (обновить `request_mail._STAFF_TEMPLATE`).
 
-- [ ] Новые mail-шаблоны
-  - `mail/staff/request_new.txt` — то, что сейчас делает `send_notification_to_staff` вручную.
-  - `mail/staff/request_validated.txt` — то, что сейчас делает `send_notification_approve_null` вручную.
-  - `mail/staff/request_stale_reminder.txt` — напоминание стафу о залежавшемся Req.
-  - `mail/client/request_stale_reminder.txt` — напоминание клиенту (опционально, по флагу `NOTIFICATION_REMIND_TO_CLIENT`).
-
-- [ ] Inapp-шаблоны в `templates/notification/inapp/staff/`
-  - `request_status_changed.txt` — RequestMain сменил `RequestStatus`. Контекст: `request`, `old_status`, `new_status`, `actor`.
-  - `request_assigned.txt` — над Req назначили исполнителя (переезд из mail).
-  - `review_requested.txt` — specialist дёрнул вышестоящего на проверку. Контекст: `request`, `document?`, `requester`, `target`, `note`.
-  - `review_resolved.txt` — ответ ревьюера (`decision`, `note`).
-
-### Сигналы
-
-- [ ] Реализовать тело `crm/notification/signals.py` (там пока только docstring)
-  - `pre_save`/`post_save` на Oferta/Zlecenie/Wniosek: при переходе в `Status.in_progress` отправлять `mail/client/document_in_progress.txt`.
-  - `pre_save`/`post_save` на RequestMain: при смене `status` создавать inapp `request_status_changed` для dep_head'ов/админов. `actor` пробрасывать через `instance._actor`, выставленный во view (сигнал юзера сам не знает).
-  - Подключить `signals` в `apps.py.ready()`.
+- [ ] Reminder-шаблоны
+  - `mail/staff/request_stale_reminder.txt` — напоминание стафу.
+  - `mail/client/request_stale_reminder.txt` — клиенту, по флагу `NOTIFICATION_REMIND_TO_CLIENT`.
 
 ### Settings и напоминания
 
-- [ ] Добавить в `settings.py`:
+- [ ] `settings.py`:
   - `NOTIFICATION_STALE_AFTER = timedelta(...)` — через сколько Req считается залежавшимся.
-  - `NOTIFICATION_REMIND_TO_CLIENT = False` — слать ли клиенту напоминания.
+  - `NOTIFICATION_REMIND_TO_CLIENT = False`.
 
 - [ ] Management-команда `python manage.py send_stale_reminders`
-  - Выбирает RequestMain с `updated_at < now - NOTIFICATION_STALE_AFTER` и не в финальных статусах.
-  - Шлёт `mail/staff/request_stale_reminder.txt` стафу, по флагу — и клиенту.
+  - RequestMain с `updated_at < now - NOTIFICATION_STALE_AFTER` и не в финальных статусах.
+  - `mail/staff/request_stale_reminder.txt`; по флагу — и клиенту.
 
-### Админка и счётчик
+### SMTP в .env
 
-- [ ] Переписать `crm/notification/admin.py` под новые поля
-  - `Notification`: показывать `kind`, `recipient`, `template_name`, `is_read`, `created_at`. Фильтр по `kind` и `is_read`.
-  - `EmailNotification`: `recipient_email`, `status`, `subject`, `sent_at`. Фильтр по `status`.
-
-- [ ] Счётчик непрочитанных возле ACCOUNT
-  - Context processor или middleware: `Notification.objects.filter(recipient=user, is_read=False).count()`.
-  - Прокинуть в шаблон шапки Unfold.
-
-- [ ] Кастомная страница inbox для inapp-уведомлений
-  - Отдельная вью со списком `Notification` текущего юзера, кнопка "mark all read", переход по `target`.
+Backend сейчас захардкожен SMTP. План:
+- [ ] Сделать `EMAIL_BACKEND` тоже env-управляемым (`os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")`). Тогда в dev можно ставить `console.EmailBackend` (письма в stdout) без правки кода.
+- [ ] Для реальной отправки заполнить в production-`.env`: `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USE_TLS`, `SMTP_USER`, `SMTP_PASSWORD`. Не коммитить.
+- Локально для интеграционного теста — MailHog / Mailtrap; production — Google Workspace / SendGrid / Mailgun.
 
 ## RBAC
 

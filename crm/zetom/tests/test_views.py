@@ -23,6 +23,9 @@ from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+from crm.notification.services.notification_service import (
+    send_notification_to_staff,
+)
 from crm.notification.services.notification_service import send_notification_to_staff
 from crm.zetom.models import RequestNull
 
@@ -134,6 +137,31 @@ class NotificationServiceIntegrationTests(TestCase):
         locmem backend не делает настоящей SMTP-отправки — письма
         складываются в список mail.outbox. Это стандартный способ
         тестировать email в Django.
+
+    Получателей резолвит services/recipients.dep_heads_or_admins_emails:
+    он ищет активных юзеров с role.code == "department_head", иначе fallback
+    на role.code == "admin". Поэтому в setUpTestData мы заводим одного
+    admin'а с валидным email — иначе письмо никому не уйдёт.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        # UserProfile создаётся автоматически через post_save сигнал
+        # (crm/users/signals_profile.py). Здесь только подменяем role на admin.
+        from crm.users.models import Role
+
+        User = get_user_model()
+        cls.admin_user = User.objects.create_user(
+            username="staff_admin",
+            email="staff_admin@zetom.test",
+            password="x",
+        )
+        admin_role, _ = Role.objects.get_or_create(
+            code="admin", defaults={"name": "Administrator"}
+        )
+        cls.admin_user.profile.role = admin_role
+        cls.admin_user.profile.save(update_fields=["role"])
+
     """
 
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
@@ -151,3 +179,5 @@ class NotificationServiceIntegrationTests(TestCase):
         # Тема письма должна содержать ID и название компании
         self.assertIn(str(obj.id), msg.subject)
         self.assertIn(obj.company_name, msg.subject)
+        # И уйти на адрес admin'а из setUpTestData (а не на захардкоженный).
+        self.assertEqual(msg.to, [self.admin_user.email])

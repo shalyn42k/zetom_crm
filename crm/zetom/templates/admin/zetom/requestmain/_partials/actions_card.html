@@ -11,20 +11,15 @@
   Контекст из RequestMainAdmin.render_change_form:
     original, ofertas, zlecenia, wnioski.
 
-  TODO для бэкенда:
-    Когда появятся URL'ы в RequestMainAdmin.get_urls():
-      - zetom_requestmain_mail_document
-      - zetom_requestmain_mail_freeform
-    подставить их в action="" у обеих форм ниже (см. метки [TODO-URL]).
-    Сейчас action оставлен пустым — форма отправит POST на change-view,
-    Django ответит как на обычное сохранение. До подключения view'ов
-    модалкой можно пользоваться только визуально.
+  URL'ы подключены через RequestMailMixin (crm/zetom/admin/requestmain_mail.py):
+    - admin:zetom_requestmain_mail_document
+    - admin:zetom_requestmain_mail_freeform
 {% endcomment %}
 
 <section class="rm-card rm-card--collapsible"
          aria-labelledby="rm-actions-heading" id="actions"
          x-data="rmActions()"
-         @keydown.escape.window="modal.open && (modal.open = false)">
+         @keydown.escape.window="(modal.open && (modal.open = false)) || (reviewModal.open && (reviewModal.open = false))">
   <header class="rm-card__header rm-card__toggle" role="button" tabindex="0"
           :aria-expanded="open"
           @click="open = !open"
@@ -52,6 +47,18 @@
         <button type="button"
                 class="rm-btn rm-btn--primary rm-btn--sm"
                 @click="openMail()">
+          {% trans "Open" %}
+        </button>
+      </li>
+      <li class="rm-action">
+        <span class="rm-action__icon" aria-hidden="true">⚑</span>
+        <span class="rm-action__meta">
+          <span class="rm-action__name">{% trans "Request review" %}</span>
+          <span class="rm-action__sub">{% trans "Ping department heads (or admins) to review this request" %}</span>
+        </span>
+        <button type="button"
+                class="rm-btn rm-btn--primary rm-btn--sm"
+                @click="openReview()">
           {% trans "Open" %}
         </button>
       </li>
@@ -91,7 +98,7 @@
 
         {# ------- Режим: документ ------- #}
         <form method="post"
-              action=""  {# [TODO-URL] {% url "admin:zetom_requestmain_mail_document" original.pk %} #}
+              action="{% url 'admin:zetom_requestmain_mail_document' original.pk %}"
               class="rm-modal__form"
               x-show="modal.mode === 'document'" x-cloak>
           {% csrf_token %}
@@ -127,9 +134,13 @@
 
           {% comment %}Селект конкретного документа этого типа.
              Показывается только когда выбран соответствующий радио.{% endcomment %}
+          {% comment %}Все три селекта дублируют имя document_id. Чтобы submit'ил только
+             нужный — выключаем неактивные через :disabled. Disabled-поля
+             браузер не сериализует в POST.{% endcomment %}
           <div class="rm-modal__group" x-show="modal.kind === 'zlecenie'" x-cloak>
             <label class="rm-label" for="rm-mail-zlecenie">{% trans "Pick order" %}</label>
             <select name="document_id" id="rm-mail-zlecenie" class="rm-select"
+                    :disabled="modal.kind !== 'zlecenie'"
                     :required="modal.kind === 'zlecenie'">
               {% for z in zlecenia %}
                 <option value="{{ z.pk }}">
@@ -143,6 +154,7 @@
           <div class="rm-modal__group" x-show="modal.kind === 'oferta'" x-cloak>
             <label class="rm-label" for="rm-mail-oferta">{% trans "Pick offer" %}</label>
             <select name="document_id" id="rm-mail-oferta" class="rm-select"
+                    :disabled="modal.kind !== 'oferta'"
                     :required="modal.kind === 'oferta'">
               {% for o in ofertas %}
                 <option value="{{ o.pk }}">
@@ -156,6 +168,7 @@
           <div class="rm-modal__group" x-show="modal.kind === 'wniosek'" x-cloak>
             <label class="rm-label" for="rm-mail-wniosek">{% trans "Pick application" %}</label>
             <select name="document_id" id="rm-mail-wniosek" class="rm-select"
+                    :disabled="modal.kind !== 'wniosek'"
                     :required="modal.kind === 'wniosek'">
               {% for w in wnioski %}
                 <option value="{{ w.pk }}">
@@ -176,7 +189,7 @@
 
         {# ------- Режим: свободное сообщение ------- #}
         <form method="post"
-              action=""  {# [TODO-URL] {% url "admin:zetom_requestmain_mail_freeform" original.pk %} #}
+              action="{% url 'admin:zetom_requestmain_mail_freeform' original.pk %}"
               class="rm-modal__form"
               x-show="modal.mode === 'freeform'" x-cloak>
           {% csrf_token %}
@@ -212,6 +225,50 @@
       </div>
     </div>
   </template>
+
+  {# ----------- Модалка: запрос на проверку ----------- #}
+  <template x-teleport="body">
+    <div class="rm-modal" x-show="reviewModal.open" x-cloak
+         role="dialog" aria-modal="true" aria-labelledby="rm-review-modal-title">
+      <div class="rm-modal__backdrop" @click="reviewModal.open = false"></div>
+
+      <div class="rm-modal__panel" @click.stop>
+        <header class="rm-modal__header">
+          <h2 id="rm-review-modal-title" class="rm-modal__title">
+            {% trans "Request review" %}
+          </h2>
+          <button type="button" class="rm-modal__close"
+                  @click="reviewModal.open = false" aria-label='{% trans "Close" %}'>×</button>
+        </header>
+
+        <form method="post"
+              action="{% url 'admin:zetom_requestmain_request_review' original.pk %}"
+              class="rm-modal__form">
+          {% csrf_token %}
+
+          <p class="rm-modal__hint">
+            {% trans "Notification will be sent in-app to department heads of this request (admins as fallback)." %}
+          </p>
+
+          <div class="rm-modal__group">
+            <label class="rm-label" for="rm-review-note">{% trans "Comment (optional)" %}</label>
+            <textarea id="rm-review-note" name="note" class="rm-textarea"
+                      rows="6" maxlength="1000"
+                      placeholder='{% trans "What needs reviewing?" %}'
+                      x-model="reviewModal.note"></textarea>
+          </div>
+
+          <footer class="rm-modal__footer">
+            <button type="button" class="rm-btn"
+                    @click="reviewModal.open = false">{% trans "Cancel" %}</button>
+            <button type="submit" class="rm-btn rm-btn--primary">
+              {% trans "Send request" %}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  </template>
 </section>
 
 <script>
@@ -229,10 +286,18 @@
           subject: '',
           body: '',
         },
+        reviewModal: {
+          open: false,
+          note: '',
+        },
         openMail() {
           this.modal.open = true;
           this.modal.mode = 'document';
           this.modal.kind = '';
+        },
+        openReview() {
+          this.reviewModal.open = true;
+          this.reviewModal.note = '';
         },
       };
     };

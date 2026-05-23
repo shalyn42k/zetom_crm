@@ -1,0 +1,11 @@
+{% load i18n %}{% comment %}Inapp-уведомление вышестоящему: specialist запросил проверку.
+   Контекст рендера (из Notification.payload):
+       request_id      — pk RequestMain
+       request_label   — короткая строка-заголовок
+       document_label  — название документа (если относится к oferta/zlecenie/wniosek), иначе пусто
+       requester_name  — имя/username специалиста, который запросил
+       note            — текст-комментарий специалиста (может быть пустой)
+   Первая строка — title.{% endcomment %}{% blocktrans %}{{ requester_name }} requested review on {{ request_label }}{% endblocktrans %}
+
+{% if document_label %}{% blocktrans %}Document: {{ document_label }}{% endblocktrans %}
+{% endif %}{% if note %}{{ note }}{% else %}{% trans "(no comment provided)" %}{% endif %}

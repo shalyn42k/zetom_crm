@@ -1,0 +1,8 @@
+{% load i18n %}{% comment %}Inapp-уведомление специалисту: его назначили на Req.
+   Контекст рендера (из Notification.payload):
+       request_id    — pk RequestMain
+       request_label — короткая строка-заголовок
+       actor_name    — кто назначил
+   Первая строка — title.{% endcomment %}{% blocktrans %}You were assigned to {{ request_label }}{% endblocktrans %}
+
+{% blocktrans %}{{ actor_name }} assigned you as a specialist on this request.{% endblocktrans %}
