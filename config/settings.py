@@ -127,15 +127,24 @@ DATABASES = {
 }
 
 
-# Email SMTP
+# Email SMTP — все переменные читаются под стандартными Django-именами,
+# чтобы .env совпадал с https://docs.djangoproject.com/en/5.0/topics/email/
+# EMAIL_BACKEND по дефолту smtp; в dev'е удобно ставить
+# `django.core.mail.backends.console.EmailBackend` — письма печатаются в stdout.
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-
-EMAIL_HOST = os.getenv("SMTP_SERVER", "localhost")
-EMAIL_PORT = int(os.getenv("SMTP_PORT", "587"))
-EMAIL_USE_TLS = os.getenv("SMTP_USE_TLS", "False").lower() == "true"
-EMAIL_HOST_USER = os.getenv("SMTP_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "False").lower() == "true"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+# `os.getenv("X") or fallback` — `os.getenv("X", default)` вернёт пустую строку, если
+# переменная объявлена без значения (например DEFAULT_FROM_EMAIL= в .env), и SMTP
+# отобьёт "Invalid address". Через `or` пустая строка падает в фоллбек.
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL") or EMAIL_HOST_USER or "noreply@localhost"
 
 
 # Password validation
