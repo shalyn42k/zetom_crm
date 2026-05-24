@@ -162,8 +162,6 @@ class NotificationServiceIntegrationTests(TestCase):
         cls.admin_user.profile.role = admin_role
         cls.admin_user.profile.save(update_fields=["role"])
 
-    """
-
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_send_notification_creates_email_in_outbox(self):
         obj = RequestNull.objects.create(
