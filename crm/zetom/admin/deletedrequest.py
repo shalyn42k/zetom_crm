@@ -17,6 +17,7 @@ from crm.zetom.models import (
     DeletedRequest, DepartmentsVariants, Oferta, RequestMain, Wniosek,
     Zlecenie,
 )
+from crm.zetom.services.visibility import visible_requests_for
 
 from .base import DepartmentsDisplayMixin
 
@@ -49,8 +50,9 @@ class DeletedRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
 
     # ---------- Queryset / submit bar / context ----------
 
+    # claude — без visible_requests_for спец видел чужие удалённые Req.
     def get_queryset(self, request):
-        return RequestMain.deleted_objects.all()
+        return visible_requests_for(request.user, RequestMain.deleted_objects.all())
 
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
         extra_context = extra_context or {}
@@ -107,11 +109,30 @@ class DeletedRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
 
     # ---------- Restore / hard-delete actions ----------
 
+    # claude
+    def _get_trashed_for_action(self, request, object_id, perm):
+        """Mirror of RequestMainAdmin._get_req_for_action — perm + visibility
+        gate, but against the deleted_objects manager. Returns (obj, None) or
+        (None, redirect)."""
+        if not user_has_perm(request.user, perm):
+            messages.error(request, "You don't have permission for this action.")
+            return None, redirect("admin:zetom_deletedrequest_change", object_id)
+        qs = visible_requests_for(request.user, RequestMain.deleted_objects.all())
+        obj = qs.filter(pk=object_id).first()
+        if obj is None:
+            messages.error(request, "Request not found.")
+            return None, redirect("admin:zetom_deletedrequest_changelist")
+        return obj, None
+
     @transaction.atomic
     def restore_action(self, request, object_id):
         if request.method != "POST":
             return redirect("admin:zetom_deletedrequest_change", object_id)
-        obj = RequestMain.deleted_objects.get(pk=object_id)
+        obj, denied = self._get_trashed_for_action(
+            request, object_id, "change_request_status"
+        )
+        if denied is not None:
+            return denied
         obj.undelete()
         obj.status = RequestStatus.active
         obj.save()
@@ -129,8 +150,12 @@ class DeletedRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
     def hard_delete_action(self, request, object_id):
         if request.method != "POST":
             return redirect("admin:zetom_deletedrequest_change", object_id)
+        obj, denied = self._get_trashed_for_action(
+            request, object_id, "delete_requests"
+        )
+        if denied is not None:
+            return denied
         from safedelete.config import HARD_DELETE
-        obj = RequestMain.deleted_objects.get(pk=object_id)
         obj.delete(force_policy=HARD_DELETE)
         messages.success(request, "Request permanently deleted.")
         return redirect("admin:zetom_deletedrequest_changelist")

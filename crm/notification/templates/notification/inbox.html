@@ -274,7 +274,8 @@
           <div class="nb-right">
             {% if not item.is_read %}<span class="nb-dot" aria-label="{% trans "Unread" %}"></span>{% endif %}
             <div class="nb-actions">
-              {% if not item.is_read %}
+              {% if not item.is_read and item.kind != "REVIEW_REQUEST" %}
+                {% comment %}claude — REVIEW_REQUEST не помечается как read через эту кнопку: снимается только после Approve/Reject в Resolve-модалке.{% endcomment %}
                 <form class="nb-form-inline" method="post" action="{% url "notification:mark_read" item.id %}?back={% url "notification:inbox" %}{% if filter_value != "all" %}%3Ffilter%3D{{ filter_value }}{% endif %}">
                   {% csrf_token %}
                   <button type="submit" class="nb-act" title="{% trans "Mark as read" %}" aria-label="{% trans "Mark as read" %}">

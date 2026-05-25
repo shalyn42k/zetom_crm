@@ -12,9 +12,11 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.urls import path
+from django.utils.translation import gettext_lazy as _
 
 from crm.status_manager.models import StatusHistory
 from crm.status_manager.services.statuses import RequestStatus
+from crm.users.utils import user_has_perm
 from crm.zetom.forms import AddRequestFormMain
 from crm.zetom.models import DepartmentsVariants, RequestMain, RequestSource
 from crm.zetom.services.request_service import (
@@ -23,14 +25,23 @@ from crm.zetom.services.request_service import (
 from crm.zetom.services.status_orchestration import (
     ReasonRequired, apply_status_change,
 )
+from crm.zetom.services.visibility import visible_requests_for
 
 from .base import BaseRequestAdmin, ReasonForm
 from .requestmain_mail import RequestMailMixin
+from .requestmain_resolve_review import (
+    RequestResolveReviewMixin, latest_open_review,
+)
 from .requestmain_review import RequestReviewMixin
 
 
 @admin.register(RequestMain)
-class RequestMainAdmin(RequestMailMixin, RequestReviewMixin, BaseRequestAdmin):
+class RequestMainAdmin(
+    RequestMailMixin,
+    RequestReviewMixin,
+    RequestResolveReviewMixin,
+    BaseRequestAdmin,
+):
     
     form = AddRequestFormMain
     change_form_template = "admin/zetom/requestmain/change_form.html"
@@ -212,6 +223,17 @@ class RequestMainAdmin(RequestMailMixin, RequestReviewMixin, BaseRequestAdmin):
         context["user_departments"] = profile.departments if profile else []
         context["source_display"] = obj.get_source_display() if has_obj else ""
 
+        # claude — гейтинг "Resolve review" в actions_card:
+        #   can_resolve_review — perm у текущего юзера (dep_head/admin);
+        #   open_review        — Notification(REVIEW_REQUEST) если открыт, иначе None.
+        # Сам Notification пробрасываем в шаблон, чтобы модалка показала
+        # автора, дату и комментарий специалиста до принятия решения.
+        context["can_resolve_review"] = (
+            has_obj and user_has_perm(request.user, "resolve_review")
+        )
+        context["open_review"] = latest_open_review(obj) if has_obj else None
+        context["has_open_review"] = context["open_review"] is not None
+
         return super().render_change_form(request, context, *args, **kwargs)
 
     # ---------- Custom URL endpoints ----------
@@ -263,37 +285,65 @@ class RequestMainAdmin(RequestMailMixin, RequestReviewMixin, BaseRequestAdmin):
         ]
         return custom + urls
 
+    # ---------- POST-action gate ----------
+
+    # claude
+    def _get_req_for_action(self, request, object_id, perm):
+        """Resolve RequestMain for a custom POST endpoint.
+
+        Returns (obj, None) on success, or (None, HttpResponse) when the
+        caller should bail out — either missing permission, hidden by
+        visibility filter, or pk not found. The redirect target differs
+        on purpose: perm-denied lands back on the same Req (so the user
+        sees the error message in context), whereas a missing/hidden pk
+        lands on the changelist (the Req either doesn't exist or the
+        user has no business seeing it).
+        """
+        if not user_has_perm(request.user, perm):
+            messages.error(request, _("You don't have permission for this action."))
+            return None, redirect("admin:zetom_requestmain_change", object_id)
+        qs = visible_requests_for(request.user, RequestMain.objects.all())
+        obj = qs.filter(pk=object_id).first()
+        if obj is None:
+            messages.error(request, _("Request not found."))
+            return None, redirect("admin:zetom_requestmain_changelist")
+        return obj, None
+
     # ---------- Department actions ----------
 
     def add_department_action(self, request, object_id):
         if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
 
-        obj = RequestMain.objects.get(pk=object_id)
         code = request.POST.get("dept_code")
         if code not in DepartmentsVariants.values:
-            messages.error(request, "Invalid department.")
+            messages.error(request, _("Invalid department."))
             return redirect("admin:zetom_requestmain_change", object_id)
         if code in (obj.departments or []):
-            messages.info(request, "Already assigned.")
+            messages.info(request, _("Already assigned."))
             return redirect("admin:zetom_requestmain_change", object_id)
 
         obj.departments = list(obj.departments or []) + [code]
         obj.save(update_fields=["departments"])
         label = dict(DepartmentsVariants.choices).get(code, code)
-        messages.success(request, f"Added {label}.")
+        messages.success(request, _("Added %(label)s.") % {"label": label})
         return redirect("admin:zetom_requestmain_change", object_id)
 
     def remove_department_action(self, request, object_id, dept_code):
         if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
 
-        obj = RequestMain.objects.get(pk=object_id)
         if dept_code in (obj.departments or []):
             obj.departments = [c for c in obj.departments if c != dept_code]
             obj.save(update_fields=["departments"])
             label = dict(DepartmentsVariants.choices).get(dept_code, dept_code)
-            messages.success(request, f"Removed {label}.")
+            messages.success(request, _("Removed %(label)s.") % {"label": label})
         return redirect("admin:zetom_requestmain_change", object_id)
 
     # ---------- User actions ----------
@@ -301,35 +351,45 @@ class RequestMainAdmin(RequestMailMixin, RequestReviewMixin, BaseRequestAdmin):
     def assign_user_action(self, request, object_id):
         if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "assign_requests")
+        if denied is not None:
+            return denied
 
-        obj = RequestMain.objects.get(pk=object_id)
         user_id = request.POST.get("user_id")
         if not user_id:
-            messages.error(request, "No user selected.")
+            messages.error(request, _("No user selected."))
             return redirect("admin:zetom_requestmain_change", object_id)
         try:
             user = User.objects.get(pk=user_id, is_active=True)
         except User.DoesNotExist:
-            messages.error(request, "User not found.")
+            messages.error(request, _("User not found."))
             return redirect("admin:zetom_requestmain_change", object_id)
 
         obj.assigned_to.add(user)
-        messages.success(request, f"Assigned {user.get_full_name() or user.username}.")
+        messages.success(
+            request,
+            _("Assigned %(name)s.") % {"name": user.get_full_name() or user.username},
+        )
         return redirect("admin:zetom_requestmain_change", object_id)
 
     def unassign_user_action(self, request, object_id, user_id):
         if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "assign_requests")
+        if denied is not None:
+            return denied
 
-        obj = RequestMain.objects.get(pk=object_id)
         try:
             user = User.objects.get(pk=user_id)
         except User.DoesNotExist:
-            messages.error(request, "User not found.")
+            messages.error(request, _("User not found."))
             return redirect("admin:zetom_requestmain_change", object_id)
 
         obj.assigned_to.remove(user)
-        messages.success(request, f"Removed {user.get_full_name() or user.username}.")
+        messages.success(
+            request,
+            _("Removed %(name)s.") % {"name": user.get_full_name() or user.username},
+        )
         return redirect("admin:zetom_requestmain_change", object_id)
 
     # ---------- Status flow ----------
@@ -337,8 +397,12 @@ class RequestMainAdmin(RequestMailMixin, RequestReviewMixin, BaseRequestAdmin):
     def apply_status_action(self, request, object_id):
         if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(
+            request, object_id, "change_request_status"
+        )
+        if denied is not None:
+            return denied
 
-        obj = RequestMain.objects.get(pk=object_id)
         new_status = request.POST.get("new_status")
         reason = request.POST.get("reason") or None
 
@@ -356,7 +420,10 @@ class RequestMainAdmin(RequestMailMixin, RequestReviewMixin, BaseRequestAdmin):
             messages.error(request, str(e))
             return redirect("admin:zetom_requestmain_change", object_id)
 
-        messages.success(request, f"Status changed to {new_status}.")
+        messages.success(
+            request,
+            _("Status changed to %(status)s.") % {"status": new_status},
+        )
         if new_status == RequestStatus.deleted:
             return redirect("admin:zetom_requestmain_changelist")
         return redirect("admin:zetom_requestmain_change", object_id)
@@ -364,16 +431,31 @@ class RequestMainAdmin(RequestMailMixin, RequestReviewMixin, BaseRequestAdmin):
     # ---------- Document creation actions ----------
 
     def oferta_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        _obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
         approve_oferta_action(object_id)
-        messages.success(request, "Offer created.")
+        messages.success(request, _("Offer created."))
         return redirect("admin:zetom_requestmain_change", object_id)
 
     def zlecenie_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        _obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
         approve_zlecenie_action(object_id)
-        messages.success(request, "Order created.")
+        messages.success(request, _("Order created."))
         return redirect("admin:zetom_requestmain_change", object_id)
 
     def wniosek_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        _obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
         approve_wniosek_action(object_id)
-        messages.success(request, "Application created.")
+        messages.success(request, _("Application created."))
         return redirect("admin:zetom_requestmain_change", object_id)

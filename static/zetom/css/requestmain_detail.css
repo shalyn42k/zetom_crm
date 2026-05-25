@@ -502,3 +502,17 @@ html.dark {
   display: flex; justify-content: flex-end; gap: 8px;
   padding-top: 8px; border-top: 1px solid var(--rm-card-border);
 }
+
+/* claude — блок с исходным запросом ревью в модалке Resolve. */
+.rm-modal__quote {
+  padding: 10px 12px;
+  border-left: 3px solid var(--rm-card-border);
+  background: rgba(148, 163, 184, 0.08);
+  border-radius: 0 6px 6px 0;
+}
+.rm-modal__quote-head { font-size: 13px; color: var(--rm-text); }
+.rm-modal__quote-meta { font-size: 12px; color: var(--rm-text-muted); }
+.rm-modal__quote-body {
+  margin-top: 6px; font-size: 13px; color: var(--rm-text);
+  white-space: pre-wrap; word-break: break-word;
+}
