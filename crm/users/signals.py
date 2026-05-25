@@ -13,11 +13,13 @@ print("RBAC SIGNALS LOADED")
 
 @receiver(post_migrate)
 def create_rbac_defaults(sender, **kwargs):
-    if sender.label != "users":
+    # Run only for crm.users app
+    if sender.name != "crm.users":
         return
 
     print("RBAC SIGNAL RUNNING FOR USERS")
 
+    # Ensure tables exist
     try:
         Permission.objects.exists()
         Role.objects.exists()
@@ -26,7 +28,11 @@ def create_rbac_defaults(sender, **kwargs):
         print("RBAC: tables are not created yet — skipping")
         return
 
-    # 1. Custom permissions
+    # claude — расширил permissions_data по матрице DOCS/rbac.md §5.
+    # Новые коды (view_logs ... resolve_review) пока НИГДЕ не проверяются —
+    # они заведены как заглушки, видны в админ-вкладке Permissions, чтобы
+    # команда могла раздавать их заранее. Гейты по этим pерм-кодам подключим
+    # отдельным куском (см. план в DOCS/rbac.md §7.2).
     permissions_data = [
         ("view_dashboard", "View dashboard"),
         ("view_admin_panel", "View admin panel"),
@@ -37,14 +43,25 @@ def create_rbac_defaults(sender, **kwargs):
         ("view_requests", "View requests"),
         ("edit_requests", "Edit requests"),
         ("delete_requests", "Delete requests"),
+        ("view_logs", "View logs"),
+        ("change_request_status", "Change request status"),
+        ("send_documents", "Send document emails (oferta/zlecenie/wniosek)"),
+        ("assign_requests", "Assign/unassign users to requests"),
+        ("grant_head", "Grant/revoke department head"),
+        ("request_review", "Request review from a higher role"),
+        ("resolve_review", "Resolve review (approve/reject)"),
     ]
 
     perm_objects = {}
     for code, name in permissions_data:
-        perm, _ = Permission.objects.get_or_create(code=code, defaults={"name": name})
+        perm, _ = Permission.objects.get_or_create(
+            code=code,
+            defaults={"name": name}
+        )
         perm_objects[code] = perm
 
-    # 2. Roles
+    # claude — наборы по матрице DOCS/rbac.md §5. all_seeing по дизайну
+    # пустая роль-шаблон, права раздаются индивидуально через extra_permissions.
     roles_data = {
         "admin": {
             "name": "Administrator",
@@ -54,9 +71,15 @@ def create_rbac_defaults(sender, **kwargs):
             "name": "Department Head",
             "perms": [
                 "view_dashboard",
+                "view_users",
                 "view_requests",
                 "edit_requests",
-                "view_users",
+                "delete_requests",
+                "view_logs",
+                "change_request_status",
+                "send_documents",
+                "assign_requests",
+                "resolve_review",
             ],
         },
         "specialist": {
@@ -65,43 +88,55 @@ def create_rbac_defaults(sender, **kwargs):
                 "view_dashboard",
                 "view_requests",
                 "edit_requests",
+                "send_documents",
+                "assign_requests",
+                "request_review",
             ],
         },
         "auditor": {
             "name": "Auditor",
             "perms": [
                 "view_dashboard",
+                "view_admin_panel",
+                "view_users",
+                "view_roles",
                 "view_requests",
+                "view_logs",
             ],
         },
         "all_seeing": {
-            "name": "custom role",
-            "perms": [
-                "view_dashboard",
-                "view_requests",
-                "view_users",
-                "view_roles",
-            ],
+            "name": "All Seeing",
+            "perms": [],
         },
     }
 
     for code, data in roles_data.items():
-        role, _ = Role.objects.get_or_create(code=code, defaults={"name": data["name"]})
+        role, _ = Role.objects.get_or_create(
+            code=code,
+            defaults={"name": data["name"]}
+        )
         role.permissions.set([perm_objects[p] for p in data["perms"]])
 
-    # 3. Mapping custom permissions → Django permissions
+    # claude — старый общий Role(code=custom) больше не используется.
+    # Индивидуальные права теперь живут в UserProfile.extra_permissions.
+    # Чистим, чтобы не висел осиротевший ряд (юзеров с этой ролью
+    # отвязываем на NULL — есть on_delete=SET_NULL).
+    Role.objects.filter(code="custom").delete()
 
+    # Map custom permissions → Django permissions
     django_perm_map = {
         "view_requests": ("zetom", "requestmain"),
         "edit_requests": ("zetom", "requestmain"),
         "delete_requests": ("zetom", "requestmain"),
+
         "view_users": ("users", "userprofile"),
         "edit_users": ("users", "userprofile"),
+
         "view_roles": ("users", "role"),
         "edit_roles": ("users", "role"),
     }
 
-    # 4. Assigning Django permissions to users
+    # 4. Assign Django permissions to users based on roles
     for user in User.objects.all():
         profile = getattr(user, "profile", None)
         if not profile or not profile.role:
