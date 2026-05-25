@@ -41,6 +41,11 @@ class EmailNotification(models.Model):
     sent_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # claude
+    def __str__(self):
+        when = self.created_at.strftime("%Y-%m-%d %H:%M") if self.created_at else "—"
+        return f"[{self.status}] {self.subject or '(no subject)'} → {self.recipient_email} · {when}"
+
 
 class Notification(models.Model):
     recipient = models.ForeignKey(
@@ -79,3 +84,10 @@ class Notification(models.Model):
             models.Index(fields=["recipient", "is_read"]),
             models.Index(fields=["recipient", "-created_at"]),
         ]
+
+    # claude
+    def __str__(self):
+        kind_label = NotificationKind(self.kind).label if self.kind in NotificationKind.values else self.kind
+        actor = self.actor.get_username() if self.actor_id else "system"
+        when = self.created_at.strftime("%Y-%m-%d %H:%M") if self.created_at else "—"
+        return f"{kind_label} · {actor} → {self.recipient.get_username()} · {when}"
