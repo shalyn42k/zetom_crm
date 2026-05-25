@@ -13,13 +13,9 @@ def _notifications_title(request):
     return f"{base} ({count})" if count else base
 
 
-# claude — link на changelist Notification, отфильтрованный по recipient=user и непрочитанным
+# claude — link на нашу кастомную inbox-страницу (см. crm.notification.urls)
 def _notifications_link(request):
-    base = reverse("admin:notification_notification_changelist")
-    user_id = getattr(getattr(request, "user", None), "id", None)
-    if user_id is None:
-        return base
-    return f"{base}?recipient__id__exact={user_id}&is_read__exact=0"
+    return reverse("notification:inbox")
 
 UNFOLD = {
     "SITE_TITLE": "Zetom CRM",
@@ -125,38 +121,88 @@ UNFOLD = {
         "filter": "dcrm.unfold_sidebar.filter_sidebar_items",
         "navigation": [
 
+            # claude — Inbox without a group, on top. No permission gate —
+            # каждый staff юзер имеет inbox (в т.ч. system-нотификации).
             {
-                "title": "Developer Interface",
+                "title": "Inbox",
+                "collapsible": False,
+                "items": [
+                    {
+                        "title": _("Inbox"),
+                        "icon": "inbox",
+                        "link": reverse_lazy("notification:inbox"),
+                    },
+                ],
+            },
+
+            # claude — рабочие сущности в порядке workflow: Null -> Main -> документы
+            {
+                "title": "Requests",
                 "collapsible": True,
                 "items": [
                     {
-                        "title": "Validation Window",
-                        "icon": "check",
+                        "title": _("Validation"),
+                        "icon": "task_alt",
                         "link": reverse_lazy("admin:zetom_requestnull_changelist"),
                         "permission": lambda request: user_has_perm(
                             request.user, "view_requests"
                         ),
                     },
                     {
-                        "title": "Activity Log",
-                        "icon": "history",
-                        "link": "/admin/admin/logentry/",
+                        "title": _("Information"),
+                        "icon": "folder",
+                        "link": reverse_lazy("admin:zetom_requestmain_changelist"),
                         "permission": lambda request: user_has_perm(
-                            request.user, "view_admin_panel"
+                            request.user, "view_requests"
                         ),
                     },
                     {
-                        "title": "Notification",
-                        "icon": "notifications",
-                        "link": reverse_lazy(
-                            "admin:notification_notification_changelist"
+                        "title": _("Offers"),
+                        "icon": "request_quote",
+                        "link": reverse_lazy("admin:zetom_oferta_changelist"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_requests"
                         ),
                     },
                     {
-                        "title": "Email Notification",
-                        "icon": "notification_multiple",
-                        "link": reverse_lazy(
-                            "admin:notification_emailnotification_changelist"
+                        "title": _("Orders"),
+                        "icon": "receipt_long",
+                        "link": reverse_lazy("admin:zetom_zlecenie_changelist"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_requests"
+                        ),
+                    },
+                    {
+                        "title": _("Applications"),
+                        "icon": "article",
+                        "link": reverse_lazy("admin:zetom_wniosek_changelist"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_requests"
+                        ),
+                    },
+                ],
+            },
+
+            # claude — терминальные/мусор. TODO[other dev]: Trash, возможно,
+            # надо закрыть `delete_requests` отдельно. Пока — `view_requests`.
+            {
+                "title": "Archive",
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Cancelled"),
+                        "icon": "cancel",
+                        "link": reverse_lazy("admin:zetom_cancelledrequest_changelist"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_requests"
+                        ),
+                    },
+                    {
+                        "title": _("Trash"),
+                        "icon": "delete",
+                        "link": reverse_lazy("admin:zetom_deletedrequest_changelist"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_requests"
                         ),
                     },
                 ],
@@ -167,8 +213,8 @@ UNFOLD = {
                 "collapsible": True,
                 "items": [
                     {
-                        "title": "Clients",
-                        "icon": "account_circle",
+                        "title": _("Clients"),
+                        "icon": "business",
                         "link": reverse_lazy("admin:clients_client_changelist"),
                         "permission": lambda request: user_has_perm(
                             request.user, "view_clients"
@@ -177,76 +223,65 @@ UNFOLD = {
                 ],
             },
 
+            # claude — раньше "Admin"; переименовано в "Users & Access" чтобы
+            # не путать с ролью admin и не вступать в конфликт с группой "System".
             {
-                "title": "Requests",
+                "title": "Users & Access",
                 "collapsible": True,
                 "items": [
                     {
-                        "title": "Trash",
-                        "icon": "delete",
-                        "link": reverse_lazy("admin:zetom_deletedrequest_changelist"),
+                        "title": _("Users"),
+                        "icon": "manage_accounts",
+                        "link": reverse_lazy("admin:auth_user_changelist"),
                         "permission": lambda request: user_has_perm(
-                            request.user, "view_requests"
-                        ),
-                    },
-
-
-                    {
-                        "title": "Cancelled",
-                        "icon": "cancel",
-                        "link": reverse_lazy("admin:zetom_cancelledrequest_changelist"),
-                        "permission": lambda request: user_has_perm(
-                           request.user, "view_requests"
-                        ),
-                    },
-
-                    {
-                        "title": "Information",
-                        "icon": "folder",
-                        "link": reverse_lazy("admin:zetom_requestmain_changelist"),
-                        "permission": lambda request: user_has_perm(
-                            request.user, "view_requests"
+                            request.user, "view_users"
                         ),
                     },
                     {
-                        "title": "Offers",
-                        "icon": "description",
-                        "link": reverse_lazy("admin:zetom_oferta_changelist"),
-                        "permission": lambda request: user_has_perm(
-                            request.user, "view_requests"
-                        ),
-                    },
-                    {
-                        "title": "Orders",
-                        "icon": "description",
-                        "link": reverse_lazy("admin:zetom_zlecenie_changelist"),
-                    },
-                    {
-                        "title": "Applications",
-                        "icon": "description",
-                        "link": reverse_lazy("admin:zetom_wniosek_changelist"),
-                    },
-                ],
-            },
-
-            {
-                "title": "Admin",
-                "collapsible": True,
-                "items": [
-                    {
-                        "title": "Roles",
+                        "title": _("Roles"),
                         "icon": "shield",
                         "link": reverse_lazy("admin:users_role_changelist"),
                         "permission": lambda request: user_has_perm(
                             request.user, "view_roles"
                         ),
                     },
+                ],
+            },
+
+            # claude — Системные / аудит логи. `view_admin_panel` пока нигде
+            # не enforce'ится в коде (см. DOCS/rbac.md §3.4), но используем
+            # его здесь forward-compatibly. Activity Log пока живой только для
+            # RequestMain (см. DOCS/rbac.md / TODO).
+            {
+                "title": "System",
+                "collapsible": True,
+                "items": [
                     {
-                        "title": "Users",
-                        "icon": "account_box",
-                        "link": reverse_lazy("admin:auth_user_changelist"),
+                        "title": _("Activity Log"),
+                        "icon": "history",
+                        "link": "/admin/admin/logentry/",
                         "permission": lambda request: user_has_perm(
-                            request.user, "view_users"
+                            request.user, "view_admin_panel"
+                        ),
+                    },
+                    {
+                        "title": _("Notification log"),
+                        "icon": "monitor_heart",
+                        "link": reverse_lazy(
+                            "admin:notification_notification_changelist"
+                        ),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_admin_panel"
+                        ),
+                    },
+                    {
+                        "title": _("Email log"),
+                        "icon": "outbox",
+                        "link": reverse_lazy(
+                            "admin:notification_emailnotification_changelist"
+                        ),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_admin_panel"
                         ),
                     },
                 ],
