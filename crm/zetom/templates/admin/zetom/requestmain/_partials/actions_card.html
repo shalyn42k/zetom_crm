@@ -100,6 +100,7 @@
         <form method="post"
               action="{% url 'admin:zetom_requestmain_mail_document' original.pk %}"
               class="rm-modal__form"
+              data-send-overlay
               x-show="modal.mode === 'document'" x-cloak>
           {% csrf_token %}
 
@@ -191,6 +192,7 @@
         <form method="post"
               action="{% url 'admin:zetom_requestmain_mail_freeform' original.pk %}"
               class="rm-modal__form"
+              data-send-overlay
               x-show="modal.mode === 'freeform'" x-cloak>
           {% csrf_token %}
 
@@ -243,7 +245,8 @@
 
         <form method="post"
               action="{% url 'admin:zetom_requestmain_request_review' original.pk %}"
-              class="rm-modal__form">
+              class="rm-modal__form"
+              data-send-overlay>
           {% csrf_token %}
 
           <p class="rm-modal__hint">
@@ -303,3 +306,5 @@
     };
   }
 </script>
+
+{% include "notification/_send_overlay.html" %}

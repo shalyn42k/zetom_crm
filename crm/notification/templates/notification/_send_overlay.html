@@ -1,0 +1,72 @@
+{% load i18n %}
+{% comment %}
+  Full-screen "sending" overlay. Include this partial once per page and
+  add `data-send-overlay` to any <form> whose submit should block the UI
+  until the response comes back. JS-converted anchors (the data-mark-read
+  pattern in the inbox) can use `data-send-overlay-click` on the trigger
+  instead.
+
+  The overlay disappears naturally when the browser navigates to the
+  redirect response — no JS cleanup needed.
+{% endcomment %}
+
+<style>
+  .zo-overlay {
+    position:fixed; inset:0; z-index:9999;
+    background:rgba(0,0,0,.55); backdrop-filter:blur(2px);
+    display:none; align-items:center; justify-content:center;
+    cursor:wait;
+  }
+  .zo-overlay.is-visible { display:flex; }
+  .zo-overlay__card {
+    background:#1a2028; color:#e5e7eb;
+    border:1px solid #2a3442; border-radius:12px;
+    padding:24px 32px; min-width:260px; text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,.5);
+    font-family:'Inter',system-ui,sans-serif;
+  }
+  .zo-overlay__spinner {
+    width:32px; height:32px; margin:0 auto 12px;
+    border:3px solid rgba(255,255,255,.12);
+    border-top-color:#22c55e; border-radius:50%;
+    animation:zo-spin .9s linear infinite;
+  }
+  @keyframes zo-spin { to { transform:rotate(360deg); } }
+  .zo-overlay__title { font-weight:600; font-size:14px; margin:0 0 4px; }
+  .zo-overlay__sub { font-size:12px; color:#9ca3af; margin:0; }
+</style>
+
+<div class="zo-overlay" id="zo-overlay" aria-hidden="true">
+  <div class="zo-overlay__card" role="status" aria-live="polite">
+    <div class="zo-overlay__spinner" aria-hidden="true"></div>
+    <p class="zo-overlay__title">{% trans "Sending…" %}</p>
+    <p class="zo-overlay__sub">{% trans "Please wait, the page will refresh when it's done." %}</p>
+  </div>
+</div>
+
+<script>
+  (function () {
+    // claude — show the overlay any time a "send"-marked form submits, and
+    // disable its submit buttons so an impatient double-click can't fire
+    // the action twice (and triple-charge an SMTP send).
+    function show() {
+      var ov = document.getElementById("zo-overlay");
+      if (ov) {
+        ov.classList.add("is-visible");
+        ov.setAttribute("aria-hidden", "false");
+      }
+    }
+    document.addEventListener("submit", function (e) {
+      var form = e.target;
+      if (!form.matches || !form.matches("form[data-send-overlay]")) return;
+      form.querySelectorAll("button[type=submit], input[type=submit]").forEach(function (b) {
+        b.disabled = true;
+      });
+      show();
+    }, true);
+    document.addEventListener("click", function (e) {
+      var trigger = e.target.closest("[data-send-overlay-click]");
+      if (trigger) show();
+    });
+  })();
+</script>

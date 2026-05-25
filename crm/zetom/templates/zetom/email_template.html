@@ -94,7 +94,7 @@
         </ul>
     {% endif %}
 
-    <form method="post" novalidate>
+    <form method="post" novalidate data-send-overlay>
         {% csrf_token %}
 
         <div class="email-form-row">
@@ -153,4 +153,6 @@
 
 </div>
 </div>
+
+{% include "notification/_send_overlay.html" %}
 {% endblock content %}
