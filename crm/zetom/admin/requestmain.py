@@ -103,11 +103,15 @@ class RequestMainAdmin(RequestMailMixin, RequestReviewMixin, BaseRequestAdmin):
             old_status = obj.status
             obj.status = RequestStatus.deleted
             obj.save(update_fields=["status"])
+            # claude — single-object delete (`delete_view`) stashes the reason
+            # on the instance; bulk `delete_queryset` doesn't have a reason
+            # form, so it falls back to a generic label.
+            reason = getattr(obj, "_delete_reason", None) or "Deleted via admin"
             StatusHistory.objects.create(
                 request=obj,
                 old_status=old_status,
                 new_status=RequestStatus.deleted,
-                reason="Deleted via admin",
+                reason=reason,
                 changed_by=request.user,
             )
 
@@ -121,6 +125,34 @@ class RequestMainAdmin(RequestMailMixin, RequestReviewMixin, BaseRequestAdmin):
         for obj in queryset:
             self._flip_to_deleted(request, obj)
         super().delete_queryset(request, queryset)
+
+    # claude — bottom "Delete" button on the change form now goes through
+    # the same reason-form flow as the right-side Status → Delete action,
+    # instead of silently using "Deleted via admin" as the reason.
+    def delete_view(self, request, object_id, extra_context=None):
+        obj = self.get_object(request, object_id)
+        if obj is None or not self.has_delete_permission(request, obj):
+            return super().delete_view(request, object_id, extra_context)
+
+        if request.method == "POST":
+            reason = (request.POST.get("reason") or "").strip()
+            if reason:
+                obj._delete_reason = reason
+                self.delete_model(request, obj)
+                messages.success(request, "Request deleted.")
+                return redirect("admin:zetom_requestmain_changelist")
+            messages.error(request, "Reason is required.")
+
+        form = ReasonForm()
+        return render(
+            request,
+            "admin/zetom/requestmain/reason_form.html",
+            {
+                "form": form,
+                "obj": obj,
+                **self.admin_site.each_context(request),
+            },
+        )
 
     # ---------- Custom layout context ----------
 
