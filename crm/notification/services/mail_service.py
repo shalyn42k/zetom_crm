@@ -11,7 +11,7 @@ import logging
 
 # Django imports
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage, get_connection
 from django.utils import timezone
 
 # Local imports
@@ -43,33 +43,39 @@ def _send(*, recipients, subject, body, template_name="", payload=None, actor=No
         return []
 
     records = []
-    for email in recipients:
-        record = EmailNotification.objects.create(
-            recipient_email=email,
-            actor=actor,
-            template_name=template_name,
-            subject=subject,
-            payload=payload or {},
-            status=EmailStatus.PENDING,
-        )
-        try:
-            send_mail(
-                subject,
-                body,
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
+    # claude — Open one SMTP connection for the whole batch. Was: `send_mail`
+    # per recipient, which means TCP+STARTTLS+AUTH+QUIT each iteration. With
+    # Gmail at ~1-2s per handshake a 5-recipient send took ~10s; with a shared
+    # `get_connection()` context manager the handshake happens once.
+    with get_connection() as connection:
+        for email in recipients:
+            record = EmailNotification.objects.create(
+                recipient_email=email,
+                actor=actor,
+                template_name=template_name,
+                subject=subject,
+                payload=payload or {},
+                status=EmailStatus.PENDING,
             )
-        except Exception as exc:
-            record.status = EmailStatus.FAILED
-            record.status_reason = str(exc)
-            record.save(update_fields=["status", "status_reason"])
-            logger.exception("notification.mail: failed to send to %s", email)
-        else:
-            record.status = EmailStatus.SENT
-            record.sent_at = timezone.now()
-            record.save(update_fields=["status", "sent_at"])
-        records.append(record)
+            try:
+                msg = EmailMessage(
+                    subject=subject,
+                    body=body,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[email],
+                    connection=connection,
+                )
+                msg.send(fail_silently=False)
+            except Exception as exc:
+                record.status = EmailStatus.FAILED
+                record.status_reason = str(exc)
+                record.save(update_fields=["status", "status_reason"])
+                logger.exception("notification.mail: failed to send to %s", email)
+            else:
+                record.status = EmailStatus.SENT
+                record.sent_at = timezone.now()
+                record.save(update_fields=["status", "sent_at"])
+            records.append(record)
     return records
 
 
