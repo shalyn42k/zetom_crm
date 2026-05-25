@@ -19,7 +19,7 @@
 <section class="rm-card rm-card--collapsible"
          aria-labelledby="rm-actions-heading" id="actions"
          x-data="rmActions()"
-         @keydown.escape.window="(modal.open && (modal.open = false)) || (reviewModal.open && (reviewModal.open = false))">
+         @keydown.escape.window="(modal.open && (modal.open = false)) || (reviewModal.open && (reviewModal.open = false)) || (resolveModal.open && (resolveModal.open = false))">
   <header class="rm-card__header rm-card__toggle" role="button" tabindex="0"
           :aria-expanded="open"
           @click="open = !open"
@@ -62,6 +62,21 @@
           {% trans "Open" %}
         </button>
       </li>
+
+      {% if can_resolve_review and has_open_review %}
+      <li class="rm-action">
+        <span class="rm-action__icon" aria-hidden="true">✓</span>
+        <span class="rm-action__meta">
+          <span class="rm-action__name">{% trans "Resolve review" %}</span>
+          <span class="rm-action__sub">{% trans "Approve or reject the pending review request" %}</span>
+        </span>
+        <button type="button"
+                class="rm-btn rm-btn--primary rm-btn--sm"
+                @click="openResolve()">
+          {% trans "Open" %}
+        </button>
+      </li>
+      {% endif %}
     </ul>
   </div>
 
@@ -100,6 +115,7 @@
         <form method="post"
               action="{% url 'admin:zetom_requestmain_mail_document' original.pk %}"
               class="rm-modal__form"
+              data-send-overlay
               x-show="modal.mode === 'document'" x-cloak>
           {% csrf_token %}
 
@@ -191,6 +207,7 @@
         <form method="post"
               action="{% url 'admin:zetom_requestmain_mail_freeform' original.pk %}"
               class="rm-modal__form"
+              data-send-overlay
               x-show="modal.mode === 'freeform'" x-cloak>
           {% csrf_token %}
 
@@ -226,6 +243,97 @@
     </div>
   </template>
 
+  {# ----------- Модалка: решение по запросу проверки ----------- #}
+  {% if can_resolve_review %}
+  <template x-teleport="body">
+    <div class="rm-modal" x-show="resolveModal.open" x-cloak
+         role="dialog" aria-modal="true" aria-labelledby="rm-resolve-modal-title">
+      <div class="rm-modal__backdrop" @click="resolveModal.open = false"></div>
+
+      <div class="rm-modal__panel" @click.stop>
+        <header class="rm-modal__header">
+          <h2 id="rm-resolve-modal-title" class="rm-modal__title">
+            {% trans "Resolve review" %}
+          </h2>
+          <button type="button" class="rm-modal__close"
+                  @click="resolveModal.open = false" aria-label='{% trans "Close" %}'>×</button>
+        </header>
+
+        <form method="post"
+              action="{% url 'admin:zetom_requestmain_resolve_review' original.pk %}"
+              class="rm-modal__form"
+              data-send-overlay>
+          {% csrf_token %}
+
+          {% if open_review %}
+          <div class="rm-modal__group rm-modal__quote">
+            <div class="rm-modal__quote-head">
+              <strong>
+                {% if open_review.actor %}
+                  {{ open_review.actor.get_full_name|default:open_review.actor.username }}
+                {% else %}
+                  {% trans "Unknown specialist" %}
+                {% endif %}
+              </strong>
+              <span class="rm-modal__quote-meta">
+                · {{ open_review.created_at|date:"Y-m-d H:i" }}
+              </span>
+            </div>
+            {% if open_review.payload.document_label %}
+              <div class="rm-modal__quote-meta">
+                {% blocktrans with doc=open_review.payload.document_label %}Document: {{ doc }}{% endblocktrans %}
+              </div>
+            {% endif %}
+            <div class="rm-modal__quote-body">
+              {% if open_review.payload.note %}
+                {{ open_review.payload.note|linebreaksbr }}
+              {% else %}
+                <em>{% trans "(no comment provided)" %}</em>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+
+          <p class="rm-modal__hint">
+            {% trans "Notification will be sent in-app to the specialist who requested this review." %}
+          </p>
+
+          <fieldset class="rm-modal__group">
+            <legend class="rm-modal__legend">{% trans "Decision" %}</legend>
+            <label class="rm-radio">
+              <input type="radio" name="decision" value="approved"
+                     x-model="resolveModal.decision">
+              <span>{% trans "Approve" %}</span>
+            </label>
+            <label class="rm-radio">
+              <input type="radio" name="decision" value="rejected"
+                     x-model="resolveModal.decision">
+              <span>{% trans "Reject" %}</span>
+            </label>
+          </fieldset>
+
+          <div class="rm-modal__group">
+            <label class="rm-label" for="rm-resolve-note">{% trans "Comment (optional)" %}</label>
+            <textarea id="rm-resolve-note" name="note" class="rm-textarea"
+                      rows="6" maxlength="1000"
+                      placeholder='{% trans "Anything the requester should know?" %}'
+                      x-model="resolveModal.note"></textarea>
+          </div>
+
+          <footer class="rm-modal__footer">
+            <button type="button" class="rm-btn"
+                    @click="resolveModal.open = false">{% trans "Cancel" %}</button>
+            <button type="submit" class="rm-btn rm-btn--primary"
+                    :disabled="!resolveModal.decision">
+              {% trans "Submit decision" %}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  </template>
+  {% endif %}
+
   {# ----------- Модалка: запрос на проверку ----------- #}
   <template x-teleport="body">
     <div class="rm-modal" x-show="reviewModal.open" x-cloak
@@ -243,7 +351,8 @@
 
         <form method="post"
               action="{% url 'admin:zetom_requestmain_request_review' original.pk %}"
-              class="rm-modal__form">
+              class="rm-modal__form"
+              data-send-overlay>
           {% csrf_token %}
 
           <p class="rm-modal__hint">
@@ -290,6 +399,11 @@
           open: false,
           note: '',
         },
+        resolveModal: {
+          open: false,
+          decision: '',
+          note: '',
+        },
         openMail() {
           this.modal.open = true;
           this.modal.mode = 'document';
@@ -299,7 +413,14 @@
           this.reviewModal.open = true;
           this.reviewModal.note = '';
         },
+        openResolve() {
+          this.resolveModal.open = true;
+          this.resolveModal.decision = '';
+          this.resolveModal.note = '';
+        },
       };
     };
   }
 </script>
+
+{% include "notification/_send_overlay.html" %}

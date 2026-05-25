@@ -6,6 +6,7 @@ from crm.status_manager.models import StatusHistory
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
 from crm.zetom.models import CancelledRequest, DepartmentsVariants, RequestMain
+from crm.zetom.services.visibility import visible_requests_for
 
 from .base import DepartmentsDisplayMixin
 
@@ -24,8 +25,12 @@ class CancelledRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
         "company_name", "company_nip", "email", "address", "message", "source",
     )
 
+    # claude — переопределённый queryset (вместо super().get_queryset()) терял
+    # фильтр видимости из BaseRequestAdmin; без `visible_requests_for` спец
+    # видел чужие cancelled-Req.
     def get_queryset(self, request):
-        return RequestMain.objects.filter(status=RequestStatus.cancelled)
+        qs = RequestMain.objects.filter(status=RequestStatus.cancelled)
+        return visible_requests_for(request.user, qs)
 
     def has_add_permission(self, request):
         return False
@@ -56,10 +61,20 @@ class CancelledRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
         ]
         return custom + urls
 
+    # claude — то же ужесточение, что в RequestMainAdmin POST-вью: perm-гейт +
+    # visibility, иначе спец мог дёрнуть restore по чужому id через прямой POST.
     def restore_action(self, request, object_id):
         if request.method != "POST":
             return redirect("admin:zetom_cancelledrequest_change", object_id)
-        obj = RequestMain.objects.get(pk=object_id)
+        if not user_has_perm(request.user, "change_request_status"):
+            return redirect("admin:zetom_cancelledrequest_change", object_id)
+        qs = visible_requests_for(
+            request.user,
+            RequestMain.objects.filter(status=RequestStatus.cancelled),
+        )
+        obj = qs.filter(pk=object_id).first()
+        if obj is None:
+            return redirect("admin:zetom_cancelledrequest_changelist")
         old_status = obj.status
         obj.status = RequestStatus.active
         obj.save()

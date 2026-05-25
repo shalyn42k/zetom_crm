@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}Submit Request{% endblock title %}
+{% block title %}{% trans "Submit Request" %}{% endblock title %}
 
 {% block extrastyle %}
     {{ block.super }}
@@ -75,12 +75,30 @@
 <div class="email-page">
 <div class="email-form-card">
 
+    {% if submitted %}
+        {% comment %}
+          Thank-you state — анонимный юзер раньше редиректился в
+          /admin/login/?next=..., что выглядело как поломка. Теперь
+          остаётся на той же странице с подтверждением.
+        {% endcomment %}
+        <div class="email-form-header">
+            <h2>{% trans "Thank you!" %}</h2>
+            <a href="{% url 'admin:index' %}" class="return-btn">← {% trans "Return" %}</a>
+        </div>
+        <p class="subtitle">
+            {% trans "Your request has been received. We will get back to you shortly." %}
+        </p>
+        <a href="{% url 'zetom:index' %}" class="return-btn">
+            {% trans "Submit another request" %}
+        </a>
+    {% else %}
+
     <div class="email-form-header">
-        <h2>Submit your request</h2>
-        <a href="{% url 'admin:index' %}" class="return-btn">← Return</a>
+        <h2>{% trans "Submit your request" %}</h2>
+        <a href="{% url 'admin:index' %}" class="return-btn">← {% trans "Return" %}</a>
     </div>
 
-    <p class="subtitle">Fill in the details below and we will get back to you shortly.</p>
+    <p class="subtitle">{% trans "Fill in the details below and we will get back to you shortly." %}</p>
 
     {% if message %}
         <div class="notice">{{ message }}</div>
@@ -94,7 +112,7 @@
         </ul>
     {% endif %}
 
-    <form method="post" novalidate>
+    <form method="post" novalidate data-send-overlay>
         {% csrf_token %}
 
         <div class="email-form-row">
@@ -148,9 +166,13 @@
             {{ form.message.errors }}
         </div>
 
-        <button type="submit">Submit request</button>
+        <button type="submit">{% trans "Submit request" %}</button>
     </form>
+
+    {% endif %}
 
 </div>
 </div>
+
+{% include "notification/_send_overlay.html" %}
 {% endblock content %}

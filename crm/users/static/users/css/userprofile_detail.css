@@ -142,6 +142,151 @@ html.dark,
 .up-perm__name { font-size: 13px; font-weight: 500; color: var(--up-text); }
 .up-perm__code { font-size: 11.5px; color: var(--up-text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
+/* claude — permission tab: 2-column grid + collapsible groups + states */
+.up-perm-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1100px) { .up-perm-grid { grid-template-columns: 1fr; } }
+
+.up-perm-legend {
+  display: flex; flex-wrap: wrap; gap: 14px;
+  margin: 0 0 12px; padding: 0;
+  font-size: 11.5px; color: var(--up-text-muted);
+}
+.up-perm-legend__item { display: inline-flex; align-items: center; gap: 6px; }
+.up-perm-legend__swatch {
+  width: 14px; height: 14px; border-radius: 4px;
+  border: 1px solid var(--up-card-border); background: var(--up-bg-soft);
+}
+.up-perm-legend__swatch--locked   { background: color-mix(in oklab, var(--up-perm-allowed) 18%, transparent); border-color: color-mix(in oklab, var(--up-perm-allowed) 35%, transparent); }
+.up-perm-legend__swatch--editable { background: var(--up-bg-soft); border-color: color-mix(in oklab, var(--up-text) 25%, transparent); }
+.up-perm-legend__swatch--stub     { background: color-mix(in oklab, var(--up-perm-limited) 14%, transparent); border: 1px dashed color-mix(in oklab, var(--up-perm-limited) 50%, transparent); }
+
+/* Сворачиваемая группа: используем нативный <details>/<summary> */
+.up-perm-group {
+  margin-bottom: 10px;
+  border: 1px solid var(--up-card-border);
+  border-radius: 8px;
+  background: var(--up-bg-soft);
+  overflow: hidden;
+}
+.up-perm-group:last-child { margin-bottom: 0; }
+.up-perm-group__summary {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  font-size: 12px; font-weight: 600;
+  color: var(--up-text); text-transform: uppercase; letter-spacing: 0.04em;
+}
+.up-perm-group__summary::-webkit-details-marker { display: none; }
+.up-perm-group__summary:hover { background: color-mix(in oklab, var(--up-text) 4%, transparent); }
+/* CSS-нарисованный chevron вместо unicode ▸ — крепко рендерится и
+   переворачивается на 90° при open. */
+.up-perm-group__caret {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  color: var(--up-text-muted);
+  transform: rotate(-45deg);
+  transition: transform 150ms ease;
+  flex-shrink: 0;
+  margin-left: 2px; margin-right: 4px;
+}
+.up-perm-group[open] > .up-perm-group__summary > .up-perm-group__caret {
+  transform: rotate(45deg);
+}
+.up-perm-group__summary:hover > .up-perm-group__caret {
+  color: var(--up-text);
+}
+.up-perm-group__title { flex: 1; }
+.up-perm-group__count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 20px; padding: 0 6px; border-radius: 100px;
+  background: color-mix(in oklab, var(--up-text) 10%, transparent);
+  color: var(--up-text-muted);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0;
+}
+.up-perm-group .up-perm-list { padding: 4px 8px 10px; }
+
+.up-perm__check { width: 100%; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.up-perm__badges { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+
+/* Кастомный чекбокс: скруглённый квадрат, зелёная заливка + галка через ::after. */
+.up-perm__check input[type="checkbox"] {
+  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border: 1.5px solid color-mix(in oklab, var(--up-text) 30%, transparent);
+  border-radius: 5px;
+  background: var(--up-bg);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+  position: relative;
+}
+.up-perm__check input[type="checkbox"]:hover:not(:disabled) {
+  border-color: var(--up-perm-allowed);
+}
+.up-perm__check input[type="checkbox"]:checked {
+  background: var(--up-perm-allowed);
+  border-color: var(--up-perm-allowed);
+}
+.up-perm__check input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  width: 4px; height: 8px;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+.up-perm__check input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+.up-perm__check input[type="checkbox"]:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--up-perm-allowed) 60%, transparent);
+  outline-offset: 2px;
+}
+
+/* Editable row — обычная рамка, чёткий hover, курсор pointer */
+.up-perm--editable {
+  border-color: color-mix(in oklab, var(--up-text) 22%, var(--up-card-border));
+  background: var(--up-bg-soft);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.up-perm--editable:hover {
+  border-color: color-mix(in oklab, var(--up-perm-allowed) 45%, transparent);
+}
+
+/* Locked row — приглушённая, без hover-эффекта, cursor not-allowed */
+.up-perm--locked {
+  background: color-mix(in oklab, var(--up-perm-allowed) 6%, transparent);
+  border-color: color-mix(in oklab, var(--up-perm-allowed) 28%, transparent);
+}
+.up-perm--locked .up-perm__check { cursor: not-allowed; }
+.up-perm--locked input[type="checkbox"] { accent-color: var(--up-perm-allowed); }
+
+/* Stub row — пунктир + амбер, поверх locked/editable */
+.up-perm--stub {
+  border-style: dashed;
+  border-color: color-mix(in oklab, var(--up-perm-limited) 50%, transparent);
+}
+.up-perm--stub .up-perm__name,
+.up-perm--stub .up-perm__code { opacity: 0.85; }
+
+.up-badge--stub {
+  color: var(--up-perm-limited);
+  background: color-mix(in oklab, var(--up-perm-limited) 14%, transparent);
+}
+
 /* ---------- Departments tab: 2-column grid ---------- */
 .up-dept-grid {
   display: grid;

@@ -51,12 +51,27 @@ class UserProfile(models.Model):
     )
     job_title = models.CharField(max_length=100, null=True, blank=True)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
+    # claude — индивидуальные права поверх role.permissions (аддитивно).
+    # Заменяет прежний «общий Role(code=custom)», который один на всех.
+    extra_permissions = models.ManyToManyField(
+        Permission,
+        blank=True,
+        related_name="extra_users",
+    )
 
     def __str__(self):
         return f"{self.user.username} - {self.role}"
 
     def is_role(self, code):
         return self.role and self.role.code == code
+
+    # claude — единая точка для проверок прав: union роли и extras.
+    def effective_permissions(self):
+        if self.role_id:
+            return Permission.objects.filter(
+                models.Q(role=self.role) | models.Q(extra_users=self)
+            ).distinct()
+        return self.extra_permissions.all()
 
     # claude
     def clean(self):

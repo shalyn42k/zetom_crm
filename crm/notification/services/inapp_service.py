@@ -98,8 +98,13 @@ def mark_read(notification, *, by_user):
 
 
 # claude
-def mark_all_read(user):
-    """Bulk-mark every unread Notification of `user` as read. Returns count."""
-    return Notification.objects.filter(recipient=user, is_read=False).update(
-        is_read=True, read_at=timezone.now()
-    )
+def mark_all_read(user, *, exclude_kinds=()):
+    """Bulk-mark every unread Notification of `user` as read. Returns count.
+
+    `exclude_kinds` keeps specific kinds unread (e.g. REVIEW_REQUEST, which
+    by design only clears after the recipient takes an action).
+    """
+    qs = Notification.objects.filter(recipient=user, is_read=False)
+    if exclude_kinds:
+        qs = qs.exclude(kind__in=exclude_kinds)
+    return qs.update(is_read=True, read_at=timezone.now())

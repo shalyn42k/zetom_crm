@@ -53,6 +53,13 @@
   - План: два JSON-эндпоинта в `RequestMainAdmin` (`clients/search/?q=`, `users/search/?q=&request=<pk>` с исключением уже назначенных), лимит ~20. На фронте — общий Alpine-комбобокс (Alpine уже подключён в `assigned_users.html`): input с дебаунсом, выпадашка, скрытый id-инпут.
   - Открытые вопросы: формат строки для клиента (`Company — NIP …`?), что показывать для юзера кроме ФИО, исключать ли назначенных, нужна ли пагинация при скролле.
 
+- [ ] Вложения для RequestMain и дочерних модалок (oferta/zlecenie/wniosek) + отправка по почте
+  - Модель `RequestAttachment` (FK на RequestMain или GFK на parent + children, `FileField`, `uploaded_by`, `uploaded_at`, валидация размера/MIME).
+  - UI: загрузка/список/удаление в основной модалке RequestMain и в каждой из дочерних форм.
+  - Mail: прицеплять вложения в `send_document_to_*` / `send_freeform_to_client` через `EmailMessage.attach_file`; учесть SMTP-лимит размера и UTF-8 имена.
+  - Решить, кому принадлежит файл — RequestMain или конкретному документу (от этого зависит, какие письма его тянут).
+  - На альфу не тянем; задел — можно завести только модель+миграцию без UI.
+
 - [ ] Решить, нужен ли FSM-переход обратно в `Status.new` для детей
   - В [status_service.py:23-28](crm/status_manager/services/status_service.py#L23-L28) ни один из переходов не ведёт в `new` — статус становится недостижим после первой смены.
 

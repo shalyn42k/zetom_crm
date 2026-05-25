@@ -190,10 +190,24 @@ def mark_read(request, pk):
     fallback to the inbox. Per handoff, default redirect goes to the
     notification target (`get_absolute_url()` of the linked object), so the
     user lands on the thing the notification was about.
+
+    REVIEW_REQUEST is intentionally NOT marked here — dep_head must
+    explicitly resolve (approve/reject) for the unread state to clear.
+    The mark-as-read for that kind happens in resolve_review_action.
     """
     notification = get_object_or_404(Notification, pk=pk)
     if notification.recipient_id != request.user.id:
         return HttpResponseForbidden("Not your notification.")
+
+    # claude — для REVIEW_REQUEST ни pin-чекмарка, ни клика по заголовку с
+    # `?back=inbox` не должно "съедать" нотификацию: dep_head обязан попасть
+    # на Req и осознанно принять решение через Resolve-модалку. Поэтому здесь
+    # игнорируем mark_read И `back`, и сразу ведём на target.
+    if notification.kind == NotificationKind.REVIEW_REQUEST:
+        tgt = target_url(notification)
+        if tgt:
+            return redirect(tgt)
+        return redirect(reverse("notification:inbox"))
 
     inapp_service.mark_read(notification, by_user=request.user)
 
@@ -210,6 +224,13 @@ def mark_read(request, pk):
 @require_POST
 @login_required
 def mark_all_read(request):
-    """Bulk mark every unread notification of the current user."""
-    inapp_service.mark_all_read(request.user)
+    """Bulk mark every unread notification of the current user.
+
+    REVIEW_REQUEST is excluded — by design, оно снимается только после
+    Approve/Reject в Resolve-модалке на самом Req.
+    """
+    inapp_service.mark_all_read(
+        request.user,
+        exclude_kinds=[NotificationKind.REVIEW_REQUEST],
+    )
     return redirect(reverse("notification:inbox"))
