@@ -24,4 +24,5 @@ urlpatterns = [
     path("zetom/", include("crm.zetom.urls")),
     path("users/", include("crm.users.urls")),
     path("clients/", include("crm.clients.urls")),
+    path("notifications/", include("crm.notification.urls")),
 ]

@@ -10,6 +10,7 @@ import logging
 
 # Django imports
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 
 # Local imports
 from crm.notification.models import Notification, NotificationKind
@@ -78,3 +79,27 @@ def create_inapp(
             )
         )
     return records
+
+
+# claude
+def mark_read(notification, *, by_user):
+    """Flip is_read=True + stamp read_at. Security: only the recipient can do it.
+
+    Idempotent — if already read, returns False without re-writing.
+    """
+    if notification.recipient_id != by_user.id:
+        return False
+    if notification.is_read:
+        return False
+    notification.is_read = True
+    notification.read_at = timezone.now()
+    notification.save(update_fields=["is_read", "read_at"])
+    return True
+
+
+# claude
+def mark_all_read(user):
+    """Bulk-mark every unread Notification of `user` as read. Returns count."""
+    return Notification.objects.filter(recipient=user, is_read=False).update(
+        is_read=True, read_at=timezone.now()
+    )

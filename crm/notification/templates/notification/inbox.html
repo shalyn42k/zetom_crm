@@ -1,0 +1,369 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Notifications" %} | {{ site_title|default:_("Django site admin") }}{% endblock title %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  {% comment %}
+    CSS-токены и компоненты из design_handoff_notifications/. Прототип использовал
+    [data-theme="dark"] — у нас Unfold ставит class="dark" на <html>, поэтому
+    темная-тема ловится через html.dark (а не [data-theme]).
+  {% endcomment %}
+  <style>
+    :root {
+      --nb-green-500:#16a34a; --nb-green-600:#15803d; --nb-green-400:#22c55e;
+      --nb-red-500:#dc2626; --nb-amber-500:#f59e0b; --nb-blue-500:#3b82f6;
+      --nb-purple-500:#7c3aed; --nb-slate-500:#64748b;
+
+      --nb-bg-2:#fafaf9; --nb-bg-3:#f5f5f4;
+      --nb-surface:#ffffff; --nb-border:#e7e5e4; --nb-border-2:#d6d3d1;
+      --nb-text:#1c1917; --nb-text-2:#57534e; --nb-text-3:#78716c;
+      --nb-shadow-sm:0 1px 2px rgba(0,0,0,.04);
+      --nb-shadow-md:0 2px 8px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.03);
+
+      --nb-rail-w:3px;
+    }
+    html.dark {
+      --nb-bg-2:#151b22; --nb-bg-3:#1c232c;
+      --nb-surface:#1a2028; --nb-border:#2a3442; --nb-border-2:#3a4656;
+      --nb-text:#e5e7eb; --nb-text-2:#9ca3af; --nb-text-3:#6b7280;
+      --nb-shadow-sm:0 1px 2px rgba(0,0,0,.4);
+      --nb-shadow-md:0 4px 12px rgba(0,0,0,.3);
+    }
+
+    .nb-stage { padding:24px 28px; display:flex; flex-direction:column; gap:14px; }
+    .nb-stage * { box-sizing:border-box; }
+
+    /* page header */
+    .nb-head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .nb-h1 { margin:0; font-size:22px; font-weight:700; letter-spacing:-.01em; color:var(--nb-text); display:flex; align-items:center; gap:10px; }
+    .nb-h1 .nb-pill { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:11px; font-weight:600; color:var(--nb-green-400); background:rgba(34,197,94,.12); padding:3px 8px; border-radius:100px; letter-spacing:.04em; }
+    .nb-sub { margin:4px 0 0; font-size:13px; color:var(--nb-text-3); }
+    .nb-sub strong { color:var(--nb-text); }
+
+    /* generic button (local, doesn't conflict with Unfold .button) */
+    .nb-btn { padding:7px 12px; border-radius:6px; border:1px solid var(--nb-border); background:var(--nb-surface); color:var(--nb-text); font-size:13px; font-weight:500; cursor:pointer; transition:background .12s; font-family:inherit; display:inline-flex; align-items:center; gap:6px; text-decoration:none; }
+    .nb-btn:hover { background:var(--nb-bg-3); }
+    .nb-btn--primary { background:var(--nb-green-500); border-color:var(--nb-green-500); color:#fff; }
+    .nb-btn--primary:hover { background:var(--nb-green-600); }
+    .nb-btn--ghost { background:transparent; border-color:transparent; color:var(--nb-text-2); }
+    .nb-btn--ghost:hover { background:var(--nb-bg-3); color:var(--nb-text); }
+    .nb-btn--sm { padding:5px 10px; font-size:12px; }
+
+    /* icons */
+    .nb-i { width:14px; height:14px; display:inline-block; stroke:currentColor; fill:none; stroke-width:1.75; stroke-linecap:round; stroke-linejoin:round; vertical-align:middle; flex-shrink:0; }
+    .nb-i--sm { width:12px; height:12px; }
+    .nb-i--md { width:16px; height:16px; }
+
+    /* filter row */
+    .nb-segrow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .nb-seg { display:inline-flex; background:var(--nb-bg-3); border:1px solid var(--nb-border); border-radius:8px; padding:3px; gap:2px; }
+    .nb-seg__btn { padding:5px 12px; border-radius:5px; background:transparent; border:none; color:var(--nb-text-2); font-size:12.5px; font-weight:500; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:6px; text-decoration:none; }
+    .nb-seg__btn:hover { color:var(--nb-text); }
+    .nb-seg__btn.is-active { background:var(--nb-surface); color:var(--nb-text); box-shadow:var(--nb-shadow-sm); }
+    .nb-seg__btn .nb-n { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:10.5px; color:var(--nb-text-3); background:var(--nb-bg-2); padding:1px 6px; border-radius:100px; }
+    .nb-seg__btn.is-active .nb-n { background:rgba(34,197,94,.14); color:var(--nb-green-400); }
+
+    .nb-kindchips { display:flex; gap:6px; flex-wrap:wrap; }
+    .nb-kindchip { padding:5px 10px; border:1px solid var(--nb-border); background:var(--nb-surface); border-radius:100px; font-size:12px; color:var(--nb-text-2); cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-family:inherit; text-decoration:none; }
+    .nb-kindchip:hover { border-color:var(--nb-border-2); color:var(--nb-text); }
+    .nb-kindchip__swatch { width:8px; height:8px; border-radius:50%; }
+    .nb-kindchip__swatch--blue   { background:var(--nb-blue-500); }
+    .nb-kindchip__swatch--amber  { background:var(--nb-amber-500); }
+    .nb-kindchip__swatch--green  { background:var(--nb-green-400); }
+    .nb-kindchip__swatch--purple { background:var(--nb-purple-500); }
+    .nb-kindchip__swatch--slate  { background:var(--nb-slate-500); }
+    .nb-kindchip.is-active { background:var(--nb-bg-3); color:var(--nb-text); border-color:var(--nb-border-2); }
+
+    /* badges */
+    .nb-badge { display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:100px; font-size:10.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; line-height:1.4; }
+    .nb-badge--green   { background:rgba(34,197,94,.14);  color:var(--nb-green-400); }
+    .nb-badge--blue    { background:rgba(59,130,246,.14); color:var(--nb-blue-500); }
+    .nb-badge--amber   { background:rgba(245,158,11,.14); color:var(--nb-amber-500); }
+    .nb-badge--purple  { background:rgba(124,58,237,.14); color:var(--nb-purple-500); }
+    .nb-badge--slate   { background:rgba(100,116,139,.14); color:var(--nb-slate-500); }
+    .nb-badge--outline { background:transparent; border:1px solid var(--nb-border-2); color:var(--nb-text-3); }
+
+    /* inbox card */
+    .nb-inbox { background:var(--nb-surface); border:1px solid var(--nb-border); border-radius:12px; box-shadow:var(--nb-shadow-md); overflow:hidden; }
+    .nb-inbox__head { display:flex; align-items:center; gap:14px; padding:12px 16px; border-bottom:1px solid var(--nb-border); background:linear-gradient(180deg,var(--nb-surface) 0%, var(--nb-bg-2) 100%); }
+    .nb-inbox__count { font-size:13px; color:var(--nb-text-2); }
+    .nb-inbox__count strong { color:var(--nb-text); font-weight:600; }
+    .nb-inbox__head .nb-right { margin-left:auto; display:flex; align-items:center; gap:6px; }
+
+    .nb-list { display:flex; flex-direction:column; }
+    .nb-group { padding:10px 16px 6px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--nb-text-3); background:var(--nb-bg-2); border-bottom:1px solid var(--nb-border); display:flex; align-items:center; justify-content:space-between; }
+    .nb-group__n { font-family:'JetBrains Mono',ui-monospace,monospace; font-weight:500; color:var(--nb-text-3); }
+
+    /* notification item */
+    .nb-item { display:grid; grid-template-columns:var(--nb-rail-w) 44px 1fr auto; align-items:flex-start; gap:12px; padding:14px 18px 14px 14px; border-bottom:1px solid var(--nb-border); position:relative; transition:background .12s; }
+    .nb-item:last-child { border-bottom:none; }
+    .nb-item:hover { background:var(--nb-bg-2); }
+    .nb-item__rail { align-self:stretch; width:var(--nb-rail-w); border-radius:2px; background:transparent; }
+    .nb-item.is-unread { background:rgba(34,197,94,.04); }
+    html.dark .nb-item.is-unread { background:rgba(34,197,94,.045); }
+    .nb-item.is-unread .nb-item__rail { background:var(--nb-green-500); }
+    .nb-item.is-read { opacity:.7; }
+    .nb-item.is-read .nb-item__body { color:var(--nb-text-3); }
+
+    .nb-icon { width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; position:relative; }
+    .nb-icon.k-status     { background:rgba(59,130,246,.14); color:var(--nb-blue-500); }
+    .nb-icon.k-review-req { background:rgba(245,158,11,.14); color:var(--nb-amber-500); }
+    .nb-icon.k-review-ok  { background:rgba(34,197,94,.14);  color:var(--nb-green-400); }
+    .nb-icon.k-assign     { background:rgba(124,58,237,.14); color:var(--nb-purple-500); }
+    .nb-icon.k-system     { background:rgba(100,116,139,.14); color:var(--nb-slate-500); }
+    .nb-icon__av { position:absolute; bottom:-4px; right:-4px; width:18px; height:18px; border-radius:50%; color:#fff; font-weight:700; font-size:9px; display:flex; align-items:center; justify-content:center; border:2px solid var(--nb-surface); font-family:'Inter',sans-serif; }
+
+    .nb-main { min-width:0; display:flex; flex-direction:column; gap:4px; }
+    .nb-main__top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .nb-main__title { font-size:13.5px; font-weight:500; color:var(--nb-text-2); line-height:1.4; }
+    .nb-item.is-unread .nb-main__title { color:var(--nb-text); font-weight:600; }
+    .nb-main__title a, .nb-link { color:var(--nb-green-400); text-decoration:none; }
+    .nb-main__title a:hover, .nb-link:hover { text-decoration:underline; }
+    .nb-body { font-size:12.5px; color:var(--nb-text-2); line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; white-space:pre-wrap; }
+    .nb-meta { display:flex; align-items:center; gap:10px; margin-top:2px; font-size:11.5px; color:var(--nb-text-3); font-family:'JetBrains Mono',ui-monospace,monospace; }
+    .nb-meta__dot { width:3px; height:3px; border-radius:50%; background:var(--nb-text-3); }
+
+    .nb-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; padding-top:2px; flex-shrink:0; }
+    .nb-dot { width:8px; height:8px; border-radius:50%; background:var(--nb-green-500); box-shadow:0 0 0 4px rgba(34,197,94,.18); }
+    .nb-item.is-read .nb-dot { display:none; }
+    .nb-actions { display:flex; gap:2px; opacity:0; transition:opacity .12s; }
+    .nb-item:hover .nb-actions { opacity:1; }
+    .nb-act { width:26px; height:26px; border-radius:6px; background:var(--nb-surface); border:1px solid var(--nb-border); color:var(--nb-text-2); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+    .nb-act:hover { color:var(--nb-text); border-color:var(--nb-border-2); background:var(--nb-bg-3); }
+
+    /* hidden inline form helpers — submit buttons styled like links */
+    .nb-form-inline { display:inline; margin:0; padding:0; }
+
+    /* footer / pagination */
+    .nb-foot { padding:10px 16px; border-top:1px solid var(--nb-border); display:flex; align-items:center; justify-content:space-between; font-size:12.5px; color:var(--nb-text-3); background:var(--nb-bg-2); flex-wrap:wrap; gap:8px; }
+    .nb-foot code { font-family:'JetBrains Mono',ui-monospace,monospace; background:transparent; }
+    .nb-pager { display:flex; align-items:center; gap:2px; }
+    .nb-pager__btn { background:transparent; border:1px solid var(--nb-border); color:var(--nb-text-2); width:28px; height:28px; border-radius:6px; cursor:pointer; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:11.5px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; }
+    .nb-pager__btn:hover { color:var(--nb-text); border-color:var(--nb-border-2); }
+    .nb-pager__btn.is-active { background:var(--nb-bg-3); color:var(--nb-text); border-color:var(--nb-border-2); }
+    .nb-pager__btn.is-disabled { opacity:.45; cursor:not-allowed; pointer-events:none; }
+
+    /* empty state */
+    .nb-empty { padding:60px 20px; text-align:center; color:var(--nb-text-3); }
+    .nb-empty__ring { width:54px; height:54px; border-radius:50%; background:rgba(34,197,94,.1); color:var(--nb-green-400); display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px; }
+    .nb-empty h4 { margin:0 0 4px; color:var(--nb-text); font-size:14px; font-weight:600; }
+    .nb-empty p { margin:0; font-size:12.5px; }
+  </style>
+{% endblock extrastyle %}
+
+{% block content %}
+{# Inline icon-set из прототипа — feather-style stroke icons. #}
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-check"  viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-check-all" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+  <symbol id="i-arrow-r" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></symbol>
+  <symbol id="i-link"   viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="i-bell-off" viewBox="0 0 24 24"><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M2 2l20 20"/><path d="M18 8a6 6 0 0 0-9.33-3"/><path d="M6 8v6"/><path d="M4 16h12"/></symbol>
+  <symbol id="ki-status"     viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="ki-review-req" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 8v4M12 16h.01"/></symbol>
+  <symbol id="ki-review-ok"  viewBox="0 0 24 24"><path d="M9 11.5 11 13.5l4-4.5"/><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="ki-assign"     viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21a6 6 0 0 1 12 0M17 11l2 2 4-4"/></symbol>
+  <symbol id="ki-system"     viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></symbol>
+</svg>
+
+<div class="nb-stage" id="content-main">
+  {# ---- Page header ---- #}
+  <header class="nb-head">
+    <div>
+      <h1 class="nb-h1">
+        {% trans "Notifications" %}
+        {% if unread_count_total %}<span class="nb-pill">{{ unread_count_total }} {% trans "NEW" %}</span>{% endif %}
+      </h1>
+      <p class="nb-sub">
+        {% blocktrans with name=user.get_username %}Inbox for <strong>{{ name }}</strong> · refreshed just now{% endblocktrans %}
+      </p>
+    </div>
+    <div class="nb-segrow">
+      {% if unread_count_total %}
+        <form class="nb-form-inline" method="post" action="{% url "notification:mark_all_read" %}">
+          {% csrf_token %}
+          <button type="submit" class="nb-btn nb-btn--sm nb-btn--primary">
+            <svg class="nb-i"><use href="#i-check-all"/></svg>
+            {% trans "Mark all as read" %}
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </header>
+
+  {# ---- Filter row ---- #}
+  <div class="nb-segrow">
+    <div class="nb-seg" role="tablist" aria-label="{% trans "Filter" %}">
+      <a class="nb-seg__btn {% if filter_value == "all" %}is-active{% endif %}"
+         href="{% url "notification:inbox" %}{% if kind_filter != "all" %}?kind={{ kind_filter }}{% endif %}">
+        {% trans "All" %} <span class="nb-n">{{ total_count }}</span>
+      </a>
+      <a class="nb-seg__btn {% if filter_value == "unread" %}is-active{% endif %}"
+         href="{% url "notification:inbox" %}?filter=unread{% if kind_filter != "all" %}&kind={{ kind_filter }}{% endif %}">
+        {% trans "Unread" %} <span class="nb-n">{{ unread_count_total }}</span>
+      </a>
+    </div>
+
+    <div class="nb-kindchips">
+      <a class="nb-kindchip {% if kind_filter == "all" %}is-active{% endif %}"
+         href="{% url "notification:inbox" %}{% if filter_value != "all" %}?filter={{ filter_value }}{% endif %}">
+        {% trans "All kinds" %}
+      </a>
+      {% for k in kinds %}
+        <a class="nb-kindchip {% if kind_filter == k.value %}is-active{% endif %}"
+           href="{% url "notification:inbox" %}?kind={{ k.value }}{% if filter_value != "all" %}&filter={{ filter_value }}{% endif %}">
+          <span class="nb-kindchip__swatch nb-kindchip__swatch--{{ k.color }}"></span>
+          {{ k.label }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ---- Inbox card ---- #}
+  <div class="nb-inbox">
+    <div class="nb-inbox__head">
+      <span class="nb-inbox__count">
+        {% blocktrans with n=page_obj.object_list|length total=paginator.count %}Showing <strong>{{ n }}</strong> of <strong>{{ total }}</strong>{% endblocktrans %}
+      </span>
+    </div>
+
+    <div class="nb-list">
+      {% for item in items %}
+        {% if item.bucket_first %}
+          <div class="nb-group">
+            <span>{{ item.bucket_label }}</span>
+          </div>
+        {% endif %}
+
+        <div class="nb-item {% if item.is_read %}is-read{% else %}is-unread{% endif %}" data-kind="{{ item.kind|lower }}">
+          <span class="nb-item__rail"></span>
+
+          <div class="nb-icon {{ item.kind_icon_class }}">
+            <svg class="nb-i nb-i--md"><use href="#{{ item.kind_icon_id }}"/></svg>
+            {% if item.actor_initials %}
+              <span class="nb-icon__av" style="background:{{ item.actor_color }}">{{ item.actor_initials }}</span>
+            {% endif %}
+          </div>
+
+          <div class="nb-main">
+            <div class="nb-main__top">
+              <span class="nb-badge nb-badge--{{ item.kind_color }}">{{ item.kind_label }}</span>
+              {% if item.request_label %}<span class="nb-badge nb-badge--outline">{{ item.request_label }}</span>{% endif %}
+            </div>
+            <div class="nb-main__title">
+              {% if item.target_url %}
+                <a class="nb-link" href="{% url "notification:mark_read" item.id %}?back={% url "notification:inbox" %}{% if filter_value != "all" %}%3Ffilter%3D{{ filter_value }}{% endif %}" data-mark-read>{{ item.title|default:_("(no title)") }}</a>
+              {% else %}
+                {{ item.title|default:_("(no title)") }}
+              {% endif %}
+            </div>
+            {% if item.body %}<div class="nb-body">{{ item.body }}</div>{% endif %}
+            <div class="nb-meta">
+              <span title="{{ item.created_at|date:"c" }}">{{ item.created_at|timesince }} {% trans "ago" %}</span>
+              {% if item.actor %}
+                <span class="nb-meta__dot"></span>
+                <span>{{ item.actor.get_full_name|default:item.actor.username }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="nb-right">
+            {% if not item.is_read %}<span class="nb-dot" aria-label="{% trans "Unread" %}"></span>{% endif %}
+            <div class="nb-actions">
+              {% if not item.is_read %}
+                <form class="nb-form-inline" method="post" action="{% url "notification:mark_read" item.id %}?back={% url "notification:inbox" %}{% if filter_value != "all" %}%3Ffilter%3D{{ filter_value }}{% endif %}">
+                  {% csrf_token %}
+                  <button type="submit" class="nb-act" title="{% trans "Mark as read" %}" aria-label="{% trans "Mark as read" %}">
+                    <svg class="nb-i nb-i--sm"><use href="#i-check"/></svg>
+                  </button>
+                </form>
+              {% endif %}
+              {% if item.target_url %}
+                <a class="nb-act" href="{% url "notification:mark_read" item.id %}" title="{% trans "Open" %}" aria-label="{% trans "Open" %}" data-mark-read>
+                  <svg class="nb-i nb-i--sm"><use href="#i-arrow-r"/></svg>
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="nb-empty">
+          <span class="nb-empty__ring"><svg class="nb-i nb-i--md"><use href="#i-bell-off"/></svg></span>
+          <h4>{% trans "All caught up" %}</h4>
+          <p>
+            {% if filter_value == "unread" %}{% trans "No unread notifications." %}
+            {% else %}{% trans "No notifications yet." %}{% endif %}
+          </p>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if paginator.num_pages > 1 %}
+      <div class="nb-foot">
+        <span>
+          {% blocktrans with shown=page_obj.object_list|length total=paginator.count %}Showing {{ shown }} of {{ total }}{% endblocktrans %}
+        </span>
+        <div class="nb-pager">
+          {% if page_obj.has_previous %}
+            <a class="nb-pager__btn"
+               href="?page={{ page_obj.previous_page_number }}{% if filter_value != "all" %}&filter={{ filter_value }}{% endif %}{% if kind_filter != "all" %}&kind={{ kind_filter }}{% endif %}"
+               aria-label="{% trans "Previous page" %}">
+              <svg class="nb-i nb-i--sm"><use href="#i-chev-l"/></svg>
+            </a>
+          {% else %}
+            <span class="nb-pager__btn is-disabled" aria-hidden="true">
+              <svg class="nb-i nb-i--sm"><use href="#i-chev-l"/></svg>
+            </span>
+          {% endif %}
+          {% for n in paginator.page_range %}
+            {% if n == page_obj.number %}
+              <span class="nb-pager__btn is-active" aria-current="page">{{ n }}</span>
+            {% else %}
+              <a class="nb-pager__btn"
+                 href="?page={{ n }}{% if filter_value != "all" %}&filter={{ filter_value }}{% endif %}{% if kind_filter != "all" %}&kind={{ kind_filter }}{% endif %}">{{ n }}</a>
+            {% endif %}
+          {% endfor %}
+          {% if page_obj.has_next %}
+            <a class="nb-pager__btn"
+               href="?page={{ page_obj.next_page_number }}{% if filter_value != "all" %}&filter={{ filter_value }}{% endif %}{% if kind_filter != "all" %}&kind={{ kind_filter }}{% endif %}"
+               aria-label="{% trans "Next page" %}">
+              <svg class="nb-i nb-i--sm"><use href="#i-chev-r"/></svg>
+            </a>
+          {% else %}
+            <span class="nb-pager__btn is-disabled" aria-hidden="true">
+              <svg class="nb-i nb-i--sm"><use href="#i-chev-r"/></svg>
+            </span>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  /* claude — convert anchor-clicks marked with [data-mark-read] into CSRF-aware
+     POSTs, so mark_read can stay POST-only on the server (no GET side-effects). */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[data-mark-read]');
+    if (!a) return;
+    e.preventDefault();
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = a.getAttribute('href');
+    var csrf = document.querySelector('input[name=csrfmiddlewaretoken]');
+    if (csrf) {
+      var i = document.createElement('input');
+      i.type = 'hidden';
+      i.name = 'csrfmiddlewaretoken';
+      i.value = csrf.value;
+      form.appendChild(i);
+    }
+    document.body.appendChild(form);
+    form.submit();
+  });
+</script>
+{% endblock content %}
