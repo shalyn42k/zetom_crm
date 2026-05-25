@@ -4,7 +4,8 @@ from unfold.admin import ModelAdmin
 from crm.notification.models import EmailNotification, Notification
 
 
-# claude
+# claude — append-only лог. Удалять / редактировать запрещено даже супер-юзеру,
+# чтобы аудит-история была настоящим immutable-логом (см. DOCS/rbac.md / README).
 @admin.register(Notification)
 class NotificationAdmin(ModelAdmin):
     list_display = ("created_at", "kind", "recipient", "template_name", "is_read")
@@ -16,11 +17,15 @@ class NotificationAdmin(ModelAdmin):
         "is_read", "read_at", "created_at",
     )
     ordering = ("-created_at",)
+    list_per_page = 10
 
     def has_add_permission(self, request):
         return False
 
     def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False
 
 
@@ -35,9 +40,13 @@ class EmailNotificationAdmin(ModelAdmin):
         "status", "status_reason", "sent_at", "created_at",
     )
     ordering = ("-created_at",)
+    list_per_page = 10
 
     def has_add_permission(self, request):
         return False
 
     def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
         return False

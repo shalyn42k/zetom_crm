@@ -22,7 +22,7 @@ class ReasonForm(forms.Form):
         required=True,
     )
 
-
+ 
 class DepartmentsDisplayMixin:
     """Renders the ArrayField departments as a comma-separated list of
     labels in admin list_display / readonly_fields."""
@@ -36,6 +36,9 @@ class DepartmentsDisplayMixin:
 class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
     """Shared base for RequestNull / RequestMain / Oferta / Zlecenie /
     Wniosek admins. Wires RBAC permissions and visibility filter."""
+
+    # claude — 10 per page across every Req-changelist; Django default is 100.
+    list_per_page = 10
 
     # RBAC
     def has_view_permission(self, request, obj=None):
