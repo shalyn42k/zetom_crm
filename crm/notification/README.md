@@ -30,7 +30,8 @@
 5. **UI**:
    - Счётчик непрочитанных пересчитывается в `context_processor` на каждом запросе через индекс `(recipient, is_read)`.
    - Красный кружок-бейдж поверх аватара в sidebar'е через override `templates/unfold/helpers/navigation_user.html`.
-   - Inbox: пока admin-changelist отфильтрован по `recipient=user, is_read=0`. Кастомная страница — отдельный TODO.
+   - Кастомная inbox-страница `/notifications/` (см. `crm/notification/views.py` + `templates/notification/inbox.html`), реализованная по handoff-дизайну: фильтры All/Unread, kind-chips, day-grouping, пагинация по 10. Доступна из ACCOUNT-dropdown и из sidebar'а ("Inbox").
+   - Клик по уведомлению → POST `mark_read` → 302 редирект на target (через `target.get_absolute_url()` или admin change-view fallback). Шаблон рендерится лениво в `utils.render_notification(n)`.
 
 ## 3. Схемы и диаграммы
 
@@ -75,7 +76,8 @@
 - **Изоляция получателей.** Резолв через `head_of_departments` гарантирует, что письмо о Req отдела X не уйдёт на dep_head'а отдела Y. Fallback на админов — явное и аудируемое поведение.
 - **Защита от перекрёстных уведомлений в review-флоу.** В `request_review_action` инициатор запроса исключается из получателей (юзер не пингует сам себя). Если он единственный кандидат — surface ошибка вместо пустой отправки.
 - **Email клиента в логе.** В `EmailNotification.recipient_email` хранится email клиента в открытом виде. Не считается чувствительными данными (это адрес отправки), но при удалении клиента не очищается каскадом — лог переживает удаление, что и нужно для аудита.
-- **CSRF.** Все POST-эндпоинты (`/mail/document/`, `/mail/freeform/`, `/request-review/`) прикреплены к Django admin и проходят стандартную CSRF-проверку.
+- **CSRF.** Все POST-эндпоинты (`/mail/document/`, `/mail/freeform/`, `/request-review/`, `/notifications/<pk>/read/`, `/notifications/read-all/`) проходят стандартную CSRF-проверку. Для mark-read в шаблоне используется JS-перехватчик: anchor с `data-mark-read` конвертируется в POST с CSRF-токеном при клике, что не даёт совершать `mark_read` через простой GET.
+- **mark_read recipient check.** `inapp_service.mark_read(notification, by_user=...)` сравнивает `recipient_id` с `by_user.id` — чужие уведомления нельзя пометить даже спецально подобранным pk. View дублирует проверку и отдаёт 403.
 
 ## 6. Матрица прав доступа
 
@@ -132,6 +134,18 @@
 ### Сценарий 7 — Inapp при смене статуса RequestMain
 1. В `RequestMain.change_form` сменить статус (например, `active → open`), сохранить.
 2. **Ожидаемый результат:** у dep_head'ов отделов этого Req создаётся `Notification(kind=STATUS_CHANGE)`; счётчик в шапке обновляется на следующем GET.
+
+### Сценарий 8 — Inbox и mark-read
+1. Открыть `/notifications/` (через ACCOUNT-dropdown или sidebar → Inbox).
+2. **Ожидаемый результат:** видна страница с заголовком "Notifications", pill "N NEW", сегмент-фильтры "All / Unread", chip-фильтры по `kind`, day-grouping заголовки (Today / Yesterday / Earlier this week), карточки-уведомления. Непрочитанные с зелёной полоской слева и dot'ом справа.
+3. Кликнуть по title непрочитанного.
+4. **Ожидаемый результат:** редирект на target-объект (например `/admin/zetom/requestmain/<pk>/change/`); запись помечена `is_read=True`, `read_at` заполнен; красный кружок на аватаре в шапке уменьшился на 1.
+5. Вернуться в inbox, нажать "Mark all as read" (если есть непрочитанные).
+6. **Ожидаемый результат:** все записи стали прочитанными, pill "NEW" пропал, кружок на аватаре исчез.
+7. Попробовать GET-ом дёрнуть `/notifications/<pk>/read/` напрямую (без CSRF).
+8. **Ожидаемый результат:** 405 Method Not Allowed (POST-only endpoint).
+9. От лица другого юзера попробовать POST на `/notifications/<чужой_pk>/read/`.
+10. **Ожидаемый результат:** 403 Forbidden — `recipient_id != by_user.id`.
 
 ### Что проверять в логах
 - `notification.mail: skipping send, no recipients (subject=..., template=...)` — нет ни одного валидного получателя. Чинить через `_admins()` query — должен быть юзер с `is_superuser=True` или `role.code="admin"` и непустым email.

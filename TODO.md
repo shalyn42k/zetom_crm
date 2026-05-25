@@ -149,22 +149,25 @@
   - RequestMain → смена `status` → inapp dep_heads(Req.depts) + fallback админы. `actor` пробрасывается через `instance._actor` из view.
   - Подключено в `apps.py.ready()`.
 - [x] `notification/admin.py` переписан под новые поля. Записи read-only (защита от ручной правки лога).
-- [x] Счётчик непрочитанных в ACCOUNT-dropdown (Unfold). Title динамически собирается "Notifications (N)", link ведёт на changelist `Notification` отфильтрованный по `recipient=user, is_read=0`.
+- [x] Счётчик непрочитанных в ACCOUNT-dropdown (Unfold). Title "Notifications (N)", link на кастомный inbox.
+- [x] Кастомная inbox-страница `/notifications/` по handoff V1:
+  - filter All/Unread, kind-chips, day-grouping, пагинация 10/страница;
+  - клик помечает прочитанным и редиректит на target (`get_absolute_url()` или admin change-view fallback);
+  - "Mark all as read" — bulk POST;
+  - admin shell (Unfold sidebar/topbar) через `admin.site.each_context(request)`;
+  - доступ только `staff_member_required`.
+- [x] Триггер `request_review` — кнопка в Actions-card RequestMain, POST `/request-review/`, исключение автора из получателей.
+- [x] Sidebar restructure (Inbox / Requests / Archive / Clients / Users & Access / System) + `list_per_page = 10` на Req-чейнджлистах + Notification/EmailNotification.
 
 #### Inapp: что осталось
 
 - [ ] Сигнал на M2M `RequestMain.assigned_to.add(user)` → inapp `request_assigned` для добавленного юзера.
   - Через `m2m_changed`, фильтр `action == "post_add"`. На каждый pk из `pk_set` — отдельная запись.
 
-- [ ] Кастомная inbox-страница (опционально, поверх admin changelist)
-  - Сейчас работает changelist в админке `/admin/notification/notification/?recipient__id__exact=<me>&is_read__exact=0`. Этого, возможно, достаточно для MVP.
-  - Если нужен отдельный UI — view со списком, кнопка "mark all read", переход по `target` через `ContentType.objects.get_for_id(target_content_type_id).get_object_for_this_type(pk=target_object_id)`.
-  - Шаблон `Notification` рендерится в UI лениво: `from django.template.loader import render_to_string; render_to_string(n.template_name, n.payload)`. Первая строка — title, остальное — body.
+- [ ] Триггер `resolve_review` — UI-кнопка в RequestMainAdmin для dep_head/admin'а
+  - POST endpoint, входит decision (approved/rejected) и note. Создаёт inapp `kind=REVIEW_RESOLVED` на автора оригинального запроса. Триггер покрыт пермишеном `resolve_review` из [DOCS/rbac.md](DOCS/rbac.md).
 
-- [ ] Триггеры review_requested / review_resolved — нужны UI-кнопки в RequestMainAdmin
-  - Endpoint `request_review` (POST) — specialist шлёт запрос; кладёт inapp с kind=REVIEW_REQUEST для dep_heads(Req) → admins.
-  - Endpoint `resolve_review` (POST) — head/admin принимает решение approved/rejected; кладёт inapp с kind=REVIEW_RESOLVED на автора запроса.
-  - Триггеры покрыты пермишенами `request_review` / `resolve_review` из [DOCS/rbac.md](DOCS/rbac.md).
+- [ ] V3 — bell-popover для quick-triage (см. handoff §V3). Сейчас inbox-страница это полноценная V1, popover-вариант отдельной задачей.
 
 ### Шаблоны: реорг и напоминания
 
