@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect
 from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from crm.users.forms import CustomUserChangeForm, CustomUserCreateForm
-from crm.users.models import Role, UserProfile
+from crm.users.models import Role, UserProfile, Permission
 from crm.users.utils import user_has_perm
 
 
@@ -14,28 +14,29 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
     form = CustomUserChangeForm
 
     fieldsets = (
-        ("Личные данные", {"fields": ("username", "first_name", "last_name", "email", "job_title")}),
-        ("Доступ", {"fields": ("role", "department", "is_active", "is_staff", "is_superuser")}),
+        ("Личные данные", {
+            "fields": ("username", "first_name", "last_name", "email", "job_title")
+        }),
+        ("Доступ", {
+            "fields": ("role", "department", "is_active", "is_staff", "is_superuser")
+        }),
     )
 
     add_fieldsets = (
-        (
-            None,
-            {
-                "classes": ("wide",),
-                "fields": (
-                    "username",
-                    "email",
-                    "first_name",
-                    "last_name",
-                    "password",
-                    "password_confirm",
-                    "role",
-                    "department",
-                    "job_title",
-                ),
-            },
-        ),
+        (None, {
+            "classes": ("wide",),
+            "fields": (
+                "username",
+                "email",
+                "first_name",
+                "last_name",
+                "password",
+                "password_confirm",
+                "role",
+                "department",
+                "job_title",
+            ),
+        }),
     )
 
     list_display = (
@@ -50,29 +51,66 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
     )
     list_select_related = ("profile",)
 
-    # 🔥 ДЕЛАЕМ is_staff НЕДОСТУПНЫМ ДЛЯ ИЗМЕНЕНИЯ
+    # is_staff нельзя менять вручную
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         if "is_staff" in form.base_fields:
-            form.base_fields["is_staff"].disabled = True  # ← выключаем редактирование
+            form.base_fields["is_staff"].disabled = True
         return form
 
-    # 🔥 ДЕЛАЕМ is_staff ВСЕГДА TRUE
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+        obj = self.get_object(request, object_id)
+
+        if obj:
+            profile = obj.profile
+            extra_context["permissions"] = Permission.objects.all()
+            extra_context["user_permissions_ids"] = list(
+                profile.role.permissions.values_list("id", flat=True)
+            )
+
+        return super().change_view(request, object_id, form_url, extra_context)
+
+    # Логика сохранения
     def save_model(self, request, obj, form, change):
-        obj.is_staff = True  # ← принудительно включаем staff
+        obj.is_staff = True  # staff всегда включён
         super().save_model(request, obj, form, change)
 
         profile, _ = UserProfile.objects.get_or_create(user=obj)
+
+        # Сохранение вкладки permissions 
+        if request.GET.get("tab") == "permissions":
+            selected_perms = request.POST.getlist("permissions")
+
+            role = profile.role
+
+            # Если роль не custom → меняем
+            if role.code != "custom":
+                role = Role.objects.get(code="custom")
+                profile.role = role
+                profile.save()
+
+            # Обновляем permissions роли
+            role.permissions.set(selected_perms)
+            role.save()
+
+            return  
+
+        # Остальные вкладки 
         if "role" in form.cleaned_data:
             profile.role = form.cleaned_data.get("role")
+
         if "department" in form.cleaned_data:
             department = form.cleaned_data.get("department")
             profile.department = department if department else None
+
         if "job_title" in form.cleaned_data:
             job_title = form.cleaned_data.get("job_title")
             profile.job_title = job_title if job_title else None
+
         profile.save()
 
+    #  Колонки в списке 
     def get_role(self, obj):
         return obj.profile.role if hasattr(obj, "profile") and obj.profile.role else None
     get_role.short_description = "Роль"
@@ -88,6 +126,7 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
     get_job_title.short_description = "Должность"
     get_job_title.admin_order_field = "profile__job_title"
 
+    # Права на действия
     def has_add_permission(self, request):
         return True
 
@@ -97,6 +136,7 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
     def has_delete_permission(self, request, obj=None):
         return True
 
+    # Сохраняем вкладку при обновлении
     def response_post_save_change(self, request, obj):
         url = request.path
         tab = request.GET.get("tab")
@@ -105,6 +145,7 @@ class CustomUserAdmin(UnfoldModelAdmin, DjangoUserAdmin):
         return HttpResponseRedirect(url)
 
 
+#  Регистрация 
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
 

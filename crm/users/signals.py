@@ -13,11 +13,13 @@ print("RBAC SIGNALS LOADED")
 
 @receiver(post_migrate)
 def create_rbac_defaults(sender, **kwargs):
-    if sender.label != "users":
+    # Run only for crm.users app
+    if sender.name != "crm.users":
         return
 
     print("RBAC SIGNAL RUNNING FOR USERS")
 
+    # Ensure tables exist
     try:
         Permission.objects.exists()
         Role.objects.exists()
@@ -26,7 +28,7 @@ def create_rbac_defaults(sender, **kwargs):
         print("RBAC: tables are not created yet — skipping")
         return
 
-    # 1. Custom permissions
+    # Custom permissions
     permissions_data = [
         ("view_dashboard", "View dashboard"),
         ("view_admin_panel", "View admin panel"),
@@ -41,10 +43,13 @@ def create_rbac_defaults(sender, **kwargs):
 
     perm_objects = {}
     for code, name in permissions_data:
-        perm, _ = Permission.objects.get_or_create(code=code, defaults={"name": name})
+        perm, _ = Permission.objects.get_or_create(
+            code=code,
+            defaults={"name": name}
+        )
         perm_objects[code] = perm
 
-    # 2. Roles
+    # Roles
     roles_data = {
         "admin": {
             "name": "Administrator",
@@ -75,7 +80,7 @@ def create_rbac_defaults(sender, **kwargs):
             ],
         },
         "all_seeing": {
-            "name": "custom role",
+            "name": "All Seeing",
             "perms": [
                 "view_dashboard",
                 "view_requests",
@@ -83,25 +88,33 @@ def create_rbac_defaults(sender, **kwargs):
                 "view_roles",
             ],
         },
+        "custom": {
+            "name": "Custom role",
+            "perms": [],  # user chooses manually
+        },
     }
 
     for code, data in roles_data.items():
-        role, _ = Role.objects.get_or_create(code=code, defaults={"name": data["name"]})
+        role, _ = Role.objects.get_or_create(
+            code=code,
+            defaults={"name": data["name"]}
+        )
         role.permissions.set([perm_objects[p] for p in data["perms"]])
 
-    # 3. Mapping custom permissions → Django permissions
-
+    # Map custom permissions → Django permissions
     django_perm_map = {
         "view_requests": ("zetom", "requestmain"),
         "edit_requests": ("zetom", "requestmain"),
         "delete_requests": ("zetom", "requestmain"),
+
         "view_users": ("users", "userprofile"),
         "edit_users": ("users", "userprofile"),
+
         "view_roles": ("users", "role"),
         "edit_roles": ("users", "role"),
     }
 
-    # 4. Assigning Django permissions to users
+    # 4. Assign Django permissions to users based on roles
     for user in User.objects.all():
         profile = getattr(user, "profile", None)
         if not profile or not profile.role:
