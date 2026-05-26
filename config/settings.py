@@ -188,6 +188,9 @@ LOCALE_PATHS = [BASE_DIR / "locale"]
 
 # настройка дефолтного региона для библиотеки для валидации телефонов
 PHONENUMBER_DEFAULT_REGION = "PL"
+# claude — INTERNATIONAL даёт `+48 12 345 67 89` (с кодом страны и пробелами);
+# единый формат для отображения и в карточке клиента, и в заявке.
+PHONENUMBER_DEFAULT_FORMAT = "INTERNATIONAL"
 
 # crispy-forms: используем template pack от Unfold, чтобы рендер совпадал со стилем админки
 CRISPY_ALLOWED_TEMPLATE_PACKS = "unfold_crispy"

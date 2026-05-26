@@ -1,7 +1,6 @@
 # Django imports
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
-from django.core.validators import RegexValidator
 from django.db import models
 # Other imports
 from phonenumber_field.modelfields import PhoneNumberField
@@ -9,6 +8,8 @@ from phonenumber_field.modelfields import PhoneNumberField
 from safedelete.config import SOFT_DELETE_CASCADE
 from safedelete.models import SafeDeleteModel
 
+# claude
+from crm.clients.validators import normalize_nip, validate_nip
 # Zetom app imports
 from crm.status_manager.services.statuses import RequestStatus, Status
 
@@ -43,13 +44,11 @@ class RequestTemplate(SafeDeleteModel):
     phone = PhoneNumberField(null=False, blank=False)
     company_name = models.CharField(max_length=50, blank=True, null=True)
     email = models.EmailField(max_length=100, null=False, blank=False)
+    # claude — max_length=20 чтобы пользователь мог ввести `PL...`, дефисы и пробелы;
+    # clean() приведёт значение к 10 цифрам перед сохранением.
     company_nip = models.CharField(
-        max_length=10,
-        validators=[
-            RegexValidator(
-                regex=r"^\d{10}$"
-            )
-        ],
+        max_length=20,
+        validators=[validate_nip],
         blank=True,
         null=True,
     )
@@ -62,6 +61,12 @@ class RequestTemplate(SafeDeleteModel):
 
     class Meta:
         abstract = True
+
+    # claude
+    def clean(self):
+        super().clean()
+        if self.company_nip:
+            self.company_nip = normalize_nip(self.company_nip)
 
     @property
     def full_name(self):

@@ -17,12 +17,7 @@ from django.test import TestCase
 
 from crm.status_manager.services.statuses import RequestStatus, Status
 from crm.zetom.models import (
-    DepartmentsVariants,
-    Oferta,
-    RequestMain,
-    RequestNull,
-    Wniosek,
-    Zlecenie,
+    DepartmentsVariants, Oferta, RequestMain, RequestNull, Wniosek, Zlecenie,
 )
 
 # Минимальный набор обязательных полей RequestTemplate.
@@ -98,6 +93,31 @@ class RequestNullModelTests(TestCase):
         # Десять цифр — корректный NIP. full_clean() не бросает исключение.
         obj = RequestNull(**BASE_DATA, company_nip="7322215365")
         obj.full_clean()  # не падает — тест проходит
+
+    # claude
+    def test_nip_validator_rejects_bad_checksum(self):
+        # 10 цифр, но контрольная сумма не сходится — должно отлететь.
+        obj = RequestNull(**BASE_DATA, company_nip="1234567890")
+        with self.assertRaises(ValidationError):
+            obj.full_clean()
+
+    # claude
+    def test_nip_normalizes_with_dashes(self):
+        obj = RequestNull(**BASE_DATA, company_nip="732-22-15-365")
+        obj.full_clean()
+        self.assertEqual(obj.company_nip, "7322215365")
+
+    # claude
+    def test_nip_normalizes_with_pl_prefix(self):
+        obj = RequestNull(**BASE_DATA, company_nip="PL7322215365")
+        obj.full_clean()
+        self.assertEqual(obj.company_nip, "7322215365")
+
+    # claude
+    def test_nip_normalizes_with_spaces(self):
+        obj = RequestNull(**BASE_DATA, company_nip="732 221 53 65")
+        obj.full_clean()
+        self.assertEqual(obj.company_nip, "7322215365")
 
 
 # ─────────────────────────── RequestMain ──────────────────────────────────────
