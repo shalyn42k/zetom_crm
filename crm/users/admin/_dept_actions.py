@@ -21,6 +21,7 @@ from django.urls import path
 from django.utils.translation import gettext_lazy as _
 
 from crm.users.models import UserProfile
+from crm.users.utils import user_has_perm
 from crm.zetom.models import DepartmentsVariants
 
 
@@ -74,13 +75,13 @@ class DepartmentActionsMixin:
         ]
         return custom + urls
 
-    # claude
+    # claude — гейт переехал с hardcoded `is_role("admin")` на permission
+    # `grant_head` (см. crm/users/signals.py). superuser получает `True`
+    # автоматически через `user_has_perm`. Это позволяет админу делегировать
+    # headship-управление кому-то ещё через `extra_permissions`, не повышая
+    # роль до admin.
     def _can_grant_head(self, request):
-        """Only superusers and users with role.code == 'admin' may toggle headship."""
-        if request.user.is_superuser:
-            return True
-        prof = getattr(request.user, "profile", None)
-        return bool(prof and prof.is_role("admin"))
+        return user_has_perm(request.user, "grant_head")
 
     # ---------- Context builder ----------
 

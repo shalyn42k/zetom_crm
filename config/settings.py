@@ -179,7 +179,7 @@ USE_I18N = True
 USE_TZ = True
 
 LANGUAGES = (
-    ("ru", _("Russian")),
+    #("ru", _("Russian")),
     ("en", _("English")),
     ("pl", _("Polish")),
 )

@@ -54,7 +54,7 @@
         <span class="rm-action__icon" aria-hidden="true">⚑</span>
         <span class="rm-action__meta">
           <span class="rm-action__name">{% trans "Request review" %}</span>
-          <span class="rm-action__sub">{% trans "Ping department heads (or admins) to review this request" %}</span>
+          <span class="rm-action__sub">{% trans "Notify owners (or escalate to dep heads / admins) to review this request" %}</span>
         </span>
         <button type="button"
                 class="rm-btn rm-btn--primary rm-btn--sm"
@@ -356,8 +356,55 @@
           {% csrf_token %}
 
           <p class="rm-modal__hint">
-            {% trans "Notification will be sent in-app to department heads of this request (admins as fallback)." %}
+            {% trans "Owners are notified automatically. You can also add or remove other recipients below." %}
           </p>
+
+          {% if review_default_locked %}
+            <div class="rm-modal__group">
+              <span class="rm-label">{% trans "Always notified (owners)" %}</span>
+              <ul class="rm-recipient-list">
+                {% for u in review_default_locked %}
+                  <li class="rm-recipient rm-recipient--locked">
+                    <span class="rm-recipient__name">{{ u.get_full_name|default:u.username }}</span>
+                    {% if u.profile.role %}<span class="rm-recipient__role">{{ u.profile.role.name }}</span>{% endif %}
+                    <span class="rm-badge rm-badge--owner">{% trans "Owner" %}</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          {% if review_default_optional %}
+            <fieldset class="rm-modal__group">
+              <legend class="rm-modal__legend">{% trans "Default recipients" %}</legend>
+              {% for u in review_default_optional %}
+                <label class="rm-checkbox">
+                  <input type="checkbox" name="recipient_ids" value="{{ u.pk }}" checked>
+                  <span class="rm-recipient__name">{{ u.get_full_name|default:u.username }}</span>
+                  {% if u.profile.role %}<span class="rm-recipient__role">{{ u.profile.role.name }}</span>{% endif %}
+                </label>
+              {% endfor %}
+            </fieldset>
+          {% endif %}
+
+          {% if review_extras %}
+            <fieldset class="rm-modal__group">
+              <legend class="rm-modal__legend">{% trans "Additional recipients" %}</legend>
+              {% for u in review_extras %}
+                <label class="rm-checkbox">
+                  <input type="checkbox" name="recipient_ids" value="{{ u.pk }}">
+                  <span class="rm-recipient__name">{{ u.get_full_name|default:u.username }}</span>
+                  {% if u.profile.role %}<span class="rm-recipient__role">{{ u.profile.role.name }}</span>{% endif %}
+                </label>
+              {% endfor %}
+            </fieldset>
+          {% endif %}
+
+          {% if not review_default_locked and not review_default_optional and not review_extras %}
+            <p class="rm-modal__hint">
+              {% trans "No reviewers available to notify." %}
+            </p>
+          {% endif %}
 
           <div class="rm-modal__group">
             <label class="rm-label" for="rm-review-note">{% trans "Comment (optional)" %}</label>
@@ -370,7 +417,8 @@
           <footer class="rm-modal__footer">
             <button type="button" class="rm-btn"
                     @click="reviewModal.open = false">{% trans "Cancel" %}</button>
-            <button type="submit" class="rm-btn rm-btn--primary">
+            <button type="submit" class="rm-btn rm-btn--primary"
+                    {% if not review_default_locked and not review_default_optional and not review_extras %}disabled{% endif %}>
               {% trans "Send request" %}
             </button>
           </footer>

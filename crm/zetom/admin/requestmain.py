@@ -19,6 +19,10 @@ from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
 from crm.zetom.forms import AddRequestFormMain
 from crm.zetom.models import DepartmentsVariants, RequestMain, RequestSource
+from crm.zetom.services.per_req_perms import (
+    can_assign_anyone, can_assign_target, can_manage_owners,
+    can_resolve_review, can_unassign_target, is_owner_of_req,
+)
 from crm.zetom.services.request_service import (
     approve_oferta_action, approve_wniosek_action, approve_zlecenie_action,
 )
@@ -223,16 +227,69 @@ class RequestMainAdmin(
         context["user_departments"] = profile.departments if profile else []
         context["source_display"] = obj.get_source_display() if has_obj else ""
 
+        # claude — picker для "Request review". default = каскад owners →
+        # dep_heads → admins, фильтрованный правилом «sender может слать
+        # target'у». extras = все active dep_heads + admins, которых нет в
+        # default. owners-из-default рендерятся read-only в шаблоне.
+        if has_obj:
+            from crm.notification.services.recipients import (
+                review_candidates_for,
+            )
+            review_default, review_extras = review_candidates_for(obj, request.user)
+            owner_ids_in_default = {u.pk for u in review_default if u.pk in obj.owners.values_list("id", flat=True)}
+            context["review_default_locked"] = [u for u in review_default if u.pk in owner_ids_in_default]
+            context["review_default_optional"] = [u for u in review_default if u.pk not in owner_ids_in_default]
+            context["review_extras"] = review_extras
+        else:
+            context["review_default_locked"] = []
+            context["review_default_optional"] = []
+            context["review_extras"] = []
+
         # claude — гейтинг "Resolve review" в actions_card:
-        #   can_resolve_review — perm у текущего юзера (dep_head/admin);
+        #   can_resolve_review — per-Req пермишена (роль resolve_review ИЛИ owner);
         #   open_review        — Notification(REVIEW_REQUEST) если открыт, иначе None.
         # Сам Notification пробрасываем в шаблон, чтобы модалка показала
         # автора, дату и комментарий специалиста до принятия решения.
         context["can_resolve_review"] = (
-            has_obj and user_has_perm(request.user, "resolve_review")
+            has_obj and can_resolve_review(request.user, obj)
         )
         context["open_review"] = latest_open_review(obj) if has_obj else None
         context["has_open_review"] = context["open_review"] is not None
+
+        # claude — контекст для assigned_users.html: per-Req флаги owner +
+        # права на управление списком. Список assigned сортируем owners-first,
+        # потом по username, чтобы UI был стабильным.
+        if has_obj:
+            owner_ids = set(obj.owners.values_list("id", flat=True))
+            assigned = list(
+                obj.assigned_to.select_related("profile__role").order_by("username")
+            )
+            assigned.sort(key=lambda u: (u.id not in owner_ids, u.username))
+            context["assigned_users_ordered"] = assigned
+            context["owner_ids"] = owner_ids
+            context["can_manage_owners"] = can_manage_owners(request.user, obj)
+            context["can_assign_anyone"] = can_assign_anyone(request.user, obj)
+            context["is_owner_self"] = is_owner_of_req(request.user, obj)
+            # Per-юзер права на × unassign (нужно в шаблоне на каждую строку).
+            context["assign_target_rights"] = {
+                u.pk: {
+                    "can_unassign": can_unassign_target(request.user, u, obj),
+                }
+                for u in assigned
+            }
+            # Доступные для add: и фильтруем по can_assign_target на каждом.
+            context["assignable_users"] = [
+                u for u in context["available_users"]
+                if can_assign_target(request.user, u, obj)
+            ]
+        else:
+            context["assigned_users_ordered"] = []
+            context["owner_ids"] = set()
+            context["can_manage_owners"] = False
+            context["can_assign_anyone"] = False
+            context["is_owner_self"] = False
+            context["assign_target_rights"] = {}
+            context["assignable_users"] = []
 
         return super().render_change_form(request, context, *args, **kwargs)
 
@@ -273,6 +330,16 @@ class RequestMainAdmin(
                 name="zetom_requestmain_unassign_user",
             ),
             path(
+                "<path:object_id>/set-owner/<int:user_id>/",
+                view(self.set_owner_action),
+                name="zetom_requestmain_set_owner",
+            ),
+            path(
+                "<path:object_id>/unset-owner/<int:user_id>/",
+                view(self.unset_owner_action),
+                name="zetom_requestmain_unset_owner",
+            ),
+            path(
                 "<path:object_id>/add-department/",
                 view(self.add_department_action),
                 name="zetom_requestmain_add_department",
@@ -289,7 +356,8 @@ class RequestMainAdmin(
 
     # claude
     def _get_req_for_action(self, request, object_id, perm):
-        """Resolve RequestMain for a custom POST endpoint.
+        """Resolve RequestMain for a custom POST endpoint guarded by a
+        role-permission code (например, edit_requests / assign_requests).
 
         Returns (obj, None) on success, or (None, HttpResponse) when the
         caller should bail out — either missing permission, hidden by
@@ -302,6 +370,21 @@ class RequestMainAdmin(
         if not user_has_perm(request.user, perm):
             messages.error(request, _("You don't have permission for this action."))
             return None, redirect("admin:zetom_requestmain_change", object_id)
+        qs = visible_requests_for(request.user, RequestMain.objects.all())
+        obj = qs.filter(pk=object_id).first()
+        if obj is None:
+            messages.error(request, _("Request not found."))
+            return None, redirect("admin:zetom_requestmain_changelist")
+        return obj, None
+
+    # claude
+    def _get_req_visible(self, request, object_id):
+        """Same as `_get_req_for_action`, но без role-perm-чека.
+
+        Используется там, где гейт контекстный (per-Req): assign/unassign,
+        set/unset owner. Право решает уже сам action через
+        `services.per_req_perms.*`.
+        """
         qs = visible_requests_for(request.user, RequestMain.objects.all())
         obj = qs.filter(pk=object_id).first()
         if obj is None:
@@ -348,10 +431,13 @@ class RequestMainAdmin(
 
     # ---------- User actions ----------
 
+    # claude — per-Req пермишена: admin/dep_head-of-Req могут любого,
+    # owner может только specialist'ов. Подробно см.
+    # memory/project_per_req_permissions.md.
     def assign_user_action(self, request, object_id):
         if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
-        obj, denied = self._get_req_for_action(request, object_id, "assign_requests")
+        obj, denied = self._get_req_visible(request, object_id)
         if denied is not None:
             return denied
 
@@ -365,6 +451,10 @@ class RequestMainAdmin(
             messages.error(request, _("User not found."))
             return redirect("admin:zetom_requestmain_change", object_id)
 
+        if not can_assign_target(request.user, user, obj):
+            messages.error(request, _("You can't assign this user."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
         obj.assigned_to.add(user)
         messages.success(
             request,
@@ -375,7 +465,7 @@ class RequestMainAdmin(
     def unassign_user_action(self, request, object_id, user_id):
         if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
-        obj, denied = self._get_req_for_action(request, object_id, "assign_requests")
+        obj, denied = self._get_req_visible(request, object_id)
         if denied is not None:
             return denied
 
@@ -385,10 +475,63 @@ class RequestMainAdmin(
             messages.error(request, _("User not found."))
             return redirect("admin:zetom_requestmain_change", object_id)
 
+        if not can_unassign_target(request.user, user, obj):
+            messages.error(request, _("You can't unassign this user."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        # claude — unassign снимает и owner-флаг (owners ⊆ assigned).
         obj.assigned_to.remove(user)
+        obj.owners.remove(user)
         messages.success(
             request,
             _("Removed %(name)s.") % {"name": user.get_full_name() or user.username},
+        )
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    # claude — per-Req пермишена на owners: только admin / dep_head-of-Req.
+    def set_owner_action(self, request, object_id, user_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_visible(request, object_id)
+        if denied is not None:
+            return denied
+        if not can_manage_owners(request.user, obj):
+            messages.error(request, _("You don't have permission for this action."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        try:
+            user = User.objects.get(pk=user_id, is_active=True)
+        except User.DoesNotExist:
+            messages.error(request, _("User not found."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        # Owner ⊆ assigned — нельзя сделать овнером того, кого нет в assigned.
+        if not obj.assigned_to.filter(pk=user.pk).exists():
+            messages.error(request, _("User must be assigned before becoming owner."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj.owners.add(user)
+        messages.success(
+            request,
+            _("%(name)s is now an owner.") % {"name": user.get_full_name() or user.username},
+        )
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    def unset_owner_action(self, request, object_id, user_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_visible(request, object_id)
+        if denied is not None:
+            return denied
+        if not can_manage_owners(request.user, obj):
+            messages.error(request, _("You don't have permission for this action."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            messages.error(request, _("User not found."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj.owners.remove(user)
+        messages.success(
+            request,
+            _("%(name)s is no longer an owner.") % {"name": user.get_full_name() or user.username},
         )
         return redirect("admin:zetom_requestmain_change", object_id)
 

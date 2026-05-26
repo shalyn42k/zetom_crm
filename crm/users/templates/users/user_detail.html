@@ -4,23 +4,23 @@
 {% block content %}
 <div class="p-6 max-w-xl mx-auto">
 
-    <h1 class="text-2xl font-bold mb-6">Профиль пользователя</h1>
+    <h1 class="text-2xl font-bold mb-6">{% trans "User profile" %}</h1>
 
     <div class="bg-gray-900 p-6 rounded-lg space-y-3">
-        <p><strong>Username:</strong> {{ user.username }}</p>
-        <p><strong>Email:</strong> {{ user.email }}</p>
-        <p><strong>Имя:</strong> {{ user.first_name }}</p>
-        <p><strong>Фамилия:</strong> {{ user.last_name }}</p>
-        <p><strong>Роль:</strong> {{ profile.role }}</p>
+        <p><strong>{% trans "Username" %}:</strong> {{ user.username }}</p>
+        <p><strong>{% trans "Email" %}:</strong> {{ user.email }}</p>
+        <p><strong>{% trans "First name" %}:</strong> {{ user.first_name }}</p>
+        <p><strong>{% trans "Last name" %}:</strong> {{ user.last_name }}</p>
+        <p><strong>{% trans "Role" %}:</strong> {{ profile.role }}</p>
         <p><strong>{% trans "Departments" %}:</strong> {{ profile.departments|join:", " }}</p>
     </div>
 
     <div class="mt-6 flex gap-4">
         <a href="{% url 'user_edit' user.id %}" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded">
-            Редактировать
+            {% trans "Edit" %}
         </a>
         <a href="{% url 'user_list' %}" class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded">
-            Назад
+            {% trans "Back" %}
         </a>
     </div>
 

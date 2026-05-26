@@ -322,6 +322,32 @@ html.dark {
 }
 .rm-iconbtn:hover { background: var(--rm-bg-soft); color: var(--rm-text); }
 
+/* claude — owner toggle (star). Off-state: muted hollow star. On-state:
+   filled star in the same accent that the Owner badge uses. */
+.rm-iconbtn--star { font-size: 16px; line-height: 1; }
+.rm-iconbtn--star-on { color: var(--rm-st-active); }
+.rm-iconbtn--star-on:hover { color: var(--rm-st-active); }
+.rm-user--owner { background: color-mix(in oklab, var(--rm-st-active) 6%, transparent); }
+.rm-user--owner:hover { background: color-mix(in oklab, var(--rm-st-active) 10%, transparent); }
+
+/* claude — Request-review picker (модалка). */
+.rm-recipient-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.rm-recipient {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 6px;
+  background: var(--rm-bg-soft);
+  font-size: 13px;
+}
+.rm-recipient--locked { opacity: 0.95; }
+.rm-recipient__name { font-weight: 500; }
+.rm-recipient__role { color: var(--rm-text-muted); font-size: 11.5px; }
+.rm-checkbox {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 0;
+  font-size: 13px; cursor: pointer;
+}
+.rm-checkbox input { margin: 0; }
+
 /* ---------- Form fields ---------- */
 .rm-row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 10px; }
 .rm-col-6 { grid-column: span 6; }

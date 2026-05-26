@@ -83,6 +83,15 @@ class RequestMain(RequestTemplate):
         RequestNull, on_delete=models.SET_NULL, null=True, blank=True
     )
     address = models.CharField(max_length=228, null=True, blank=True)
+    # claude — per-Req флаг "owner". owners ⊆ assigned_to поддерживается на
+    # уровне UI/admin-actions (set_owner доступен только для assigned юзеров,
+    # unassign снимает owner-флаг). Подробности в memory:
+    # project_per_req_permissions.md.
+    owners = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name="owned_requests",
+    )
 
     class Meta:
         verbose_name = "Information"

@@ -28,18 +28,16 @@ def create_rbac_defaults(sender, **kwargs):
         print("RBAC: tables are not created yet — skipping")
         return
 
-    # claude — расширил permissions_data по матрице DOCS/rbac.md §5.
-    # Новые коды (view_logs ... resolve_review) пока НИГДЕ не проверяются —
-    # они заведены как заглушки, видны в админ-вкладке Permissions, чтобы
-    # команда могла раздавать их заранее. Гейты по этим pерм-кодам подключим
-    # отдельным куском (см. план в DOCS/rbac.md §7.2).
+    # claude — permission-каталог. Каждый код должен иметь гейт в коде;
+    # «мёртвые» коды помечены * рядом со статусом в DOCS/rbac.md.
+    # Расширения (manage_owners / view_inbox / view_*_log) — для notification
+    # и per-Req owner-флоу; их гейты см. в crm/notification/views.py,
+    # crm/notification/admin.py, crm/zetom/services/per_req_perms.py.
     permissions_data = [
-        ("view_dashboard", "View dashboard"),
-        ("view_admin_panel", "View admin panel"),
         ("view_users", "View users"),
-        ("edit_users", "Edit users"),
+        ("edit_users", "Edit users (profile fields)"),
         ("view_roles", "View roles"),
-        ("edit_roles", "Edit roles"),
+        ("edit_roles", "Assign role and individual permissions to users"),
         ("view_requests", "View requests"),
         ("edit_requests", "Edit requests"),
         ("delete_requests", "Delete requests"),
@@ -50,6 +48,20 @@ def create_rbac_defaults(sender, **kwargs):
         ("grant_head", "Grant/revoke department head"),
         ("request_review", "Request review from a higher role"),
         ("resolve_review", "Resolve review (approve/reject)"),
+        # claude — per-Req owners (см. memory project_per_req_permissions.md).
+        # Контекстный fallback admin/dep_head-of-Req сохраняется в коде;
+        # этот perm позволяет ДЕЛЕГИРОВАТЬ право через extra_permissions.
+        ("manage_owners", "Set/unset owner on a request"),
+        # claude — gates для inapp-канала и админ-логов.
+        ("view_inbox", "Open the in-app notifications inbox"),
+        ("view_notification_log", "View the in-app notification audit log (admin)"),
+        ("view_email_log", "View the email notification audit log (admin)"),
+        # claude — clients module gates. Раньше ClientAdmin + search/autofill
+        # views были без проверок; любой staff (а search вообще аноним) мог
+        # выгрузить базу клиентов.
+        ("view_clients", "View clients"),
+        ("edit_clients", "Edit/create clients"),
+        ("delete_clients", "Delete clients"),
     ]
 
     perm_objects = {}
@@ -59,6 +71,13 @@ def create_rbac_defaults(sender, **kwargs):
             defaults={"name": name}
         )
         perm_objects[code] = perm
+
+    # claude — чистим Permission-записи, которые ушли из permissions_data
+    # (например, удалённые декоративные view_dashboard / view_admin_panel).
+    # Иначе они продолжают висеть в БД мёртвым грузом, появляются в админ-UI
+    # как доступные для extra_permissions и путают команду.
+    valid_codes = {code for code, _ in permissions_data}
+    Permission.objects.exclude(code__in=valid_codes).delete()
 
     # claude — наборы по матрице DOCS/rbac.md §5. all_seeing по дизайну
     # пустая роль-шаблон, права раздаются индивидуально через extra_permissions.
@@ -70,7 +89,6 @@ def create_rbac_defaults(sender, **kwargs):
         "department_head": {
             "name": "Department Head",
             "perms": [
-                "view_dashboard",
                 "view_users",
                 "view_requests",
                 "edit_requests",
@@ -80,28 +98,41 @@ def create_rbac_defaults(sender, **kwargs):
                 "send_documents",
                 "assign_requests",
                 "resolve_review",
+                # claude — dep_head управляет owner-флагом на «своих» Req'ах
+                # (контекст dep_head-of-Req проверяется отдельно в коде).
+                "manage_owners",
+                "view_inbox",
+                # claude — dep_head создаёт Req'ы и видит клиентов в форме.
+                "view_clients",
+                "edit_clients",
             ],
         },
         "specialist": {
             "name": "Specialist",
             "perms": [
-                "view_dashboard",
                 "view_requests",
                 "edit_requests",
                 "send_documents",
                 "assign_requests",
                 "request_review",
+                "view_inbox",
+                # claude — spec'у нужен autofill и search клиентов в форме Req.
+                "view_clients",
+                "edit_clients",
             ],
         },
         "auditor": {
             "name": "Auditor",
             "perms": [
-                "view_dashboard",
-                "view_admin_panel",
                 "view_users",
                 "view_roles",
                 "view_requests",
                 "view_logs",
+                # claude — read-only аудит логов уведомлений.
+                "view_inbox",
+                "view_notification_log",
+                "view_email_log",
+                "view_clients",
             ],
         },
         "all_seeing": {

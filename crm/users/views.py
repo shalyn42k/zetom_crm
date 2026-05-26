@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext_lazy as _
 from django.views import View
 
 from crm.users.models import UserProfile
@@ -30,7 +31,7 @@ class UserCreateView(View):
 
         if form.is_valid():
             form.save()
-            messages.success(request, "Пользователь успешно создан.")
+            messages.success(request, _("User created."))
             return redirect("user_list")
 
         return render(request, "users/user_form.html", {"form": form, "mode": "create"})
@@ -62,7 +63,7 @@ class UserEditView(View):
 
         if form.is_valid():
             form.save()
-            messages.success(request, "Пользователь обновлён.")
+            messages.success(request, _("User updated."))
             return redirect("user_list")
 
         return render(request, "users/user_form.html", {"form": form, "mode": "edit"})
@@ -78,7 +79,7 @@ class UserDeleteView(View):
     def post(self, request, pk):
         user = get_object_or_404(User, pk=pk)
         user.delete()
-        messages.success(request, "Пользователь удалён.")
+        messages.success(request, _("User deleted."))
         return redirect("user_list")
 
 
@@ -103,7 +104,7 @@ class UserProfileEditView(View):
 
         if form.is_valid():
             form.save()
-            messages.success(request, "Профиль обновлён.")
+            messages.success(request, _("Profile updated."))
             return redirect("user_profile_edit")
 
         return render(request, "users/user_profile_edit.html", {"form": form})

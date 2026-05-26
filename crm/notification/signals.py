@@ -15,7 +15,7 @@ from django.db.models.signals import post_save, pre_save
 # Local imports
 from crm.notification.models import NotificationKind
 from crm.notification.services import inapp_service, request_mail
-from crm.notification.services.recipients import dep_heads_or_admins
+from crm.notification.services.recipients import default_recipients
 from crm.status_manager.services.statuses import Status
 from crm.zetom.models import Oferta, RequestMain, Wniosek, Zlecenie
 
@@ -79,7 +79,7 @@ def _notify_inapp_on_request_status_change(sender, instance, created, **kwargs):
         return
 
     actor = getattr(instance, "_actor", None)
-    recipients = dep_heads_or_admins(instance)
+    recipients = default_recipients(instance)
     inapp_service.create_inapp(
         kind=NotificationKind.STATUS_CHANGE,
         template_name=REQUEST_STATUS_CHANGED_TEMPLATE,
