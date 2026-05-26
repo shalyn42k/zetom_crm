@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 
 # Local imports
 from crm.notification.services import mail_service
-from crm.notification.services.recipients import dep_heads_or_admins_emails
+from crm.notification.services.recipients import default_recipients_emails
 from crm.status_manager.services.statuses import Status
 
 # claude — Dispatch tables keyed by document class name (string).
@@ -82,7 +82,7 @@ def send_document_to_staff(document, actor=None):
     })
     subject, body = _split_subject_body(rendered)
 
-    recipients = dep_heads_or_admins_emails(parent) if parent else []
+    recipients = default_recipients_emails(parent) if parent else []
     mail_service.send_to_staff(
         subject=subject,
         body=body,
