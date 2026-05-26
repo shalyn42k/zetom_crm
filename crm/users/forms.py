@@ -14,18 +14,18 @@ class CustomUserCreateForm(forms.ModelForm):
     """Форма создания нового пользователя"""
 
     password = forms.CharField(
-        label="Пароль",
+        label=_("Password"),
         widget=forms.PasswordInput(attrs={"class": INPUT_CLASS})
     )
 
     password_confirm = forms.CharField(
-        label="Подтверждение пароля",
+        label=_("Password confirmation"),
         widget=forms.PasswordInput(attrs={"class": INPUT_CLASS})
     )
 
     role = forms.ModelChoiceField(
         queryset=Role.objects.all(),
-        label="Роль",
+        label=_("Role"),
         widget=forms.Select(attrs={"class": INPUT_CLASS})
     )
 
@@ -37,7 +37,7 @@ class CustomUserCreateForm(forms.ModelForm):
     )
 
     job_title = forms.CharField(
-        label="Должность",
+        label=_("Job title"),
         required=False,
         widget=forms.TextInput(attrs={"class": INPUT_CLASS})
     )
@@ -57,7 +57,7 @@ class CustomUserCreateForm(forms.ModelForm):
     def clean_username(self):
         username = self.cleaned_data["username"]
         if User.objects.filter(username=username).exists():
-            raise forms.ValidationError("Пользователь с таким username уже существует.")
+            raise forms.ValidationError(_("A user with this username already exists."))
         return username
 
     def clean_email(self):
@@ -65,7 +65,7 @@ class CustomUserCreateForm(forms.ModelForm):
         if not email:
             return email
         if User.objects.filter(email=email).exists():
-            raise forms.ValidationError("Email уже используется.")
+            raise forms.ValidationError(_("This email is already in use."))
         return email
 
     def clean(self):
@@ -74,7 +74,7 @@ class CustomUserCreateForm(forms.ModelForm):
         p2 = cleaned.get("password_confirm")
 
         if p1 and p2 and p1 != p2:
-            raise forms.ValidationError("Пароли не совпадают.")
+            raise forms.ValidationError(_("Passwords don't match."))
 
         return cleaned
 
@@ -99,13 +99,13 @@ class CustomUserChangeForm(forms.ModelForm):
 
     role = forms.ModelChoiceField(
         queryset=Role.objects.all(),
-        label="Роль",
+        label=_("Role"),
         required=False,
         widget=forms.Select(attrs={"class": INPUT_CLASS})
     )
 
     job_title = forms.CharField(
-        label="Должность",
+        label=_("Job title"),
         required=False,
         widget=forms.TextInput(attrs={"class": INPUT_CLASS})
     )
@@ -156,7 +156,7 @@ class CustomUserChangeForm(forms.ModelForm):
             return email
         qs = User.objects.filter(email=email).exclude(pk=self.instance.pk)
         if qs.exists():
-            raise forms.ValidationError("Email уже используется.")
+            raise forms.ValidationError(_("This email is already in use."))
         return email
 
     # claude — валидация пары new_password1/new_password2:
@@ -219,5 +219,5 @@ class UserProfileEditForm(forms.ModelForm):
             return email
         qs = User.objects.filter(email=email).exclude(pk=self.instance.pk)
         if qs.exists():
-            raise forms.ValidationError("Email уже используется.")
+            raise forms.ValidationError(_("This email is already in use."))
         return email

@@ -102,24 +102,53 @@
         </span>
       </p>
 
+      {% if not can_edit_roles %}
+        <p class="up-callout">
+          {% trans "You can view permissions but not change them. The 'edit_roles' permission is required to assign roles and individual permissions." %}
+        </p>
+      {% endif %}
+
       {% trans "from role" as from_role_label %}
       {% trans "Permission is seeded but no code checks it yet." as stub_tooltip %}
 
+      {% comment %}claude — раньше тут был `<details open>` (открыто всегда).
+         По просьбе пользователя дефолт = закрыто, юзерский выбор сохраняется
+         per-group через Alpine $persist. Ключ привязан к slug группы,
+         чтобы не делиться состоянием между разными user-страницами.
+         Alpine + persist подгружаются Unfold'ом — отдельных скриптов не надо.
+      {% endcomment %}
       {% for group in permission_groups %}
-        <details class="up-perm-group" open>
-          <summary class="up-perm-group__summary">
-            <span class="up-perm-group__caret" aria-hidden="true"></span>
+        <section class="up-perm-group"
+                 x-data="{ open: $persist(false).as('up-perm-{{ group.name|slugify }}') }"
+                 :class="{ 'is-open': open }">
+          <button type="button" class="up-perm-group__summary"
+                  @click="open = !open"
+                  :aria-expanded="open">
+            <span class="up-perm-group__caret" aria-hidden="true"
+                  :class="{ 'is-open': open }"></span>
             <span class="up-perm-group__title">{{ group.name }}</span>
             <span class="up-perm-group__count">{{ group.items|length }}</span>
-          </summary>
-          <ul class="up-perm-list">
+          </button>
+          {% comment %}x-cloak + x-show, чтобы во время загрузки страницы
+             группы не «мигали» открытыми перед инициализацией Alpine.
+             Сами чекбоксы рендерятся в DOM всегда — submit формы их
+             подхватит независимо от того, открыта секция или нет.
+          {% endcomment %}
+          <ul class="up-perm-list" x-show="open" x-cloak>
             {% for item in group.items %}
               <li class="up-perm {% if item.from_role %}up-perm--locked{% else %}up-perm--editable{% endif %} {% if item.stub %}up-perm--stub{% endif %}">
                 <label class="up-check up-perm__check">
+                  {% comment %}claude — checkbox disabled когда:
+                     • право пришло из роли (always-on),
+                     • ИЛИ у текущего юзера нет permission `edit_roles`
+                       (он видит галки read-only, менять не может).
+                  {% endcomment %}
                   {% if item.from_role %}
                     <input type="checkbox" checked disabled aria-label="{{ item.perm.name }} ({{ from_role_label }})">
                   {% else %}
-                    <input type="checkbox" name="extra_permissions" value="{{ item.perm.id }}" {% if item.extra %}checked{% endif %}>
+                    <input type="checkbox" name="extra_permissions" value="{{ item.perm.id }}"
+                           {% if item.extra %}checked{% endif %}
+                           {% if not can_edit_roles %}disabled{% endif %}>
                   {% endif %}
                   <span class="up-perm__meta">
                     <span class="up-perm__name">{{ item.perm.name }}</span>
@@ -137,7 +166,7 @@
               </li>
             {% endfor %}
           </ul>
-        </details>
+        </section>
       {% empty %}
         <p class="up-empty">{% trans "No permissions available." %}</p>
       {% endfor %}

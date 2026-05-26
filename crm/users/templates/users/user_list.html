@@ -1,13 +1,14 @@
 {% extends "unfold/layouts/base.html" %}
+{% load i18n %}
 
 {% block content %}
 <div class="p-6">
 
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold">Пользователи</h1>
+        <h1 class="text-2xl font-bold">{% trans "Users" %}</h1>
         <a href="{% url 'user_create' %}"
            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">
-            Создать пользователя
+            {% trans "Create user" %}
         </a>
     </div>
 
@@ -15,10 +16,10 @@
         <table class="w-full text-left">
             <thead class="border-b border-gray-700">
                 <tr>
-                    <th class="py-2">Username</th>
-                    <th>Email</th>
-                    <th>Роль</th>
-                    <th>Департамент</th>
+                    <th class="py-2">{% trans "Username" %}</th>
+                    <th>{% trans "Email" %}</th>
+                    <th>{% trans "Role" %}</th>
+                    <th>{% trans "Department" %}</th>
                     <th></th>
                 </tr>
             </thead>
@@ -30,14 +31,14 @@
                     <td>{{ u.userprofile.role }}</td>
                     <td>{{ u.userprofile.departments|join:", " }}</td>
                     <td class="text-right">
-                        <a href="{% url 'user_detail' u.id %}" class="text-blue-400 hover:underline">Просмотр</a> |
-                        <a href="{% url 'user_edit' u.id %}" class="text-yellow-400 hover:underline">Редактировать</a> |
-                        <a href="{% url 'user_delete' u.id %}" class="text-red-400 hover:underline">Удалить</a>
+                        <a href="{% url 'user_detail' u.id %}" class="text-blue-400 hover:underline">{% trans "View" %}</a> |
+                        <a href="{% url 'user_edit' u.id %}" class="text-yellow-400 hover:underline">{% trans "Edit" %}</a> |
+                        <a href="{% url 'user_delete' u.id %}" class="text-red-400 hover:underline">{% trans "Delete" %}</a>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="py-4 text-center text-gray-400">Нет пользователей</td>
+                    <td colspan="5" class="py-4 text-center text-gray-400">{% trans "No users" %}</td>
                 </tr>
                 {% endfor %}
             </tbody>

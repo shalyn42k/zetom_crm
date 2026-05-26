@@ -17,8 +17,8 @@ from django.utils.translation import gettext_lazy as _
 # Local imports
 from crm.notification.models import Notification, NotificationKind
 from crm.notification.services import inapp_service
-from crm.users.utils import user_has_perm
 from crm.zetom.models import RequestMain
+from crm.zetom.services.per_req_perms import can_resolve_review
 
 REVIEW_RESOLVED_TEMPLATE = "notification/inapp/staff/review_resolved.txt"
 
@@ -93,17 +93,17 @@ class RequestResolveReviewMixin:
         if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
 
-        if not user_has_perm(request.user, "resolve_review"):
-            messages.error(request, _("You don't have permission for this action."))
-            return redirect("admin:zetom_requestmain_change", object_id)
-
-        # Visibility-фильтр здесь не нужен — perm `resolve_review` есть только
-        # у dep_head/admin, у которых `visible_requests_for` возвращает всё.
-        # Но get_object_or_404-семантика всё равно нужна для мусорных id.
+        # claude — owner-of-Req тоже может резолвить (даже если у него
+        # роль specialist), поэтому perm-чек теперь контекстный. Грузим
+        # Req первым, чтобы было что передать в can_resolve_review.
         obj = RequestMain.objects.filter(pk=object_id).first()
         if obj is None:
             messages.error(request, _("Request not found."))
             return redirect("admin:zetom_requestmain_changelist")
+
+        if not can_resolve_review(request.user, obj):
+            messages.error(request, _("You don't have permission for this action."))
+            return redirect("admin:zetom_requestmain_change", object_id)
 
         form = ResolveReviewForm(request.POST)
         if not form.is_valid():

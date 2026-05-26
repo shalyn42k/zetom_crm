@@ -21,6 +21,7 @@ from django.views.decorators.http import require_POST
 from crm.notification.models import Notification, NotificationKind
 from crm.notification.services import inapp_service
 from crm.notification.utils import render_notification, target_url
+from crm.users.utils import user_has_perm
 
 # claude — handoff V1 диктует 10 на страницу.
 INBOX_PAGE_SIZE = 10
@@ -82,6 +83,12 @@ def inbox(request):
     All/Unread/kind chips are computed from the full per-user queryset so
     they don't shrink when a filter is active.
     """
+    # claude — staff_member_required прокидывает login + is_staff. Permission
+    # `view_inbox` (см. crm/users/signals.py) — дополнительный гейт, чтобы
+    # админ мог отозвать inbox у конкретной роли через extra_permissions.
+    if not user_has_perm(request.user, "view_inbox"):
+        return HttpResponseForbidden("You don't have permission to view the inbox.")
+
     filter_value = request.GET.get("filter", "all")
     if filter_value not in ("all", "unread"):
         filter_value = "all"

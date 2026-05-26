@@ -185,6 +185,11 @@ html.dark,
 }
 .up-perm-group__summary::-webkit-details-marker { display: none; }
 .up-perm-group__summary:hover { background: color-mix(in oklab, var(--up-text) 4%, transparent); }
+/* claude — секция теперь Alpine-обёртка с `is-open`-классом, а не <details>.
+   Кнопка должна не выглядеть как браузерная кнопка (border/bg сброшен). */
+button.up-perm-group__summary {
+  width: 100%; background: none; border: none; text-align: left; font: inherit;
+}
 /* CSS-нарисованный chevron вместо unicode ▸ — крепко рендерится и
    переворачивается на 90° при open. */
 .up-perm-group__caret {
@@ -198,7 +203,9 @@ html.dark,
   flex-shrink: 0;
   margin-left: 2px; margin-right: 4px;
 }
-.up-perm-group[open] > .up-perm-group__summary > .up-perm-group__caret {
+.up-perm-group[open] > .up-perm-group__summary > .up-perm-group__caret,
+.up-perm-group.is-open > .up-perm-group__summary > .up-perm-group__caret,
+.up-perm-group__caret.is-open {
   transform: rotate(45deg);
 }
 .up-perm-group__summary:hover > .up-perm-group__caret {

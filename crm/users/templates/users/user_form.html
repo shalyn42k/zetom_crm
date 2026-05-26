@@ -1,10 +1,11 @@
 {% extends "unfold/layouts/base.html" %}
+{% load i18n %}
 
 {% block content %}
 <div class="p-6 max-w-2xl mx-auto">
 
     <h1 class="text-2xl font-bold mb-6">
-        {% if mode == "create" %}Создание пользователя{% else %}Редактирование пользователя{% endif %}
+        {% if mode == "create" %}{% trans "Create user" %}{% else %}{% trans "Edit user" %}{% endif %}
     </h1>
 
     <form method="post" class="space-y-4">
@@ -23,7 +24,7 @@
 
         <div class="flex justify-end">
             <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">
-                Сохранить
+                {% trans "Save" %}
             </button>
         </div>
     </form>

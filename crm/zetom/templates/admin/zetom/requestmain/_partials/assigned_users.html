@@ -1,4 +1,21 @@
 {% load i18n %}
+{% comment %}
+  Карточка Assigned users на RequestMain change-form.
+
+  Контекст (формируется в RequestMainAdmin.render_change_form):
+    - assigned_users_ordered : list[User] — owners-first, потом по username.
+    - owner_ids              : set[int]   — id юзеров с owner-флагом.
+    - can_manage_owners      : bool       — admin / dep_head-of-Req.
+    - can_assign_anyone      : bool       — admin / dep_head-of-Req.
+    - is_owner_self          : bool       — текущий юзер сам owner этого Req.
+    - assign_target_rights   : dict[user_id -> {"can_unassign": bool}]
+    - assignable_users       : list[User] — кого можно добавить (фильтр на сервере).
+
+  «Owner» — это не порядковая позиция, а флаг (см. memory
+  project_per_req_permissions.md). Сортируем owners-first просто чтобы
+  визуально не разбегались. Кнопка-звёздочка переключает owner-флаг и
+  доступна только тем, у кого `can_manage_owners`.
+{% endcomment %}
 <section class="rm-card rm-card--collapsible" aria-labelledby="rm-users-heading" id="assigned-users" x-data="{ open: $persist(true).as('rm-users-{{ request.user.id }}-{{ original.pk }}') }">
   <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
     <h2 id="rm-users-heading" class="rm-card__title">
@@ -10,39 +27,72 @@
 
   <div x-show="open" x-cloak>
   <ul class="rm-user-list">
-    {% for u in original.assigned_to.all %}
-      <li class="rm-user">
+    {% for u in assigned_users_ordered %}
+      <li class="rm-user{% if u.pk in owner_ids %} rm-user--owner{% endif %}">
         <span class="rm-avatar" aria-hidden="true">
           {{ u.first_name|slice:":1"|default:u.username|slice:":1"|upper }}
         </span>
         <span class="rm-user__meta">
           <span class="rm-user__name">
             {{ u.get_full_name|default:u.username }}
-            {% if forloop.first %}<span class="rm-badge rm-badge--owner">{% trans "Owner" %}</span>{% endif %}
+            {% if u.pk in owner_ids %}<span class="rm-badge rm-badge--owner">{% trans "Owner" %}</span>{% endif %}
           </span>
           <span class="rm-user__sub">
             {% if u.profile.role %}{{ u.profile.role.name }}{% endif %}
             {% if u.profile.departments %} · {{ u.profile.departments|join:", " }}{% endif %}
           </span>
         </span>
-        <button type="submit"
-                formaction='{% url "admin:zetom_requestmain_unassign_user" original.pk u.pk %}'
-                formmethod="post"
-                formnovalidate
-                class="rm-iconbtn"
-                aria-label='{% trans "Remove user" %}'>
-          ×
-        </button>
+
+        {% if can_manage_owners %}
+          {% if u.pk in owner_ids %}
+            <button type="submit"
+                    formaction='{% url "admin:zetom_requestmain_unset_owner" original.pk u.pk %}'
+                    formmethod="post"
+                    formnovalidate
+                    class="rm-iconbtn rm-iconbtn--star rm-iconbtn--star-on"
+                    title='{% trans "Remove owner status" %}'
+                    aria-label='{% trans "Remove owner status" %}'>
+              ★
+            </button>
+          {% else %}
+            <button type="submit"
+                    formaction='{% url "admin:zetom_requestmain_set_owner" original.pk u.pk %}'
+                    formmethod="post"
+                    formnovalidate
+                    class="rm-iconbtn rm-iconbtn--star"
+                    title='{% trans "Make owner" %}'
+                    aria-label='{% trans "Make owner" %}'>
+              ☆
+            </button>
+          {% endif %}
+        {% endif %}
+
+        {% comment %}«×» unassign — показываем кнопку, если у текущего
+           юзера хоть какие-то права на unassign на этом Req (admin /
+           dep_head-of-Req — любого; owner — только специалистов).
+           Финальная per-target проверка делается в
+           `unassign_user_action` (см. requestmain.py).{% endcomment %}
+        {% if can_assign_anyone or is_owner_self %}
+          <button type="submit"
+                  formaction='{% url "admin:zetom_requestmain_unassign_user" original.pk u.pk %}'
+                  formmethod="post"
+                  formnovalidate
+                  class="rm-iconbtn"
+                  title='{% trans "Remove user" %}'
+                  aria-label='{% trans "Remove user" %}'>
+            ×
+          </button>
+        {% endif %}
       </li>
     {% empty %}
       <li class="rm-empty">{% trans "No users assigned yet." %}</li>
     {% endfor %}
   </ul>
 
-  {% if available_users %}
+  {% if assignable_users %}
     <div class="rm-user-add">
       <select name="user_id" class="rm-select">
-        {% for u in available_users %}
+        {% for u in assignable_users %}
           <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>
         {% endfor %}
       </select>

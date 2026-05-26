@@ -6,6 +6,22 @@
 
 ---
 
+## Security (критические дыры)
+
+- [x] **`CustomUserAdmin` отдавал права кому угодно** — закрыто 2026-05-25.
+  - `has_view_permission` / `has_change_permission` / `has_add_permission` / `has_delete_permission` теперь через `user_has_perm` ([user.py](crm/users/admin/user.py)).
+  - Safeguards: non-superuser не может `is_superuser=True` (отключено в `get_form`, дроп в `save_model`); non-superuser не может присвоить роль `admin` / `all_seeing`; нельзя менять собственный role; нельзя удалять себя или superuser'а.
+
+- [x] **Анонимный доступ к `/clients/search/` и `/clients/autofill/`** — закрыто 2026-05-25.
+  - Раньше эти эндпоинты отвечали без auth — выгрузка базы клиентов любому. Теперь `@login_required` + `user_has_perm("view_clients")`.
+  - `ClientAdmin` тоже получил гейты `view_clients` / `edit_clients` / `delete_clients`.
+
+- [x] **`grant_head` теперь permission-driven** — закрыто 2026-05-26.
+  - [`_dept_actions._can_grant_head`](crm/users/admin/_dept_actions.py#L78-L84) теперь зовёт `user_has_perm("grant_head")` вместо hardcoded `is_role("admin")`. Админ может делегировать через `extra_permissions` (нужны: `view_users` + `edit_users` + `grant_head`).
+
+- [ ] **POST-эндпоинты `_dept_actions` без `edit_users` гейта** (осталось)
+  - [crm/users/admin/_dept_actions.py](crm/users/admin/_dept_actions.py) — `add_department_action`, `remove_department_action`, `promote_department_action`, `demote_department_action` принимают POST без `user_has_perm("edit_users")`. Сейчас защищены только `admin_view`-обёрткой (is_staff) + новым `has_view_permission` на UserAdmin (фактически view_users). Но прямой POST от юзера с `view_users` без `edit_users` всё ещё проходит — надо добавить явный `user_has_perm("edit_users")` в каждой action.
+
 ## Zetom: баги и дыры в правах
 
 - [ ] Свести два пути удаления RequestMain в один
@@ -75,9 +91,11 @@
   - Требует эндпоинта-фрагмента в `crm/users/views.py` + URL — зона авторов `users`, согласовать.
   - Аддитивно к текущей реализации, ничего ломать не нужно.
 
-- [ ] Notifications-таб: подключить к реальной модели
-  - Сейчас — UI-заглушка, toggles без save'а.
-  - Нужна модель (например, `UserProfile.notification_settings` или отдельный `NotificationPreference`) — зона авторов `users`/`notification`.
+- [ ] Notifications-таб: согласовать с бизнесом и подключить к модели
+  - Сейчас [tab_notifications.html](crm/users/templates/admin/auth/user/_partials/tab_notifications.html) — UI-заглушка, 3 disabled toggles.
+  - **Сначала нужен бизнес-вход**: какие из 12 триггеров матрицы юзер вправе глушить? По каким каналам (inapp / mail / оба)? Без этого модель проектировать рано — текущие 3 toggle'а это домыслы, могут не совпасть с реальными хотелками.
+  - Когда categories утверждены: модель `UserProfile.notification_settings = JSONField` (дёшево, гибко) либо отдельная `NotificationPreference(user, kind, channel, enabled)` (нормализованно). На альфу не критично — без preferences инструмент работает корректно (всем отправляется по умолчанию).
+  - Зона: согласование — бизнес; модель/UI — `users`-команда; уважение preferences в send-pipeline — `notification` (моя).
 
 - [ ] Avatar в шапке профиля
   - Сейчас — инициалы. Хотим загружаемое изображение → нужно поле `UserProfile.avatar = ImageField(...)` и миграция.
@@ -99,9 +117,48 @@
 
 ## Notification
 
+### Per-Req owners (готово)
+
+- [x] `RequestMain.owners` (M2M) + миграция `0003_requestmain_owners`.
+- [x] Каскад в [recipients.py](crm/notification/services/recipients.py) — `default_recipients(req)` идёт owners → dep_heads(Req.depts) → admins. Старые `dep_heads_or_admins*` оставлены aliases.
+- [x] Per-Req permission-хелперы — [crm/zetom/services/per_req_perms.py](crm/zetom/services/per_req_perms.py). Иерархия `admin > dep_head-of-Req > owner > specialist`.
+- [x] UI назначения owners — кнопка ★/☆ в карточке Assigned users (только admin / dep_head-of-Req). Bейдж Owner по факту, owners сортируются наверх.
+- [x] `unassign` снимает owner-флаг (owners ⊆ assigned).
+- [x] `resolve_review` теперь доступен и owner'у Req (даже специалисту).
+- [x] `request_review` — picker с тремя секциями: "Always notified (owners)" read-only, "Default recipients" пред-выбранные снимаемые, "Additional recipients" добавляемые. Список фильтруется по правилу sender→target.
+- [x] Правило `request_review`: specialist шлёт owners + dep_heads + admins; dep_head — только admins; admin — кому угодно.
+
+#### Per-Req owners: что осталось
+
+- [ ] **Прогон тестировщиком** — пройти сценарии ниже на dev-стенде:
+  - admin/dep_head-of-Req назначает Owner спецу из assigned → бейдж появляется, спец сортируется наверх.
+  - спец-non-owner: кнопки ★/× не видит, картинка read-only.
+  - спец-owner: видит ★/× только у других специалистов, не у dep_head/admin.
+  - dep_head чужого отдела: на Req не из его отделов — read-only (как обычный юзер).
+  - request_review от specialist'а без owners на Req → default = dep_heads(Req.depts) → admins fallback; extras = весь пул минус default; снять можно только default-checkboxes, owners-блок отсутствует.
+  - request_review от specialist'а после назначения owner'а → "Always notified" с owner'ом, default-секция пуста, extras = dep_heads + admins.
+  - request_review от dep_head'а → default только admins, extras пусто (peer-dep_head'ы недопустимы).
+  - resolve_review: спец-owner закрывает ревью на своём Req без role-perm; обычный спец-non-owner кнопку не видит.
+  - mail-сценарии (Send mail → document staff, новая заявка с сайта): письмо уходит owner'ам если они есть, иначе dep_head'ам отдела, иначе админам.
+  - unassign owner'а: owner-флаг тоже снимается (проверить и в Notification log).
+
+- [ ] Owners на дочерних `Oferta` / `Zlecenie` / `Wniosek`
+  - Сейчас owners живёт только на `RequestMain`. После доработки дочерних форм решить: тащить отдельных owners на каждой дочке или наследовать от parent.
+  - Если делать — добавить `owners` в `RequestTemplate` или отдельно на каждой модели + миграция + аналогичный UI.
+
+- [x] Интеграция owner-флага с **validation window** — закрыто 2026-05-26.
+  - При approve через VW админ сразу выбирает departments + owners в Step 03. Назначение идёт через `_do_approve` в [requestnull_validate.py](crm/zetom/admin/requestnull_validate.py): `assigned_to.set(owners)` + `owners.set(owners)` (owners ⊆ assigned).
+
+- [ ] Удалить backward-compat aliases `dep_heads_or_admins[_emails]` после полного перехода
+  - Сейчас остались в [recipients.py:90-97](crm/notification/services/recipients.py#L90-L97) на случай если где-то ещё используется (нашёл только в test_views.py и README).
+
+- [ ] Обновить [crm/notification/README.md](crm/notification/README.md) — описание каскада owners → dep_heads → admins, а не текущий "dep_heads → admins".
+
+- [ ] Поправить упоминание старого имени в [crm/zetom/tests/test_views.py:141](crm/zetom/tests/test_views.py#L141) (комментарий, не код).
+
 ### Mail-направление (готово)
 
-- [x] `services/recipients.py` — `dep_heads_or_admins(req)` + `*_emails(req)`.
+- [x] `services/recipients.py` — каскад `default_recipients(req)` (owners → dep_heads → admins), `*_emails(req)` обёртка.
 - [x] `services/mail_service.py` — `send_to_client` / `send_to_staff` с логом в `EmailNotification`. Убран `STAFF_RECIPIENTS` (статическая константа адресов) — получателей всегда резолвит `recipients.py` под конкретный кейс.
 - [x] `services/request_mail.py` — `send_document_to_staff`, `send_document_to_client`, `send_freeform_to_client`.
 - [x] `services/notification_service.py` — рефакторнут; имена сохранены, хардкод `tymirapps@gmail.com` ушёл.
@@ -112,22 +169,22 @@
 
 | # | Триггер | Канал | Получатели | Шаблон | Статус |
 |---|---|---|---|---|---|
-| 1 | Сайтовая форма → `RequestNull` | mail | dep_heads(Req.depts) → admins | `mail/staff/request_new.txt` | done |
-| 2 | Null валидирован → `RequestMain` | mail | dep_heads(Req.depts) → admins | `mail/staff/request_validated.txt` | done |
+| 1 | Сайтовая форма → `RequestNull` | mail | каскад (Null без depts → сразу admins) | `mail/staff/request_new.txt` | done |
+| 2 | Null валидирован → `RequestMain` | mail | каскад (на этом этапе owners ещё нет → dep_heads(Req.depts) → admins) | `mail/staff/request_validated.txt` | done |
 | 3 | Document → `in_progress` (signal) | mail | client (`document.email` → `parent.email`) | `mail/client_in_progress.txt` | done |
-| 4 | "Mail" по document (staff action) | mail | dep_heads(Req.depts) → admins | `mail/{oferta,zlecenie,wniosek}_staff.txt` | done |
+| 4 | "Mail" по document (staff action) | mail | каскад (owners → dep_heads → admins) | `mail/{oferta,zlecenie,wniosek}_staff.txt` | done |
 | 5 | Freeform mail (staff action) | mail | client (`request_main.email`) | — (raw subject/body) | done |
-| 6 | Req stale (cron) | mail | dep_heads(Req.depts) → admins | `mail/staff/request_stale_reminder.txt` | pending |
+| 6 | Req stale (cron) | mail | каскад | `mail/staff/request_stale_reminder.txt` | pending |
 | 6.1 | Req stale + `NOTIFICATION_REMIND_TO_CLIENT` | mail | client | `mail/client/request_stale_reminder.txt` | pending |
-| 7 | RequestMain `status` changed | inapp | dep_heads(Req.depts) → admins (assigned specialists позже) | `inapp/staff/request_status_changed.txt` | done |
+| 7 | RequestMain `status` changed | inapp | каскад (assigned specialists добавить позже) | `inapp/staff/request_status_changed.txt` | done |
 | 8 | Specialist назначен на Req | inapp | назначенный specialist | `inapp/staff/request_assigned.txt` | pending |
-| 9 | Specialist запросил review | inapp | dep_heads(Req.depts) → admins | `inapp/staff/review_requested.txt` | pending |
-| 10 | Review resolved | inapp | автор запроса (specialist) | `inapp/staff/review_resolved.txt` | pending |
-| 11 | Req cancelled / deleted | inapp | dep_heads(Req.depts) + assigned specialists | тот же `request_status_changed.txt` | pending |
-| 12 | Document deleted | inapp | dep_heads(Req.depts) → admins | `inapp/staff/request_status_changed.txt` (или новый kind) | pending |
+| 9 | Specialist запросил review | inapp | picker: default по каскаду + extras из dep_heads/admins (фильтр по роли отправителя) | `inapp/staff/review_requested.txt` | done |
+| 10 | Review resolved | inapp | автор запроса (specialist) | `inapp/staff/review_resolved.txt` | done |
+| 11 | Req cancelled / deleted | inapp | каскад + assigned specialists | тот же `request_status_changed.txt` | pending |
+| 12 | Document deleted | inapp | каскад | `inapp/staff/request_status_changed.txt` (или новый kind) | pending |
 
-Правила резолва "→":
-- "X → Y" значит "сначала X; если пусто — Y".
+Правила резолва:
+- **«каскад»** = `services/recipients.default_recipients(req)`: owners → dep_heads(Req.depts) → admins. Останавливаемся на первом непустом уровне.
 - "X + Y" значит "и X, и Y вместе (после де-дупа)".
 - "client" определяется по полю `email` на самом объекте (с fallback на родителя для дочек).
 
@@ -163,16 +220,14 @@
   - "Mark all as read" — bulk POST;
   - admin shell (Unfold sidebar/topbar) через `admin.site.each_context(request)`;
   - доступ только `staff_member_required`.
-- [x] Триггер `request_review` — кнопка в Actions-card RequestMain, POST `/request-review/`, исключение автора из получателей.
+- [x] Триггер `request_review` — кнопка + picker в Actions-card RequestMain, POST `/request-review/`, role-фильтр sender→target, owners read-only.
+- [x] Триггер `resolve_review` — кнопка/модалка в Actions-card. Доступна dep_head/admin'у И owner'у Req. Шлёт `REVIEW_RESOLVED` автору исходного запроса.
 - [x] Sidebar restructure (Inbox / Requests / Archive / Clients / Users & Access / System) + `list_per_page = 10` на Req-чейнджлистах + Notification/EmailNotification.
 
 #### Inapp: что осталось
 
 - [ ] Сигнал на M2M `RequestMain.assigned_to.add(user)` → inapp `request_assigned` для добавленного юзера.
   - Через `m2m_changed`, фильтр `action == "post_add"`. На каждый pk из `pk_set` — отдельная запись.
-
-- [ ] Триггер `resolve_review` — UI-кнопка в RequestMainAdmin для dep_head/admin'а
-  - POST endpoint, входит decision (approved/rejected) и note. Создаёт inapp `kind=REVIEW_RESOLVED` на автора оригинального запроса. Триггер покрыт пермишеном `resolve_review` из [DOCS/rbac.md](DOCS/rbac.md).
 
 - [ ] V3 — bell-popover для quick-triage (см. handoff §V3). Сейчас inbox-страница это полноценная V1, popover-вариант отдельной задачей.
 
@@ -206,6 +261,85 @@ Backend сейчас захардкожен SMTP. План:
 ## RBAC
 
 Полный хендофф вынесен в [DOCS/rbac.md](DOCS/rbac.md) — матрица прав, текущее состояние кода, открытые дизайн-вопросы и план работ для разработчика.
+
+### Что добавлено / переосмыслено в матрице (2026-05-25 — 26)
+
+Новые permissions (с реальными гейтами в коде):
+
+| Код | Назначение | Гейт |
+|---|---|---|
+| `manage_owners` | Set/unset owner на Req | [per_req_perms.can_manage_owners](crm/zetom/services/per_req_perms.py) — admin / dep_head-of-Req получают автоматически; permission даёт делегирование через `extra_permissions`. |
+| `view_inbox` | Открыть `/notifications/` | [notification/views.py::inbox](crm/notification/views.py) |
+| `view_notification_log` | Админ-список Notification (immutable log) | [notification/admin.py::NotificationAdmin](crm/notification/admin.py) |
+| `view_email_log` | Админ-список EmailNotification | [notification/admin.py::EmailNotificationAdmin](crm/notification/admin.py) |
+| `view_clients` | Списки/детали клиентов + `/clients/search/`, `/clients/autofill/` | [clients/admin.py](crm/clients/admin.py), [clients/views.py](crm/clients/views.py) |
+| `edit_clients` | Создание/правка клиентов | [clients/admin.py](crm/clients/admin.py) |
+| `delete_clients` | Удаление клиентов | [clients/admin.py](crm/clients/admin.py) |
+
+Переосмыслены / починены:
+
+| Код | Что было | Что стало |
+|---|---|---|
+| `edit_roles` | Висел как stub — Role admin был принудительно read-only | Теперь = «право присваивать role / individual permissions конкретному юзеру». UserAdmin: без него `role` field disabled, extras checkbox-ы disabled, save_model дропает изменения. |
+| `grant_head` | Был permission, но `_can_grant_head` хардкодил `is_role("admin")` | `_dept_actions._can_grant_head` теперь зовёт `user_has_perm("grant_head")`. Делегирование работает. |
+| `view_logs` | Был stub — `LogEntryAdmin.has_view_permission` возвращал `True` всем | Теперь = «доступ к Activity Log» (`/admin/admin/logentry/`). По дефолту даётся admin / dep_head / auditor. |
+
+Удалены (мёртвые декорации без UI):
+- `view_dashboard`, `view_admin_panel` — нет дашборда; `is_staff` уже гейтит вход в `/admin/`. Удалены из `permissions_data` + auto-cleanup осиротевших Permission-строк в `signals.py`.
+
+Дефолтные роли:
+- **admin**: всё (через `[p[0] for p in permissions_data]`).
+- **dep_head**: `manage_owners`, `view_inbox`, `view_clients`, `edit_clients` (плюс прежний набор).
+- **specialist**: `view_inbox`, `view_clients`, `edit_clients` (нужно для autofill/search в форме Req).
+- **auditor**: `view_inbox`, оба `view_*_log`, `view_clients`.
+
+Единственный оставшийся stub — `view_logs` (нет admin-страницы под `StatusHistory`).
+
+### Что в матрице ещё «мёртвое» / не подключено
+
+- [x] ~~`view_admin_panel`, `view_dashboard`~~ — удалены 2026-05-26 (нет UI, мёртвый груз).
+- [x] ~~`edit_roles`~~ — переосмыслено 2026-05-26. Permission больше **не** про правку `Role` модели (она остаётся read-only), а про право **присваивать роль / individual permissions конкретному юзеру** в UserAdmin. Без него юзер видит таб Permissions read-only.
+- [x] ~~`grant_head` hardcoded~~ — закрыто 2026-05-26 (см. секцию Security).
+- [x] ~~`view_logs`~~ — подключено 2026-05-26 к `LogEntryAdmin` (Activity Log). Раньше `has_view_permission` возвращал `True` для всех.
+
+**STUB-список теперь пуст** — все perm-коды в `crm/users/signals.py::permissions_data` имеют рабочий гейт.
+
+### Потенциальные новые permissions (на обсуждение с RBAC-команды)
+
+- [ ] `restore_request` — сейчас `restore_action` в [cancelledrequest.py:69](crm/zetom/admin/cancelledrequest.py#L69) гейтится `change_request_status`. Если хочется отделить «вернуть из архива» от «менять статус», нужен отдельный код. Не критично.
+- [ ] `mail_freeform_client` — сейчас freeform-mail к клиенту делает любой с `send_documents`. Если бизнес хочет отделить «свободные письма» от «отправка готового документа» — добавить отдельный код.
+- [ ] `validate_null` — для VW; добавить когда дойдём до доработки validation window.
+
+### Видимость для dep_head в visibility.py (DOCS/rbac.md §7.3)
+
+- [ ] `crm/zetom/services/visibility.py:34` — dep_head сейчас видит все Req (как admin). Нужно сузить до `qs.filter(departments__overlap=profile.head_of_departments)`, иначе head ничем не отличается от auditor по видимости.
+
+## Validation Window
+
+Базовая страница реализована по [design_handoff_validation_window/](design_handoff_validation_window/) (commit `feat(zetom): validation window for RequestNull`). Заменяет старую одну кнопку Approve: `change_view` на `RequestNullAdmin` редиректит на `/admin/zetom/requestnull/<id>/validate/` → 3-зонная форма (Snapshot · Link to Client · Assignment) + sticky footer (Cancel / Discard as spam / Approve & create RequestMain). На странице помечено WIP-тегами всё, что ещё не работает.
+
+### VW: что осталось
+
+- [ ] FK `RequestMain → Client` + миграция
+  - Сейчас «линковка» в [`_do_approve`](crm/zetom/admin/requestnull_validate.py) копирует поля Client в новый RequestMain, но связь не сохраняется. Когда добавим FK — поменять `_do_approve` на `new_main.client = client` и убрать копирование полей.
+
+- [ ] Live HTMX-фильтрация owners по departments
+  - Сейчас `userpop` показывает всех активных юзеров; правило «owners ∈ users-with-overlapping-dept» проверяется в `ValidationWindowForm.clean()` и при несовпадении возвращает форму с ошибкой. Нужен `htmx GET` партиал «users-for-departments» + `hx-trigger=change` на чипах департаментов. WIP-нотис убрать после.
+
+- [ ] Drag-reorder primary owner
+  - Сейчас primary = первый выбранный (наименьший pk). По дизайну: первый чип = primary, должна быть возможность переставлять (минимум — действие «make primary», максимум — DnD).
+
+- [ ] Ad-hoc client search box
+  - `.search-row` в шаблоне сейчас `disabled` + WIP-тег. План: эндпоинт `clients/search/?q=` (уже есть в [crm/clients/views.py](crm/clients/views.py)) + Alpine-комбобокс над списком кандидатов, чтобы можно было найти клиента, которого матчер не предложил.
+
+- [ ] `validate_null` permission (см. RBAC секцию ниже)
+  - Сейчас view защищён только `admin_view`-обёрткой (is_staff). Завести отдельный permission и гейтить `validation_window_view`, `_do_approve`, discard-ветку.
+
+- [ ] Тесты на матчер дубликатов
+  - [`crm/zetom/services/duplicate_matcher.py`](crm/zetom/services/duplicate_matcher.py) — score / badges / порядок. Случаи: exact phone, exact email, NIP, similar name (порог 0.78), email domain, пустой результат, weak-only.
+
+- [ ] Notification kind для «discarded as spam»
+  - Сейчас при discard создаётся RequestMain и сразу cancel'ится через `cancel_request` — событие пишется в `StatusHistory`, но отдельного inapp-уведомления для админов нет. Решить с RBAC-командой, нужно ли.
 
 ## Прочее
 

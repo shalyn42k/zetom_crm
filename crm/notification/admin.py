@@ -6,6 +6,7 @@ from unfold.admin import ModelAdmin
 
 from crm.notification.models import EmailNotification, Notification
 from crm.notification.utils import render_notification
+from crm.users.utils import user_has_perm
 
 
 # claude
@@ -39,6 +40,14 @@ class NotificationAdmin(ModelAdmin):
     exclude = ("payload",)
     ordering = ("-created_at",)
     list_per_page = 10
+
+    # claude — append-only лог. view гейтится permission'ом, add/change/delete
+    # запрещены всем (включая суперюзера), чтобы аудит был immutable.
+    def has_view_permission(self, request, obj=None):
+        return user_has_perm(request.user, "view_notification_log")
+
+    def has_module_permission(self, request):
+        return user_has_perm(request.user, "view_notification_log")
 
     def has_add_permission(self, request):
         return False
@@ -86,6 +95,13 @@ class EmailNotificationAdmin(ModelAdmin):
     exclude = ("payload",)
     ordering = ("-created_at",)
     list_per_page = 10
+
+    # claude — то же что для NotificationAdmin, только другой permission-код.
+    def has_view_permission(self, request, obj=None):
+        return user_has_perm(request.user, "view_email_log")
+
+    def has_module_permission(self, request):
+        return user_has_perm(request.user, "view_email_log")
 
     def has_add_permission(self, request):
         return False
