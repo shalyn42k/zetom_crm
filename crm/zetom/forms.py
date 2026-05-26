@@ -1,14 +1,16 @@
 # Django imports
 from django import forms
 # Other imports
-from localflavor.pl.forms import PLNIPField
 from phonenumber_field.formfields import PhoneNumberField
-
-# Zetom app imports
-from crm.zetom.models import (Oferta, RequestMain, RequestNull, Wniosek, Zlecenie)
 
 # Client module import
 from crm.clients.fields import ClientField
+# claude
+from crm.clients.validators import normalize_nip, validate_nip
+# Zetom app imports
+from crm.zetom.models import (
+    Oferta, RequestMain, RequestNull, Wniosek, Zlecenie,
+)
 
 
 class TemplateForm(forms.ModelForm):
@@ -29,12 +31,20 @@ class TemplateForm(forms.ModelForm):
         required=True, widget=forms.TextInput(attrs={"placeholder": "email@gmail.com"})
     )
 
-    company_nip = PLNIPField(
+    # claude
+    company_nip = forms.CharField(
         required=True,
-        widget=forms.TextInput(
-            attrs={"placeholder": "7322215365"}
-        ),
+        max_length=20,
+        validators=[validate_nip],
+        widget=forms.TextInput(attrs={"placeholder": "7322215365"}),
     )
+
+    # claude
+    def clean_company_nip(self):
+        value = self.cleaned_data.get("company_nip")
+        if not value:
+            return value
+        return normalize_nip(value)
 
     message = forms.CharField(
         required=False,

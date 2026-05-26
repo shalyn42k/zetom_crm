@@ -43,7 +43,7 @@ class ClientSearchView(View):
                     "id": c.id,
                     "label": c.company_name or f"{c.first_name} {c.last_name}" or f"Client #{c.id}",
                     "email": c.email,
-                    "phone": c.phone.as_national if c.phone else "",
+                    "phone": c.phone.as_international if c.phone else "",
                     "company_nip": c.company_nip,
                     "address": c.address,
                 }
@@ -72,7 +72,7 @@ def client_autofill(request):
             "company_name": client.company_name,
             "company_nip": client.company_nip,
             "email": client.email,
-            "phone": client.phone.as_national if client.phone else "",
+            "phone": client.phone.as_international if client.phone else "",
             "address": client.address,
         })
     except Client.DoesNotExist:
