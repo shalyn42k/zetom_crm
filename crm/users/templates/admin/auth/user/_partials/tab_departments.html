@@ -177,12 +177,20 @@
     </header>
 
     <div class="up-card__body">
+      {% comment %}claude — было `is-open` хардкодом + JS-toggle. По
+         просьбе юзера дефолт = закрыто, выбор сохраняется per-dept через
+         Alpine $persist. Ключ — slug кода отдела + pk юзера (чтобы у
+         разных user-страниц не делилось состояние).
+      {% endcomment %}
       <ul class="up-dept-tree" role="tree" aria-label="{% trans "Departments and members" %}">
         {% for dept in my_departments %}
-          <li class="up-dept-tree__node {% if dept.is_primary %}up-dept-tree__node--primary{% endif %} is-open"
+          <li class="up-dept-tree__node {% if dept.is_primary %}up-dept-tree__node--primary{% endif %}"
+              x-data="{ open: $persist(false).as('up-dept-tree-{{ original.pk }}-{{ dept.code|slugify }}') }"
+              :class="{ 'is-open': open }"
               role="treeitem"
-              aria-expanded="true">
-            <button type="button" class="up-dept-tree__head" data-tree-toggle>
+              :aria-expanded="open">
+            <button type="button" class="up-dept-tree__head"
+                    @click="open = !open">
               <span class="up-dept-tree__caret" aria-hidden="true">▸</span>
               <span class="up-dept-tree__name">
                 {{ dept.label }}
@@ -193,7 +201,7 @@
               <span class="up-dept-tree__count">{{ dept.members|length }}</span>
             </button>
 
-            <ul class="up-dept-tree__body" role="group">
+            <ul class="up-dept-tree__body" role="group" x-show="open" x-cloak>
               {% for member in dept.members %}
                 <li class="up-dept-member {% if member.is_you %}up-dept-member--you{% endif %}">
                   <span class="up-dept-member__avatar {% if member.is_head %}up-dept-member__avatar--head{% endif %}"

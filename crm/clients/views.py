@@ -1,13 +1,22 @@
-from django.http import JsonResponse
-from django.views import View
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.http import JsonResponse
+from django.utils.decorators import method_decorator
+from django.views import View
 
 from crm.clients.models import Client
+from crm.users.utils import user_has_perm
 
 
-
+# claude — раньше эти эндпоинты отвечали без аутентификации (URL смонтирован
+# вне /admin/). Любой аноним мог дёрнуть `/clients/search/?q=A` и выгрузить
+# список клиентов. Закрываем: требуем login + permission view_clients.
+@method_decorator(login_required, name="dispatch")
 class ClientSearchView(View):
     def get(self, request):
+        if not user_has_perm(request.user, "view_clients"):
+            return JsonResponse({"results": []}, status=403)
+
         q = request.GET.get("q", "").strip()
 
         if not q:
@@ -44,7 +53,12 @@ class ClientSearchView(View):
 
 
 
+# claude — то же, что для ClientSearchView: autofill раньше работал
+# анонимно. Закрываем тем же permission'ом (view_clients).
+@login_required
 def client_autofill(request):
+    if not user_has_perm(request.user, "view_clients"):
+        return JsonResponse({"error": "forbidden"}, status=403)
     nip = request.GET.get("nip")
     if not nip:
         return JsonResponse({"error": "no_nip"}, status=400)
