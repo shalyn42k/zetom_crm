@@ -248,10 +248,10 @@ UNFOLD = {
                 ],
             },
 
-            # claude — Системные / аудит логи. `view_admin_panel` пока нигде
-            # не enforce'ится в коде (см. DOCS/rbac.md §3.4), но используем
-            # его здесь forward-compatibly. Activity Log пока живой только для
-            # RequestMain (см. DOCS/rbac.md / TODO).
+            # claude — Системные / аудит логи. Гейты совпадают с теми, что
+            # стоят на самих ModelAdmin'ах (LogEntryAdmin / NotificationAdmin /
+            # EmailNotificationAdmin), иначе пункт сайдбара виден / скрыт
+            # рассинхронно с реальным доступом.
             {
                 "title": "System",
                 "collapsible": True,
@@ -261,7 +261,7 @@ UNFOLD = {
                         "icon": "history",
                         "link": "/admin/admin/logentry/",
                         "permission": lambda request: user_has_perm(
-                            request.user, "view_admin_panel"
+                            request.user, "view_logs"
                         ),
                     },
                     {
@@ -271,7 +271,7 @@ UNFOLD = {
                             "admin:notification_notification_changelist"
                         ),
                         "permission": lambda request: user_has_perm(
-                            request.user, "view_admin_panel"
+                            request.user, "view_notification_log"
                         ),
                     },
                     {
@@ -281,7 +281,7 @@ UNFOLD = {
                             "admin:notification_emailnotification_changelist"
                         ),
                         "permission": lambda request: user_has_perm(
-                            request.user, "view_admin_panel"
+                            request.user, "view_email_log"
                         ),
                     },
                 ],
