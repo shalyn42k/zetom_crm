@@ -18,7 +18,7 @@ def create_user_profile(sender, instance, created, **kwargs):
         return
 
     default_role, _ = Role.objects.get_or_create(
-        code="specialist", defaults={"name": "Специалист"}
+        code="specialist", defaults={"name": "Specialist"}
     )
 
     UserProfile.objects.create(user=instance, role=default_role)
