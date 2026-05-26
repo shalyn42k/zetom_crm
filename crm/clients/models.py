@@ -1,7 +1,8 @@
 from django.db import models
-
 from phonenumber_field.modelfields import PhoneNumberField
 
+# claude
+from crm.clients.validators import normalize_nip, validate_nip
 
 
 class Client(models.Model):
@@ -9,7 +10,12 @@ class Client(models.Model):
     last_name = models.CharField("Last name", max_length=100, blank=True, null=True)
 
     company_name = models.CharField("Company name", max_length=255, blank=True, null=True)
-    company_nip = models.CharField("NIP", max_length=20, blank=True, null=True, db_index=True)
+    # claude — max_length=20 оставлен на случай исторических записей с разделителями;
+    # новые значения нормализуются в clean() до 10 цифр.
+    company_nip = models.CharField(
+        "NIP", max_length=20, blank=True, null=True, db_index=True,
+        validators=[validate_nip],
+    )
 
     email = models.EmailField("Email", blank=True, null=True)
     phone = PhoneNumberField(null=True, blank=True)
@@ -21,6 +27,12 @@ class Client(models.Model):
     class Meta:
         verbose_name = "Client"
         verbose_name_plural = "Clients"
+
+    # claude
+    def clean(self):
+        super().clean()
+        if self.company_nip:
+            self.company_nip = normalize_nip(self.company_nip)
 
     def __str__(self):
         if self.company_name:
