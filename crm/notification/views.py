@@ -7,11 +7,12 @@ sidebar/topbar Unfold. Layout — handoff V1 (см. design_handoff_notifications
 from datetime import timedelta
 
 # Django imports
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -20,11 +21,12 @@ from django.views.decorators.http import require_POST
 # Local imports
 from crm.notification.models import Notification, NotificationKind
 from crm.notification.services import inapp_service
-from crm.notification.utils import render_notification, target_url
+from crm.notification.utils import (
+    render_notification, target_url, unread_count,
+)
 from crm.users.utils import user_has_perm
 
-# claude — handoff V1 диктует 10 на страницу.
-INBOX_PAGE_SIZE = 10
+INBOX_PAGE_SIZE = settings.PAGE_SIZE
 
 # claude — какие kind'ы вообще существуют, для chip-фильтра в шаблоне.
 KIND_META = {
@@ -225,6 +227,16 @@ def mark_read(request, pk):
     if tgt:
         return redirect(tgt)
     return redirect(reverse("notification:inbox"))
+
+
+# claude — лёгкий JSON-эндпоинт для polling'а из admin-шаблона (sidebar badge,
+# account dropdown, document.title). Использует тот же `unread_count`, что и
+# context_processor для серверного рендера.
+@login_required
+def unread_count_json(request):
+    response = JsonResponse({"count": unread_count(request.user)})
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 # claude

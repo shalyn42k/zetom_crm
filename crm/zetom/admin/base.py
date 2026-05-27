@@ -37,9 +37,6 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
     """Shared base for RequestNull / RequestMain / Oferta / Zlecenie /
     Wniosek admins. Wires RBAC permissions and visibility filter."""
 
-    # claude — 10 per page across every Req-changelist; Django default is 100.
-    list_per_page = 10
-
     # RBAC
     def has_view_permission(self, request, obj=None):
         return user_has_perm(request.user, "view_requests")

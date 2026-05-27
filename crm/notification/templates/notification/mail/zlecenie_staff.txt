@@ -1,27 +1,25 @@
-{% comment %}Письмо стаффу: пользователь нажал "Mail" по существующему Zlecenie.
+{% load i18n %}{% comment %}Письмо стаффу: пользователь нажал "Mail" по существующему Zlecenie.
    Контекст рендера:
        document  — Zlecenie
        parent    — document.from_main (RequestMain)
        sender    — request.user, инициатор отправки
-   Первая строка — тема письма, всё остальное — тело.
-   Шаблон-черновик, тексты будут уточняться.{% endcomment %}
-Новый заказ требует внимания: ZLC-{{ document.created_at|date:"Y" }}-{{ document.pk|stringformat:"04d" }} ({{ parent.company_name|default:"—" }})
+   Первая строка — тема, остальное — тело.{% endcomment %}{% trans "New order needs attention:" %} ZLC-{{ document.created_at|date:"Y" }}-{{ document.pk|stringformat:"04d" }} ({{ parent.company_name|default:"—" }})
 
-Здравствуйте.
+{% trans "Hello," %}
 
-По заявке REQ-{{ parent.created_at|date:"Y" }}-{{ parent.pk|stringformat:"04d" }} от {{ parent.company_name|default:"клиента" }} запущен заказ (Zlecenie).
+{% trans "An order has been started for request" %} REQ-{{ parent.created_at|date:"Y" }}-{{ parent.pk|stringformat:"04d" }} {% trans "from" %} {{ parent.company_name|default:"the client" }}.
 
-Реквизиты заказа:
-  Номер заказа: ZLC-{{ document.created_at|date:"Y" }}-{{ document.pk|stringformat:"04d" }}
-  Контактное лицо: {{ document.full_name|default:parent.full_name }}
-  Телефон: {{ document.phone|default:parent.phone }}
-  Email клиента: {{ document.email|default:parent.email }}
-{% if document.deadline %}  Срок: {{ document.deadline|date:"d.m.Y" }}{% endif %}
-{% if document.price %}  Сумма: {{ document.price }} PLN{% endif %}
+{% trans "Order details:" %}
+  {% trans "Order number:" %} ZLC-{{ document.created_at|date:"Y" }}-{{ document.pk|stringformat:"04d" }}
+  {% trans "Contact:" %} {{ document.full_name|default:parent.full_name }}
+  {% trans "Phone:" %} {{ document.phone|default:parent.phone }}
+  {% trans "Client email:" %} {{ document.email|default:parent.email }}
+{% if document.deadline %}  {% trans "Deadline:" %} {{ document.deadline|date:"Y-m-d" }}{% endif %}
+{% if document.price %}  {% trans "Amount:" %} {{ document.price }} PLN{% endif %}
 
-Комментарий по заказу:
+{% trans "Notes:" %}
 {{ document.notes|default:"—" }}
 
-После отправки этого письма статус заказа в CRM меняется на "Ожидание" (waiting).
+{% trans "After this email is sent, the order status in CRM changes to \"waiting\"." %}
 
-Инициатор отправки: {% if sender %}{{ sender.get_full_name|default:sender.username }}{% else %}система{% endif %}
+{% trans "Sent by:" %} {% if sender %}{{ sender.get_full_name|default:sender.username }}{% else %}{% trans "system" %}{% endif %}

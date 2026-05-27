@@ -180,8 +180,8 @@ html.dark,
   cursor: pointer;
   user-select: none;
   list-style: none;
-  font-size: 12px; font-weight: 600;
-  color: var(--up-text); text-transform: uppercase; letter-spacing: 0.04em;
+  font-size: 13.5px; font-weight: 600;
+  color: var(--up-text);
 }
 .up-perm-group__summary::-webkit-details-marker { display: none; }
 .up-perm-group__summary:hover { background: color-mix(in oklab, var(--up-text) 4%, transparent); }

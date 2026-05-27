@@ -1,0 +1,24 @@
+/* claude — pill-бейдж непрочитанных нотификаций. Заполняется JS-ом
+   (static/admin/js/notification_badge.js) на ссылках /notifications/. */
+
+.js-unread-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    background-color: var(--color-primary-500, #16a34a);
+    color: #fff;
+    white-space: nowrap;
+}
+
+html.dark .js-unread-badge {
+    background-color: var(--color-primary-600, #16a34a);
+    color: #fff;
+}

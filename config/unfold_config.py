@@ -2,20 +2,7 @@
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
-from crm.notification.utils import unread_count
 from crm.users.utils import user_has_perm
-
-
-# claude — формат строки "Notifications (3)" / "Notifications" для ACCOUNT dropdown
-def _notifications_title(request):
-    count = unread_count(getattr(request, "user", None))
-    base = _("Notifications")
-    return f"{base} ({count})" if count else base
-
-
-# claude — link на нашу кастомную inbox-страницу (см. crm.notification.urls)
-def _notifications_link(request):
-    return reverse("notification:inbox")
 
 UNFOLD = {
     "SITE_TITLE": "Zetom CRM",
@@ -41,12 +28,6 @@ UNFOLD = {
                     args=[request.user.pk],
                 ),
             },
-            # claude
-            {
-                "title": _notifications_title,
-                "link": _notifications_link,
-                "icon": "notifications",
-            },
         ],
     },
 
@@ -60,6 +41,19 @@ UNFOLD = {
     },
 
     "LOGIN": {},
+
+    # claude — глобальные ассеты Unfold-админки.
+    # clickable_rows: клик по любой ячейке changelist открывает change-view.
+    # notification_badge: polling /notifications/unread-count/ → бейдж в
+    # sidebar/account-dropdown + префикс "(N) " в title вкладки.
+    "STYLES": [
+        lambda request: static("admin/css/clickable_rows.css"),
+        lambda request: static("admin/css/notification_badge.css"),
+    ],
+    "SCRIPTS": [
+        lambda request: static("admin/js/clickable_rows.js"),
+        lambda request: static("admin/js/notification_badge.js"),
+    ],
 
     "SITE_URL": "https://www.zetom.eu/",
     "SHOW_HISTORY": True,

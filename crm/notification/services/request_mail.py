@@ -27,10 +27,10 @@ _DOC_PREFIX = {
     "Zlecenie": "ZLC",
     "Wniosek": "WNI",
 }
-_DOC_KIND_RU = {
-    "Oferta": "оферта",
-    "Zlecenie": "заказ",
-    "Wniosek": "заявление",
+_DOC_KIND_LABEL = {
+    "Oferta": "offer",
+    "Zlecenie": "order",
+    "Wniosek": "application",
 }
 
 CLIENT_IN_PROGRESS_TEMPLATE = "notification/mail/client_in_progress.txt"
@@ -111,7 +111,7 @@ def send_document_to_client(document):
     rendered = render_to_string(CLIENT_IN_PROGRESS_TEMPLATE, {
         "document": document,
         "parent": parent,
-        "document_kind": _DOC_KIND_RU.get(kind, kind.lower()),
+        "document_kind": _DOC_KIND_LABEL.get(kind, kind.lower()),
         "document_code": _document_code(document),
     })
     subject, body = _split_subject_body(rendered)
