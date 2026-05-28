@@ -1,22 +1,21 @@
-{% comment %}Автописьмо клиенту: документ перешёл в статус "in_progress".
+{% load i18n %}{% comment %}Автописьмо клиенту: документ перешёл в статус "in_progress".
    Используется триггером Б из crm/notification/signals.py для всех трёх
-   типов документов — тип передаётся переменной document_kind, чтобы
-   подставить корректное слово.
+   типов документов — тип передаётся переменной document_kind ("offer" /
+   "order" / "application"), чтобы подставить корректное слово.
    Контекст рендера:
        document       — Oferta / Zlecenie / Wniosek
        parent         — document.from_main (RequestMain)
-       document_kind  — "оферта" | "заказ" | "заявление"  (русский)
+       document_kind  — "offer" | "order" | "application"
        document_code  — короткий код, например "OFR-2026-0042"
-   Первая строка — тема. Шаблон-черновик.{% endcomment %}
-{{ document_code }}: ваш {{ document_kind }} принят в работу
+   Первая строка — тема.{% endcomment %}{{ document_code }}: {% trans "your" %} {{ document_kind }} {% trans "is now in progress" %}
 
-Здравствуйте{% if parent.first_name %}, {{ parent.first_name }}{% endif %}!
+{% trans "Hello" %}{% if parent.first_name %}, {{ parent.first_name }}{% endif %}!
 
-Сообщаем, что ваш {{ document_kind }} {{ document_code }} принят в работу.
-По заявке {{ parent.company_name|default:"" }} ({{ parent.created_at|date:"d.m.Y" }}).
+{% trans "We're letting you know that your" %} {{ document_kind }} {{ document_code }} {% trans "has been accepted and is now in progress." %}
+{% trans "Linked to request from" %} {{ parent.company_name|default:"" }} ({{ parent.created_at|date:"Y-m-d" }}).
 
-Мы свяжемся с вами при изменении статуса либо при необходимости уточнить детали.
-Если у вас появятся вопросы — просто ответьте на это письмо.
+{% trans "We'll get back to you when the status changes or if any details need to be clarified." %}
+{% trans "If you have any questions, simply reply to this email." %}
 
-С уважением,
-команда Zetom
+{% trans "Kind regards," %}
+{% trans "Zetom team" %}

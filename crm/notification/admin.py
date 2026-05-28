@@ -39,7 +39,6 @@ class NotificationAdmin(ModelAdmin):
     )
     exclude = ("payload",)
     ordering = ("-created_at",)
-    list_per_page = 10
 
     # claude — append-only лог. view гейтится permission'ом, add/change/delete
     # запрещены всем (включая суперюзера), чтобы аудит был immutable.
@@ -94,7 +93,6 @@ class EmailNotificationAdmin(ModelAdmin):
     )
     exclude = ("payload",)
     ordering = ("-created_at",)
-    list_per_page = 10
 
     # claude — то же что для NotificationAdmin, только другой permission-код.
     def has_view_permission(self, request, obj=None):

@@ -39,6 +39,11 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
+# claude — дефолтный размер страницы для всех changelist'ов (Django admin + Unfold)
+# и кастомного inbox-paginator'а. Применяется через monkey-patch
+# `django.contrib.admin.ModelAdmin.list_per_page` в NotificationConfig.ready().
+PAGE_SIZE = int(os.getenv("PAGE_SIZE", "20"))
+
 # Прод-настройки безопасности (включаются автоматически при DEBUG=False).
 # Cloudflare терминирует TLS, поэтому редирект и сертификаты не наша забота.
 if not DEBUG:
@@ -104,7 +109,6 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                "crm.notification.context_processors.unread_notifications",
             ],
         },
     },
@@ -172,7 +176,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Europe/Warsaw"
 
 USE_I18N = True
 
