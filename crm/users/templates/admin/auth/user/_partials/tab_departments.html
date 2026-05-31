@@ -90,7 +90,8 @@
                     hx-target="#dept-tab" hx-swap="outerHTML"
                     hx-confirm="{% trans "Demote this department from primary?" %}"
                     title="{% trans "Demote from primary" %}"
-                    aria-label="{% trans "Demote from primary" %}">
+                    aria-label="{% trans "Demote from primary" %}"
+                    {% if not can_edit_departments %}disabled aria-disabled="true"{% endif %}>
               <span aria-hidden="true">↓</span>
             </button>
             <button type="button"
@@ -107,7 +108,8 @@
                     hx-post="{% url 'admin:auth_user_promote_department' original.pk dept.code %}"
                     hx-target="#dept-tab" hx-swap="outerHTML"
                     title="{% trans "Promote to primary" %}"
-                    aria-label="{% trans "Promote to primary" %}">
+                    aria-label="{% trans "Promote to primary" %}"
+                    {% if not can_edit_departments %}disabled aria-disabled="true"{% endif %}>
               <span aria-hidden="true">↑</span>
             </button>
             <button type="button"
@@ -124,7 +126,8 @@
                     hx-post="{% url 'admin:auth_user_promote_department' original.pk dept.code %}"
                     hx-target="#dept-tab" hx-swap="outerHTML"
                     title="{% trans "Promote to primary" %}"
-                    aria-label="{% trans "Promote to primary" %}">
+                    aria-label="{% trans "Promote to primary" %}"
+                    {% if not can_edit_departments %}disabled aria-disabled="true"{% endif %}>
               <span aria-hidden="true">↑</span>
             </button>
             <button type="button"
@@ -132,7 +135,8 @@
                     hx-delete="{% url 'admin:auth_user_remove_department' original.pk dept.code %}"
                     hx-target="#dept-tab" hx-swap="outerHTML"
                     hx-confirm="{% trans "Remove user from this department?" %}"
-                    aria-label="{% trans "Remove from department" %}">
+                    aria-label="{% trans "Remove from department" %}"
+                    {% if not can_edit_departments %}disabled aria-disabled="true"{% endif %}>
               <span aria-hidden="true">×</span>
             </button>
           {% endif %}
@@ -142,23 +146,31 @@
       {% endfor %}
 
       {% if available_departments %}
-        <div class="up-dept-add-panel" id="dept-add-panel">
-          <label class="up-search-input" for="dept-search">
-            <span class="up-visually-hidden">{% trans "Search departments" %}</span>
-            <input id="dept-search"
-                   type="search"
-                   autocomplete="off"
-                   name="q"
-                   placeholder="{% trans "Search department by name or code…" %}"
-                   hx-get="{% url 'admin:auth_user_search_departments' original.pk %}"
-                   hx-trigger="keyup changed delay:200ms"
-                   hx-target="#dept-search-results">
-          </label>
+        {% if can_edit_departments %}
+          <div class="up-dept-add-panel" id="dept-add-panel">
+            <label class="up-search-input" for="dept-search">
+              <span class="up-visually-hidden">{% trans "Search departments" %}</span>
+              <input id="dept-search"
+                     type="search"
+                     autocomplete="off"
+                     name="q"
+                     placeholder="{% trans "Search department by name or code…" %}"
+                     hx-get="{% url 'admin:auth_user_search_departments' original.pk %}"
+                     hx-trigger="keyup changed delay:200ms"
+                     hx-target="#dept-search-results">
+            </label>
 
-          <ul class="up-picker-list" id="dept-search-results" role="listbox">
-            {% include "admin/auth/user/_partials/_dept_search_results.html" %}
-          </ul>
-        </div>
+            <ul class="up-picker-list" id="dept-search-results" role="listbox">
+              {% include "admin/auth/user/_partials/_dept_search_results.html" %}
+            </ul>
+          </div>
+        {% else %}
+          <div class="up-dept-add-panel up-dept-add-panel--readonly" id="dept-add-panel">
+            <p class="up-help">
+              {% trans "You can view departments, but you need edit_users permission to change them." %}
+            </p>
+          </div>
+        {% endif %}
       {% endif %}
 
       <p class="up-help">

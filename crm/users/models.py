@@ -13,6 +13,9 @@ class Permission(models.Model):
     code = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=255)
 
+    # claude — категории прав для группировки в UI и логике RBAC
+    category = models.CharField(max_length=100, default="system")
+
     def __str__(self):
         return self.name
 

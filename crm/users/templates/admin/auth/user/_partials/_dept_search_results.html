@@ -11,7 +11,8 @@
             class="up-btn up-btn--sm up-btn--primary"
             hx-post="{% url 'admin:auth_user_add_department' original.pk %}"
             hx-vals='{"code": "{{ dept.code }}"}'
-            hx-target="#dept-tab" hx-swap="outerHTML">
+            hx-target="#dept-tab" hx-swap="outerHTML"
+            {% if not can_edit_departments %}disabled aria-disabled="true"{% endif %}>
       {% trans "Add" %}
     </button>
   </li>
