@@ -13,13 +13,13 @@ print("RBAC SIGNALS LOADED")
 
 @receiver(post_migrate)
 def create_rbac_defaults(sender, **kwargs):
-    # Run only for crm.users app
+    # Запускаем только для приложения crm.users
     if sender.name != "crm.users":
         return
 
     print("RBAC SIGNAL RUNNING FOR USERS")
 
-    # Ensure tables exist
+    # Проверяем, что таблицы существуют
     try:
         Permission.objects.exists()
         Role.objects.exists()
@@ -64,11 +64,15 @@ def create_rbac_defaults(sender, **kwargs):
         ("delete_clients", "Delete clients"),
     ]
 
+    # Создание permissions
     perm_objects = {}
     for code, name in permissions_data:
         perm, _ = Permission.objects.get_or_create(
             code=code,
-            defaults={"name": name}
+            defaults={
+                "name": name,
+                "category": "system",  # claude — обязательная категория для UI-группировки
+            }
         )
         perm_objects[code] = perm
 
@@ -79,8 +83,9 @@ def create_rbac_defaults(sender, **kwargs):
     valid_codes = {code for code, _ in permissions_data}
     Permission.objects.exclude(code__in=valid_codes).delete()
 
-    # claude — наборы по матрице DOCS/rbac.md §5. all_seeing по дизайну
-    # пустая роль-шаблон, права раздаются индивидуально через extra_permissions.
+    # claude — наборы по матрице DOCS/rbac.md §5.
+    # all_seeing по дизайну пустая роль-шаблон, права раздаются индивидуально
+    # через extra_permissions.
     roles_data = {
         "admin": {
             "name": "Administrator",
@@ -141,6 +146,7 @@ def create_rbac_defaults(sender, **kwargs):
         },
     }
 
+    # Создание ролей
     for code, data in roles_data.items():
         role, _ = Role.objects.get_or_create(
             code=code,
