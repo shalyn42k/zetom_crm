@@ -14,7 +14,7 @@ prepended in `get_urls`, names prefixed with the model's admin-url label).
 """
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.urls import path
@@ -83,6 +83,9 @@ class DepartmentActionsMixin:
     def _can_grant_head(self, request):
         return user_has_perm(request.user, "grant_head")
 
+    def _can_edit_departments(self, request):
+        return user_has_perm(request.user, "edit_users")
+
     # ---------- Context builder ----------
 
     def _build_dept_context(self, request, user):
@@ -140,6 +143,7 @@ class DepartmentActionsMixin:
         return {
             "my_departments": my_departments,
             "available_departments": available_departments,
+            "can_edit_departments": self._can_edit_departments(request),
             # claude
             "can_grant_head": self._can_grant_head(request),
         }
@@ -157,6 +161,8 @@ class DepartmentActionsMixin:
     def add_department_action(self, request, object_id):
         if request.method != "POST":
             return redirect("admin:auth_user_change", object_id)
+        if not self._can_edit_departments(request):
+            return HttpResponseForbidden("Permission denied")
         user = get_object_or_404(User, pk=object_id)
         code = request.POST.get("code")
         if code not in DepartmentsVariants.values:
@@ -170,6 +176,8 @@ class DepartmentActionsMixin:
     def remove_department_action(self, request, object_id, dept_code):
         if request.method not in ("POST", "DELETE"):
             return redirect("admin:auth_user_change", object_id)
+        if not self._can_edit_departments(request):
+            return HttpResponseForbidden("Permission denied")
         user = get_object_or_404(User, pk=object_id)
         if dept_code not in DepartmentsVariants.values:
             return HttpResponseBadRequest("Invalid department code")
@@ -197,6 +205,8 @@ class DepartmentActionsMixin:
     def promote_department_action(self, request, object_id, dept_code):
         if request.method != "POST":
             return redirect("admin:auth_user_change", object_id)
+        if not self._can_edit_departments(request):
+            return HttpResponseForbidden("Permission denied")
         user = get_object_or_404(User, pk=object_id)
         if dept_code not in DepartmentsVariants.values:
             return HttpResponseBadRequest("Invalid department code")
@@ -211,6 +221,8 @@ class DepartmentActionsMixin:
     def demote_department_action(self, request, object_id, dept_code):
         if request.method != "POST":
             return redirect("admin:auth_user_change", object_id)
+        if not self._can_edit_departments(request):
+            return HttpResponseForbidden("Permission denied")
         user = get_object_or_404(User, pk=object_id)
         if dept_code not in DepartmentsVariants.values:
             return HttpResponseBadRequest("Invalid department code")
