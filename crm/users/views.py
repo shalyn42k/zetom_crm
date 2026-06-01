@@ -108,3 +108,4 @@ class UserProfileEditView(View):
             return redirect("user_profile_edit")
 
         return render(request, "users/user_profile_edit.html", {"form": form})
+

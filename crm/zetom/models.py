@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 # Other imports
+from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
 # Other imports
 from safedelete.config import SOFT_DELETE_CASCADE
@@ -15,21 +16,21 @@ from crm.status_manager.services.statuses import RequestStatus, Status
 
 
 class DepartmentsVariants(models.TextChoices):
-    DEPARTMENT_0 = "DEPARTMENT_0", "Research Team"
-    DEPARTMENT_1 = "DEPARTMENT_1", "Calibration Team"
-    DEPARTMENT_2 = "DEPARTMENT_2", "Length and Angle Lab"
-    DEPARTMENT_3 = "DEPARTMENT_3", "Electrical Lab"
-    DEPARTMENT_4 = "DEPARTMENT_4", "Mechanical Lab"
-    DEPARTMENT_5 = "DEPARTMENT_5", "Heating Equipment Lab"
-    DEPARTMENT_6 = "DEPARTMENT_6", "Technical Office"
+    DEPARTMENT_0 = "DEPARTMENT_0", _("Research Team")
+    DEPARTMENT_1 = "DEPARTMENT_1", _("Calibration Team")
+    DEPARTMENT_2 = "DEPARTMENT_2", _("Length and Angle Lab")
+    DEPARTMENT_3 = "DEPARTMENT_3", _("Electrical Lab")
+    DEPARTMENT_4 = "DEPARTMENT_4", _("Mechanical Lab")
+    DEPARTMENT_5 = "DEPARTMENT_5", _("Heating Equipment Lab")
+    DEPARTMENT_6 = "DEPARTMENT_6", _("Technical Office")
 
 class RequestSource(models.TextChoices):
-    PHONE = "phone", "Phone"
-    EMAIL = "email", "Email"
-    SITE = "site", "Site"
-    PARENT = "main", "Parent"
-    MANUAL = "manual", "Manual"
-    OTHER = "other", "Other"
+    PHONE = "phone", _("Phone")
+    EMAIL = "email", _("Email")
+    SITE = "site", _("Site")
+    PARENT = "main", _("Parent")
+    MANUAL = "manual", _("Manual")
+    OTHER = "other", _("Other")
 
 
 
@@ -78,8 +79,8 @@ class RequestTemplate(SafeDeleteModel):
 
 class RequestNull(RequestTemplate):
     class Meta:
-        verbose_name = "Validation Window"
-        verbose_name_plural = "Validation Window"
+        verbose_name = _("Validation Window")
+        verbose_name_plural = _("Validation Window")
 
 
 class RequestMain(RequestTemplate):
@@ -99,8 +100,8 @@ class RequestMain(RequestTemplate):
     )
 
     class Meta:
-        verbose_name = "Information"
-        verbose_name_plural = "Information"
+        verbose_name = _("Information")
+        verbose_name_plural = _("Information")
 
 
 class Oferta(RequestTemplate):
@@ -112,8 +113,8 @@ class Oferta(RequestTemplate):
     notes = models.TextField(null=True, blank=True)
 
     class Meta:
-        verbose_name = "Offer"
-        verbose_name_plural = "Offers"
+        verbose_name = _("Offer")
+        verbose_name_plural = _("Offers")
 
 
 class Zlecenie(RequestTemplate):
@@ -126,8 +127,8 @@ class Zlecenie(RequestTemplate):
     deadline = models.DateField(null=True, blank=True)
 
     class Meta:
-        verbose_name = "Order"
-        verbose_name_plural = "Orders"
+        verbose_name = _("Order")
+        verbose_name_plural = _("Orders")
 
 
 class Wniosek(RequestTemplate):
@@ -139,17 +140,17 @@ class Wniosek(RequestTemplate):
     application_number = models.CharField(max_length=20, null=True, blank=True)
 
     class Meta:
-        verbose_name = "Application"
-        verbose_name_plural = "Applications"
+        verbose_name = _("Application")
+        verbose_name_plural = _("Applications")
 
-class DeletedRequest(RequestMain):  # proxy может открывать те же данные и в других классах 
+class DeletedRequest(RequestMain):  # proxy может открывать те же данные и в других классах
     class Meta:
         proxy = True
-        verbose_name = "Deleted Request"
-        verbose_name_plural = "Deleted Requests"
+        verbose_name = _("Deleted Request")
+        verbose_name_plural = _("Deleted Requests")
 
 class CancelledRequest(RequestMain):
     class Meta:
         proxy = True
-        verbose_name = "Cancelled Request"
-        verbose_name_plural = "Cancelled Requests"
+        verbose_name = _("Cancelled Request")
+        verbose_name_plural = _("Cancelled Requests")

@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load crispy_forms_tags %}
+{% load i18n crispy_forms_tags %}
 
 {% block content %}
 <div id="content-main">
@@ -13,11 +13,11 @@
         <div class="flex gap-2 mt-4">
             <button type="submit"
                     class="font-medium inline-flex items-center px-3 py-2 bg-blue-600 text-white">
-                Confirm
+                {% trans "Confirm" %}
             </button>
             <a href="{% url 'admin:zetom_requestmain_change' obj.pk %}"
                class="font-medium inline-flex items-center px-3 py-2 border border-gray-200 text-gray-700">
-                Cancel
+                {% trans "Cancel" %}
             </a>
         </div>
     </form>

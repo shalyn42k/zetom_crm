@@ -2,22 +2,23 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from crm.users.models import User
 
 
 class NotificationKind(models.TextChoices):
-    STATUS_CHANGE = "STATUS_CHANGE", "Status change"
-    REVIEW_REQUEST = "REVIEW_REQUEST", "Review request"
-    REVIEW_RESOLVED = "REVIEW_RESOLVED", "Review resolved"
-    ASSIGNMENT = "ASSIGNMENT", "Assignment"
-    SYSTEM = "SYSTEM", "System"
+    STATUS_CHANGE = "STATUS_CHANGE", _("Status change")
+    REVIEW_REQUEST = "REVIEW_REQUEST", _("Review request")
+    REVIEW_RESOLVED = "REVIEW_RESOLVED", _("Review resolved")
+    ASSIGNMENT = "ASSIGNMENT", _("Assignment")
+    SYSTEM = "SYSTEM", _("System")
 
 
 class EmailStatus(models.TextChoices):
-    PENDING = "PENDING", "Pending"
-    SENT = "SENT", "Sent"
-    FAILED = "FAILED", "Failed"
+    PENDING = "PENDING", _("Pending")
+    SENT = "SENT", _("Sent")
+    FAILED = "FAILED", _("Failed")
 
 
 class EmailNotification(models.Model):
@@ -64,7 +65,7 @@ class Notification(models.Model):
     template_name = models.CharField(max_length=255)
     payload = models.JSONField(
         default=dict,
-        help_text="Data to replace template placeholders.",
+        help_text=_("Data to replace template placeholders."),
     )
     target_content_type = models.ForeignKey(
         ContentType,
