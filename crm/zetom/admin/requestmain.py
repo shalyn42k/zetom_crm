@@ -255,6 +255,9 @@ class RequestMainAdmin(
         )
         context["open_review"] = latest_open_review(obj) if has_obj else None
         context["has_open_review"] = context["open_review"] is not None
+        context["can_change_request_status"] = user_has_perm(
+            request.user, "change_request_status"
+        )
 
         # claude — контекст для assigned_users.html: per-Req флаги owner +
         # права на управление списком. Список assigned сортируем owners-first,
