@@ -8,6 +8,7 @@ done
 echo "Postgres is up"
 
 python manage.py migrate --noinput
+python manage.py compilemessages
 python manage.py collectstatic --noinput --clear
 
 exec "$@"
