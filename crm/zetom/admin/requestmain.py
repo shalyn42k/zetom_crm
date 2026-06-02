@@ -154,9 +154,9 @@ class RequestMainAdmin(
             if reason:
                 obj._delete_reason = reason
                 self.delete_model(request, obj)
-                messages.success(request, "Request deleted.")
+                messages.success(request, _("Request deleted."))
                 return redirect("admin:zetom_requestmain_changelist")
-            messages.error(request, "Reason is required.")
+            messages.error(request, _("Reason is required."))
 
         form = ReasonForm()
         return render(

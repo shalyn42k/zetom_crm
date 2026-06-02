@@ -5,6 +5,7 @@ this module is loaded first and shouldn't pull in Crispy / heavy stuff.
 """
 from django import forms
 from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
@@ -18,19 +19,19 @@ class ReasonForm(forms.Form):
     (cancel / delete / inactive) and by Trash Restore."""
     reason = forms.CharField(
         widget=forms.Textarea,
-        label="Reason",
+        label=_("Reason"),
         required=True,
     )
 
- 
+
 class DepartmentsDisplayMixin:
     """Renders the ArrayField departments as a comma-separated list of
     labels in admin list_display / readonly_fields."""
 
-    @admin.display(description="Departments")
+    @admin.display(description=_("Departments"))
     def display_departments(self, obj):
         labels = dict(DepartmentsVariants.choices)
-        return ", ".join(labels.get(code, code) for code in obj.departments) or "—"
+        return ", ".join(str(labels.get(code, code)) for code in obj.departments) or "—"
 
 
 class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
@@ -55,7 +56,7 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
         qs = visible_requests_for(request.user, qs)
         return qs.prefetch_related("assigned_to")
 
-    @admin.display(description="Assigned")
+    @admin.display(description=_("Assigned"))
     def assignees_display(self, obj):
         users = obj.assigned_to.all()
         return ", ".join(u.username for u in users) or "—"
@@ -67,13 +68,8 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             "waiting": "secondary",
             "done": "success",
         },
-        description="Status",
+        description=_("Status"),
     )
     def colored_status(self, obj):
-        display_names = {
-            "new": "New",
-            "in_progress": "In Progress",
-            "waiting": "Waiting",
-            "done": "Done",
-        }
-        return obj.status, display_names.get(obj.status, obj.status)
+        from crm.status_manager.services.statuses import Status
+        return obj.status, str(Status(obj.status).label) if obj.status in Status.values else obj.status

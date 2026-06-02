@@ -68,10 +68,10 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
     form = CustomUserChangeForm
 
     fieldsets = (
-        ("Личные данные", {
+        (_("Personal info"), {
             "fields": ("username", "first_name", "last_name", "email", "job_title")
         }),
-        ("Доступ", {
+        (_("Access"), {
             "fields": ("role", "is_active", "is_staff", "is_superuser")
         }),
     )
@@ -278,7 +278,7 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
     #  Колонки в списке 
     def get_role(self, obj):
         return obj.profile.role if hasattr(obj, "profile") and obj.profile.role else None
-    get_role.short_description = "Роль"
+    get_role.short_description = _("Role")
     get_role.admin_order_field = "profile__role__name"
 
     # claude
@@ -286,12 +286,12 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
         if not hasattr(obj, "profile") or not obj.profile.departments:
             return None
         labels = dict(DepartmentsVariants.choices)
-        return ", ".join(labels.get(code, code) for code in obj.profile.departments)
+        return ", ".join(str(labels.get(code, code)) for code in obj.profile.departments)
     get_departments.short_description = _("Departments")
 
     def get_job_title(self, obj):
         return obj.profile.job_title if hasattr(obj, "profile") else None
-    get_job_title.short_description = "Должность"
+    get_job_title.short_description = _("Job title")
     get_job_title.admin_order_field = "profile__job_title"
 
     # claude — Раньше тут было `return True` безусловно: любой is_staff

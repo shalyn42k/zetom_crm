@@ -8,6 +8,7 @@ from django.contrib import admin, messages
 from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import path
+from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 
 from crm.status_manager.models import StatusHistory
@@ -115,12 +116,12 @@ class DeletedRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
         gate, but against the deleted_objects manager. Returns (obj, None) or
         (None, redirect)."""
         if not user_has_perm(request.user, perm):
-            messages.error(request, "You don't have permission for this action.")
+            messages.error(request, _("You don't have permission for this action."))
             return None, redirect("admin:zetom_deletedrequest_change", object_id)
         qs = visible_requests_for(request.user, RequestMain.deleted_objects.all())
         obj = qs.filter(pk=object_id).first()
         if obj is None:
-            messages.error(request, "Request not found.")
+            messages.error(request, _("Request not found."))
             return None, redirect("admin:zetom_deletedrequest_changelist")
         return obj, None
 
@@ -143,7 +144,7 @@ class DeletedRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             reason="Restored from trash",
             changed_by=request.user,
         )
-        messages.success(request, "Request restored.")
+        messages.success(request, _("Request restored."))
         return redirect("admin:zetom_requestmain_change", object_id)
 
     @transaction.atomic
@@ -157,5 +158,5 @@ class DeletedRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             return denied
         from safedelete.config import HARD_DELETE
         obj.delete(force_policy=HARD_DELETE)
-        messages.success(request, "Request permanently deleted.")
+        messages.success(request, _("Request permanently deleted."))
         return redirect("admin:zetom_deletedrequest_changelist")

@@ -111,11 +111,11 @@ class UserProfile(models.Model):
         main_set = set(self.main_departments or [])
         ordered = sorted(
             codes,
-            key=lambda c: (0 if c in main_set else 1, labels.get(c, c).lower()),
+            key=lambda c: (0 if c in main_set else 1, str(labels.get(c, c)).lower()),
         )
         head = ordered[:limit]
         extra = len(ordered) - limit
-        text = ", ".join(labels.get(c, c) for c in head)
+        text = ", ".join(str(labels.get(c, c)) for c in head)
         if extra > 0:
             text = f"{text}, +{extra}"
         return text

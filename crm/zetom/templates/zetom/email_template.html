@@ -117,7 +117,7 @@
 
         <div class="email-form-row">
             <div class="form-group">
-                <label for="id_first_name">First name</label>
+                <label for="id_first_name">{% trans "First name" %}</label>
                 <input type="text" id="id_first_name" name="first_name" required
                        placeholder="John"
                        value="{{ form.first_name.value|default:'' }}">
@@ -125,7 +125,7 @@
             </div>
 
             <div class="form-group">
-                <label for="id_last_name">Last name</label>
+                <label for="id_last_name">{% trans "Last name" %}</label>
                 <input type="text" id="id_last_name" name="last_name" required
                        placeholder="Johnson"
                        value="{{ form.last_name.value|default:'' }}">
@@ -134,7 +134,7 @@
         </div>
 
         <div class="form-group">
-            <label for="id_company_name">Company name</label>
+            <label for="id_company_name">{% trans "Company name" %}</label>
             <input type="text" id="id_company_name" name="company_name"
                    placeholder="Zetom Sp. z o.o."
                    value="{{ form.company_name.value|default:'' }}">
@@ -143,7 +143,7 @@
 
         <div class="email-form-row">
             <div class="form-group">
-                <label for="id_phone">Phone</label>
+                <label for="id_phone">{% trans "Phone" %}</label>
                 <input type="tel" id="id_phone" name="phone" required
                        placeholder="+48 000 000 000"
                        value="{{ form.phone.value|default:'' }}">
@@ -151,7 +151,7 @@
             </div>
 
             <div class="form-group">
-                <label for="id_email">Email</label>
+                <label for="id_email">{% trans "Email" %}</label>
                 <input type="email" id="id_email" name="email" required
                        placeholder="example@zetom.pl"
                        value="{{ form.email.value|default:'' }}">
@@ -160,9 +160,9 @@
         </div>
 
         <div class="form-group">
-            <label for="id_message">Message</label>
+            <label for="id_message">{% trans "Message" %}</label>
             <textarea id="id_message" name="message"
-                      placeholder="Long and very interesting note for noting your long and interesting text">{{ form.message.value|default:'' }}</textarea>
+                      placeholder="{% trans "Your message here" %}">{{ form.message.value|default:'' }}</textarea>
             {{ form.message.errors }}
         </div>
 

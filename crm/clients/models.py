@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
 
 # claude
@@ -6,27 +7,27 @@ from crm.clients.validators import normalize_nip, validate_nip
 
 
 class Client(models.Model):
-    first_name = models.CharField("First name", max_length=100, blank=True, null=True)
-    last_name = models.CharField("Last name", max_length=100, blank=True, null=True)
+    first_name = models.CharField(_("First name"), max_length=100, blank=True, null=True)
+    last_name = models.CharField(_("Last name"), max_length=100, blank=True, null=True)
 
-    company_name = models.CharField("Company name", max_length=255, blank=True, null=True)
+    company_name = models.CharField(_("Company name"), max_length=255, blank=True, null=True)
     # claude — max_length=20 оставлен на случай исторических записей с разделителями;
     # новые значения нормализуются в clean() до 10 цифр.
     company_nip = models.CharField(
-        "NIP", max_length=20, blank=True, null=True, db_index=True,
+        _("NIP"), max_length=20, blank=True, null=True, db_index=True,
         validators=[validate_nip],
     )
 
-    email = models.EmailField("Email", blank=True, null=True)
+    email = models.EmailField(_("Email"), blank=True, null=True)
     phone = PhoneNumberField(null=True, blank=True)
 
-    address = models.TextField("Address", blank=True, null=True)
+    address = models.TextField(_("Address"), blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "Client"
-        verbose_name_plural = "Clients"
+        verbose_name = _("Client")
+        verbose_name_plural = _("Clients")
 
     # claude
     def clean(self):

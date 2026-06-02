@@ -1,6 +1,7 @@
 from itertools import chain
 
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 
 from crm.status_manager.models import StatusHistory
 from crm.status_manager.services.statuses import RequestStatus, Status
@@ -33,7 +34,7 @@ def change_status(child, new_status, reason, user):
         return
 
     if new_status not in allowed:
-        raise ValueError("Недопустимый переход статуса")
+        raise ValueError(_("Invalid status transition."))
 
     child.status = new_status
     child.save()
