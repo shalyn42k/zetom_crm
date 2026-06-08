@@ -11,14 +11,17 @@ the POST, validates state, shows messages, and redirects back.
 # Django imports
 from django import forms
 from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponseForbidden
+from django.shortcuts import redirect
 from django.urls import path
 from django.utils.translation import gettext_lazy as _
 
 # Local imports
 from crm.notification.services import request_mail
 from crm.status_manager.services.statuses import Status
+from crm.users.utils import user_has_perm
 from crm.zetom.models import Oferta, RequestMain, Wniosek, Zlecenie
+from crm.zetom.services.visibility import visible_requests_for
 
 # claude
 KIND_TO_MODEL = {
@@ -55,10 +58,23 @@ class RequestMailMixin:
         ]
         return custom + urls
 
+    def _get_req_for_mail_action(self, request, object_id):
+        if not user_has_perm(request.user, "send_documents"):
+            return None, HttpResponseForbidden(
+                _("You don't have permission for this action.")
+            )
+        qs = visible_requests_for(request.user, RequestMain.objects.all())
+        obj = qs.filter(pk=object_id).first()
+        if obj is None:
+            return None, HttpResponseForbidden(_("Request not found."))
+        return obj, None
+
     def mail_document_action(self, request, object_id):
         if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
-        obj = get_object_or_404(RequestMain, pk=object_id)
+        obj, forbidden = self._get_req_for_mail_action(request, object_id)
+        if forbidden is not None:
+            return forbidden
 
         kind = (request.POST.get("kind") or "").lower()
         doc_model = KIND_TO_MODEL.get(kind)
@@ -86,7 +102,9 @@ class RequestMailMixin:
     def mail_freeform_action(self, request, object_id):
         if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
-        obj = get_object_or_404(RequestMain, pk=object_id)
+        obj, forbidden = self._get_req_for_mail_action(request, object_id)
+        if forbidden is not None:
+            return forbidden
 
         form = FreeformMailForm(request.POST)
         if not form.is_valid():
