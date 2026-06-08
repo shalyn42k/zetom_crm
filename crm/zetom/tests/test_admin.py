@@ -168,6 +168,41 @@ class MainAdminActionTests(TestCase):
         self.main.refresh_from_db()
         self.assertEqual(self.main.status, RequestStatus.cancelled)
 
+    @patch("crm.zetom.admin.requestmain_mail.user_has_perm", return_value=False)
+    def test_mail_freeform_returns_403_without_send_documents_permission(
+        self, mail_perm_mock, _
+    ):
+        self.main.assigned_to.add(self.user)
+        url = reverse("admin:zetom_requestmain_mail_freeform", args=[self.main.pk])
+        response = self.client.post(url, data={"subject": "test", "body": "test message"})
+        self.assertEqual(response.status_code, 403)
+
+    @patch("crm.zetom.admin.requestmain_mail.user_has_perm", return_value=False)
+    def test_mail_document_returns_403_without_send_documents_permission(
+        self, mail_perm_mock, _
+    ):
+        self.main.assigned_to.add(self.user)
+        oferta = Oferta.objects.create(
+            **BASE_DATA,
+            from_main=self.main,
+            status=Status.in_progress,
+        )
+        url = reverse("admin:zetom_requestmain_mail_document", args=[self.main.pk])
+        response = self.client.post(
+            url,
+            data={"kind": "oferta", "document_id": oferta.pk},
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_mail_freeform_returns_403_for_hidden_request(self, _):
+        hidden = get_user_model().objects.create_user(
+            username="hidden", email="hidden@example.com", password="x", is_staff=True
+        )
+        self.client.force_login(hidden)
+        url = reverse("admin:zetom_requestmain_mail_freeform", args=[self.main.pk])
+        response = self.client.post(url, data={"subject": "test", "body": "test message"})
+        self.assertEqual(response.status_code, 403)
+
 
 # ─────────────────────────── ChildSaveModel (Oferta) ──────────────────────────
 
