@@ -1,0 +1,100 @@
+{% load i18n %}
+{% comment %}
+Pre-save duplicate popup — mini Validation Window with steps 02/03/04.
+Shell rendered server-side; steps 02 (dupe list) and 03 (client candidates)
+are filled by requestmain_dupe_check.js using the check-duplicates API.
+Step 04 (assignment) is rendered here from server context.
+All choices are collected as hidden inputs before form submission.
+{% endcomment %}
+
+{# Anchor: JS reads data-urls from here #}
+<div id="rm-dupe-check"
+     data-url="{% url 'admin:zetom_requestmain_check_duplicates' %}"
+     data-dup-action-url="{% url 'admin:zetom_requestmain_dup_request_action' %}"
+     data-form-id="{{ opts.model_name }}_form"></div>
+
+<div id="rm-dupe-modal" class="rm-dupe-modal" hidden>
+  <div class="rm-dupe-modal__box" role="dialog" aria-modal="true" aria-labelledby="rm-popup-title">
+
+    {# Step nav #}
+    <div class="rm-popup-steps">
+      <button type="button" class="rm-popup-step active" data-step="2">
+        <span class="rm-popup-step__n">02</span> {% trans "Duplicate Check" %}
+      </button>
+      <button type="button" class="rm-popup-step" data-step="3">
+        <span class="rm-popup-step__n">03</span> {% trans "Link to Client" %}
+      </button>
+      <button type="button" class="rm-popup-step" data-step="4">
+        <span class="rm-popup-step__n">04</span> {% trans "Assignment" %}
+      </button>
+    </div>
+
+    {# Step 02: Duplicate Check #}
+    <div class="rm-popup-section" data-section="2">
+      <h3 id="rm-popup-title" class="rm-popup-section__h">{% trans "Possible duplicates found" %}</h3>
+      <p class="rm-popup-section__sub">{% trans "Similar records already exist. Act on them or proceed to save." %}</p>
+      <ul id="rm-dupe-list" class="rm-dupe-modal__list"></ul>
+      <p id="rm-dupe-empty" class="rm-popup-ok" hidden>✓ {% trans "No duplicates found — safe to save." %}</p>
+    </div>
+
+    {# Step 03: Link to Client #}
+    <div class="rm-popup-section" data-section="3" hidden>
+      <h3 class="rm-popup-section__h">{% trans "Link to Client" %}</h3>
+      <p class="rm-popup-section__sub">{% trans "Optionally link this request to a client record." %}</p>
+      <div id="rm-popup-clients" class="rm-popup-cands"></div>
+      <label class="rm-popup-opt">
+        <input type="radio" name="popup_client_internal" value="create" id="popup-create">
+        <span>{% trans "Create a new client from this request" %}</span>
+      </label>
+      <label class="rm-popup-opt">
+        <input type="radio" name="popup_client_internal" value="unlinked" id="popup-skip" checked>
+        <span>{% trans "Skip — don't link a client now" %}</span>
+      </label>
+    </div>
+
+    {# Step 04: Assignment #}
+    <div class="rm-popup-section" data-section="4" hidden>
+      <h3 class="rm-popup-section__h">{% trans "Assignment" %}</h3>
+      <p class="rm-popup-section__sub">{% trans "Set departments and owners for the new request. You can change these later." %}</p>
+
+      <div class="rm-popup-assign">
+        <div class="rm-popup-assign__col">
+          <label class="rm-popup-assign__label">{% trans "Departments" %}</label>
+          <div class="rm-popup-depts">
+            {% for code, label in departments_choices %}
+              <label class="rm-popup-chip">
+                <input type="checkbox" name="popup_departments" value="{{ code }}">{{ label }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="rm-popup-assign__col">
+          <label class="rm-popup-assign__label">{% trans "Owners" %}</label>
+          <div class="rm-popup-owners">
+            {% for u in eligible_users_popup %}
+              <label class="rm-popup-urow">
+                <input type="checkbox" name="popup_owners" value="{{ u.pk }}">
+                <span class="rm-popup-uav">{{ u.first_name|slice:":1"|upper }}{{ u.last_name|slice:":1"|upper }}</span>
+                <span class="rm-popup-uname">{{ u.get_full_name|default:u.username }}</span>
+                {% with prof=u.profile %}
+                  {% if prof.role %}<span class="rm-dupe-modal__kind">{{ prof.role.code }}</span>{% endif %}
+                {% endwith %}
+              </label>
+            {% empty %}
+              <p class="rm-popup-section__sub">{% trans "No active users." %}</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Footer #}
+    <div class="rm-dupe-modal__actions">
+      <button type="button" id="rm-dupe-cancel" class="rm-dupe-btn">{% trans "Go back and edit" %}</button>
+      <button type="button" id="rm-popup-prev" class="rm-dupe-btn" hidden>{% trans "← Back" %}</button>
+      <button type="button" id="rm-popup-next" class="rm-dupe-btn create">{% trans "Next →" %}</button>
+      <button type="button" id="rm-dupe-proceed" class="rm-dupe-btn create" hidden>{% trans "Save" %}</button>
+    </div>
+
+  </div>
+</div>

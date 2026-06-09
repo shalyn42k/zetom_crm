@@ -23,9 +23,12 @@ NOTE — partial behaviour (see UI notices on the page):
       (by pk) is treated as primary.
     * The ad-hoc client search box is decorative — only auto-proposed
       candidates can be linked right now.
-    * No FK from RequestMain to Client exists yet; "linking" copies the
-      Client's data onto the new RequestMain but does not persist a
-      relation. Tracked separately.
+
+Linking now persists a real relation: a RequestClientLink row (the
+RequestMain.clients M2M through-table) is created, and the Client's
+canonical values are copied onto the new RequestMain. A possible-duplicate
+panel (find_request_duplicates) lets the validator hard-delete an obvious
+copy before it pollutes the DB.
 """
 from __future__ import annotations
 
@@ -43,8 +46,11 @@ from crm.notification.services.notification_service import (
 )
 from crm.status_manager.services.status_service import cancel_request
 from crm.status_manager.services.statuses import RequestStatus
-from crm.zetom.models import DepartmentsVariants, RequestMain, RequestNull
+from crm.zetom.models import (
+    DepartmentsVariants, RequestClientLink, RequestMain, RequestNull,
+)
 from crm.zetom.services.duplicate_matcher import find_candidates
+from crm.zetom.services.request_duplicate_finder import find_request_duplicates
 from crm.zetom.services.request_service import approve_null_action
 
 LINK_NEW = "new"
@@ -230,7 +236,7 @@ def _eligible_users():
 
 
 @transaction.atomic
-def _do_approve(rn: RequestNull, cleaned: dict):
+def _do_approve(rn: RequestNull, cleaned: dict, user=None):
     choice = cleaned["link_choice"]
     client = None
     if choice == LINK_NEW:
@@ -265,11 +271,131 @@ def _do_approve(rn: RequestNull, cleaned: dict):
     new_main.departments = list(cleaned["departments"])
     new_main.save()
 
+    # 3) Persist the Client ↔ RequestMain relation (M2M through-table).
+    #    LINK_UNLINKED leaves client=None → no link row created.
+    if client is not None:
+        RequestClientLink.objects.get_or_create(
+            request=new_main, client=client, defaults={"linked_by": user},
+        )
+
     owners = list(cleaned["owners"])
     new_main.assigned_to.set(owners)
     new_main.owners.set(owners)
 
     return new_main
+
+
+# ---------------------------------------------------------------------------
+# Duplicate-management ops (possible-duplicate panel)
+# ---------------------------------------------------------------------------
+
+# Request-shaped fields copied during a transfer/merge. message included so a
+# merge keeps the website note.
+_DUPE_COPY_FIELDS = (
+    "first_name", "last_name", "phone",
+    "company_name", "company_nip", "email", "message",
+)
+
+
+def _copy_request_fields(src, dst) -> None:
+    for fld in _DUPE_COPY_FIELDS:
+        setattr(dst, fld, getattr(src, fld))
+
+
+def _resolve_dupe_target(kind: str, raw_pk: str):
+    try:
+        pk = int(raw_pk)
+    except (TypeError, ValueError):
+        return None
+    model = RequestMain if kind == "main" else RequestNull
+    return model.objects.filter(pk=pk).first()
+
+
+def _dispatch_dupe_op(request, rn: RequestNull, action: str):
+    """Handle a duplicate-panel POST. Returns an HttpResponse to short-circuit
+    the view, or None when `action` isn't a dupe op (normal approve flow).
+    """
+    from safedelete.config import HARD_DELETE
+
+    # Discard-as-spam (footbar): promote then cancel, keeping an audit trail.
+    if action == "discard":
+        with transaction.atomic():
+            new_main = approve_null_action(rn.pk)
+            cancel_request(
+                new_main, request.user,
+                reason=_("Discarded as spam from the Validation Window."),
+            )
+        messages.success(request, _("Request discarded as spam (moved to Cancelled)."))
+        return redirect("admin:zetom_cancelledrequest_changelist")
+
+    # Hard-delete THIS incoming RequestNull (the copy).
+    if action == "delete_duplicate":
+        rn.delete(force_policy=HARD_DELETE)
+        messages.success(request, _("This request was permanently deleted as a duplicate."))
+        return redirect("admin:zetom_requestnull_changelist")
+
+    if ":" not in action:
+        return None
+
+    op, kind, raw_pk = (action.split(":", 2) + ["", ""])[:3]
+    if op not in ("delete_existing", "update_existing", "update_current"):
+        return None
+
+    target = _resolve_dupe_target(kind, raw_pk)
+    if target is None:
+        messages.error(request, _("Duplicate target not found."))
+        return redirect("admin:zetom_requestnull_validate", rn.pk)
+
+    # Delete the EXISTING duplicate. Type-aware: a RequestMain may have child
+    # documents / history, so it's soft-cancelled (auditable); a RequestNull
+    # has no children, so it's hard-deleted.
+    if op == "delete_existing":
+        if kind == "main":
+            try:
+                cancel_request(
+                    target, request.user,
+                    reason=_("Cancelled as duplicate from the Validation Window."),
+                )
+                messages.success(
+                    request,
+                    _("Existing request #%(id)d cancelled as duplicate.") % {"id": target.pk},
+                )
+            except ValueError:
+                messages.info(request, _("Existing request was already cancelled/deleted."))
+        else:
+            pk = target.pk
+            target.delete(force_policy=HARD_DELETE)
+            messages.success(
+                request,
+                _("Existing validation request #%(id)d permanently deleted.") % {"id": pk},
+            )
+        return redirect("admin:zetom_requestnull_validate", rn.pk)
+
+    # Transfer THIS request's data onto the existing duplicate, then drop this
+    # one (merge into existing — existing stays canonical).
+    if op == "update_existing":
+        with transaction.atomic():
+            _copy_request_fields(rn, target)
+            target.save()
+            pk = target.pk
+            rn.delete(force_policy=HARD_DELETE)
+        messages.success(
+            request,
+            _("Existing request updated with this data; this request was removed."),
+        )
+        if kind == "main":
+            return redirect("admin:zetom_requestmain_change", pk)
+        return redirect("admin:zetom_requestnull_validate", pk)
+
+    # Pull the existing duplicate's data onto THIS request, then stay so the
+    # validator can finish approving with the refreshed snapshot.
+    if op == "update_current":
+        _copy_request_fields(target, rn)
+        rn.save()
+        messages.success(request, _("This request was updated from the existing duplicate."))
+        return redirect("admin:zetom_requestnull_validate", rn.pk)
+
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -294,24 +420,21 @@ class ValidationWindowMixin:
     def validation_window_view(self, request, object_id):
         rn = get_object_or_404(RequestNull, pk=object_id)
 
-        # Discard-as-spam fires from the same screen via a hidden field.
-        # We promote RequestNull -> RequestMain so the entry remains
-        # auditable, then immediately transition it to `cancelled` with
-        # a system-supplied reason (cancellation is reason-required —
-        # see status_orchestration.REASON_REQUIRED_STATUSES). The result
-        # shows up under CancelledRequest, not under deleted.
-        if request.method == "POST" and request.POST.get("__action") == "discard":
-            with transaction.atomic():
-                new_main = approve_null_action(rn.pk)
-                cancel_request(
-                    new_main,
-                    request.user,
-                    reason=_("Discarded as spam from the Validation Window."),
-                )
-            messages.success(request, _("Request discarded as spam (moved to Cancelled)."))
-            return redirect("admin:zetom_cancelledrequest_changelist")
+        # Duplicate-management ops fire from the possible-duplicate panel.
+        # Each is encoded in one __action value so a single button carries both
+        # the op and its target: "<op>:<kind>:<pk>". They run before form
+        # validation (like discard) so a half-filled approve form never blocks
+        # a cleanup decision. See _dispatch_dupe_op for the catalogue.
+        if request.method == "POST":
+            action = request.POST.get("__action", "")
+            dupe_response = _dispatch_dupe_op(request, rn, action)
+            if dupe_response is not None:
+                return dupe_response
 
         candidates = find_candidates(rn)
+        # Sibling requests (other RequestNull + active RequestMain) that look
+        # like copies of this one — drives the "possible duplicate" panel.
+        request_dupes = find_request_duplicates(rn)
         candidate_ids = [c.client.pk for c in candidates]
         snapshot = _snapshot_fields(rn)
         banner = _banner_state(rn, candidates)
@@ -320,7 +443,7 @@ class ValidationWindowMixin:
         if request.method == "POST":
             form = ValidationWindowForm(request.POST, candidate_ids=candidate_ids)
             if form.is_valid():
-                new_main = _do_approve(rn, form.cleaned_data)
+                new_main = _do_approve(rn, form.cleaned_data, user=request.user)
                 try:
                     send_notification_approve_null(new_main)
                 except Exception:  # noqa: BLE001 — notification must not block approve
@@ -355,6 +478,8 @@ class ValidationWindowMixin:
             "snapshot": snapshot,
             "banner": banner,
             "candidates": candidates,
+            "request_dupes": request_dupes,
+            "has_strong_dupe": any(c.is_strong for c in request_dupes),
             "departments_choices": DepartmentsVariants.choices,
             "eligible_users": eligible_users,
             "form": form,

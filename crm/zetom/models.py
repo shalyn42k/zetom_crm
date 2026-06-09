@@ -98,6 +98,16 @@ class RequestMain(RequestTemplate):
         blank=True,
         related_name="owned_requests",
     )
+    # claude — M2M к Client через RequestClientLink. Заявка может быть
+    # привязана к нескольким клиентам (похожий/идентичный клиент или
+    # компания), и при этом продолжать существовать самостоятельно.
+    # Persisted relation, в отличие от form-only ClientField (autofill).
+    clients = models.ManyToManyField(
+        "clients.Client",
+        through="RequestClientLink",
+        related_name="requests",
+        blank=True,
+    )
 
     class Meta:
         verbose_name = _("Information")
@@ -142,6 +152,33 @@ class Wniosek(RequestTemplate):
     class Meta:
         verbose_name = _("Application")
         verbose_name_plural = _("Applications")
+
+# claude — through-таблица для RequestMain.clients (M2M).
+# linked_by/linked_at дают аудит: кто и когда привязал клиента к заявке.
+class RequestClientLink(models.Model):
+    request = models.ForeignKey(
+        RequestMain, on_delete=models.CASCADE, related_name="client_links"
+    )
+    client = models.ForeignKey(
+        "clients.Client", on_delete=models.CASCADE, related_name="request_links"
+    )
+    linked_at = models.DateTimeField(auto_now_add=True)
+    linked_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["request", "client"], name="uniq_request_client"
+            ),
+        ]
+        verbose_name = _("Client link")
+        verbose_name_plural = _("Client links")
+
+    def __str__(self):
+        return f"{self.request_id} ↔ {self.client_id}"
+
 
 class DeletedRequest(RequestMain):  # proxy может открывать те же данные и в других классах
     class Meta:

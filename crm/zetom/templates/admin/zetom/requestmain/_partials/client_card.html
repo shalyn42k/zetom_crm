@@ -1,52 +1,96 @@
 {% load i18n %}
-<section class="rm-card" aria-labelledby="rm-client-heading" id="client-card">
+{% comment %}
+Client card. Shows:
+  1. Avatar + name header (existing behaviour)
+  2. Linked clients (M2M) with JS-fetch unlink button
+  3. Suggested clients (duplicate_matcher) when none linked — compact, dismissible
+  4. Linker widget: search-select + Create-from-request (JS fetch, no page reload)
+
+All link/unlink/create POST via fetch so they don't interfere with the main form.
+URLs injected via data- attributes; JS lives in requestmain_client_link.js.
+{% endcomment %}
+<section class="rm-card rm-client-card" aria-labelledby="rm-client-heading" id="client-card"
+         data-link-url="{% if original.pk %}{% url 'admin:zetom_requestmain_link_client_json' original.pk 0 %}{% endif %}"
+         data-unlink-url="{% if original.pk %}{% url 'admin:zetom_requestmain_unlink_client_json' original.pk 0 %}{% endif %}"
+         data-create-url="{% if original.pk %}{% url 'admin:zetom_requestmain_create_client_json' original.pk %}{% endif %}"
+         data-pk="{{ original.pk|default:'' }}">
+
   <header class="rm-card__header">
-    <h2 id="rm-client-heading" class="rm-card__title">
-      {% trans "Client" %}
-    </h2>
+    <h2 id="rm-client-heading" class="rm-card__title">{% trans "Client" %}</h2>
   </header>
 
+  {# Avatar + company header #}
   <div class="rm-client">
     <div class="rm-avatar rm-avatar--lg" aria-hidden="true">
       {{ original.company_name|slice:":1"|upper|default:"?" }}
     </div>
     <div class="rm-client__meta">
       <div class="rm-client__name">{{ original.company_name|default:"—" }}</div>
-      <div class="rm-client__sub">
-        {% if original.company_nip %}NIP {{ original.company_nip }}{% endif %}
-      </div>
+      <div class="rm-client__sub">{% if original.company_nip %}NIP {{ original.company_nip }}{% endif %}</div>
     </div>
   </div>
 
-  <dl class="rm-linked-fields">
-    <div class="rm-linked-field">
-      <dt class="rm-linked-field__label">
-        <label for="{{ form.client.id_for_label }}">{% trans "Client" %}</label>
-      </dt>
-      <dd class="rm-linked-field__value">{{ form.client }}</dd>
+  {# ---- Linked clients (M2M) ---- #}
+  <div class="rm-linked-section" id="rm-linked-list">
+    <div class="rm-linked-label">{% trans "Linked clients" %}</div>
+    {% if linked_clients %}
+      {% for cl in linked_clients %}
+        <div class="rm-linked-row" data-client-pk="{{ cl.pk }}">
+          <a class="rm-linked-name" href="{% url 'admin:clients_client_change' cl.pk %}" target="_blank">{{ cl.short_label }}</a>
+          {% if cl.company_nip %}<span class="rm-linked-nip mono">NIP {{ cl.company_nip }}</span>{% endif %}
+          {% if original.pk %}
+            <button type="button" class="rm-linked-x js-unlink-client" data-client="{{ cl.pk }}" title="{% trans 'Unlink' %}">×</button>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="rm-linked-empty" id="rm-linked-empty">{% trans "No clients linked yet." %}</div>
+    {% endif %}
+  </div>
+
+  {# ---- Client suggestions (only when nothing linked + suggestions exist) ---- #}
+  {% if suggested_clients and not linked_clients and original.pk %}
+    <div class="rm-suggestions" id="rm-suggestions">
+      <div class="rm-suggestions__label">{% trans "Suggested matches" %}</div>
+      {% for c in suggested_clients %}
+        <div class="rm-suggestion-row">
+          <span class="rm-sug-name">{{ c.client.short_label }}</span>
+          <span class="rm-sug-badges">{% for b in c.badges %}<span class="rm-mb {{ b.kind }}">{{ b.label }}</span>{% endfor %}</span>
+          <span class="rm-sug-score {% if c.is_strong %}strong{% endif %}">{{ c.score }}/100</span>
+          <button type="button" class="rm-dupe-btn link js-link-client" data-client="{{ c.client.pk }}">{% trans "Link" %}</button>
+        </div>
+      {% endfor %}
     </div>
+  {% endif %}
+
+  {# ---- Existing form fields (autofill select + key fields) ---- #}
+  {# Client select doubles as linker — Link button creates M2M entry immediately via fetch #}
+  <dl class="rm-linked-fields">
+    <div class="rm-linked-field rm-linked-field--client">
+      <dt class="rm-linked-field__label"><label for="{{ form.client.id_for_label }}">{% trans "Client" %}</label></dt>
+      <dd class="rm-linked-field__value rm-client-select-row">
+        {{ form.client }}
+        {% if original.pk %}
+          <button type="button" id="rm-linker-btn" class="rm-dupe-btn link">{% trans "Link" %}</button>
+          <button type="button" id="rm-create-btn" class="rm-dupe-btn create">{% trans "Create from request" %}</button>
+        {% endif %}
+      </dd>
+    </div>
+    <div id="rm-link-status" class="rm-link-status" hidden></div>
     <div class="rm-linked-field">
-      <dt class="rm-linked-field__label">
-        <label for="{{ form.company_nip.id_for_label }}">{% trans "NIP" %}</label>
-      </dt>
+      <dt class="rm-linked-field__label"><label for="{{ form.company_nip.id_for_label }}">{% trans "NIP" %}</label></dt>
       <dd class="rm-linked-field__value">{{ form.company_nip }}</dd>
     </div>
     <div class="rm-linked-field">
-      <dt class="rm-linked-field__label">
-        <label for="{{ form.company_name.id_for_label }}">{% trans "Company" %}</label>
-      </dt>
+      <dt class="rm-linked-field__label"><label for="{{ form.company_name.id_for_label }}">{% trans "Company" %}</label></dt>
       <dd class="rm-linked-field__value">{{ form.company_name }}</dd>
     </div>
     <div class="rm-linked-field">
-      <dt class="rm-linked-field__label">
-        <label for="{{ form.first_name.id_for_label }}">{% trans "First name" %}</label>
-      </dt>
+      <dt class="rm-linked-field__label"><label for="{{ form.first_name.id_for_label }}">{% trans "First name" %}</label></dt>
       <dd class="rm-linked-field__value">{{ form.first_name }}</dd>
     </div>
     <div class="rm-linked-field">
-      <dt class="rm-linked-field__label">
-        <label for="{{ form.last_name.id_for_label }}">{% trans "Last name" %}</label>
-      </dt>
+      <dt class="rm-linked-field__label"><label for="{{ form.last_name.id_for_label }}">{% trans "Last name" %}</label></dt>
       <dd class="rm-linked-field__value">{{ form.last_name }}</dd>
     </div>
   </dl>
