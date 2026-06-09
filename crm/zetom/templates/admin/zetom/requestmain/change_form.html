@@ -14,7 +14,6 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
 
 {% block extrahead %}
   {{ block.super }}
-  {# HTMX is loaded once globally via Unfold settings; do not re-include here. #}
 {% endblock extrahead %}
 
 {% block content %}
@@ -71,7 +70,12 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
     </p>
   {% endif %}
 
-  {# -------- Form (full layout for change-view, compact for add-view) -------- #}
+  {# -------- Pre-save duplicate popup (add view only) -------- #}
+  {% if not original.pk %}
+    {% include "admin/zetom/requestmain/_partials/dupe_popup.html" %}
+  {% endif %}
+
+  {# -------- Form (client card contains linked clients + linker) -------- #}
   <form method="post" class="rm-grid"
         id="{{ opts.model_name }}_form" novalidate>
     {% csrf_token %}

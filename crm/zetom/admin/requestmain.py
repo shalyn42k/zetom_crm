@@ -10,19 +10,25 @@ from crispy_forms.layout import Column, Field, Layout, Row
 from django.contrib import admin, messages
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
-from django.urls import path
+from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 
+from crm.clients.models import Client
 from crm.status_manager.models import StatusHistory
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
 from crm.zetom.forms import AddRequestFormMain
-from crm.zetom.models import DepartmentsVariants, RequestMain, RequestSource
+from crm.zetom.models import (
+    DepartmentsVariants, RequestClientLink, RequestMain, RequestSource,
+)
+from crm.zetom.services.duplicate_matcher import find_candidates
 from crm.zetom.services.per_req_perms import (
     can_assign_anyone, can_assign_target, can_manage_owners,
     can_resolve_review, can_unassign_target, is_owner_of_req,
 )
+from crm.zetom.services.request_duplicate_finder import find_request_duplicates
 from crm.zetom.services.request_service import (
     approve_oferta_action, approve_wniosek_action, approve_zlecenie_action,
 )
@@ -79,6 +85,8 @@ class RequestMainAdmin(
         js = [
             "client/client_autofill.js",
             "client/client_search.js",
+            "zetom/js/requestmain_dupe_check.js",
+            "zetom/js/requestmain_client_link.js",
         ]
 
     def get_queryset(self, request):
@@ -108,7 +116,37 @@ class RequestMainAdmin(
     def response_change(self, request, obj):
         return redirect("admin:zetom_requestmain_change", obj.pk)
 
+    @transaction.atomic
     def response_add(self, request, obj, post_url_continue=None):
+        # claude — popup mini-VW choices: link/create client + assign.
+        choice = (request.POST.get("popup_client_choice") or "").strip()
+        if choice == "create":
+            cl = Client.objects.create(
+                first_name=request.POST.get("first_name") or obj.first_name,
+                last_name=request.POST.get("last_name") or obj.last_name,
+                company_name=request.POST.get("company_name") or obj.company_name,
+                company_nip=request.POST.get("company_nip") or obj.company_nip or None,
+                phone=request.POST.get("phone") or obj.phone,
+                email=request.POST.get("email") or obj.email,
+            )
+            RequestClientLink.objects.get_or_create(request=obj, client=cl, defaults={"linked_by": request.user})
+        elif choice.startswith("link:"):
+            try:
+                client_pk = int(choice.split(":", 1)[1])
+                cl = Client.objects.filter(pk=client_pk).first()
+                if cl:
+                    RequestClientLink.objects.get_or_create(request=obj, client=cl, defaults={"linked_by": request.user})
+            except (ValueError, IndexError):
+                pass
+        departments = request.POST.getlist("popup_departments")
+        owners_raw = request.POST.getlist("popup_owners")
+        if departments:
+            obj.departments = list(departments)
+            obj.save(update_fields=["departments"])
+        if owners_raw:
+            owner_users = list(User.objects.filter(pk__in=owners_raw, is_active=True))
+            obj.assigned_to.set(owner_users)
+            obj.owners.set(owner_users)
         return redirect("admin:zetom_requestmain_change", obj.pk)
 
     # ---------- Delete (status flip + safedelete) ----------
@@ -294,6 +332,23 @@ class RequestMainAdmin(
             context["assign_target_rights"] = {}
             context["assignable_users"] = []
 
+        # claude — linked clients (M2M) + suggestions when none linked.
+        # Add view: eligible_users_popup + departments_choices for popup step 04.
+        if has_obj:
+            context["linked_clients"] = list(obj.clients.all())
+            # Show client suggestions in card only when no client linked yet.
+            if not context["linked_clients"]:
+                context["suggested_clients"] = find_candidates(obj)
+            else:
+                context["suggested_clients"] = []
+        else:
+            context["linked_clients"] = []
+            context["suggested_clients"] = []
+            # Add-form popup step 04 needs users + departments.
+            from crm.zetom.admin.requestnull_validate import _eligible_users
+            context["eligible_users_popup"] = _eligible_users()
+            context["departments_choices"] = DepartmentsVariants.choices
+
         return super().render_change_form(request, context, *args, **kwargs)
 
     # ---------- Custom URL endpoints ----------
@@ -352,8 +407,181 @@ class RequestMainAdmin(
                 view(self.remove_department_action),
                 name="zetom_requestmain_remove_department",
             ),
+            path(
+                "<path:object_id>/link-client/",
+                view(self.link_client_action),
+                name="zetom_requestmain_link_client",
+            ),
+            path(
+                "<path:object_id>/create-client/",
+                view(self.create_client_action),
+                name="zetom_requestmain_create_client",
+            ),
+            path(
+                "<path:object_id>/unlink-client/<int:client_id>/",
+                view(self.unlink_client_action),
+                name="zetom_requestmain_unlink_client",
+            ),
+            path(
+                "check-duplicates/",
+                view(self.check_duplicates_action),
+                name="zetom_requestmain_check_duplicates",
+            ),
+            path(
+                "dup-request-action/",
+                view(self.dup_request_action),
+                name="zetom_requestmain_dup_request_action",
+            ),
+            path(
+                "<path:object_id>/link-client-json/<int:client_id>/",
+                view(self.link_client_json),
+                name="zetom_requestmain_link_client_json",
+            ),
+            path(
+                "<path:object_id>/unlink-client-json/<int:client_id>/",
+                view(self.unlink_client_json),
+                name="zetom_requestmain_unlink_client_json",
+            ),
+            path(
+                "<path:object_id>/create-client-json/",
+                view(self.create_client_json),
+                name="zetom_requestmain_create_client_json",
+            ),
         ]
         return custom + urls
+
+    # ---------- JSON client-link endpoints (for card JS) ----------
+
+    def link_client_json(self, request, object_id, client_id):
+        if request.method != "POST":
+            return JsonResponse({"ok": False}, status=405)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied:
+            return JsonResponse({"ok": False, "error": "permission"}, status=403)
+        cl = Client.objects.filter(pk=client_id).first()
+        if not cl:
+            return JsonResponse({"ok": False, "error": "not found"}, status=404)
+        _, created = RequestClientLink.objects.get_or_create(
+            request=obj, client=cl, defaults={"linked_by": request.user}
+        )
+        return JsonResponse({"ok": True, "created": created, "label": str(cl), "pk": cl.pk, "nip": cl.company_nip or ""})
+
+    def unlink_client_json(self, request, object_id, client_id):
+        if request.method != "POST":
+            return JsonResponse({"ok": False}, status=405)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied:
+            return JsonResponse({"ok": False, "error": "permission"}, status=403)
+        RequestClientLink.objects.filter(request=obj, client_id=client_id).delete()
+        return JsonResponse({"ok": True})
+
+    def create_client_json(self, request, object_id):
+        if request.method != "POST":
+            return JsonResponse({"ok": False}, status=405)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied:
+            return JsonResponse({"ok": False, "error": "permission"}, status=403)
+        cl = Client.objects.create(
+            first_name=obj.first_name,
+            last_name=obj.last_name,
+            company_name=obj.company_name,
+            company_nip=obj.company_nip or None,
+            phone=obj.phone,
+            email=obj.email,
+            address=obj.address,
+        )
+        RequestClientLink.objects.create(request=obj, client=cl, linked_by=request.user)
+        return JsonResponse({"ok": True, "label": str(cl), "pk": cl.pk, "nip": cl.company_nip or ""})
+
+    # ---------- Pre-save duplicate check (JSON, for the add-form popup) ----------
+
+    # claude — JSON-эндпоинт: возвращает возможные дубликаты (клиенты + заявки)
+    # для значений add-формы. JS-попап дёргает его при нажатии Save и, если
+    # хоть что-то похоже, показывает предупреждение до отправки формы.
+    def check_duplicates_action(self, request):
+        probe = RequestMain(
+            first_name=request.GET.get("first_name") or None,
+            last_name=request.GET.get("last_name") or None,
+            phone=request.GET.get("phone") or None,
+            email=request.GET.get("email") or None,
+            company_name=request.GET.get("company_name") or None,
+            company_nip=request.GET.get("company_nip") or None,
+        )
+        items = []
+        for c in find_candidates(probe):
+            cl = c.client
+            items.append({
+                "type": "client",
+                "pk": cl.pk,
+                "label": str(cl),
+                "first_name": cl.first_name or "",
+                "last_name": cl.last_name or "",
+                "company_name": cl.company_name or "",
+                "company_nip": cl.company_nip or "",
+                "phone": str(cl.phone) if cl.phone else "",
+                "email": cl.email or "",
+                "score": c.score,
+                "badges": [str(b.label) for b in c.badges],
+                "url": reverse("admin:clients_client_change", args=[cl.pk]),
+            })
+        for d in find_request_duplicates(probe):
+            name = d.obj.full_name or "—"
+            if d.obj.company_name:
+                name = f"{name} · {d.obj.company_name}"
+            items.append({
+                "type": d.kind,
+                "pk": d.obj.pk,
+                "label": f"#{d.obj.pk} {name}",
+                "first_name": d.obj.first_name or "",
+                "last_name": d.obj.last_name or "",
+                "company_name": d.obj.company_name or "",
+                "phone": str(d.obj.phone) if d.obj.phone else "",
+                "email": d.obj.email or "",
+                "score": d.score,
+                "badges": [str(b.label) for b in d.badges],
+                "url": (
+                    reverse("admin:zetom_requestmain_change", args=[d.obj.pk])
+                    if d.kind == "main" else None
+                ),
+            })
+        return JsonResponse({"count": len(items), "items": items})
+
+    # claude — generic duplicate-request action for the add-form popup
+    # (no new RequestMain pk needed — acts on existing records only).
+    def dup_request_action(self, request):
+        if request.method != "POST":
+            return JsonResponse({"ok": False, "error": "POST required"}, status=405)
+        from safedelete.config import HARD_DELETE
+
+        from crm.status_manager.services.status_service import (
+            cancel_request as _cancel,
+        )
+        from crm.zetom.models import RequestNull as RN
+        from crm.zetom.services.request_duplicate_finder import (
+            KIND_MAIN, KIND_NULL,
+        )
+        action = request.POST.get("action", "")
+        if ":" not in action:
+            return JsonResponse({"ok": False, "error": "bad action"}, status=400)
+        op, kind, raw_pk = (action.split(":", 2) + ["", ""])[:3]
+        try:
+            pk = int(raw_pk)
+        except ValueError:
+            return JsonResponse({"ok": False, "error": "bad pk"}, status=400)
+        if op == "delete_existing":
+            if kind == KIND_NULL:
+                obj = RN.objects.filter(pk=pk).first()
+                if obj:
+                    obj.delete(force_policy=HARD_DELETE)
+            else:
+                obj = RequestMain.objects.filter(pk=pk).first()
+                if obj:
+                    try:
+                        _cancel(obj, request.user, reason=_("Cancelled as duplicate from the add form."))
+                    except ValueError as exc:
+                        return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+            return JsonResponse({"ok": True})
+        return JsonResponse({"ok": False, "error": "unknown op"}, status=400)
 
     # ---------- POST-action gate ----------
 
@@ -430,6 +658,69 @@ class RequestMainAdmin(
             obj.save(update_fields=["departments"])
             label = dict(DepartmentsVariants.choices).get(dept_code, dept_code)
             messages.success(request, _("Removed %(label)s.") % {"label": label})
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    # ---------- Client link actions ----------
+
+    # claude — привязка существующего Client к заявке (M2M через
+    # RequestClientLink). Идемпотентно: повторный линк не дублируется.
+    def link_client_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+
+        client_id = request.POST.get("client_id")
+        client = Client.objects.filter(pk=client_id).first()
+        if client is None:
+            messages.error(request, _("Client not found."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        _link, created = RequestClientLink.objects.get_or_create(
+            request=obj, client=client, defaults={"linked_by": request.user},
+        )
+        if created:
+            messages.success(request, _("Linked client %(c)s.") % {"c": client})
+        else:
+            messages.info(request, _("Client already linked."))
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    # claude — создать нового Client из данных заявки и сразу привязать.
+    def create_client_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+
+        client = Client.objects.create(
+            first_name=obj.first_name,
+            last_name=obj.last_name,
+            company_name=obj.company_name,
+            company_nip=obj.company_nip or None,
+            phone=obj.phone,
+            email=obj.email,
+            address=obj.address,
+        )
+        RequestClientLink.objects.create(
+            request=obj, client=client, linked_by=request.user,
+        )
+        messages.success(request, _("Created and linked client %(c)s.") % {"c": client})
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    def unlink_client_action(self, request, object_id, client_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+
+        deleted, _n = RequestClientLink.objects.filter(
+            request=obj, client_id=client_id
+        ).delete()
+        if deleted:
+            messages.success(request, _("Client unlinked."))
         return redirect("admin:zetom_requestmain_change", object_id)
 
     # ---------- User actions ----------

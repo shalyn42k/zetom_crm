@@ -2,12 +2,9 @@
 {% load i18n static %}
 
 {% comment %}
-Validation Window — replaces the old single "Approve" button on RequestNull.
-Three zones: snapshot · link-to-client · assignment.
-Implements design_handoff_validation_window/Zetom Validation Window.html.
-
-WIP notice block (.vw-dev-notice) lists features that are visible but
-not yet wired — keep it in sync with requestnull_validate.py docstring.
+Validation Window — 4-step compact layout.
+Steps: 01 Snapshot · 02 Duplicate Check · 03 Link to Client · 04 Assignment.
+Grid: top row = [01 Snapshot][02 Dup Check], bottom row = [03 Link][—], col-3 = [04 Assign].
 {% endcomment %}
 
 {% block extrastyle %}
@@ -15,97 +12,60 @@ not yet wired — keep it in sync with requestnull_validate.py docstring.
   <link rel="stylesheet" href="{% static 'zetom/css/validation_window.css' %}">
 {% endblock extrastyle %}
 
-{% block branding %}{{ block.super }}{% endblock branding %}
-
 {% block content %}
 <form method="post" class="vw-stage" id="vw-form" novalidate>
   {% csrf_token %}
 
-  {# -------- WIP notice -------- #}
-  <div class="vw-dev-notice">
-    <span class="wip-tag">WIP</span>
-    <div>
-      <strong>{% trans "Preview build" %}</strong>
-      {% trans "the layout matches the design handoff, but the items below are not fully wired yet:" %}
-      <ul>
-        <li><span class="wip-tag">WIP</span>{% trans "Owners list is not live-filtered by departments — eligibility is enforced when you click Approve. Pick departments first to avoid being bounced back." %}</li>
-        <li><span class="wip-tag">WIP</span>{% trans "Primary-owner reordering by drag is not available — the first selected owner becomes primary." %}</li>
-        <li><span class="wip-tag">WIP</span>{% trans "Ad-hoc client search box is decorative — only auto-proposed candidates can be linked right now." %}</li>
-        <li><span class="wip-tag">WIP</span>{% trans "RequestMain has no foreign key to Client yet — linking copies the Client's data into the new request but does not store the relation." %}</li>
-      </ul>
-    </div>
-  </div>
-
-  {# -------- Form errors -------- #}
+  {# Form errors #}
   {% if form.errors %}
     <div class="vw-errs">
       <strong>{% trans "Please fix the following:" %}</strong>
       <ul>
-        {% for field in form %}
-          {% for err in field.errors %}<li>{{ field.label }}: {{ err }}</li>{% endfor %}
-        {% endfor %}
+        {% for field in form %}{% for err in field.errors %}<li>{{ field.label }}: {{ err }}</li>{% endfor %}{% endfor %}
         {% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}
       </ul>
     </div>
   {% endif %}
 
-  {# -------- Title + sub -------- #}
-  <div class="vw-head">
-    <div>
+  {# Header + compact banner #}
+  <div class="vw-topbar">
+    <div class="vw-topbar__left">
       <h1 class="vw-title">
         {% trans "Validation Window" %}
-        <span class="pill">REQUESTNULL #{{ request_null.pk }}</span>
+        <span class="pill">NULL-{{ request_null.pk }}</span>
+        <span class="pill pill--meta">{{ request_null.source|default:"—" }}</span>
+        <span class="pill pill--meta mono">{{ request_null.created_at|date:"Y-m-d" }}</span>
       </h1>
-      <p class="vw-sub">
-        {% blocktrans %}Review the incoming snapshot, link it to an existing <code>Client</code> (or create a new one), assign the responsible department(s) and owners, then approve to promote into a <code>RequestMain</code>.{% endblocktrans %}
-      </p>
+    </div>
+    <div class="vbanner vbanner--inline {% if banner.kind == 'warn' %}warn{% elif banner.kind == 'info' %}info{% endif %}">
+      <span class="vico-s">{% if banner.kind == 'warn' %}!{% elif banner.kind == 'info' %}i{% else %}✓{% endif %}</span>
+      <span class="vbanner-text"><strong>{{ banner.title }}</strong> — {{ banner.sub }}</span>
+      <span class="vmeta">{{ candidates|length }}c / {{ request_dupes|length }}d</span>
     </div>
   </div>
 
-  {# -------- Banner -------- #}
-  <div class="vbanner{% if banner.kind == 'warn' %} warn{% elif banner.kind == 'info' %} info{% endif %}">
-    <div class="vico">
-      {% if banner.kind == 'warn' %}!{% elif banner.kind == 'info' %}i{% else %}✓{% endif %}
-    </div>
-    <div>
-      <h4>{{ banner.title }}</h4>
-      <p>{{ banner.sub }}</p>
-    </div>
-    <div class="vmeta">
-      {{ candidates|length }} {% trans "candidate(s)" %}
-    </div>
-  </div>
+  {# 4-step grid #}
+  <div class="vw-grid4">
 
-  {# -------- 3-zone grid -------- #}
-  <div class="vw-grid">
-
-    {# ============== Snapshot ============== #}
-    <section class="vw-card">
+    {# ===== Step 01: Snapshot ===== #}
+    <section class="vw-card vw-s01">
       <header class="card-h">
         <h3><span class="step">01</span>{% trans "Snapshot" %}</h3>
-        <div class="right">{% trans "read-only" %}</div>
+        <span class="right">{% trans "read-only" %}</span>
       </header>
       <div class="card-b">
-        <div class="snap-meta">
-          <span class="vhint info">{% trans "source" %} · {{ request_null.source|default:"—" }}</span>
-          <span class="vhint info">{{ request_null.created_at|date:"Y-m-d · H:i" }}</span>
-        </div>
         {% for row in snapshot %}
-          <div class="field-row">
+          <div class="field-row field-row--sm">
             <div class="flabel">
               {{ row.label }}
               {% if row.hint.0 == 'err' %}<span class="req">*</span>{% endif %}
             </div>
             <div class="fvalue">
               {% if row.long %}
-                {% if row.value %}<div class="longtext">{{ row.value }}</div>
-                {% else %}<span class="val empty">— {% trans "empty" %} —</span>{% endif %}
+                {% if row.value %}<div class="longtext">{{ row.value|truncatechars:180 }}</div>
+                {% else %}<span class="val empty">—</span>{% endif %}
               {% else %}
-                {% if row.value %}
-                  <span class="val{% if row.mono %} mono{% endif %}">{{ row.value }}</span>
-                {% else %}
-                  <span class="val empty">— {% trans "empty" %} —</span>
-                {% endif %}
+                <span class="val{% if row.mono %} mono{% endif %}">{{ row.value|default:"—" }}</span>
               {% endif %}
               <span class="vhint {{ row.hint.0 }}">{{ row.hint.1 }}</span>
             </div>
@@ -114,24 +74,111 @@ not yet wired — keep it in sync with requestnull_validate.py docstring.
       </div>
     </section>
 
-    {# ============== Candidates / Link to Client ============== #}
-    <section class="vw-card">
+    {# ===== Step 02: Duplicate Check ===== #}
+    <section class="vw-card vw-s02">
       <header class="card-h">
-        <h3><span class="step">02</span>{% trans "Link to Client" %}</h3>
-        <div class="right">{% trans "sorted by signal strength" %}</div>
+        <h3><span class="step">02</span>{% trans "Duplicate Check" %}</h3>
+        <span class="right">{{ request_dupes|length }} {% trans "found" %}</span>
       </header>
       <div class="card-b">
+        {% if request_dupes %}
+          <div class="dupes-list">
+            {% for d in request_dupes %}
+              <div class="dupe-row">
+                <div class="dupe-info">
+                  <span class="dupe-kind {{ d.kind }}">{% if d.kind == "main" %}M{% else %}N{% endif %}#{{ d.obj.pk }}</span>
+                  <span class="dupe-name">{{ d.obj.full_name|default:"—" }}{% if d.obj.company_name %} · {{ d.obj.company_name }}{% endif %}</span>
+                  <span class="dupe-score {% if d.is_strong %}strong{% elif d.is_weak %}weak{% endif %}">{{ d.score }}</span>
+                  <span class="dupe-badges">{% for b in d.badges %}<span class="mb {{ b.kind }}">{{ b.label }}</span>{% endfor %}</span>
+                  {% if d.kind == "main" %}
+                    <a class="dupe-open" href="{% url 'admin:zetom_requestmain_change' d.obj.pk %}" target="_blank">↗</a>
+                  {% else %}
+                    <a class="dupe-open" href="{% url 'admin:zetom_requestnull_validate' d.obj.pk %}" target="_blank">↗</a>
+                  {% endif %}
+                </div>
+                {% if d.kind == "main" %}
+                  {% trans "Cancel the existing request as a duplicate?" as del_msg %}
+                {% else %}
+                  {% trans "Permanently delete the existing validation request?" as del_msg %}
+                {% endif %}
+                <div class="dupe-ops">
+                  <button type="submit" form="vw-form" name="__action" value="update_current:{{ d.kind }}:{{ d.obj.pk }}" class="btn xs" title="{% trans 'Overwrite THIS request with the existing data' %}">{% trans "← pull" %}</button>
+                  <button type="submit" form="vw-form" name="__action" value="update_existing:{{ d.kind }}:{{ d.obj.pk }}" class="btn xs" onclick="return confirm('{% trans "Overwrite the existing request with THIS data and remove this one?" %}');" title="{% trans 'Merge THIS data into the existing request, then delete this' %}">{% trans "push →" %}</button>
+                  <button type="submit" form="vw-form" name="__action" value="delete_existing:{{ d.kind }}:{{ d.obj.pk }}" class="btn xs danger-ghost" onclick="return confirm('{{ del_msg|escapejs }}');">{% trans "del" %}</button>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="dupe-del-self">
+            <button type="submit" form="vw-form" name="__action" value="delete_duplicate" class="btn danger"
+                    onclick="return confirm('{% trans "Permanently delete THIS request as a duplicate? This is a hard delete and cannot be undone." %}');">
+              {% trans "Delete this request as duplicate" %}
+            </button>
+          </div>
+        {% else %}
+          <div class="vw-no-dupes">
+            <span class="vhint ok">✓ {% trans "No duplicate requests found" %}</span>
+          </div>
+        {% endif %}
+      </div>
+    </section>
 
+    {# ===== Step 04: Assignment (right col, spans 2 rows) ===== #}
+    <section class="vw-card vw-s04">
+      <header class="card-h">
+        <h3><span class="step">04</span>{% trans "Assignment" %}</h3>
+        <span class="right">{% trans "future RequestMain" %}</span>
+      </header>
+      <div class="card-b">
+        <div class="field">
+          <label>{% trans "Departments" %} <span class="req">*</span></label>
+          <div class="chip-group">
+            {% for code, label in departments_choices %}
+              <label class="chip-pick">
+                <input type="checkbox" name="departments" value="{{ code }}"
+                  {% if code in form.departments.value %}checked{% endif %}>
+                {{ label }}
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="field">
+          <label>{% trans "Owners" %} <span class="req">*</span></label>
+          <div class="userpop">
+            <div class="userpop-h">{% trans "All active users" %}</div>
+            {% for u in eligible_users %}
+              {% with prof=u.profile %}
+              <label class="urow">
+                <input type="checkbox" name="owners" value="{{ u.pk }}"
+                  {% if form.owners.value and u.pk|stringformat:"s" in form.owners.value|stringformat:"s" %}checked{% endif %}>
+                <span class="uav">{{ u.first_name|slice:":1"|upper }}{{ u.last_name|slice:":1"|upper }}</span>
+                <span class="uname">{{ u.get_full_name|default:u.username }}</span>
+                <span class="urole mono">{% if prof.role %}{{ prof.role.code }}{% else %}—{% endif %}</span>
+                <span class="check"></span>
+              </label>
+              {% endwith %}
+            {% empty %}
+              <div class="urow"><span class="uname">{% trans "No active users." %}</span></div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="role-hint">
+          <div class="row mono role-hint-title">{% trans "Per-Req role ladder" %}</div>
+          <div class="row"><code>admin</code><span>›</span><code>dep_head</code><span>›</span><code class="cur">owner</code><span>›</span><code>specialist</code></div>
+        </div>
+      </div>
+    </section>
+
+    {# ===== Step 03: Link to Client ===== #}
+    <section class="vw-card vw-s03">
+      <header class="card-h">
+        <h3><span class="step">03</span>{% trans "Link to Client" %}</h3>
+        <span class="right">{% trans "sorted by signal strength" %}</span>
+      </header>
+      <div class="card-b">
         <div class="cand-summary">
-          <span class="num">{{ candidates|length }}</span>
-          {% trans "candidate(s) proposed by the duplicate matcher" %}
+          <span class="num">{{ candidates|length }}</span> {% trans "candidate(s) proposed by the duplicate matcher" %}
         </div>
-
-        <div class="search-row" title="{% trans "Search is not wired yet" %}">
-          <span class="wip-tag">WIP</span>
-          <input type="text" placeholder="{% trans "Search clients by name, NIP, phone, email…" %}" disabled>
-        </div>
-
         <div class="cand-list">
           {% if candidates %}
             {% for c in candidates %}
@@ -149,12 +196,9 @@ not yet wired — keep it in sync with requestnull_validate.py docstring.
                     {% if c.client.phone %}<div class="cand-f"><span class="k">PHONE</span><span class="v mono{% if c.highlights.phone %} hl{% endif %}">{{ c.client.phone }}</span></div>{% endif %}
                     {% if c.client.email %}<div class="cand-f"><span class="k">EMAIL</span><span class="v mono{% if c.highlights.email %} hl{% endif %}">{{ c.client.email }}</span></div>{% endif %}
                     {% if c.client.company_nip %}<div class="cand-f"><span class="k">NIP</span><span class="v mono{% if c.highlights.company_nip %} hl{% endif %}">{{ c.client.company_nip }}</span></div>{% endif %}
-                    {% if c.client.company_name %}<div class="cand-f"><span class="k">COMPANY</span><span class="v{% if c.highlights.company_name %} hl{% endif %}">{{ c.client.company_name }}</span></div>{% endif %}
                   </div>
                   <div class="match-row">
-                    {% for b in c.badges %}
-                      <span class="mb {{ b.kind }}">{{ b.label }}</span>
-                    {% endfor %}
+                    {% for b in c.badges %}<span class="mb {{ b.kind }}">{{ b.label }}</span>{% endfor %}
                   </div>
                 </div>
                 <div class="cand-score">
@@ -170,11 +214,10 @@ not yet wired — keep it in sync with requestnull_validate.py docstring.
             <div class="empty-state">
               <div class="ico-ring">○</div>
               <h4>{% trans "No matching clients found" %}</h4>
-              <p>{% trans "The duplicate matcher checked phone, email, NIP, company name and surname — no signal hit. Create a new client below, or discard as spam." %}</p>
             </div>
           {% endif %}
 
-          {# ------- Create as new client (alt card) ------- #}
+          {# Create as new client #}
           <label class="cand alt">
             <input type="radio" name="link_choice" value="{{ LINK_NEW }}"
               {% if form.link_choice.value == LINK_NEW %}checked{% endif %}>
@@ -182,38 +225,19 @@ not yet wired — keep it in sync with requestnull_validate.py docstring.
             <div class="alt-ico">+</div>
             <div class="cand-main">
               <div class="alt-title">{% trans "Create as new client" %}</div>
-              <div class="alt-desc">{% trans "Add this request as a fresh entry in the Clients table. Fields are pre-filled from the snapshot — edit as needed." %}</div>
               <div class="alt-form">
-                <div class="field">
-                  <label>{% trans "First name" %}</label>
-                  <input class="input" name="new_first_name" value="{{ form.new_first_name.value|default_if_none:'' }}">
-                </div>
-                <div class="field">
-                  <label>{% trans "Last name" %}</label>
-                  <input class="input" name="new_last_name" value="{{ form.new_last_name.value|default_if_none:'' }}">
-                </div>
-                <div class="field full">
-                  <label>{% trans "Company name" %}</label>
-                  <input class="input" name="new_company_name" value="{{ form.new_company_name.value|default_if_none:'' }}">
-                </div>
-                <div class="field">
-                  <label>{% trans "NIP" %}</label>
-                  <input class="input mono" name="new_company_nip" value="{{ form.new_company_nip.value|default_if_none:'' }}">
-                </div>
-                <div class="field">
-                  <label>{% trans "Phone" %}</label>
-                  <input class="input mono" name="new_phone" value="{{ form.new_phone.value|default_if_none:'' }}">
-                </div>
-                <div class="field full">
-                  <label>{% trans "Email" %}</label>
-                  <input class="input mono" name="new_email" value="{{ form.new_email.value|default_if_none:'' }}">
-                </div>
+                <div class="field"><label>{% trans "First name" %}</label><input class="input" name="new_first_name" value="{{ form.new_first_name.value|default_if_none:'' }}"></div>
+                <div class="field"><label>{% trans "Last name" %}</label><input class="input" name="new_last_name" value="{{ form.new_last_name.value|default_if_none:'' }}"></div>
+                <div class="field full"><label>{% trans "Company name" %}</label><input class="input" name="new_company_name" value="{{ form.new_company_name.value|default_if_none:'' }}"></div>
+                <div class="field"><label>{% trans "NIP" %}</label><input class="input mono" name="new_company_nip" value="{{ form.new_company_nip.value|default_if_none:'' }}"></div>
+                <div class="field"><label>{% trans "Phone" %}</label><input class="input mono" name="new_phone" value="{{ form.new_phone.value|default_if_none:'' }}"></div>
+                <div class="field full"><label>{% trans "Email" %}</label><input class="input mono" name="new_email" value="{{ form.new_email.value|default_if_none:'' }}"></div>
               </div>
             </div>
             <div class="cand-score"><span class="score-tag strong">{% trans "recommended" %}</span></div>
           </label>
 
-          {# ------- Leave unlinked (alt card) ------- #}
+          {# Leave unlinked #}
           <label class="cand alt">
             <input type="radio" name="link_choice" value="{{ LINK_UNLINKED }}"
               {% if form.link_choice.value == LINK_UNLINKED %}checked{% endif %}>
@@ -221,7 +245,7 @@ not yet wired — keep it in sync with requestnull_validate.py docstring.
             <div class="alt-ico">∅</div>
             <div class="cand-main">
               <div class="alt-title">{% trans "Leave unlinked" %}</div>
-              <div class="alt-desc">{% trans "Approve without attaching a Client. Useful when the request data is too thin to justify a Client record. Discouraged — use sparingly." %}</div>
+              <div class="alt-desc">{% trans "Approve without attaching a Client. Discouraged — use sparingly." %}</div>
             </div>
             <div class="cand-score"><span class="score-tag weak">{% trans "low usage" %}</span></div>
           </label>
@@ -229,82 +253,14 @@ not yet wired — keep it in sync with requestnull_validate.py docstring.
       </div>
     </section>
 
-    {# ============== Assignment ============== #}
-    <section class="vw-card vw-col-right">
-      <header class="card-h">
-        <h3><span class="step">03</span>{% trans "Assignment" %}</h3>
-        <div class="right">{% trans "future RequestMain" %}</div>
-      </header>
-      <div class="card-b">
-
-        {# Departments #}
-        <div class="field">
-          <label>{% trans "Departments" %} <span class="req">*</span></label>
-          <div class="chip-group">
-            {% for code, label in departments_choices %}
-              <label class="chip-pick">
-                <input type="checkbox" name="departments" value="{{ code }}"
-                  {% if code in form.departments.value %}checked{% endif %}>
-                {{ label }}
-              </label>
-            {% endfor %}
-          </div>
-          <div class="help">{% trans "Pick one or more — owners must belong to at least one." %}</div>
-        </div>
-
-        {# Owners #}
-        <div class="field">
-          <label>{% trans "Owners" %} <span class="req">*</span></label>
-          <div class="userpop">
-            <div class="userpop-h">{% trans "All active users · pick from list below" %}</div>
-            {% for u in eligible_users %}
-              {% with prof=u.profile %}
-              <label class="urow">
-                <input type="checkbox" name="owners" value="{{ u.pk }}"
-                  {% if form.owners.value and u.pk|stringformat:"s" in form.owners.value|stringformat:"s" %}checked{% endif %}>
-                <span class="uav">{{ u.first_name|slice:":1"|upper }}{{ u.last_name|slice:":1"|upper }}</span>
-                <span class="uname">{{ u.get_full_name|default:u.username }}</span>
-                <span class="urole mono">{% if prof.role %}{{ prof.role.code }}{% else %}—{% endif %}</span>
-                <span class="udep mono">{% for d in prof.departments %}{{ d }}{% if not forloop.last %} · {% endif %}{% endfor %}</span>
-                <span class="check"></span>
-              </label>
-              {% endwith %}
-            {% empty %}
-              <div class="urow"><span class="uname">{% trans "No active users." %}</span></div>
-            {% endfor %}
-          </div>
-          <div class="help">
-            <span class="wip-tag">WIP</span>
-            {% trans "Eligibility (owner ∈ users with overlapping department) is enforced on submit. Live filtering is not wired yet." %}
-          </div>
-        </div>
-
-        {# Role ladder hint #}
-        <div class="role-hint">
-          <div class="row mono role-hint-title">{% trans "Per-Req role ladder" %}</div>
-          <div class="row">
-            <code>admin</code><span>›</span>
-            <code>dep_head</code><span>›</span>
-            <code class="cur">owner</code><span>›</span>
-            <code>specialist</code>
-          </div>
-          <div class="help">{% trans "The first selected owner becomes the primary owner of the new RequestMain." %}</div>
-        </div>
-      </div>
-    </section>
-  </div>
+  </div>{# /vw-grid4 #}
 </form>
 
-{# -------- Sticky footbar (outside the form? no — same form via `form=` attr) -------- #}
+{# Footbar #}
 <div class="footbar">
   <div class="sumline">
-    <span class="pip ok">✓ {% trans "snapshot loaded" %}</span>
-    {% if candidates %}
-      <span class="pip ok">✓ {{ candidates|length }} {% trans "candidate(s)" %}</span>
-    {% else %}
-      <span class="pip miss">⚠ {% trans "no candidates" %}</span>
-    {% endif %}
-    <span class="pip">{% trans "owners filter:" %} <span class="wip-tag">WIP</span></span>
+    <span class="pip {% if request_dupes %}warn{% else %}ok{% endif %}">{% if request_dupes %}⚠ {{ request_dupes|length }} {% trans "duplicate(s)" %}{% else %}✓ {% trans "no duplicates" %}{% endif %}</span>
+    <span class="pip {% if candidates %}ok{% else %}miss{% endif %}">{% if candidates %}✓ {{ candidates|length }} {% trans "client candidate(s)" %}{% else %}⚠ {% trans "no clients" %}{% endif %}</span>
   </div>
   <div class="actions">
     <a href="{{ cancel_url }}" class="btn ghost">{% trans "Cancel" %}</a>

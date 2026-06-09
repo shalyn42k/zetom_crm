@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-01 21:38+0200\n"
+"POT-Creation-Date: 2026-06-09 08:57+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #: config/settings.py:187
 msgid "English"
 msgstr ""
@@ -41,19 +42,19 @@ msgstr ""
 msgid "Validation"
 msgstr ""
 
-#: config/unfold_config.py:146 crm/zetom/models.py:103 crm/zetom/models.py:104
+#: config/unfold_config.py:146 crm/zetom/models.py:113 crm/zetom/models.py:114
 msgid "Information"
 msgstr ""
 
-#: config/unfold_config.py:154 crm/zetom/models.py:117
+#: config/unfold_config.py:154 crm/zetom/models.py:127
 msgid "Offers"
 msgstr ""
 
-#: config/unfold_config.py:162 crm/zetom/models.py:131
+#: config/unfold_config.py:162 crm/zetom/models.py:141
 msgid "Orders"
 msgstr ""
 
-#: config/unfold_config.py:170 crm/zetom/models.py:144
+#: config/unfold_config.py:170 crm/zetom/models.py:154
 msgid "Applications"
 msgstr ""
 
@@ -92,25 +93,25 @@ msgid "Email log"
 msgstr ""
 
 #: crm/clients/models.py:10 crm/users/templates/users/user_detail.html:12
-#: crm/zetom/admin/requestnull_validate.py:141
+#: crm/zetom/admin/requestnull_validate.py:147
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:81
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:42
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:188
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:242
 #: crm/zetom/templates/zetom/email_template.html:121
 msgid "First name"
 msgstr ""
 
 #: crm/clients/models.py:11 crm/users/templates/users/user_detail.html:13
-#: crm/zetom/admin/requestnull_validate.py:147
+#: crm/zetom/admin/requestnull_validate.py:153
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:85
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:48
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:192
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:246
 #: crm/zetom/templates/zetom/email_template.html:129
 msgid "Last name"
 msgstr ""
 
 #: crm/clients/models.py:13
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:196
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:250
 #: crm/zetom/templates/zetom/email_template.html:138
 msgid "Company name"
 msgstr ""
@@ -118,15 +119,15 @@ msgstr ""
 #: crm/clients/models.py:17
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:73
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:30
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:200
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:254
 msgid "NIP"
 msgstr ""
 
 #: crm/clients/models.py:21 crm/users/templates/users/user_detail.html:11
 #: crm/users/templates/users/user_list.html:20
-#: crm/zetom/admin/requestnull_validate.py:164 crm/zetom/models.py:29
+#: crm/zetom/admin/requestnull_validate.py:170 crm/zetom/models.py:29
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:97
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:208
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:262
 #: crm/zetom/templates/zetom/email_template.html:155
 msgid "Email"
 msgstr ""
@@ -144,7 +145,8 @@ msgid "Client"
 msgstr ""
 
 #: crm/clients/validators.py:20
-msgid "NIP must contain exactly 10 digits (separators and PL prefix are allowed)."
+msgid ""
+"NIP must contain exactly 10 digits (separators and PL prefix are allowed)."
 msgstr ""
 
 #: crm/clients/validators.py:33
@@ -164,7 +166,7 @@ msgid "Review resolved"
 msgstr ""
 
 #: crm/notification/models.py:14
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:235
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:289
 msgid "Assignment"
 msgstr ""
 
@@ -213,7 +215,8 @@ msgstr ""
 
 #: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:12
 #, python-format
-msgid "%(actor_name)s changed status from \"%(old_status)s\" to \"%(new_status)s\"."
+msgid ""
+"%(actor_name)s changed status from \"%(old_status)s\" to \"%(new_status)s\"."
 msgstr ""
 
 #: crm/notification/templates/notification/inapp/staff/review_requested.txt:9
@@ -358,7 +361,9 @@ msgid "Linked to request from"
 msgstr ""
 
 #: crm/notification/templates/notification/mail/client_in_progress.txt:18
-msgid "We'll get back to you when the status changes or if any details need to be clarified."
+msgid ""
+"We'll get back to you when the status changes or if any details need to be "
+"clarified."
 msgstr ""
 
 #: crm/notification/templates/notification/mail/client_in_progress.txt:19
@@ -457,7 +462,9 @@ msgid "New request from the site"
 msgstr ""
 
 #: crm/notification/templates/notification/mail/staff/request_new.txt:12
-msgid "A new request just arrived from the public site form and is waiting for validation."
+msgid ""
+"A new request just arrived from the public site form and is waiting for "
+"validation."
 msgstr ""
 
 #: crm/notification/templates/notification/mail/staff/request_new.txt:14
@@ -592,7 +599,7 @@ msgstr ""
 #: crm/users/templates/users/user_detail.html:15 crm/zetom/admin/base.py:31
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:150
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/departments.html:5
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:242
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:296
 msgid "Departments"
 msgstr ""
 
@@ -659,11 +666,13 @@ msgid "The two password fields didn’t match."
 msgstr ""
 
 #: crm/users/models.py:87
-msgid "A department can be marked as main only if the user already belongs to it."
+msgid ""
+"A department can be marked as main only if the user already belongs to it."
 msgstr ""
 
 #: crm/users/models.py:95
-msgid "A department can be marked as head-of only if the user already belongs to it."
+msgid ""
+"A department can be marked as head-of only if the user already belongs to it."
 msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/_dept_search_results.html:16
@@ -769,11 +778,14 @@ msgid "Search department by name or code…"
 msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:170
-msgid "You can view departments, but you need edit_users permission to change them."
+msgid ""
+"You can view departments, but you need edit_users permission to change them."
 msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:177
-msgid "Primary marks the user's main department. Head status is granted separately by an admin and identifies the department lead."
+msgid ""
+"Primary marks the user's main department. Head status is granted separately "
+"by an admin and identifies the department lead."
 msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:186
@@ -805,7 +817,9 @@ msgid "Notification preferences"
 msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tab_notifications.html:10
-msgid "Notification preferences are not persisted yet. UI is ready; backend model is pending."
+msgid ""
+"Notification preferences are not persisted yet. UI is ready; backend model "
+"is pending."
 msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tab_notifications.html:17
@@ -887,7 +901,9 @@ msgid "Not implemented yet"
 msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:107
-msgid "You can view permissions but not change them. The 'edit_roles' permission is required to assign roles and individual permissions."
+msgid ""
+"You can view permissions but not change them. The 'edit_roles' permission is "
+"required to assign roles and individual permissions."
 msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:111
@@ -920,7 +936,9 @@ msgid "Security"
 msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tab_security.html:11
-msgid "Leave fields empty to keep the current password. Fill both to set a new one — it will be saved together with the rest of the user’s data."
+msgid ""
+"Leave fields empty to keep the current password. Fill both to set a new one "
+"— it will be saved together with the rest of the user’s data."
 msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:7
@@ -955,7 +973,7 @@ msgstr ""
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:328
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:422
 #: crm/zetom/templates/admin/zetom/requestmain/reason_form.html:20
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:310
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:364
 msgid "Cancel"
 msgstr ""
 
@@ -1043,14 +1061,14 @@ msgstr ""
 msgid "Restored from cancelled"
 msgstr ""
 
-#: crm/zetom/admin/deletedrequest.py:119 crm/zetom/admin/requestmain.py:374
-#: crm/zetom/admin/requestmain.py:502 crm/zetom/admin/requestmain.py:527
+#: crm/zetom/admin/deletedrequest.py:119 crm/zetom/admin/requestmain.py:453
+#: crm/zetom/admin/requestmain.py:644 crm/zetom/admin/requestmain.py:669
 #: crm/zetom/admin/requestmain_resolve_review.py:105
 msgid "You don't have permission for this action."
 msgstr ""
 
-#: crm/zetom/admin/deletedrequest.py:124 crm/zetom/admin/requestmain.py:379
-#: crm/zetom/admin/requestmain.py:394
+#: crm/zetom/admin/deletedrequest.py:124 crm/zetom/admin/requestmain.py:458
+#: crm/zetom/admin/requestmain.py:473
 #: crm/zetom/admin/requestmain_resolve_review.py:101
 msgid "Request not found."
 msgstr ""
@@ -1063,87 +1081,109 @@ msgstr ""
 msgid "Request permanently deleted."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:157
+#: crm/zetom/admin/requestmain.py:164
 msgid "Request deleted."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:159
+#: crm/zetom/admin/requestmain.py:166
 msgid "Reason is required."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:409
+#: crm/zetom/admin/requestmain.py:488
 msgid "Invalid department."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:412
+#: crm/zetom/admin/requestmain.py:491
 msgid "Already assigned."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:418
+#: crm/zetom/admin/requestmain.py:497
 #, python-format
 msgid "Added %(label)s."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:432
+#: crm/zetom/admin/requestmain.py:511
 #, python-format
 msgid "Removed %(label)s."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:449
+#: crm/zetom/admin/requestmain.py:528
+msgid "Client not found."
+msgstr ""
+
+#: crm/zetom/admin/requestmain.py:535
+#, python-format
+msgid "Linked client %(c)s."
+msgstr ""
+
+#: crm/zetom/admin/requestmain.py:537
+msgid "Client already linked."
+msgstr ""
+
+#: crm/zetom/admin/requestmain.py:560
+#, python-format
+msgid "Created and linked client %(c)s."
+msgstr ""
+
+#: crm/zetom/admin/requestmain.py:574
+msgid "Client unlinked."
+msgstr ""
+
+#: crm/zetom/admin/requestmain.py:591
 msgid "No user selected."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:454 crm/zetom/admin/requestmain.py:478
-#: crm/zetom/admin/requestmain.py:507 crm/zetom/admin/requestmain.py:532
+#: crm/zetom/admin/requestmain.py:596 crm/zetom/admin/requestmain.py:620
+#: crm/zetom/admin/requestmain.py:649 crm/zetom/admin/requestmain.py:674
 msgid "User not found."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:458
+#: crm/zetom/admin/requestmain.py:600
 msgid "You can't assign this user."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:464
+#: crm/zetom/admin/requestmain.py:606
 #, python-format
 msgid "Assigned %(name)s."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:482
+#: crm/zetom/admin/requestmain.py:624
 msgid "You can't unassign this user."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:490
+#: crm/zetom/admin/requestmain.py:632
 #, python-format
 msgid "Removed %(name)s."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:511
+#: crm/zetom/admin/requestmain.py:653
 msgid "User must be assigned before becoming owner."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:516
+#: crm/zetom/admin/requestmain.py:658
 #, python-format
 msgid "%(name)s is now an owner."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:537
+#: crm/zetom/admin/requestmain.py:679
 #, python-format
 msgid "%(name)s is no longer an owner."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:571
+#: crm/zetom/admin/requestmain.py:713
 #, python-format
 msgid "Status changed to %(status)s."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:586
+#: crm/zetom/admin/requestmain.py:728
 msgid "Offer created."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:596
+#: crm/zetom/admin/requestmain.py:738
 msgid "Order created."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:606
+#: crm/zetom/admin/requestmain.py:748
 msgid "Application created."
 msgstr ""
 
@@ -1216,129 +1256,163 @@ msgstr ""
 msgid "Review request sent."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:94
+#: crm/zetom/admin/requestnull_validate.py:100
 msgid "Bad link choice."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:96
+#: crm/zetom/admin/requestnull_validate.py:102
 msgid "Selected client is not in the candidate list."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:98
+#: crm/zetom/admin/requestnull_validate.py:104
 msgid "Please pick how to link this request."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:107
+#: crm/zetom/admin/requestnull_validate.py:113
 msgid "Provide at least a phone or email for the new client."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:122
+#: crm/zetom/admin/requestnull_validate.py:128
 #, python-format
 msgid "These users have no overlap with the selected departments: %(names)s"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:143
 #: crm/zetom/admin/requestnull_validate.py:149
-#: crm/zetom/admin/requestnull_validate.py:175
+#: crm/zetom/admin/requestnull_validate.py:155
+#: crm/zetom/admin/requestnull_validate.py:181
 msgid "present"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:143
 #: crm/zetom/admin/requestnull_validate.py:149
-#: crm/zetom/admin/requestnull_validate.py:157
+#: crm/zetom/admin/requestnull_validate.py:155
+#: crm/zetom/admin/requestnull_validate.py:163
 msgid "required, missing"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:155 crm/zetom/models.py:28
+#: crm/zetom/admin/requestnull_validate.py:161 crm/zetom/models.py:28
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:101
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:204
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:258
 #: crm/zetom/templates/zetom/email_template.html:147
 msgid "Phone"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:157
+#: crm/zetom/admin/requestnull_validate.py:163
 msgid "E.164 format"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:166
+#: crm/zetom/admin/requestnull_validate.py:172
 msgid "valid"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:166
+#: crm/zetom/admin/requestnull_validate.py:172
 msgid "required, invalid"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:172
+#: crm/zetom/admin/requestnull_validate.py:178
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:77
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:36
 msgid "Company"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:174
+#: crm/zetom/admin/requestnull_validate.py:180
 msgid "optional · acceptable empty"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:180
+#: crm/zetom/admin/requestnull_validate.py:186
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:109
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:231
 #: crm/zetom/templates/zetom/email_template.html:164
 msgid "Message"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:183
+#: crm/zetom/admin/requestnull_validate.py:189
 msgid "free text from the website form"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:184
+#: crm/zetom/admin/requestnull_validate.py:190
 msgid "no message provided"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:195
+#: crm/zetom/admin/requestnull_validate.py:201
 msgid "Required fields missing — review before approving"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:196
+#: crm/zetom/admin/requestnull_validate.py:202
 msgid "Approve is disabled until the snapshot has all required fields."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:201
+#: crm/zetom/admin/requestnull_validate.py:207
 msgid "No duplicate clients found · email domain looks fine"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:202
+#: crm/zetom/admin/requestnull_validate.py:208
 msgid "Proceed by creating a new client from the snapshot data."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:207
+#: crm/zetom/admin/requestnull_validate.py:213
 msgid "One strong duplicate found · all required fields valid"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:208
+#: crm/zetom/admin/requestnull_validate.py:214
 msgid "Recommended action: link to the proposed client."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:212
+#: crm/zetom/admin/requestnull_validate.py:218
 #, python-format
 msgid "%(n)d possible duplicates · pick the closest match"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:213
+#: crm/zetom/admin/requestnull_validate.py:219
 msgid "Several candidates match — review the badges before linking."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:309
+#: crm/zetom/admin/requestnull_validate.py:326
 msgid "Discarded as spam from the Validation Window."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:311
+#: crm/zetom/admin/requestnull_validate.py:328
 msgid "Request discarded as spam (moved to Cancelled)."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:328
+#: crm/zetom/admin/requestnull_validate.py:334
+msgid "This request was permanently deleted as a duplicate."
+msgstr ""
+
+#: crm/zetom/admin/requestnull_validate.py:346
+msgid "Duplicate target not found."
+msgstr ""
+
+#: crm/zetom/admin/requestnull_validate.py:357
+msgid "Cancelled as duplicate from the Validation Window."
+msgstr ""
+
+#: crm/zetom/admin/requestnull_validate.py:361
+#, python-format
+msgid "Existing request #%(id)d cancelled as duplicate."
+msgstr ""
+
+#: crm/zetom/admin/requestnull_validate.py:364
+msgid "Existing request was already cancelled/deleted."
+msgstr ""
+
+#: crm/zetom/admin/requestnull_validate.py:370
+#, python-format
+msgid "Existing validation request #%(id)d permanently deleted."
+msgstr ""
+
+#: crm/zetom/admin/requestnull_validate.py:384
+msgid "Existing request updated with this data; this request was removed."
+msgstr ""
+
+#: crm/zetom/admin/requestnull_validate.py:395
+msgid "This request was updated from the existing duplicate."
+msgstr ""
+
+#: crm/zetom/admin/requestnull_validate.py:451
 msgid "Request approved and promoted."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:353
+#: crm/zetom/admin/requestnull_validate.py:476
 #, python-format
 msgid "Validation Window — RequestNull #%(id)d"
 msgstr ""
@@ -1384,41 +1458,49 @@ msgid "Manual"
 msgstr ""
 
 #: crm/zetom/models.py:82 crm/zetom/models.py:83
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:56
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:55
 msgid "Validation Window"
 msgstr ""
 
-#: crm/zetom/models.py:116
+#: crm/zetom/models.py:126
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:182
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:18
 msgid "Offer"
 msgstr ""
 
-#: crm/zetom/models.py:130
+#: crm/zetom/models.py:140
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:196
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:56
 msgid "Order"
 msgstr ""
 
-#: crm/zetom/models.py:143
+#: crm/zetom/models.py:153
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:210
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:94
 msgid "Application"
 msgstr ""
 
-#: crm/zetom/models.py:149
+#: crm/zetom/models.py:176
+msgid "Client link"
+msgstr ""
+
+#: crm/zetom/models.py:177
+msgid "Client links"
+msgstr ""
+
+#: crm/zetom/models.py:186
 msgid "Deleted Request"
 msgstr ""
 
-#: crm/zetom/models.py:150
+#: crm/zetom/models.py:187
 msgid "Deleted Requests"
 msgstr ""
 
-#: crm/zetom/models.py:155
+#: crm/zetom/models.py:192
 msgid "Cancelled Request"
 msgstr ""
 
-#: crm/zetom/models.py:156
+#: crm/zetom/models.py:193
 msgid "Cancelled Requests"
 msgstr ""
 
@@ -1464,7 +1546,9 @@ msgid "Hard delete"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:37
-msgid "This request is in the trash. Use Restore to bring it back, or Hard delete to remove it permanently."
+msgid ""
+"This request is in the trash. Use Restore to bring it back, or Hard delete "
+"to remove it permanently."
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:42
@@ -1515,7 +1599,8 @@ msgid "Request review"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:58
-msgid "Notify owners (or escalate to dep heads / admins) to review this request"
+msgid ""
+"Notify owners (or escalate to dep heads / admins) to review this request"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:71
@@ -1542,7 +1627,9 @@ msgid "Free message"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:124
-msgid "The selected document will be e-mailed to staff. Its status will flip from In progress → Waiting."
+msgid ""
+"The selected document will be e-mailed to staff. Its status will flip from "
+"In progress → Waiting."
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:128
@@ -1609,7 +1696,8 @@ msgid "Document: %(doc)s"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:301
-msgid "Notification will be sent in-app to the specialist who requested this review."
+msgid ""
+"Notification will be sent in-app to the specialist who requested this review."
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:305
@@ -1638,7 +1726,9 @@ msgid "Submit decision"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:362
-msgid "Owners are notified automatically. You can also add or remove other recipients below."
+msgid ""
+"Owners are notified automatically. You can also add or remove other "
+"recipients below."
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:367
@@ -1721,6 +1811,24 @@ msgstr ""
 msgid "Create new application"
 msgstr ""
 
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:13
+msgid "Possible duplicates found"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:14
+msgid ""
+"Similar records already exist in the database. Review them before saving "
+"this request."
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:17
+msgid "Go back and edit"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:18
+msgid "Save anyway"
+msgstr ""
+
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/history_card.html:8
 msgid "History"
 msgstr ""
@@ -1765,6 +1873,34 @@ msgstr ""
 msgid "This request is soft-deleted. Restore it before editing."
 msgstr ""
 
+#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:82
+msgid "Linked clients"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:89
+msgid "Unlink"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:90
+msgid "Unlink this client from the request?"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:94
+msgid "No clients linked yet."
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:101
+msgid "— pick a client to link —"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:106
+msgid "Link"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:110
+msgid "Create a new client from this request"
+msgstr ""
+
 #: crm/zetom/templates/admin/zetom/requestmain/reason_form.html:16
 msgid "Confirm"
 msgstr ""
@@ -1774,172 +1910,260 @@ msgid "Preview build"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:29
-msgid "the layout matches the design handoff, but the items below are not fully wired yet:"
+msgid ""
+"the layout matches the design handoff, but the items below are not fully "
+"wired yet:"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:31
-msgid "Owners list is not live-filtered by departments — eligibility is enforced when you click Approve. Pick departments first to avoid being bounced back."
+msgid ""
+"Owners list is not live-filtered by departments — eligibility is enforced "
+"when you click Approve. Pick departments first to avoid being bounced back."
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:32
-msgid "Primary-owner reordering by drag is not available — the first selected owner becomes primary."
+msgid ""
+"Primary-owner reordering by drag is not available — the first selected owner "
+"becomes primary."
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:33
-msgid "Ad-hoc client search box is decorative — only auto-proposed candidates can be linked right now."
+msgid ""
+"Ad-hoc client search box is decorative — only auto-proposed candidates can "
+"be linked right now."
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:34
-msgid "RequestMain has no foreign key to Client yet — linking copies the Client's data into the new request but does not store the relation."
-msgstr ""
-
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:42
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:41
 msgid "Please fix the following:"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:60
-msgid "Review the incoming snapshot, link it to an existing <code>Client</code> (or create a new one), assign the responsible department(s) and owners, then approve to promote into a <code>RequestMain</code>."
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:59
+msgid ""
+"Review the incoming snapshot, link it to an existing <code>Client</code> (or "
+"create a new one), assign the responsible department(s) and owners, then "
+"approve to promote into a <code>RequestMain</code>."
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:75
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:303
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:74
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:357
 msgid "candidate(s)"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:85
-msgid "Snapshot"
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:84
+msgid "This looks like a copy of an existing request"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:86
+msgid "Possible duplicate requests found"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:89
+msgid "Matched against other validation requests and active RequestMains."
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:95
+msgid "RequestMain"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:95
+msgid "RequestNull"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:100
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:102
+msgid "open"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:107
+msgid "Overwrite THIS request with the existing data"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:108
+msgid "← pull info"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:111
+msgid "Overwrite the existing request with THIS data and remove this one?"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:112
+msgid "Merge THIS data into the existing request, then delete this"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:113
+msgid "push info →"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:116
+msgid "Cancel the existing request as a duplicate?"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:116
+msgid "Permanently delete the existing validation request?"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:117
+msgid "delete existing"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:125
+msgid ""
+"Permanently delete THIS request as a duplicate? This is a hard delete and "
+"cannot be undone."
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:126
+msgid "Delete this request as duplicate (hard delete)"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:128
+msgid ""
+"Removes the current incoming request, keeping the existing one(s) above."
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:139
+msgid "Snapshot"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:140
 msgid "read-only"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:90
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:144
 msgid "source"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:102
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:107
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:156
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:161
 msgid "empty"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:120
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:174
 msgid "Link to Client"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:121
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:175
 msgid "sorted by signal strength"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:127
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:181
 msgid "candidate(s) proposed by the duplicate matcher"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:130
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:184
 msgid "Search is not wired yet"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:132
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:186
 msgid "Search clients by name, NIP, phone, email…"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:164
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:218
 msgid "strong"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:164
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:218
 msgid "weak"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:164
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:218
 msgid "match"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:172
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:226
 msgid "No matching clients found"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:173
-msgid "The duplicate matcher checked phone, email, NIP, company name and surname — no signal hit. Create a new client below, or discard as spam."
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:227
+msgid ""
+"The duplicate matcher checked phone, email, NIP, company name and surname — "
+"no signal hit. Create a new client below, or discard as spam."
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:184
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:238
 msgid "Create as new client"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:185
-msgid "Add this request as a fresh entry in the Clients table. Fields are pre-filled from the snapshot — edit as needed."
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:239
+msgid ""
+"Add this request as a fresh entry in the Clients table. Fields are pre-"
+"filled from the snapshot — edit as needed."
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:213
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:267
 msgid "recommended"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:223
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:277
 msgid "Leave unlinked"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:224
-msgid "Approve without attaching a Client. Useful when the request data is too thin to justify a Client record. Discouraged — use sparingly."
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:278
+msgid ""
+"Approve without attaching a Client. Useful when the request data is too thin "
+"to justify a Client record. Discouraged — use sparingly."
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:226
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:280
 msgid "low usage"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:236
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:290
 msgid "future RequestMain"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:252
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:306
 msgid "Pick one or more — owners must belong to at least one."
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:257
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:311
 msgid "Owners"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:259
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:313
 msgid "All active users · pick from list below"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:273
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:327
 msgid "No active users."
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:278
-msgid "Eligibility (owner ∈ users with overlapping department) is enforced on submit. Live filtering is not wired yet."
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:332
+msgid ""
+"Eligibility (owner ∈ users with overlapping department) is enforced on "
+"submit. Live filtering is not wired yet."
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:284
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:338
 msgid "Per-Req role ladder"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:291
-msgid "The first selected owner becomes the primary owner of the new RequestMain."
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:345
+msgid ""
+"The first selected owner becomes the primary owner of the new RequestMain."
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:301
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:355
 msgid "snapshot loaded"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:305
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:359
 msgid "no candidates"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:307
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:361
 msgid "owners filter:"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:312
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:366
 msgid "Discard this request as spam? This cannot be undone."
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:313
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:367
 msgid "Discard as spam"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:315
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:369
 msgid "Approve & create RequestMain"
 msgstr ""
 
