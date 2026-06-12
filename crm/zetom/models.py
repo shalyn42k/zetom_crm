@@ -36,15 +36,15 @@ class RequestSource(models.TextChoices):
 
 class RequestTemplate(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE
-    source = models.CharField(choices=RequestSource.choices, default=RequestSource.OTHER, null=False, blank=False)
+    source = models.CharField(choices=RequestSource.choices, default=RequestSource.OTHER, null=False, blank=False, verbose_name=_("Source"))
     assigned_to = models.ManyToManyField(User, blank=True, related_name="+")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated at"))
     first_name = models.CharField(max_length=50, blank=True, null=True)
     last_name = models.CharField(max_length=50, blank=True, null=True)
-    phone = PhoneNumberField(null=False, blank=False)
-    company_name = models.CharField(max_length=50, blank=True, null=True)
-    email = models.EmailField(max_length=100, null=False, blank=False)
+    phone = PhoneNumberField(null=False, blank=False, verbose_name=_("Phone"))
+    company_name = models.CharField(max_length=50, blank=True, null=True, verbose_name=_("Company name"))
+    email = models.EmailField(max_length=100, null=False, blank=False, verbose_name=_("Email"))
     # claude — max_length=20 чтобы пользователь мог ввести `PL...`, дефисы и пробелы;
     # clean() приведёт значение к 10 цифрам перед сохранением.
     company_nip = models.CharField(
@@ -117,7 +117,7 @@ class RequestMain(RequestTemplate):
 class Oferta(RequestTemplate):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
     from_main = models.ForeignKey(
-        RequestMain, on_delete=models.CASCADE, null=True, blank=True
+        RequestMain, on_delete=models.CASCADE, null=True, blank=True, verbose_name=_("From main")
     )
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
@@ -130,7 +130,7 @@ class Oferta(RequestTemplate):
 class Zlecenie(RequestTemplate):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
     from_main = models.ForeignKey(
-        RequestMain, on_delete=models.CASCADE, null=True, blank=True
+        RequestMain, on_delete=models.CASCADE, null=True, blank=True, verbose_name=_("From main")
     )
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
@@ -144,7 +144,7 @@ class Zlecenie(RequestTemplate):
 class Wniosek(RequestTemplate):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
     from_main = models.ForeignKey(
-        RequestMain, on_delete=models.CASCADE, null=True, blank=True
+        RequestMain, on_delete=models.CASCADE, null=True, blank=True, verbose_name=_("From main")
     )
     notes = models.TextField(null=True, blank=True)
     application_number = models.CharField(max_length=20, null=True, blank=True)

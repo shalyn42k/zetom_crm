@@ -180,7 +180,7 @@ UNFOLD = {
             # claude — терминальные/мусор. TODO[other dev]: Trash, возможно,
             # надо закрыть `delete_requests` отдельно. Пока — `view_requests`.
             {
-                "title": "Archive",
+                "title": _("Archive"),
                 "collapsible": True,
                 "items": [
                     {
@@ -203,7 +203,7 @@ UNFOLD = {
             },
 
             {
-                "title": "Clients",
+                "title": _("Clients"),
                 "collapsible": True,
                 "items": [
                     {
@@ -220,7 +220,7 @@ UNFOLD = {
             # claude — раньше "Admin"; переименовано в "Users & Access" чтобы
             # не путать с ролью admin и не вступать в конфликт с группой "System".
             {
-                "title": "Users & Access",
+                "title": _("Users & Access"),
                 "collapsible": True,
                 "items": [
                     {
@@ -247,7 +247,7 @@ UNFOLD = {
             # EmailNotificationAdmin), иначе пункт сайдбара виден / скрыт
             # рассинхронно с реальным доступом.
             {
-                "title": "System",
+                "title": _("System"),
                 "collapsible": True,
                 "items": [
                     {
