@@ -24,6 +24,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from crm.status_manager.services.statuses import RequestStatus, Status
+from crm.users.models import Role
 from crm.zetom.models import Oferta, RequestMain, RequestNull, Wniosek, Zlecenie
 
 BASE_DATA = {
@@ -194,6 +195,17 @@ class MainAdminActionTests(TestCase):
         )
         self.assertEqual(response.status_code, 403)
 
+    @patch("crm.zetom.admin.requestmain_review.user_has_perm", return_value=False)
+    def test_request_review_returns_403_without_request_review_permission(
+        self, perm_mock, _
+    ):
+        url = reverse("admin:zetom_requestmain_request_review", args=[self.main.pk])
+        response = self.client.post(
+            url,
+            data={"note": "test", "recipient_ids": [self.user.pk]},
+        )
+        self.assertEqual(response.status_code, 403)
+
     def test_mail_freeform_returns_403_for_hidden_request(self, _):
         hidden = get_user_model().objects.create_user(
             username="hidden", email="hidden@example.com", password="x", is_staff=True
@@ -201,6 +213,20 @@ class MainAdminActionTests(TestCase):
         self.client.force_login(hidden)
         url = reverse("admin:zetom_requestmain_mail_freeform", args=[self.main.pk])
         response = self.client.post(url, data={"subject": "test", "body": "test message"})
+        self.assertEqual(response.status_code, 403)
+
+    def test_request_review_returns_403_for_hidden_request(self, _):
+        specialist_role = Role.objects.get(code="specialist")
+        hidden = get_user_model().objects.create_user(
+            username="hidden_spec", email="hidden_spec@example.com", password="x", is_staff=True
+        )
+        hidden.profile.role = specialist_role
+        hidden.profile.departments = []
+        hidden.profile.save(update_fields=["role", "departments"])
+        self.client.force_login(hidden)
+
+        url = reverse("admin:zetom_requestmain_request_review", args=[self.main.pk])
+        response = self.client.post(url, data={"note": "test", "recipient_ids": [self.user.pk]})
         self.assertEqual(response.status_code, 403)
 
 
