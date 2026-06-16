@@ -12,20 +12,21 @@ Per-Req rules + sender→target eligibility live in
 # Django imports
 from django import forms
 from django.contrib import messages
-# Stdlib
+from django.http import HttpResponseForbidden
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.urls import path
 from django.utils.translation import gettext_lazy as _
 
-# Local imports
 from crm.notification.models import NotificationKind
 from crm.notification.services import inapp_service
 from crm.notification.services.recipients import review_candidates_for
+from crm.users.utils import user_has_perm
 from crm.zetom.models import RequestMain
 from crm.zetom.services.per_req_perms import (
     is_owner_of_req, request_review_eligible,
 )
+from crm.zetom.services.visibility import visible_requests_for
 
 # claude
 User = get_user_model()
@@ -59,10 +60,25 @@ class RequestReviewMixin:
         ]
         return custom + urls
 
+    def _get_req_for_review_action(self, request, object_id):
+        if not user_has_perm(request.user, "request_review"):
+            return None, HttpResponseForbidden(
+                _("You don't have permission for this action.")
+            )
+
+        qs = visible_requests_for(request.user, RequestMain.objects.all())
+        obj = qs.filter(pk=object_id).first()
+        if obj is None:
+            return None, HttpResponseForbidden(_("Request not found."))
+        return obj, None
+
     def request_review_action(self, request, object_id):
         if request.method != "POST":
             return redirect("admin:zetom_requestmain_change", object_id)
-        obj = get_object_or_404(RequestMain, pk=object_id)
+
+        obj, forbidden = self._get_req_for_review_action(request, object_id)
+        if forbidden is not None:
+            return forbidden
 
         form = ReviewRequestForm(request.POST)
         if not form.is_valid():
