@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/ivan/Рабочий\\\\ стол/artscore-django/zetom_crm/crm/status_manager/**)",
+      "Read(//home/ivan/Рабочий\\\\ стол/artscore-django/zetom_crm/crm/clients/static/client/**)"
+    ]
+  }
+}
