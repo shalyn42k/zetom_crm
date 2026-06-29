@@ -451,6 +451,16 @@ class RequestMainAdmin(
                 view(self.create_client_json),
                 name="zetom_requestmain_create_client_json",
             ),
+            path(
+                "<path:object_id>/edit-client-json/<int:client_id>/",
+                view(self.edit_client_json),
+                name="zetom_requestmain_edit_client_json",
+            ),
+            path(
+                "<path:object_id>/save-client-json/<int:client_id>/",
+                view(self.save_client_json),
+                name="zetom_requestmain_save_client_json",
+            ),
         ]
         return custom + urls
 
@@ -496,6 +506,74 @@ class RequestMainAdmin(
         )
         RequestClientLink.objects.create(request=obj, client=cl, linked_by=request.user)
         return JsonResponse({"ok": True, "label": str(cl), "pk": cl.pk, "nip": cl.company_nip or ""})
+
+    def edit_client_json(self, request, object_id, client_id):
+        """Returns client data in JSON format for inline editing in a modal."""
+        if request.method != "GET":
+            return JsonResponse({"ok": False}, status=405)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied:
+            return JsonResponse({"ok": False, "error": "permission"}, status=403)
+        cl = Client.objects.filter(pk=client_id).first()
+        if not cl:
+            return JsonResponse({"ok": False, "error": "not found"}, status=404)
+        return JsonResponse({
+            "ok": True,
+            "pk": cl.pk,
+            "first_name": cl.first_name or "",
+            "last_name": cl.last_name or "",
+            "company_name": cl.company_name or "",
+            "company_nip": cl.company_nip or "",
+            "phone": str(cl.phone) if cl.phone else "",
+            "email": cl.email or "",
+            "address": cl.address or "",
+        })
+
+    def save_client_json(self, request, object_id, client_id):
+        """Saves client data from the modal form."""
+        if request.method != "POST":
+            return JsonResponse({"ok": False}, status=405)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied:
+            return JsonResponse({"ok": False, "error": "permission"}, status=403)
+        cl = Client.objects.filter(pk=client_id).first()
+        if not cl:
+            return JsonResponse({"ok": False, "error": "not found"}, status=404)
+        
+        # Update client fields
+        cl.first_name = (request.POST.get("first_name") or "").strip() or None
+        cl.last_name = (request.POST.get("last_name") or "").strip() or None
+        cl.company_name = (request.POST.get("company_name") or "").strip() or None
+        cl.company_nip = (request.POST.get("company_nip") or "").strip() or None
+        phone_raw = (request.POST.get("phone") or "").strip()
+        cl.phone = phone_raw or None
+        cl.email = (request.POST.get("email") or "").strip() or None
+        cl.address = (request.POST.get("address") or "").strip() or None
+
+        try:
+            cl.clean()  # normalizes NIP, no validate_unique side-effects
+            cl.save(update_fields=[
+                "first_name", "last_name", "company_name", "company_nip",
+                "phone", "email", "address",
+            ])
+            return JsonResponse({
+                "ok": True,
+                "pk": cl.pk,
+                "label": cl.short_label(),
+                "nip": cl.company_nip or "",
+                "first_name": cl.first_name or "",
+                "last_name": cl.last_name or "",
+                "company_name": cl.company_name or "",
+                "company_nip": cl.company_nip or "",
+                "phone": str(cl.phone) if cl.phone else "",
+                "email": cl.email or "",
+                "address": cl.address or "",
+            })
+        except Exception as e:
+            return JsonResponse({
+                "ok": False,
+                "error": str(e)
+            }, status=400)
 
     # ---------- Pre-save duplicate check (JSON, for the add-form popup) ----------
 
