@@ -153,7 +153,7 @@ Grid: top row = [01 Snapshot][02 Dup Check], bottom row = [03 Link][—], col-3 
                   {% if form.owners.value and u.pk|stringformat:"s" in form.owners.value|stringformat:"s" %}checked{% endif %}>
                 <span class="uav">{{ u.first_name|slice:":1"|upper }}{{ u.last_name|slice:":1"|upper }}</span>
                 <span class="uname">{{ u.get_full_name|default:u.username }}</span>
-                <span class="urole mono">{% if prof.role %}{{ prof.role.code }}{% else %}—{% endif %}</span>
+                <span class="urole mono">{% if prof.role %}{% trans prof.role.name %}{% else %}—{% endif %}</span>
                 <span class="check"></span>
               </label>
               {% endwith %}
