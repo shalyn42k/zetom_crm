@@ -15,7 +15,7 @@
       {% endif %}
       {% if original.profile.role %}
         <span class="up-sep" aria-hidden="true">·</span>
-        <span class="up-badge up-badge--role-{{ original.profile.role.code|lower }}">{{ original.profile.role.name }}</span>
+        <span class="up-badge up-badge--role-{{ original.profile.role.code|lower }}">{% trans original.profile.role.name %}</span>
       {% elif original.is_staff %}
         <span class="up-sep" aria-hidden="true">·</span>
         <span class="up-badge up-badge--role-staff">{% trans "Staff" %}</span>

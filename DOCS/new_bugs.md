@@ -27,7 +27,7 @@
 
 ---
 
-### ⚠️ БАГ-3 — Английские слова в польском интерфейсе
+### ✅ БАГ-3 — Английские слова в польском интерфейсе
 
 **Переведено:** `Notifications→Powiadomienia`, `Inbox→Skrzynka`, `Requests→Zlecenia`, `Klienci`, `Phone→Telefon`, `Created at→Utworzono`, `First name→Imię`, `Submit your request→Wyślij swoje zgłoszenie`, `Filter→Filtr`.
 

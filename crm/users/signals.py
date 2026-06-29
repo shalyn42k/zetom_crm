@@ -3,6 +3,7 @@ from django.contrib.auth.models import Permission as DjangoPermission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_migrate
 from django.dispatch import receiver
+from django.utils.translation import gettext_lazy as _
 
 from crm.users.models import Permission, Role
 
@@ -33,35 +34,38 @@ def create_rbac_defaults(sender, **kwargs):
     # Расширения (manage_owners / view_inbox / view_*_log) — для notification
     # и per-Req owner-флоу; их гейты см. в crm/notification/views.py,
     # crm/notification/admin.py, crm/zetom/services/per_req_perms.py.
+    # claude — строки обёрнуты в _() для makemessages; при post_migrate
+    # LANGUAGE_CODE="en" → хранится в БД как английский текст.
+    # Шаблоны используют {% trans perm.name %} для перевода при отображении.
     permissions_data = [
-        ("view_users", "View users"),
-        ("edit_users", "Edit users (profile fields)"),
-        ("view_roles", "View roles"),
-        ("edit_roles", "Assign role and individual permissions to users"),
-        ("view_requests", "View requests"),
-        ("edit_requests", "Edit requests"),
-        ("delete_requests", "Delete requests"),
-        ("view_logs", "View logs"),
-        ("change_request_status", "Change request status"),
-        ("send_documents", "Send document emails (oferta/zlecenie/wniosek)"),
-        ("assign_requests", "Assign/unassign users to requests"),
-        ("grant_head", "Grant/revoke department head"),
-        ("request_review", "Request review from a higher role"),
-        ("resolve_review", "Resolve review (approve/reject)"),
+        ("view_users", _("View users")),
+        ("edit_users", _("Edit users (profile fields)")),
+        ("view_roles", _("View roles")),
+        ("edit_roles", _("Assign role and individual permissions to users")),
+        ("view_requests", _("View requests")),
+        ("edit_requests", _("Edit requests")),
+        ("delete_requests", _("Delete requests")),
+        ("view_logs", _("View logs")),
+        ("change_request_status", _("Change request status")),
+        ("send_documents", _("Send document emails (oferta/zlecenie/wniosek)")),
+        ("assign_requests", _("Assign/unassign users to requests")),
+        ("grant_head", _("Grant/revoke department head")),
+        ("request_review", _("Request review from a higher role")),
+        ("resolve_review", _("Resolve review (approve/reject)")),
         # claude — per-Req owners (см. memory project_per_req_permissions.md).
         # Контекстный fallback admin/dep_head-of-Req сохраняется в коде;
         # этот perm позволяет ДЕЛЕГИРОВАТЬ право через extra_permissions.
-        ("manage_owners", "Set/unset owner on a request"),
+        ("manage_owners", _("Set/unset owner on a request")),
         # claude — gates для inapp-канала и админ-логов.
-        ("view_inbox", "Open the in-app notifications inbox"),
-        ("view_notification_log", "View the in-app notification audit log (admin)"),
-        ("view_email_log", "View the email notification audit log (admin)"),
+        ("view_inbox", _("Open the in-app notifications inbox")),
+        ("view_notification_log", _("View the in-app notification audit log (admin)")),
+        ("view_email_log", _("View the email notification audit log (admin)")),
         # claude — clients module gates. Раньше ClientAdmin + search/autofill
         # views были без проверок; любой staff (а search вообще аноним) мог
         # выгрузить базу клиентов.
-        ("view_clients", "View clients"),
-        ("edit_clients", "Edit/create clients"),
-        ("delete_clients", "Delete clients"),
+        ("view_clients", _("View clients")),
+        ("edit_clients", _("Edit/create clients")),
+        ("delete_clients", _("Delete clients")),
     ]
 
     # Создание permissions
@@ -86,13 +90,15 @@ def create_rbac_defaults(sender, **kwargs):
     # claude — наборы по матрице DOCS/rbac.md §5.
     # all_seeing по дизайну пустая роль-шаблон, права раздаются индивидуально
     # через extra_permissions.
+    # claude — имена ролей обёрнуты в _() для makemessages;
+    # шаблоны используют {% trans role.name %} для перевода.
     roles_data = {
         "admin": {
-            "name": "Administrator",
+            "name": _("Administrator"),
             "perms": [p[0] for p in permissions_data],
         },
         "department_head": {
-            "name": "Department Head",
+            "name": _("Department Head"),
             "perms": [
                 "view_users",
                 "view_requests",
@@ -113,7 +119,7 @@ def create_rbac_defaults(sender, **kwargs):
             ],
         },
         "specialist": {
-            "name": "Specialist",
+            "name": _("Specialist"),
             "perms": [
                 "view_requests",
                 "edit_requests",
@@ -127,7 +133,7 @@ def create_rbac_defaults(sender, **kwargs):
             ],
         },
         "auditor": {
-            "name": "Auditor",
+            "name": _("Auditor"),
             "perms": [
                 "view_users",
                 "view_roles",
@@ -141,7 +147,7 @@ def create_rbac_defaults(sender, **kwargs):
             ],
         },
         "all_seeing": {
-            "name": "All Seeing",
+            "name": _("All Seeing"),
             "perms": [],
         },
     }

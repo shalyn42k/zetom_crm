@@ -126,7 +126,7 @@
                   :aria-expanded="open">
             <span class="up-perm-group__caret" aria-hidden="true"
                   :class="{ 'is-open': open }"></span>
-            <span class="up-perm-group__title">{{ group.name }}</span>
+            <span class="up-perm-group__title">{% trans group.name %}</span>
             <span class="up-perm-group__count">{{ group.items|length }}</span>
           </button>
           {% comment %}x-cloak + x-show, чтобы во время загрузки страницы
@@ -144,14 +144,14 @@
                        (он видит галки read-only, менять не может).
                   {% endcomment %}
                   {% if item.from_role %}
-                    <input type="checkbox" checked disabled aria-label="{{ item.perm.name }} ({{ from_role_label }})">
+                    <input type="checkbox" checked disabled aria-label="{% trans item.perm.name %} ({{ from_role_label }})">
                   {% else %}
                     <input type="checkbox" name="extra_permissions" value="{{ item.perm.id }}"
                            {% if item.extra %}checked{% endif %}
                            {% if not can_edit_roles %}disabled{% endif %}>
                   {% endif %}
                   <span class="up-perm__meta">
-                    <span class="up-perm__name">{{ item.perm.name }}</span>
+                    <span class="up-perm__name">{% trans item.perm.name %}</span>
                     <span class="up-perm__code">{{ item.perm.code }}</span>
                   </span>
                   <span class="up-perm__badges">
