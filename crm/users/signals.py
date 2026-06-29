@@ -71,7 +71,7 @@ def create_rbac_defaults(sender, **kwargs):
     # Создание permissions
     perm_objects = {}
     for code, name in permissions_data:
-        perm, _ = Permission.objects.get_or_create(
+        perm, _created = Permission.objects.get_or_create(
             code=code,
             defaults={
                 "name": name,
@@ -84,7 +84,7 @@ def create_rbac_defaults(sender, **kwargs):
     # (например, удалённые декоративные view_dashboard / view_admin_panel).
     # Иначе они продолжают висеть в БД мёртвым грузом, появляются в админ-UI
     # как доступные для extra_permissions и путают команду.
-    valid_codes = {code for code, _ in permissions_data}
+    valid_codes = {code for code, _name in permissions_data}
     Permission.objects.exclude(code__in=valid_codes).delete()
 
     # claude — наборы по матрице DOCS/rbac.md §5.
@@ -154,7 +154,7 @@ def create_rbac_defaults(sender, **kwargs):
 
     # Создание ролей
     for code, data in roles_data.items():
-        role, _ = Role.objects.get_or_create(
+        role, _created = Role.objects.get_or_create(
             code=code,
             defaults={"name": data["name"]}
         )
