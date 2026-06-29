@@ -16,6 +16,9 @@ from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 
 from crm.clients.models import Client
+from crm.notification.services.inapp_service import (
+    dismiss_pending_review_requests,
+)
 from crm.status_manager.models import StatusHistory
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
@@ -167,6 +170,7 @@ class RequestMainAdmin(
                 reason=reason,
                 changed_by=request.user,
             )
+            dismiss_pending_review_requests(obj.pk)
 
     @transaction.atomic
     def delete_model(self, request, obj):
