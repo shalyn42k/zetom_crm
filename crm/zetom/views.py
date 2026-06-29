@@ -12,6 +12,19 @@ from crm.zetom.forms import AddRequestFormNull
 from crm.zetom.models import RequestSource
 
 
+def _is_dns_error(error_message: str) -> bool:
+    """Check if error message indicates a DNS/hostname resolution failure."""
+    dns_indicators = [
+        "name resolution",
+        "getaddrinfo failed",
+        "nodename nor servname provided",
+        "No address associated with hostname",
+        "Temporary failure in name resolution",
+    ]
+    error_lower = str(error_message).lower()
+    return any(indicator.lower() in error_lower for indicator in dns_indicators)
+
+
 # claude — раньше после успешного POST редиректило в
 # admin:zetom_requestnull_change, что для анонимного юзера с сайта = редирект
 # в /admin/login/?next=... Теперь рендерим ту же страницу в thank-you state.
@@ -25,7 +38,20 @@ def email_template(request):
             try:
                 send_notification_to_staff(new_request)
             except Exception as e:
-                messages.error(request, _("Notification failed: %(err)s") % {"err": e})
+                error_message = str(e)
+                # Provide user-friendly error message based on error type
+                if _is_dns_error(error_message):
+                    user_message = _(
+                        "Your request was created, but notification email could not be sent. "
+                        "This is likely a server configuration issue (invalid SMTP host). "
+                        "The staff will review your request manually."
+                    )
+                else:
+                    user_message = _(
+                        "Your request was created, but we encountered an issue sending the notification. "
+                        "The staff will review your request manually."
+                    )
+                messages.error(request, user_message)
                 return render(request, "zetom/email_template.html", {"form": form})
             return render(
                 request,
