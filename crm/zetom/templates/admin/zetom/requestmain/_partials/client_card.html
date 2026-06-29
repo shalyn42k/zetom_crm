@@ -13,6 +13,8 @@ URLs injected via data- attributes; JS lives in requestmain_client_link.js.
          data-link-url="{% if original.pk %}{% url 'admin:zetom_requestmain_link_client_json' original.pk 0 %}{% endif %}"
          data-unlink-url="{% if original.pk %}{% url 'admin:zetom_requestmain_unlink_client_json' original.pk 0 %}{% endif %}"
          data-create-url="{% if original.pk %}{% url 'admin:zetom_requestmain_create_client_json' original.pk %}{% endif %}"
+         data-edit-url="{% if original.pk %}{% url 'admin:zetom_requestmain_edit_client_json' original.pk 0 %}{% endif %}"
+         data-save-url="{% if original.pk %}{% url 'admin:zetom_requestmain_save_client_json' original.pk 0 %}{% endif %}"
          data-pk="{{ original.pk|default:'' }}">
 
   <header class="rm-card__header">
@@ -39,7 +41,8 @@ URLs injected via data- attributes; JS lives in requestmain_client_link.js.
           <a class="rm-linked-name" href="{% url 'admin:clients_client_change' cl.pk %}" target="_blank">{{ cl.short_label }}</a>
           {% if cl.company_nip %}<span class="rm-linked-nip mono">NIP {{ cl.company_nip }}</span>{% endif %}
           {% if original.pk %}
-            <button type="button" class="rm-linked-x js-unlink-client" data-client="{{ cl.pk }}" title="{% trans 'Unlink' %}">×</button>
+            <button type="button" class="rm-linked-edit js-edit-client" data-client="{{ cl.pk }}" title="{% trans "Edit" %}">✎</button>
+            <button type="button" class="rm-linked-x js-unlink-client" data-client="{{ cl.pk }}" title="{% trans "Unlink" %}">×</button>
           {% endif %}
         </div>
       {% endfor %}
@@ -95,3 +98,20 @@ URLs injected via data- attributes; JS lives in requestmain_client_link.js.
     </div>
   </dl>
 </section>
+
+{# Modal for editing linked client #}
+<div id="rm-edit-client-modal" class="rm-modal" hidden>
+  <div class="rm-modal__overlay" id="rm-modal-overlay"></div>
+  <div class="rm-modal__content">
+    <header class="rm-modal__header">
+      <h3 class="rm-modal__title">{% trans "Edit Client" %}</h3>
+      <button type="button" class="rm-modal__close" id="rm-modal-close" title="{% trans "Close" %}">&#x2715;</button>
+    </header>
+    <div id="rm-modal-body" class="rm-modal__body"></div>
+    <footer class="rm-modal__footer">
+      <button type="button" class="rm-modal__cancel" id="rm-modal-cancel">{% trans "Cancel" %}</button>
+      <button type="button" class="rm-modal__save" id="rm-modal-save">{% trans "Save" %}</button>
+    </footer>
+  </div>
+</div>
+

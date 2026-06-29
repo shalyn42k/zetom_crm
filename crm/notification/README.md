@@ -154,6 +154,173 @@
 
 ---
 
+## 8. Диагностика и исправление SMTP ошибок (БАГ-7)
+
+### Проблема: "Notification failed: [Errno -3] Temporary failure in name resolution"
+
+Эта ошибка означает, что сервер не может разрешить DNS-имя хоста почтового сервера (например, `smtp.gmail.com` → IP-адрес).
+
+### Возможные причины:
+1. **Неверно указан `EMAIL_HOST` в `.env`** — проверить синтаксис хоста (без протокола, например `smtp.gmail.com` а не `smtp://smtp.gmail.com`)
+2. **Сервер отключен от внешней сети** — container/VM не имеет доступа к интернету или DNS
+3. **Конфликт с локальной сетью** — если используется локальный SMTP-сервер, хост должен быть резолвим внутри сети
+4. **DNS-сервер недоступен** — `/etc/resolv.conf` пуст или содержит неверные адреса (в Docker)
+
+### Диагностика
+
+#### Способ 1: Встроенный management-команда (рекомендуется)
+
+```bash
+# На сервере, в контейнере, или локально:
+python manage.py check_smtp
+
+# Для теста реальной отправки письма:
+python manage.py check_smtp --recipient admin@example.com
+```
+
+Команда проверит по порядку:
+1. ✓ DNS-резолв `EMAIL_HOST` → IP-адрес
+2. ✓ TCP-соединение на `EMAIL_HOST:EMAIL_PORT`
+3. ✓ SMTP handshake (EHLO)
+4. ✓ TLS/STARTTLS (если `EMAIL_USE_TLS=True`)
+5. ✓ Аутентификация (`EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD`)
+6. ✓ Опциональный тест-email (если передан `--recipient`)
+
+Вывод:
+- Зелёные ✓ — всё в порядке
+- Красные ✗ — проблема на этом шаге + подсказка для исправления
+
+#### Способ 2: Проверить конфигурацию в `.env`
+
+```bash
+# На сервере проверить переменные окружения:
+cat .env | grep EMAIL
+
+# Ожидаемый вывод (примеры):
+# EMAIL_HOST=smtp.gmail.com
+# EMAIL_PORT=587
+# EMAIL_USE_TLS=True
+# EMAIL_HOST_USER=your-email@gmail.com
+# EMAIL_HOST_PASSWORD=your-app-password
+# DEFAULT_FROM_EMAIL=your-email@gmail.com
+```
+
+#### Способ 3: Проверить DNS вручную
+
+```bash
+# Из контейнера или сервера:
+nslookup smtp.gmail.com
+# или
+dig smtp.gmail.com
+# или
+python -c "import socket; print(socket.gethostbyname('smtp.gmail.com'))"
+```
+
+Если не резолвится → проблема в сетевых настройках контейнера или DNS.
+
+#### Способ 4: Проверить TCP-соединение
+
+```bash
+# Из контейнера:
+nc -zv smtp.gmail.com 587
+# или
+telnet smtp.gmail.com 587
+```
+
+#### Способ 5: Проверить логи Django
+
+```bash
+# В Django логах (обычно в stdout или syslog контейнера):
+grep "notification.mail" logs/*.log
+```
+
+Ищите строки вида:
+```
+SMTP Config: host=smtp.gmail.com, port=587, use_tls=True, user=your-email@gmail.com. Error: [Errno -3] Temporary failure in name resolution
+```
+
+### Исправление
+
+#### Для контейнера Docker (инструкции для deployment)
+
+**Проблема:** контейнер приложения не может подключиться к интернету или не имеет DNS.
+
+**Решение 1 — Проверить docker-compose networking:**
+
+```yaml
+# docker-compose.yml
+services:
+  web:
+    image: your-app:latest
+    networks:
+      - default
+    # Убедиться, что контейнер может выйти в интернет
+    # Если используется custom network, дополнить сервис DNS:
+    dns:
+      - 8.8.8.8      # Google DNS
+      - 8.8.4.4      # Google DNS backup
+```
+
+**Решение 2 — Проверить .env на сервере:**
+
+```bash
+# На боевом сервере переподключиться к контейнеру и проверить:
+docker exec zetom-crm-web python manage.py check_smtp --recipient admin@example.com
+```
+
+**Решение 3 — Если EMAIL_HOST локальный (например, Postfix на хосте):**
+
+```yaml
+# docker-compose.yml — использовать имя хоста вместо localhost
+services:
+  web:
+    environment:
+      EMAIL_HOST: host.docker.internal  # На Docker Desktop
+      # или на Linux:
+      EMAIL_HOST: <имя-или-ip-хоста-в-вашей-сети>
+```
+
+**Решение 4 — Тестовая конфигурация для разработки:**
+
+```bash
+# Для локальной разработки без реального SMTP (в .env):
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+# или для памяти (письма хранятся в `django.core.mail.outbox`):
+EMAIL_BACKEND=django.core.mail.backends.locmem.EmailBackend
+```
+
+#### Для локальной разработки (if testing locally)
+
+```bash
+# В .env:
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+# Письма будут выводиться в консоль вместо отправки по сети
+```
+
+Затем:
+```python
+# В тестах или Django shell:
+from django.core.mail import send_mail
+send_mail("Test", "Body", "from@example.com", ["to@example.com"])
+# Вывод в консоль, без SMTP-вызовов
+```
+
+### Документирование проблемы в БД
+
+Когда SMTP-ошибка произойдёт:
+1. Запись `EmailNotification(status=FAILED)` создаётся со статусом FAILED.
+2. `EmailNotification.status_reason` содержит текст ошибки (например, `[Errno -3] Temporary failure in name resolution`).
+3. Просмотреть в админке: `/admin/notification/emailnotification/?status__exact=failed`.
+4. Кликнуть на запись → увидеть детали ошибки.
+5. После исправления конфигурации повторить тест: `python manage.py check_smtp --recipient <email>`.
+
+### Ссылки по теме
+- [Django email settings](https://docs.djangoproject.com/en/stable/ref/settings/#email-host)
+- [Gmail App Passwords](https://support.google.com/accounts/answer/185833)
+- [Postfix/Sendmail для Linux](https://www.linode.com/docs/guides/send-email-with-postfix/)
+
+---
+
 ### Чек-лист перед созданием Pull Request:
 - [x] Выполнен `git checkout -b django/test` (текущая рабочая ветка).
 - [x] Конфликты разрешены локально.
