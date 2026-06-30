@@ -143,12 +143,13 @@ class MainAdminActionTests(TestCase):
         self.assertEqual(self.main.status, RequestStatus.active)
 
     @patch("crm.zetom.admin.requestmain.user_has_perm")
-    def test_status_grid_hidden_without_change_status_perm(self, perm_mock, _):
+    def test_status_grid_disabled_without_change_status_perm(self, perm_mock, _):
         perm_mock.side_effect = lambda user, perm: perm != "change_request_status"
         url = reverse("admin:zetom_requestmain_change", args=[self.main.pk])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, 'name="new_status"')
+        self.assertContains(response, 'name="new_status"')
+        self.assertContains(response, 'disabled aria-disabled="true"')
         self.assertContains(response, "You don't have permission to change status.")
 
     def test_apply_cancelled_without_reason_renders_reason_form(self, _):
