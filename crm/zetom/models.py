@@ -5,6 +5,7 @@ from django.db import models
 # Other imports
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
+from simple_history.models import HistoricalRecords
 # Other imports
 from safedelete.config import SOFT_DELETE_CASCADE
 from safedelete.models import SafeDeleteModel
@@ -108,6 +109,8 @@ class RequestMain(RequestTemplate):
         related_name="requests",
         blank=True,
     )
+    # БАГ-2: полная история всех изменений полей (кто/что/когда изменил)
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = _("Information")
@@ -199,6 +202,40 @@ class RequestClientLink(models.Model):
 
     def __str__(self):
         return f"{self.request_id} ↔ {self.client_id}"
+
+
+class RequestAttachment(models.Model):
+    """БАГ-8: файловые вложения к заявке (RequestNull → после валидации RequestMain)."""
+    request_null = models.ForeignKey(
+        RequestNull,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="attachments",
+    )
+    request_main = models.ForeignKey(
+        RequestMain,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="attachments",
+    )
+    file = models.FileField(upload_to="request_attachments/%Y/%m/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = _("Attachment")
+        verbose_name_plural = _("Attachments")
+
+    def __str__(self):
+        return self.file.name
 
 
 # claude — through-таблицы для Oferta/Zlecenie/Wniosek.clients (M2M).

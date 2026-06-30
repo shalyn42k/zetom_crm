@@ -24,7 +24,7 @@ from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
 from crm.zetom.forms import AddRequestFormMain
 from crm.zetom.models import (
-    DepartmentsVariants, RequestClientLink, RequestMain, RequestSource,
+    DepartmentsVariants, RequestAttachment, RequestClientLink, RequestMain, RequestSource,
 )
 from crm.zetom.services.duplicate_matcher import find_candidates
 from crm.zetom.services.per_req_perms import (
@@ -153,6 +153,8 @@ class RequestMainAdmin(
             owner_users = list(User.objects.filter(pk__in=owners_raw, is_active=True))
             obj.assigned_to.set(owner_users)
             obj.owners.set(owner_users)
+        for f in request.FILES.getlist("attachments"):
+            RequestAttachment.objects.create(request_main=obj, file=f, uploaded_by=request.user)
         return redirect("admin:zetom_requestmain_change", obj.pk)
 
     # ---------- Delete (status flip + safedelete) ----------
@@ -239,6 +241,9 @@ class RequestMainAdmin(
 
         context["status_choices"] = RequestStatus.choices
         has_obj = obj is not None and obj.pk is not None
+        context["attachments"] = (
+            list(obj.attachments.order_by("-uploaded_at")) if has_obj else []
+        )
         context["ofertas"] = obj.oferta_set.order_by("-created_at") if has_obj else []
         context["zlecenia"] = obj.zlecenie_set.order_by("-created_at") if has_obj else []
         context["wnioski"] = obj.wniosek_set.order_by("-created_at") if has_obj else []
@@ -246,6 +251,30 @@ class RequestMainAdmin(
             obj.status_history.select_related("changed_by").order_by("-changed_at")
             if has_obj else []
         )
+        # БАГ-2: полная история изменений полей через django-simple-history.
+        # Диффы считаем здесь — в шаблоне нельзя вызывать методы с аргументами.
+        if has_obj:
+            field_history = []
+            records = list(
+                obj.history.select_related("history_user").order_by("-history_date")[:50]
+            )
+            for record in records:
+                changes = []
+                if record.prev_record:
+                    delta = record.diff_against(record.prev_record)
+                    changes = [
+                        {"field": c.field, "old": c.old, "new": c.new}
+                        for c in delta.changes
+                    ]
+                field_history.append({
+                    "history_type": record.history_type,
+                    "history_user": record.history_user,
+                    "history_date": record.history_date,
+                    "changes": changes,
+                })
+            context["field_history"] = field_history
+        else:
+            context["field_history"] = []
         if has_obj:
             assigned_ids = obj.assigned_to.values_list("id", flat=True)
             context["available_users"] = (
@@ -453,6 +482,16 @@ class RequestMainAdmin(
                 "<path:object_id>/create-client-json/",
                 view(self.create_client_json),
                 name="zetom_requestmain_create_client_json",
+            ),
+            path(
+                "<path:object_id>/upload-attachment/",
+                view(self.upload_attachment_action),
+                name="zetom_requestmain_upload_attachment",
+            ),
+            path(
+                "<path:object_id>/delete-attachment/<int:attachment_id>/",
+                view(self.delete_attachment_action),
+                name="zetom_requestmain_delete_attachment",
             ),
             path(
                 "<path:object_id>/edit-client-json/<int:client_id>/",
@@ -980,4 +1019,36 @@ class RequestMainAdmin(
             return denied
         approve_wniosek_action(object_id)
         messages.success(request, _("Application created."))
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    # ---------- File attachment actions ----------
+
+    def upload_attachment_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+        files = request.FILES.getlist("attachments")
+        if not files:
+            messages.error(request, _("No files selected."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        for f in files:
+            RequestAttachment.objects.create(
+                request_main=obj, file=f, uploaded_by=request.user
+            )
+        messages.success(request, _("%(n)d file(s) uploaded.") % {"n": len(files)})
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    def delete_attachment_action(self, request, object_id, attachment_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+        att = RequestAttachment.objects.filter(pk=attachment_id, request_main=obj).first()
+        if att:
+            att.file.delete(save=False)
+            att.delete()
+            messages.success(request, _("Attachment deleted."))
         return redirect("admin:zetom_requestmain_change", object_id)

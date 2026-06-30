@@ -77,23 +77,17 @@ class EmailTemplateViewTests(TestCase):
 
     @patch("crm.zetom.views.send_notification_to_staff")
     def test_valid_post_saves_record_sends_notification_and_redirects(self, send_mock):
-        # @patch заменяет send_notification_to_staff на MagicMock.
-        # send_mock — это объект-заглушка. Можно проверить: был ли вызван, с какими аргументами.
+        # Вью рендерит ту же страницу с submitted=True (не делает redirect,
+        # чтобы анонимный юзер не улетал в /admin/login/).
         response = self.client.post(self.url, data=VALID_POST)
 
-        # 302 = редирект → запись создана, всё хорошо
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context.get("submitted"))
         self.assertEqual(RequestNull.objects.count(), 1)
         new_obj = RequestNull.objects.first()
 
         # Уведомление должно быть отправлено с новым объектом
         send_mock.assert_called_once_with(new_obj)
-
-        # Редирект ведёт в admin на страницу редактирования новой записи
-        self.assertEqual(
-            response["Location"],
-            reverse("admin:zetom_requestnull_change", args=[new_obj.pk]),
-        )
 
     @patch(
         "crm.zetom.views.send_notification_to_staff",

@@ -12,6 +12,9 @@
   </header>
 
   <div x-show="open" x-cloak>
+
+  {# Блок 1: смены статуса (StatusHistory) #}
+  <h3 class="rm-history-section-title">{% trans "Status changes" %}</h3>
   <ul class="rm-history-list">
     {% for entry in history_entries %}
       <li class="rm-history-row">
@@ -37,5 +40,39 @@
       <li class="rm-empty">{% trans "No status changes yet." %}</li>
     {% endfor %}
   </ul>
+
+  {# Блок 2: полная история изменений полей (django-simple-history) #}
+  {% if field_history %}
+  <h3 class="rm-history-section-title">{% trans "Field changes" %}</h3>
+  <ul class="rm-history-list">
+    {% for record in field_history %}
+      <li class="rm-history-row">
+        <span class="rm-history-dot" aria-hidden="true"></span>
+        <div class="rm-history-row__body">
+          <div class="rm-history-row__title">
+            <span class="rm-history-row__action">
+              {% if record.history_type == "+" %}{% trans "Created" %}
+              {% elif record.history_type == "~" %}{% trans "Changed" %}
+              {% else %}{% trans "Deleted" %}
+              {% endif %}
+            </span>
+          </div>
+          {% for change in record.changes %}
+            <div class="rm-history-row__reason">
+              <strong>{{ change.field }}</strong>:
+              "{{ change.old|default:"—" }}" → "{{ change.new|default:"—" }}"
+            </div>
+          {% endfor %}
+          <div class="rm-history-row__sub">
+            <strong>{{ record.history_user.username|default:"—" }}</strong>
+            <span class="rm-history-row__sep">·</span>
+            <span title="{{ record.history_date|date:'Y-m-d H:i' }}">{{ record.history_date|naturaltime }}</span>
+          </div>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
   </div>
 </section>

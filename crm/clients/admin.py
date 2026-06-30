@@ -10,8 +10,18 @@ from crm.users.utils import user_has_perm
 
 from . import views
 from .forms import ClientForm
-from .models import Client, ClientType
+from .models import Client, ClientInteraction, ClientType
 from .services import build_request_rows, get_client_request_summary
+
+
+# БАГ-9 + БАГ-10: inline история контактов прямо в карточке клиента
+class ClientInteractionInline(admin.TabularInline):
+    model = ClientInteraction
+    extra = 0
+    fields = ("contacted_at", "channel", "contact_person", "contacted_by", "summary", "request")
+    autocomplete_fields = ("request",)
+    readonly_fields = ("created_at",)
+    ordering = ("-contacted_at",)
 
 
 @admin.register(Client)
@@ -23,6 +33,7 @@ class ClientAdmin(admin.ModelAdmin):
         "col_requests", "col_ofertas", "col_zlecenia", "col_wnioski",
     )
     search_fields = ("first_name", "last_name", "company_name", "email", "phone")
+    inlines = [ClientInteractionInline]
     # claude
     list_filter = ["client_type"]
 
@@ -235,3 +246,14 @@ class ClientAdmin(admin.ModelAdmin):
             **(extra_context or {}),
         }
         return render(request, self.change_form_template, context)
+
+
+# БАГ-9 + БАГ-10: отдельный раздел для просмотра всех контактов
+@admin.register(ClientInteraction)
+class ClientInteractionAdmin(admin.ModelAdmin):
+    list_display = ("contacted_at", "client", "channel", "contact_person", "contacted_by", "request")
+    list_filter = ("channel",)
+    search_fields = ("client__first_name", "client__last_name", "client__company_name", "summary", "contact_person")
+    autocomplete_fields = ("client", "request")
+    readonly_fields = ("created_at",)
+    date_hierarchy = "contacted_at"

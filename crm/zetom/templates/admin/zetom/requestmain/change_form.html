@@ -76,7 +76,7 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
   {% endif %}
 
   {# -------- Form (client card contains linked clients + linker) -------- #}
-  <form method="post" class="rm-grid"
+  <form method="post" enctype="multipart/form-data" class="rm-grid"
         id="{{ opts.model_name }}_form" novalidate>
     {% csrf_token %}
 
@@ -85,6 +85,19 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
       {% include "admin/zetom/requestmain/_partials/client_information.html" %}
       {% if not original.pk %}
         {% include "admin/zetom/requestmain/_partials/source_picker.html" %}
+        <section class="rm-card" style="margin-top:1rem;">
+          <div class="rm-card__header">
+            <h2 class="rm-card__title">
+              <svg class="rm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              </svg>
+              {% trans "Attachments" %}
+            </h2>
+          </div>
+          <div style="padding:0.75rem 1rem 1rem;">
+            <input type="file" name="attachments" multiple style="font-size:0.85rem; width:100%;">
+          </div>
+        </section>
       {% endif %}
     </div>
 
@@ -95,6 +108,7 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
         {% include "admin/zetom/requestmain/_partials/status_grid.html" %}
         {% include "admin/zetom/requestmain/_partials/departments.html" %}
         {% include "admin/zetom/requestmain/_partials/documents.html" %}
+        {% include "admin/zetom/requestmain/_partials/attachments_card.html" %}
         {% include "admin/zetom/requestmain/_partials/history_card.html" %}
       </aside>
     {% endif %}
