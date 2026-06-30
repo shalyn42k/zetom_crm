@@ -9,10 +9,8 @@ atomic transaction:
 
     1. Create or link a Client (depending on the validator's choice).
     2. Promote RequestNull -> RequestMain (existing approve_null_action).
-    3. Apply Client data on top of the new RequestMain when a Client was
-       chosen / created (so the new RequestMain reflects the canonical
-       Client record, not the raw form data).
-    4. Set departments / assigned_to / owners on the RequestMain.
+    3. Set departments / assigned_to / owners on the RequestMain.
+    4. Persist the Client ↔ RequestMain M2M link (RequestClientLink).
     5. Redirect to the RequestMain change page.
 
 NOTE — partial behaviour (see UI notices on the page):
@@ -25,10 +23,9 @@ NOTE — partial behaviour (see UI notices on the page):
       candidates can be linked right now.
 
 Linking now persists a real relation: a RequestClientLink row (the
-RequestMain.clients M2M through-table) is created, and the Client's
-canonical values are copied onto the new RequestMain. A possible-duplicate
-panel (find_request_duplicates) lets the validator hard-delete an obvious
-copy before it pollutes the DB.
+RequestMain.clients M2M through-table) is created. Client data and Request
+data are kept independent. A possible-duplicate panel (find_request_duplicates)
+lets the validator hard-delete an obvious copy before it pollutes the DB.
 """
 from __future__ import annotations
 
@@ -254,24 +251,10 @@ def _do_approve(rn: RequestNull, cleaned: dict, user=None):
     # 1) Promote RequestNull -> RequestMain using the existing service.
     new_main: RequestMain = approve_null_action(rn.pk)
 
-    # 2) When a Client is involved, prefer its canonical values over the
-    #    raw RequestNull values (the validator just confirmed they match).
-    if client is not None:
-        for fld, val in (
-            ("first_name", client.first_name),
-            ("last_name", client.last_name),
-            ("company_name", client.company_name),
-            ("company_nip", client.company_nip),
-            ("phone", client.phone),
-            ("email", client.email),
-        ):
-            if val:
-                setattr(new_main, fld, val)
-
     new_main.departments = list(cleaned["departments"])
     new_main.save()
 
-    # 3) Persist the Client ↔ RequestMain relation (M2M through-table).
+    # 2) Persist the Client ↔ RequestMain relation (M2M through-table).
     #    LINK_UNLINKED leaves client=None → no link row created.
     if client is not None:
         RequestClientLink.objects.get_or_create(

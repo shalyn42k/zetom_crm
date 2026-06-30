@@ -121,6 +121,13 @@ class Oferta(RequestTemplate):
     )
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
+    # claude
+    clients = models.ManyToManyField(
+        "clients.Client",
+        through="OfertaClientLink",
+        related_name="ofertas",
+        blank=True,
+    )
 
     class Meta:
         verbose_name = _("Offer")
@@ -135,6 +142,13 @@ class Zlecenie(RequestTemplate):
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     deadline = models.DateField(null=True, blank=True)
+    # claude
+    clients = models.ManyToManyField(
+        "clients.Client",
+        through="ZlecenieClientLink",
+        related_name="zlecenia",
+        blank=True,
+    )
 
     class Meta:
         verbose_name = _("Order")
@@ -148,6 +162,13 @@ class Wniosek(RequestTemplate):
     )
     notes = models.TextField(null=True, blank=True)
     application_number = models.CharField(max_length=20, null=True, blank=True)
+    # claude
+    clients = models.ManyToManyField(
+        "clients.Client",
+        through="WniosekClientLink",
+        related_name="wnioski",
+        blank=True,
+    )
 
     class Meta:
         verbose_name = _("Application")
@@ -180,7 +201,84 @@ class RequestClientLink(models.Model):
         return f"{self.request_id} ↔ {self.client_id}"
 
 
-class DeletedRequest(RequestMain):  # proxy может открывать те же данные и в других классах
+# claude — through-таблицы для Oferta/Zlecenie/Wniosek.clients (M2M).
+# Следуют тому же паттерну что и RequestClientLink.
+class OfertaClientLink(models.Model):
+    request = models.ForeignKey(
+        Oferta, on_delete=models.CASCADE, related_name="client_links"
+    )
+    client = models.ForeignKey(
+        "clients.Client", on_delete=models.CASCADE, related_name="oferta_links"
+    )
+    linked_at = models.DateTimeField(auto_now_add=True)
+    linked_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["request", "client"], name="uniq_oferta_client"
+            ),
+        ]
+        verbose_name = _("Oferta client link")
+        verbose_name_plural = _("Oferta client links")
+
+    def __str__(self):
+        return f"{self.request_id} ↔ {self.client_id}"
+
+
+class ZlecenieClientLink(models.Model):
+    request = models.ForeignKey(
+        Zlecenie, on_delete=models.CASCADE, related_name="client_links"
+    )
+    client = models.ForeignKey(
+        "clients.Client", on_delete=models.CASCADE, related_name="zlecenie_links"
+    )
+    linked_at = models.DateTimeField(auto_now_add=True)
+    linked_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["request", "client"], name="uniq_zlecenie_client"
+            ),
+        ]
+        verbose_name = _("Zlecenie client link")
+        verbose_name_plural = _("Zlecenie client links")
+
+    def __str__(self):
+        return f"{self.request_id} ↔ {self.client_id}"
+
+
+class WniosekClientLink(models.Model):
+    request = models.ForeignKey(
+        Wniosek, on_delete=models.CASCADE, related_name="client_links"
+    )
+    client = models.ForeignKey(
+        "clients.Client", on_delete=models.CASCADE, related_name="wniosek_links"
+    )
+    linked_at = models.DateTimeField(auto_now_add=True)
+    linked_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["request", "client"], name="uniq_wniosek_client"
+            ),
+        ]
+        verbose_name = _("Wniosek client link")
+        verbose_name_plural = _("Wniosek client links")
+
+    def __str__(self):
+        return f"{self.request_id} ↔ {self.client_id}"
+
+
+class DeletedRequest(RequestMain):  # proxy może otwierać te same dane w innych klasach
     class Meta:
         proxy = True
         verbose_name = _("Deleted Request")

@@ -98,7 +98,10 @@ class RequestMainAdmin(
 
 
     def get_changeform_initial_data(self, request):
-        return {"source": RequestSource.PHONE}
+        # claude — keep the default source, plus client prefill from BaseRequestAdmin.
+        initial = super().get_changeform_initial_data(request)
+        initial.setdefault("source", RequestSource.PHONE)
+        return initial
 
     def get_fields(self, request, obj=None):
         # source выбирается только при создании; на странице редактирования
