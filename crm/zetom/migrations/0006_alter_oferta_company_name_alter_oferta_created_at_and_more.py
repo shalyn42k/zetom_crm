@@ -12,6 +12,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
+        ("clients", "0004_client_client_type_client_notes"),
         ("zetom", "0005_requestclientlink_requestmain_clients_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
@@ -471,5 +472,188 @@ class Migration(migrations.Migration):
                 "verbose_name": "Attachment",
                 "verbose_name_plural": "Attachments",
             },
+        ),
+        migrations.CreateModel(
+            name="OfertaClientLink",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("linked_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "client",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="oferta_links",
+                        to="clients.client",
+                    ),
+                ),
+                (
+                    "linked_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "request",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="client_links",
+                        to="zetom.oferta",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Oferta client link",
+                "verbose_name_plural": "Oferta client links",
+            },
+        ),
+        migrations.AddField(
+            model_name="oferta",
+            name="clients",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="ofertas",
+                through="zetom.OfertaClientLink",
+                to="clients.client",
+            ),
+        ),
+        migrations.CreateModel(
+            name="WniosekClientLink",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("linked_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "client",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="wniosek_links",
+                        to="clients.client",
+                    ),
+                ),
+                (
+                    "linked_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "request",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="client_links",
+                        to="zetom.wniosek",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Wniosek client link",
+                "verbose_name_plural": "Wniosek client links",
+            },
+        ),
+        migrations.AddField(
+            model_name="wniosek",
+            name="clients",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="wnioski",
+                through="zetom.WniosekClientLink",
+                to="clients.client",
+            ),
+        ),
+        migrations.CreateModel(
+            name="ZlecenieClientLink",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("linked_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "client",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="zlecenie_links",
+                        to="clients.client",
+                    ),
+                ),
+                (
+                    "linked_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "request",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="client_links",
+                        to="zetom.zlecenie",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Zlecenie client link",
+                "verbose_name_plural": "Zlecenie client links",
+            },
+        ),
+        migrations.AddField(
+            model_name="zlecenie",
+            name="clients",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="zlecenia",
+                through="zetom.ZlecenieClientLink",
+                to="clients.client",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="ofertaclientlink",
+            constraint=models.UniqueConstraint(
+                fields=("request", "client"), name="uniq_oferta_client"
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="wniosekclientlink",
+            constraint=models.UniqueConstraint(
+                fields=("request", "client"), name="uniq_wniosek_client"
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="zlecenieclientlink",
+            constraint=models.UniqueConstraint(
+                fields=("request", "client"), name="uniq_zlecenie_client"
+            ),
         ),
     ]

@@ -10,20 +10,20 @@ User = get_user_model()
 
 
 class Permission(models.Model):
-    code = models.CharField(max_length=100, unique=True)
-    name = models.CharField(max_length=255)
+    code = models.CharField(max_length=100, unique=True, verbose_name=_("Code"))
+    name = models.CharField(max_length=255, verbose_name=_("Name"))
 
     # claude — категории прав для группировки в UI и логике RBAC
-    category = models.CharField(max_length=100, default="system")
+    category = models.CharField(max_length=100, default="system", verbose_name=_("Category"))
 
     def __str__(self):
         return self.name
 
 
 class Role(models.Model):
-    code = models.CharField(max_length=50, unique=True)
-    name = models.CharField(max_length=100)
-    permissions = models.ManyToManyField(Permission, blank=True)
+    code = models.CharField(max_length=50, unique=True, verbose_name=_("Code"))
+    name = models.CharField(max_length=100, verbose_name=_("Name"))
+    permissions = models.ManyToManyField(Permission, blank=True, verbose_name=_("Permissions"))
 
     def __str__(self):
         return self.name

@@ -1,0 +1,284 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% comment %}
+Client Detail — custom change_form for ClientAdmin.
+Left: identity card (inline read/edit ModelForm, person/company fieldsets).
+Right: linked-request tabs (RequestMain / Oferta / Zlecenie / Wniosek) with
+attach/detach + create-new. Alpine drives ctype, edit mode and tab switching.
+See design_handoff_client_pages.
+{% endcomment %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'clients/css/client_pages.css' %}">
+{% endblock extrastyle %}
+
+{% block content %}
+{# Inline icon sprite (subset used on this screen) #}
+<svg class="cl-sprite" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+</svg>
+
+<div class="cl-stage">
+
+  <div class="cl-head">
+    <div>
+      <h1 class="cl-title">{% trans "Client Detail" %} <span class="pill">{% if client.client_type == 'company' %}{% trans "Company" %}{% else %}{% trans "Person" %}{% endif %}</span></h1>
+      <p class="cl-sub">{% blocktrans %}Inline-edit the client on the left; manage every linked request on the right, grouped by type.{% endblocktrans %}</p>
+    </div>
+    <div class="cl-head-actions">
+      <a href="{% url 'admin:clients_client_changelist' %}" class="btn ghost">{% trans "Back to list" %}</a>
+    </div>
+  </div>
+
+  <div class="dt-grid">
+
+    {# ===== LEFT: IDENTITY CARD ===== #}
+    <form method="post" class="cl-card id-card" :data-ctype="ctype"
+          x-data="{ ctype: '{{ client.client_type }}', mode: '{% if form.errors %}edit{% else %}read{% endif %}' }">
+      {% csrf_token %}
+
+      {% if form.errors %}
+        <div class="id-errs" x-show="mode === 'edit'">
+          <strong>{% trans "Please fix the following:" %}</strong>
+          <ul>
+            {% for field in form %}{% for err in field.errors %}<li>{{ field.label }}: {{ err }}</li>{% endfor %}{% endfor %}
+            {% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <div class="id-head">
+        <div class="id-top">
+          <span class="id-ava" :class="ctype === 'company' ? 'id-ava company' : 'id-ava person'">{% if client.client_type == 'company' %}{{ client.company_name|slice:":2"|upper }}{% else %}{{ client.first_name|slice:":1"|upper }}{{ client.last_name|slice:":1"|upper }}{% endif %}</span>
+          <div class="id-names">
+            <h2 class="id-name">
+              <span>{{ client.short_label }}</span>
+              <span class="type-pill person when-person-only"><svg><use href="#i-user"/></svg>{% trans "Person" %}</span>
+              <span class="type-pill company when-company"><svg><use href="#i-building"/></svg>{% trans "Company" %}</span>
+            </h2>
+            <div class="id-meta">
+              <span class="cid">C-{{ client.pk|stringformat:"04d" }}</span>
+              <span class="dot">·</span>
+              <span>{% trans "created" %} {{ client.created_at|date:"Y-m-d" }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="id-head-row">
+          <div class="type-radio" id="typeRadio">
+            <label :class="{ 'active person': ctype === 'person' }">
+              <input type="radio" name="client_type" value="person" x-model="ctype" {% if client.client_type == 'person' %}checked{% endif %} {% if not can_edit %}disabled{% endif %}>
+              <svg><use href="#i-user"/></svg>{% trans "Person" %}
+            </label>
+            <label :class="{ 'active company': ctype === 'company' }">
+              <input type="radio" name="client_type" value="company" x-model="ctype" {% if client.client_type == 'company' %}checked{% endif %} {% if not can_edit %}disabled{% endif %}>
+              <svg><use href="#i-building"/></svg>{% trans "Company" %}
+            </label>
+          </div>
+          {% if can_edit %}
+          <div class="cl-head-actions">
+            <button type="button" class="btn sm when-read" @click="mode='edit'"><svg class="i i-sm"><use href="#i-edit"/></svg> {% trans "Edit" %}</button>
+            <a class="btn ghost sm when-edit" href="{% url 'admin:clients_client_change' client.pk %}">{% trans "Cancel" %}</a>
+            <button type="submit" class="btn primary sm when-edit"><svg class="i i-sm"><use href="#i-check"/></svg> {% trans "Save" %}</button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="id-body" :data-mode="mode">
+
+        {# COMPANY (company only) #}
+        <div class="id-sec when-company">
+          <div class="id-sec-h"><svg><use href="#i-building"/></svg> {% trans "Company" %}</div>
+          <div class="when-read">
+            <div class="frow"><div class="fk">{% trans "Company" %}</div><div class="fv">{{ client.company_name|default:"—" }}</div></div>
+            <div class="frow"><div class="fk">{% trans "NIP" %}</div><div class="fv mono">{{ client.company_nip|default:"—" }}</div></div>
+          </div>
+          <div class="when-edit">
+            <div class="field-mini" style="margin-bottom:10px"><label>company_name</label>{{ form.company_name }}</div>
+            <div class="field-mini"><label>NIP</label>{{ form.company_nip }}</div>
+          </div>
+        </div>
+
+        {# CONTACT PERSON — WIP (company only) #}
+        <div class="id-sec when-company">
+          <div class="id-sec-h"><svg><use href="#i-user"/></svg> {% trans "Contact person" %} <span class="wip-tag">{% trans "WIP" %}</span></div>
+          <div class="wip-block">
+            <span class="wip-overlay">{% trans "WIP" %}</span>
+            <div class="two-col">
+              <div class="field-mini"><label>first_name</label><input class="input" placeholder="—" disabled></div>
+              <div class="field-mini"><label>last_name</label><input class="input" placeholder="—" disabled></div>
+            </div>
+          </div>
+        </div>
+
+        {# IDENTITY (person only) #}
+        <div class="id-sec when-person-only">
+          <div class="id-sec-h"><svg><use href="#i-user"/></svg> {% trans "Identity" %}</div>
+          <div class="when-read">
+            <div class="frow"><div class="fk">{% trans "First name" %}</div><div class="fv">{{ client.first_name|default:"—" }}</div></div>
+            <div class="frow"><div class="fk">{% trans "Last name" %}</div><div class="fv">{{ client.last_name|default:"—" }}</div></div>
+          </div>
+          <div class="when-edit">
+            <div class="two-col">
+              <div class="field-mini"><label>first_name</label>{{ form.first_name }}</div>
+              <div class="field-mini"><label>last_name</label>{{ form.last_name }}</div>
+            </div>
+          </div>
+        </div>
+
+        {# CONTACT (always) #}
+        <div class="id-sec">
+          <div class="id-sec-h"><svg><use href="#i-phone"/></svg> {% trans "Contact" %}</div>
+          <div class="when-read">
+            <div class="frow"><div class="fk"><svg><use href="#i-phone"/></svg> {% trans "Phone" %}</div><div class="fv mono">{{ client.phone|default:"—" }}</div></div>
+            <div class="frow"><div class="fk"><svg><use href="#i-mail"/></svg> {% trans "Email" %}</div><div class="fv mono">{{ client.email|default:"—" }}</div></div>
+          </div>
+          <div class="when-edit">
+            <div class="field-mini" style="margin-bottom:10px"><label>phone</label>{{ form.phone }}</div>
+            <div class="field-mini"><label>email</label>{{ form.email }}</div>
+          </div>
+        </div>
+
+        {# NOTES (always) #}
+        <div class="id-sec">
+          <div class="id-sec-h"><svg><use href="#i-doc"/></svg> {% trans "Notes" %}</div>
+          <div class="when-read">
+            {% if client.notes %}<div class="fv note">{{ client.notes }}</div>{% else %}<div class="fv empty">{% trans "No notes." %}</div>{% endif %}
+          </div>
+          <div class="when-edit">{{ form.notes }}</div>
+        </div>
+
+      </div>
+    </form>
+
+    {# ===== RIGHT: LINKED REQUESTS ===== #}
+    <div class="dt-right" x-data="{ tab: 'main' }">
+
+      <div class="stat-strip">
+        <div class="stat-cell{% if not summary.request_main %} dim{% endif %}"><span class="n">{{ summary.request_main }}</span><span class="l">RequestMain</span></div>
+        <div class="stat-cell{% if not summary.oferta %} dim{% endif %}"><span class="n">{{ summary.oferta }}</span><span class="l">Oferta</span></div>
+        <div class="stat-cell{% if not summary.zlecenie %} dim{% endif %}"><span class="n">{{ summary.zlecenie }}</span><span class="l">Zlecenie</span></div>
+        <div class="stat-cell{% if not summary.wniosek %} dim{% endif %}"><span class="n">{{ summary.wniosek }}</span><span class="l">Wniosek</span></div>
+      </div>
+
+      <div class="cl-card">
+        <div class="cl-card-h">
+          <h3><svg class="i i-sm"><use href="#i-link"/></svg> {% trans "Linked requests" %}</h3>
+          <div class="right">{% blocktrans count counter=total_requests with n=total_requests %}{{ n }} total{% plural %}{{ n }} total{% endblocktrans %}</div>
+        </div>
+
+        <div class="rq-tabs">
+          {% for t in tabs %}
+          <button class="rq-tab" :class="{ active: tab === '{{ t.key }}' }" @click="tab='{{ t.key }}'">{{ t.label }} <span class="cnt">{{ t.count }}</span></button>
+          {% endfor %}
+        </div>
+
+        {% for t in tabs %}
+        <div class="rq-panel" :class="{ 'active': tab === '{{ t.key }}' }">
+          {% if t.rows %}
+            <table class="rq">
+              <thead>
+                <tr><th>#</th><th>{% trans "Date" %}</th><th>{% trans "Status" %}</th><th>{% trans "Dept" %}</th><th>{% trans "Owners" %}</th><th class="act"></th></tr>
+              </thead>
+              <tbody>
+                {% for row in t.rows %}
+                <tr>
+                  <td class="rq-id">{{ row.label }}</td>
+                  <td class="rq-date">{{ row.date|date:"Y-m-d" }}</td>
+                  <td><span class="st {{ row.status }}">{{ row.status }}</span></td>
+                  <td class="rq-dept">{{ row.dept|default:"—" }}</td>
+                  <td>
+                    <span class="rq-owners">
+                      {% for a in row.avatars %}<span class="rq-av {{ a.color }}">{{ a.initials }}</span>{% endfor %}
+                      {% if row.extra_owners %}<span class="rq-more">+{{ row.extra_owners }}</span>{% endif %}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="rq-acts">
+                      <a class="rq-iconbtn" href="{{ row.change_url }}" title="{% trans 'Open' %}"><svg><use href="#i-ext"/></svg></a>
+                      {% if can_edit %}
+                      <form class="rq-detach-form" method="post" action="{% url 'admin:clients_client_detach' client.pk t.key row.pk %}" onsubmit="return confirm('{% trans "Detach this request from the client? The request itself is kept." %}');">
+                        {% csrf_token %}
+                        <button class="rq-iconbtn detach" type="submit" title="{% trans 'Detach' %}"><svg><use href="#i-x"/></svg></button>
+                      </form>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <div class="rq-empty">
+              <span class="ico-ring"><svg><use href="#i-inbox"/></svg></span>
+              <h4>{% blocktrans with label=t.label %}No {{ label }} linked{% endblocktrans %}</h4>
+              <p>{% trans "Attach an existing one below, or create a new one pre-filled with this client's details." %}</p>
+            </div>
+          {% endif %}
+
+          {% if can_edit %}
+          <div class="rq-foot" x-data="attachBox('{% url 'admin:clients_client_attachsearch' client.pk t.key %}')">
+            <form class="attach-search" method="post" action="{% url 'admin:clients_client_attach' client.pk t.key %}" x-ref="form">
+              {% csrf_token %}
+              <span class="pre">+ {% trans "attach" %}</span>
+              <input type="hidden" name="req_pk">
+              <input type="text" placeholder="{% blocktrans with label=t.label %}Search {{ label }} by # or name to attach...{% endblocktrans %}"
+                     x-model="q" @input.debounce.300ms="search()" @focus="search()" autocomplete="off">
+              <div class="attach-results" :class="{ open: results.length }">
+                <template x-for="r in results" :key="r.pk">
+                  <button type="button" class="ar-row" @click="pick(r, $refs.form)"><span class="ar-id" x-text="r.label"></span></button>
+                </template>
+                <template x-if="!results.length && q.length">
+                  <div class="ar-empty">{% trans "No matches." %}</div>
+                </template>
+              </div>
+            </form>
+            <a class="btn primary sm" href="{% url t.add_url %}?client={{ client.pk }}"><svg class="i i-sm"><use href="#i-plus"/></svg> {% trans "Create new" %}</a>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // claude — attach search: fetch JSON candidates, submit hidden form on pick.
+  function attachBox(searchUrl){
+    return {
+      q: '', results: [],
+      async search(){
+        if(!this.q.trim()){ this.results = []; return; }
+        try {
+          const res = await fetch(searchUrl + '?q=' + encodeURIComponent(this.q),
+                                  { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+          const data = await res.json();
+          this.results = data.results || [];
+        } catch (e) { this.results = []; }
+      },
+      pick(r, form){
+        form.querySelector('[name=req_pk]').value = r.pk;
+        form.submit();
+      }
+    };
+  }
+</script>
+{% endblock content %}

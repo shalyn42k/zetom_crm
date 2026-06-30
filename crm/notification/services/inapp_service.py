@@ -108,3 +108,20 @@ def mark_all_read(user, *, exclude_kinds=()):
     if exclude_kinds:
         qs = qs.exclude(kind__in=exclude_kinds)
     return qs.update(is_read=True, read_at=timezone.now())
+
+
+# claude
+def dismiss_pending_review_requests(req_pk: int) -> int:
+    """Mark all unread REVIEW_REQUEST notifications for a RequestMain as read.
+
+    Called on soft-delete so recipients are not blocked by an action-required
+    notification that can never be resolved. Returns count updated.
+    """
+    from crm.zetom.models import RequestMain  # local import — avoid circular
+    ct = ContentType.objects.get_for_model(RequestMain)
+    return Notification.objects.filter(
+        kind=NotificationKind.REVIEW_REQUEST,
+        is_read=False,
+        target_content_type=ct,
+        target_object_id=req_pk,
+    ).update(is_read=True, read_at=timezone.now())

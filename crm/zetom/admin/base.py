@@ -56,6 +56,27 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
         qs = visible_requests_for(request.user, qs)
         return qs.prefetch_related("assigned_to")
 
+    # claude — "Create new" from the Client Detail tabs lands here with
+    # ?client=<pk>. The clients M2M uses a through-model so it can't be a form
+    # field; instead we pre-fill the request's own contact snapshot from the
+    # client, which is what the validator would copy anyway.
+    def get_changeform_initial_data(self, request):
+        initial = super().get_changeform_initial_data(request)
+        client_id = request.GET.get("client")
+        if client_id:
+            from crm.clients.models import Client
+            client = Client.objects.filter(pk=client_id).first()
+            if client:
+                initial.update({
+                    "first_name": client.first_name,
+                    "last_name": client.last_name,
+                    "company_name": client.company_name,
+                    "company_nip": client.company_nip,
+                    "phone": client.phone,
+                    "email": client.email,
+                })
+        return initial
+
     @admin.display(description=_("Assigned"))
     def assignees_display(self, obj):
         users = obj.assigned_to.all()

@@ -47,7 +47,34 @@ def _send(*, recipients, subject, body, template_name="", payload=None, actor=No
     # per recipient, which means TCP+STARTTLS+AUTH+QUIT each iteration. With
     # Gmail at ~1-2s per handshake a 5-recipient send took ~10s; with a shared
     # `get_connection()` context manager the handshake happens once.
-    with get_connection() as connection:
+    try:
+        connection = get_connection()
+    except Exception as connection_error:
+        # Connection creation failed (e.g., DNS resolution at get_connection time)
+        logger.error(
+            "notification.mail: failed to create SMTP connection. "
+            "SMTP Config: host=%s, port=%s, use_tls=%s, user=%s. Error: %s",
+            settings.EMAIL_HOST,
+            settings.EMAIL_PORT,
+            settings.EMAIL_USE_TLS,
+            settings.EMAIL_HOST_USER or "(empty)",
+            connection_error,
+        )
+        # Create FAILED records for each recipient
+        for email in recipients:
+            record = EmailNotification.objects.create(
+                recipient_email=email,
+                actor=actor,
+                template_name=template_name,
+                subject=subject,
+                payload=payload or {},
+                status=EmailStatus.FAILED,
+                status_reason=f"Connection failed: {connection_error}",
+            )
+            records.append(record)
+        return records
+
+    with connection:
         for email in recipients:
             record = EmailNotification.objects.create(
                 recipient_email=email,
@@ -70,7 +97,15 @@ def _send(*, recipients, subject, body, template_name="", payload=None, actor=No
                 record.status = EmailStatus.FAILED
                 record.status_reason = str(exc)
                 record.save(update_fields=["status", "status_reason"])
-                logger.exception("notification.mail: failed to send to %s", email)
+                logger.exception(
+                    "notification.mail: failed to send to %s. "
+                    "SMTP Config: host=%s, port=%s, use_tls=%s. Error: %s",
+                    email,
+                    settings.EMAIL_HOST,
+                    settings.EMAIL_PORT,
+                    settings.EMAIL_USE_TLS,
+                    exc,
+                )
             else:
                 record.status = EmailStatus.SENT
                 record.sent_at = timezone.now()

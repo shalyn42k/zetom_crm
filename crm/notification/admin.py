@@ -2,6 +2,7 @@ import json
 
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 
 from crm.notification.models import EmailNotification, Notification
@@ -59,13 +60,13 @@ class NotificationAdmin(ModelAdmin):
 
     # claude — превью отрендеренного title в changelist'е, чтобы строки не выглядели как
     # "Notification object" / "template_name=..." и сразу было видно о чём оно.
-    @admin.display(description="Title")
+    @admin.display(description=_("Title"))
     def title_preview(self, obj):
         title, _ = render_notification(obj)
         return title or "—"
 
     # claude — полный отрендеренный текст (title + body) в детальной странице.
-    @admin.display(description="Rendered")
+    @admin.display(description=_("Rendered"))
     def rendered_display(self, obj):
         title, body = render_notification(obj)
         if not title and not body:
@@ -75,7 +76,7 @@ class NotificationAdmin(ModelAdmin):
             text = f"{title}\n\n{body}"
         return format_html("<pre style='white-space:pre-wrap;margin:0'>{}</pre>", text)
 
-    @admin.display(description="Payload")
+    @admin.display(description=_("Payload"))
     def payload_display(self, obj):
         return _pretty_json(obj.payload)
 
@@ -110,6 +111,6 @@ class EmailNotificationAdmin(ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-    @admin.display(description="Payload")
+    @admin.display(description=_("Payload"))
     def payload_display(self, obj):
         return _pretty_json(obj.payload)

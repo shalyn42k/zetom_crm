@@ -22,25 +22,27 @@ class EmailStatus(models.TextChoices):
 
 
 class EmailNotification(models.Model):
-    recipient_email = models.EmailField(max_length=254)
+    recipient_email = models.EmailField(max_length=254, verbose_name=_("Recipient email"))
     actor = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="sent_emails",
+        verbose_name=_("Actor"),
     )
-    template_name = models.CharField(max_length=255)
-    subject = models.CharField(max_length=255)
-    payload = models.JSONField(default=dict)
+    template_name = models.CharField(max_length=255, verbose_name=_("Template name"))
+    subject = models.CharField(max_length=255, verbose_name=_("Subject"))
+    payload = models.JSONField(default=dict, verbose_name=_("Payload"))
     status = models.CharField(
         max_length=20,
         choices=EmailStatus.choices,
         default=EmailStatus.PENDING,
+        verbose_name=_("Status"),
     )
-    status_reason = models.TextField(null=True, blank=True)
-    sent_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    status_reason = models.TextField(null=True, blank=True, verbose_name=_("Status reason"))
+    sent_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Sent at"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
 
     # claude
     def __str__(self):
@@ -53,6 +55,7 @@ class Notification(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="inapp_notifications",
+        verbose_name=_("Recipient"),
     )
     actor = models.ForeignKey(
         User,
@@ -60,11 +63,13 @@ class Notification(models.Model):
         null=True,
         blank=True,
         related_name="acted_inapp_notifications",
+        verbose_name=_("Actor"),
     )
-    kind = models.CharField(max_length=32, choices=NotificationKind.choices)
-    template_name = models.CharField(max_length=255)
+    kind = models.CharField(max_length=32, choices=NotificationKind.choices, verbose_name=_("Kind"))
+    template_name = models.CharField(max_length=255, verbose_name=_("Template name"))
     payload = models.JSONField(
         default=dict,
+        verbose_name=_("Payload"),
         help_text=_("Data to replace template placeholders."),
     )
     target_content_type = models.ForeignKey(
@@ -72,12 +77,13 @@ class Notification(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        verbose_name=_("Target content type"),
     )
-    target_object_id = models.PositiveIntegerField(null=True, blank=True)
+    target_object_id = models.PositiveIntegerField(null=True, blank=True, verbose_name=_("Target object id"))
     target = GenericForeignKey("target_content_type", "target_object_id")
-    is_read = models.BooleanField(default=False)
-    read_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False, verbose_name=_("Is read"))
+    read_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Read at"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
 
     # claude
     class Meta:

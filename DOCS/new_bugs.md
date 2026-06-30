@@ -27,7 +27,7 @@
 
 ---
 
-### ⚠️ БАГ-3 — Английские слова в польском интерфейсе
+### ✅ БАГ-3 — Английские слова в польском интерфейсе
 
 **Переведено:** `Notifications→Powiadomienia`, `Inbox→Skrzynka`, `Requests→Zlecenia`, `Klienci`, `Phone→Telefon`, `Created at→Utworzono`, `First name→Imię`, `Submit your request→Wyślij swoje zgłoszenie`, `Filter→Filtr`.
 
@@ -159,5 +159,99 @@
 | | |
 |---|---|
 | **Где** | Фоновые задачи |
+| **Проблема** | В проекте нет Celery, нет cron-задач, нет periodic tasks. Клиент не получает напоминание если заявка не завершена |
+| **Ожидается** | Каждые 48 часов по незакрытым заявкам автоматически уходит email клиенту |
+| **Что нужно** | Подключить Celery + Celery Beat, написать задачу `remind_unfinished_requests()` которая раз в сутки проверяет заявки и отправляет напоминание если прошло 48ч без изменений |
+
+---
+
+### ✅ БАГ-7 — SMTP: ошибка отправки email на публичной форме
+
+| | |
+|---|---|
+| **Где** | `/zetom/email/` — публичная форма создания заявки |
+| **Ошибка** | `Notification failed: [Errno -3] Temporary failure in name resolution` |
+| **Проблема** | Сервер не может подключиться к SMTP — DNS не резолвит хост почтового сервера |
+| **Ожидается** | Заявка создаётся и email-уведомление уходит успешно |
+| **Вероятная причина** | Неверный `EMAIL_HOST` в `.env` на сервере, или у сервера нет доступа к внешней сети / DNS |
+| **Что проверить** | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER` в `.env` на сервере |
+
+---
+
+### БАГ-6 — Нет кнопки редактирования клиента прямо из заявки  
+## Уже сделано Никитой 
+| | |
+|---|---|
+| **Где** | `/admin/zetom/requestmain/<id>/change/` → блок Linked Clients |
+| **Проблема** | Рядом с привязанным клиентом есть только крестик (отвязать). Кнопки редактирования (карандаш/edit) нет |
+| **Ожидается** | Рядом с каждым клиентом — кнопка редактировать, открывающая форму/popup с данными клиента без выхода из заявки |
+| **Сейчас** | Нужно идти в `/admin/clients/client/<id>/` отдельно, редактировать там, возвращаться |
+
+---
+
+### БАГ-5 — Не фиксируется кто создал заявку
+
+| | |
+|---|---|
+| **Где** | `/admin/zetom/requestmain/<id>/change/` |
+| **Проблема** | В заявке нигде не отображается кто её создал. Поля `created_by` / `author` нет ни в модели, ни в форме, ни в шаблоне |
+| **Ожидается** | В карточке заявки видно: кто создал, когда создал |
+| **Что нужно** | 1. Добавить `created_by = ForeignKey(User)` в модель `RequestMain` |
+| | 2. В `save_model` при создании записывать `request.user` |
+| | 3. Отображать в шаблоне карточки заявки |
+
+---
+
+### ✅ БАГ-2 — Кнопки статусов отображаются у Specialist
+
+| | |
+|---|---|
+| **Кто** | Alan (Specialist) |
+| **Где** | `/admin/zetom/requestmain/<id>/change/` → блок Status |
+| **Проблема** | Кнопки New / In Progress / Waiting / Done / Apply видны, но при нажатии ничего не происходит |
+| **Ожидается** | Кнопки скрыты или задизейблены без `change_request_status` |
+
+---
+
+### БАГ-3 — Freeform mail отправляется в обход прав и видимости ⚠️
+
+| | |
+|---|---|
+| **Кто** | Любой staff-пользователь (проверено: Alan — Specialist) |
+| **Где** | POST `/admin/zetom/requestmain/<id>/mail/freeform/` |
+| **Проблема** | Эндпоинт не проверяет пермишен `send_documents` и не применяет фильтр видимости |
+| **Ожидается** | 403 если нет `send_documents` или заявка не видна пользователю |
+| **Риск** | Любой staff может отправить письмо от имени компании любому клиенту, зная только ID заявки |
+
+**Как воспроизвести** — под Alan в DevTools Console (F12):
+```javascript
+fetch('/admin/zetom/requestmain/39/mail/freeform/', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)[1]
+  },
+  body: 'subject=test&body=test+message'
+}).then(r => console.log('Status:', r.status, r.url))
+```
+
+---
+
+### БАГ-4 — Request Review отправляется в обход прав и видимости ⚠️
+
+| | |
+|---|---|
+| **Кто** | Любой staff-пользователь (проверено: Alan — Specialist) |
+| **Где** | POST `/admin/zetom/requestmain/<id>/request-review/` |
+| **Проблема** | Эндпоинт не проверяет пермишен `request_review` и не применяет фильтр видимости |
+| **Ожидается** | 403 если нет `request_review` или заявка не видна пользователю |
+| **Риск** | Любой staff может отправить review-уведомление любому пользователю на любую заявку, зная только ID |
+
+**Как воспроизвести** — под Alan в DevTools Console:
+```javascript
+fetch('/admin/zetom/requestmain/39/request-review/', {method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRFToken':document.cookie.match(/csrftoken=([^;]+)/)[1]},body:'note=test&recipient_ids=19'}).then(r=>console.log('Status:',r.status,r.url))
+```
+
+---
 | **Проблема** | В проекте нет Celery, нет cron-задач. Клиент не получает напоминание если заявка не завершена |
 | **Что нужно** | Celery + Celery Beat, задача `remind_unfinished_requests()` — раз в сутки проверяет незакрытые заявки и отправляет напоминание если прошло 48ч без изменений |

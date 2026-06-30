@@ -223,7 +223,7 @@
                   <span class="up-dept-member__info">
                     <span class="up-dept-member__name">{{ member.full_name }}</span>
                     {% if member.role_label %}
-                      <span class="up-dept-member__role">{{ member.role_label }}</span>
+                      <span class="up-dept-member__role">{% trans member.role_label %}</span>
                     {% endif %}
                     {% if member.is_head %}
                       <span class="up-tag up-tag--head">{% trans "Head" %}</span>
