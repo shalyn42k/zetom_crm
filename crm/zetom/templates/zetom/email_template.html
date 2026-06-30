@@ -112,7 +112,7 @@
         </ul>
     {% endif %}
 
-    <form method="post" novalidate data-send-overlay>
+    <form method="post" enctype="multipart/form-data" novalidate data-send-overlay>
         {% csrf_token %}
 
         <div class="email-form-row">
@@ -164,6 +164,11 @@
             <textarea id="id_message" name="message"
                       placeholder="{% trans "Your message here" %}">{{ form.message.value|default:'' }}</textarea>
             {{ form.message.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_attachments">{% trans "Attachments" %} ({% trans "optional" %})</label>
+            <input type="file" id="id_attachments" name="attachments" multiple>
         </div>
 
         <button type="submit">{% trans "Submit request" %}</button>

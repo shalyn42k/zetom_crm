@@ -1,0 +1,76 @@
+{% load i18n humanize %}
+<section class="rm-card rm-card--collapsible" aria-labelledby="rm-attach-heading" id="attachments"
+         x-data="{ open: $persist(true).as('rm-attach-{{ request.user.id }}-{{ original.pk }}') }">
+  <header class="rm-card__header rm-card__toggle" role="button" tabindex="0"
+          :aria-expanded="open"
+          @click="open = !open"
+          @keydown.enter.prevent="open = !open"
+          @keydown.space.prevent="open = !open">
+    <h2 id="rm-attach-heading" class="rm-card__title">
+      <svg class="rm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+      </svg>
+      {% trans "Attachments" %}
+      <span class="rm-counter">{{ attachments|length }}</span>
+    </h2>
+    <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }"
+         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  </header>
+
+  <div x-show="open" x-cloak>
+
+    {# Список уже загруженных файлов #}
+    {% if attachments %}
+    <ul class="rm-history-list">
+      {% for att in attachments %}
+      <li class="rm-history-row" style="align-items:center; gap:0.75rem;">
+        <svg class="rm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <div class="rm-history-row__body" style="flex:1; min-width:0;">
+          <a href="{{ att.file.url }}" target="_blank" class="rm-history-row__action"
+             style="word-break:break-all;">{{ att.file.name|cut:"request_attachments/" }}</a>
+          <div class="rm-history-row__sub">
+            <strong>{{ att.uploaded_by.username|default:"—" }}</strong>
+            <span class="rm-history-row__sep">·</span>
+            <span title="{{ att.uploaded_at|date:'Y-m-d H:i' }}">{{ att.uploaded_at|naturaltime }}</span>
+          </div>
+        </div>
+        <form method="post"
+              action="{% url 'admin:zetom_requestmain_delete_attachment' original.pk att.pk %}"
+              style="flex-shrink:0;"
+              onsubmit="return confirm('{% trans "Delete this attachment?" %}')">
+          {% csrf_token %}
+          <button type="submit" class="rm-btn rm-btn--sm rm-btn--danger"
+                  title="{% trans 'Delete' %}">✕</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <p class="rm-empty">{% trans "No attachments yet." %}</p>
+    {% endif %}
+
+    {# Форма загрузки новых файлов — отдельный POST с enctype #}
+    <form method="post"
+          enctype="multipart/form-data"
+          action="{% url 'admin:zetom_requestmain_upload_attachment' original.pk %}"
+          style="padding:0.75rem 1rem 1rem;">
+      {% csrf_token %}
+      <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        <input type="file" name="attachments" multiple
+               style="flex:1; min-width:0; font-size:0.85rem;">
+        <button type="submit" class="rm-btn rm-btn--primary rm-btn--sm">
+          {% trans "Upload" %}
+        </button>
+      </div>
+    </form>
+
+  </div>
+</section>
