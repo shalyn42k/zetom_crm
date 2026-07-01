@@ -2,9 +2,13 @@
 {% load i18n static %}
 
 {% comment %}
-Validation Window — 4-step compact layout.
-Steps: 01 Snapshot · 02 Duplicate Check · 03 Link to Client · 04 Assignment.
-Grid: top row = [01 Snapshot][02 Dup Check], bottom row = [03 Link][—], col-3 = [04 Assign].
+Validation Window (redesign) — three zones + two review modals.
+  01 Snapshot     read-only lead fields + validity hints
+  02 Validation   duplicate count + client count, each opens a review modal
+  03 Assignment   departments + owners for the future RequestMain
+Modals live inside #vw-form so their inputs/buttons post with it. Duplicate
+ops submit immediately (they carry __action and mutate other records); client
+selection is deferred and written only on Approve.
 {% endcomment %}
 
 {% block extrastyle %}
@@ -13,10 +17,24 @@ Grid: top row = [01 Snapshot][02 Dup Check], bottom row = [03 Link][—], col-3 
 {% endblock extrastyle %}
 
 {% block content %}
-<form method="post" class="vw-stage" id="vw-form" novalidate>
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+  <symbol id="i-arrow-r" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></symbol>
+</svg>
+
+<form method="post" id="vw-form" class="vw-stage" novalidate>
   {% csrf_token %}
 
-  {# Form errors #}
   {% if form.errors %}
     <div class="vw-errs">
       <strong>{% trans "Please fix the following:" %}</strong>
@@ -27,249 +45,330 @@ Grid: top row = [01 Snapshot][02 Dup Check], bottom row = [03 Link][—], col-3 
     </div>
   {% endif %}
 
-  {# Header + compact banner #}
-  <div class="vw-topbar">
-    <div class="vw-topbar__left">
-      <h1 class="vw-title">
-        {% trans "Validation Window" %}
-        <span class="pill">NULL-{{ request_null.pk }}</span>
-        <span class="pill pill--meta">{{ request_null.source|default:"—" }}</span>
-        <span class="pill pill--meta mono">{{ request_null.created_at|date:"Y-m-d" }}</span>
-      </h1>
+  <div class="vw-head">
+    <h1>{% trans "Validation Window" %}
+      <span class="pill">NULL-{{ request_null.pk }}</span>
+      <span class="pill src">{{ request_null.get_source_display }}</span>
+      <span class="pill src mono">{{ request_null.created_at|date:"Y-m-d" }}</span>
+    </h1>
+  </div>
+
+  {# ── status banner ── #}
+  <div class="vbanner {% if banner.kind == 'ok' %}ok{% elif banner.kind == 'err' %}err{% endif %}">
+    <span class="vico">
+      <svg class="i i-md"><use href="#{% if banner.kind == 'ok' %}i-check{% elif banner.kind == 'info' %}i-info{% else %}i-warn{% endif %}"/></svg>
+    </span>
+    <div>
+      <h4>{{ banner.title }}</h4>
+      <p>{{ banner.sub }}</p>
     </div>
-    <div class="vbanner vbanner--inline {% if banner.kind == 'warn' %}warn{% elif banner.kind == 'info' %}info{% endif %}">
-      <span class="vico-s">{% if banner.kind == 'warn' %}!{% elif banner.kind == 'info' %}i{% else %}✓{% endif %}</span>
-      <span class="vbanner-text"><strong>{{ banner.title }}</strong> — {{ banner.sub }}</span>
-      <span class="vmeta">{{ candidates|length }}c / {{ request_dupes|length }}d</span>
+    <div class="vmeta">
+      <span>{{ candidates|length }} {% trans "clients" %}</span><span>·</span>
+      <span>{{ request_dupes|length }} {% trans "dupes" %}</span>
     </div>
   </div>
 
-  {# 4-step grid #}
-  <div class="vw-grid4">
+  <div class="vw-grid">
 
-    {# ===== Step 01: Snapshot ===== #}
-    <section class="vw-card vw-s01">
-      <header class="card-h">
-        <h3><span class="step">01</span>{% trans "Snapshot" %}</h3>
-        <span class="right">{% trans "read-only" %}</span>
-      </header>
-      <div class="card-b">
-        {% for row in snapshot %}
-          <div class="field-row field-row--sm">
-            <div class="flabel">
-              {{ row.label }}
-              {% if row.hint.0 == 'err' %}<span class="req">*</span>{% endif %}
+    {# ── 01 Snapshot ── #}
+    <div>
+      <div class="vw-card">
+        <div class="card-h">
+          <h3><span class="step">01</span> {% trans "Snapshot" %}</h3>
+          <div class="right">{% trans "read-only" %}</div>
+        </div>
+        <div class="card-b">
+          <div class="snap-meta">
+            <span class="vhint info">{% trans "source" %} · {{ request_null.get_source_display }}</span>
+            <span class="vhint info">{{ request_null.created_at|date:"Y-m-d · H:i" }}</span>
+          </div>
+          {% for row in snapshot %}
+            <div class="field-row">
+              <div class="flabel">{{ row.label }}{% if row.hint.0 == 'err' %} <span class="req">*</span>{% endif %}</div>
+              <div class="fvalue">
+                {% if row.long %}
+                  {% if row.value %}<div class="longtext">{{ row.value|truncatechars:180 }}</div>{% else %}<span class="val empty">— {% trans "empty" %} —</span>{% endif %}
+                {% else %}
+                  <span class="val{% if row.mono %} mono{% endif %}">{{ row.value|default:"—" }}</span>
+                {% endif %}
+                <span class="vhint {{ row.hint.0 }}">{{ row.hint.1 }}</span>
+              </div>
             </div>
-            <div class="fvalue">
-              {% if row.long %}
-                {% if row.value %}<div class="longtext">{{ row.value|truncatechars:180 }}</div>
-                {% else %}<span class="val empty">—</span>{% endif %}
-              {% else %}
-                <span class="val{% if row.mono %} mono{% endif %}">{{ row.value|default:"—" }}</span>
-              {% endif %}
-              <span class="vhint {{ row.hint.0 }}">{{ row.hint.1 }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {# ── 02 Validation ── #}
+    <div>
+      <div class="vw-card">
+        <div class="card-h">
+          <h3><span class="step">02</span> {% trans "Validation" %}</h3>
+          <div class="right">{% trans "resolve before approve" %}</div>
+        </div>
+        <div class="card-b">
+          <div class="vsum">
+
+            <div class="vsum-row dupes {% if not request_dupes %}zero{% endif %}">
+              <span class="badge-count">{{ request_dupes|length }}</span>
+              <div class="vsum-txt">
+                <div class="t"><svg class="i i-md" style="color:var(--amber)"><use href="#i-target"/></svg> {% trans "Duplicates" %}</div>
+                <div class="s">
+                  {% if request_dupes %}<span class="cnt">{{ request_dupes|length }}</span> {% trans "possible duplicates — review before approving." %}
+                  {% else %}{% trans "No duplicate requests found." %}{% endif %}
+                </div>
+              </div>
+              <button type="button" class="btn-review" onclick="vwOpen('vwModalDup')">{% trans "Review all" %} <svg class="i i-sm"><use href="#i-arrow-r"/></svg></button>
+            </div>
+
+            <div class="vsum-row clients">
+              <span class="badge-count">{{ candidates|length }}</span>
+              <div class="vsum-txt">
+                <div class="t"><svg class="i i-md" style="color:var(--blue)"><use href="#i-users"/></svg> {% trans "Clients" %}</div>
+                <div class="s"><span class="cnt" id="vwCliSelectedTxt">{{ selected_client_ids|length }} {% trans "selected" %}</span> — {% trans "link one or more, create new, or leave unlinked." %}</div>
+              </div>
+              <button type="button" class="btn-review" onclick="vwOpen('vwModalClient')">{% trans "Review all" %} <svg class="i i-sm"><use href="#i-arrow-r"/></svg></button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── 03 Assignment ── #}
+    <div class="vw-col-right">
+      <div class="vw-card">
+        <div class="card-h">
+          <h3><span class="step">03</span> {% trans "Assignment" %}</h3>
+          <div class="right">{% trans "future RequestMain" %}</div>
+        </div>
+        <div class="card-b">
+          <div class="field">
+            <label>{% trans "Departments" %} <span class="req">*</span></label>
+            <div class="chip-group">
+              {% for code, label in departments_choices %}
+                <label class="dchip {% if code in selected_depts %}on{% endif %}">
+                  <input type="checkbox" name="departments" value="{{ code }}" {% if code in selected_depts %}checked{% endif %}>
+                  <span class="dot"></span>{{ label }}
+                </label>
+              {% endfor %}
             </div>
           </div>
+
+          <div class="field">
+            <label>{% trans "Owners" %} <span class="req">*</span></label>
+            <div class="owner-list">
+              <div class="lh">{% trans "All active users" %}</div>
+              {% for u in eligible_users %}
+                <label class="orow {% if u.pk|stringformat:"s" in selected_owner_ids %}on{% endif %}">
+                  <input type="checkbox" name="owners" value="{{ u.pk }}" {% if u.pk|stringformat:"s" in selected_owner_ids %}checked{% endif %}>
+                  <span class="oav">{{ u.first_name|slice:":1"|upper }}{{ u.last_name|slice:":1"|upper }}</span>
+                  <span class="oname">{{ u.get_full_name|default:u.username }}</span>
+                  <span class="orole">{% if u.profile.role %}{{ u.profile.role.code }}{% else %}—{% endif %}</span>
+                  <span class="ocheck"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></span>
+                </label>
+              {% empty %}
+                <div class="orow"><span class="oname">{% trans "No active users." %}</span></div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="role-hint">
+            <span class="rh-t">{% trans "Per-Req role ladder" %}</span>
+            <div class="row"><code>admin</code><span>›</span><code>dep_head</code><span>›</span><code class="cur">owner</code><span>›</span><code>specialist</code></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  {# ═══════════ MODAL A — DUPLICATE REVIEW ═══════════ #}
+  <div class="vw-modal-scrim" id="vwModalDup" role="dialog" aria-modal="true" aria-labelledby="vwDupTitle">
+    <div class="vw-modal">
+      <div class="modal-h dup">
+        <span class="mh-ico"><svg class="i i-lg"><use href="#i-target"/></svg></span>
+        <div>
+          <h2 id="vwDupTitle">{% blocktrans count n=request_dupes|length %}Duplicate review — {{ n }} found{% plural %}Duplicate review — {{ n }} found{% endblocktrans %}</h2>
+          <div class="mh-sub">{% trans "Pull / push / delete actions submit immediately." %}</div>
+        </div>
+        <button type="button" class="mh-close" onclick="vwClose('vwModalDup')" aria-label="{% trans 'Close' %}"><svg class="i i-md"><use href="#i-x"/></svg></button>
+      </div>
+      {% if request_dupes %}
+        <div class="modal-topbar">
+          <span class="lbl">{% trans "These records share signals with this lead." %}</span>
+          <button type="submit" form="vw-form" name="__action" value="delete_all_dupes" class="vw-btn danger-ghost" style="padding:6px 11px;font-size:12px"
+                  onclick="return confirm('{% trans "Move all duplicates to trash / cancel them? This is a soft delete and can be undone." %}');">
+            <svg class="i i-sm"><use href="#i-trash"/></svg> {% blocktrans count n=request_dupes|length %}Delete all {{ n }} duplicate{% plural %}Delete all {{ n }} duplicates{% endblocktrans %}
+          </button>
+        </div>
+      {% endif %}
+      <div class="modal-body">
+        {% for d in request_dupes %}
+          <div class="dup {% if d.is_strong %}strong{% endif %}">
+            <span class="kind-badge {{ d.kind }}">{% if d.kind == 'main' %}M{% else %}N{% endif %}#{{ d.obj.pk }}</span>
+            <div class="dup-main">
+              <div class="dup-top">
+                <span class="dup-name">{{ d.obj.full_name|default:"—" }}</span>
+                {% if d.obj.company_name %}<span class="dup-co">· {{ d.obj.company_name }}</span>{% endif %}
+                {% if d.kind == 'main' %}
+                  <a class="dup-open" href="{% url 'admin:zetom_requestmain_change' d.obj.pk %}" target="_blank" title="{% trans 'Open in new tab' %}"><svg class="i i-sm"><use href="#i-external"/></svg></a>
+                {% else %}
+                  <a class="dup-open" href="{% url 'admin:zetom_requestnull_validate' d.obj.pk %}" target="_blank" title="{% trans 'Open in new tab' %}"><svg class="i i-sm"><use href="#i-external"/></svg></a>
+                {% endif %}
+              </div>
+              <div class="match-row">{% for b in d.badges %}<span class="mb {{ b.kind }}">{{ b.label }}</span>{% endfor %}</div>
+            </div>
+            <div class="dup-actions">
+              <div class="dup-score {% if d.is_weak %}weak{% endif %}"><span class="n"><strong>{{ d.score }}</strong>/100</span><span class="bar"><i style="width:{{ d.score }}%"></i></span></div>
+              <div class="dup-btns">
+                <button type="submit" form="vw-form" name="__action" value="update_current:{{ d.kind }}:{{ d.obj.pk }}" class="mbtn" title="{% trans 'Overwrite THIS lead with the duplicate data' %}"><svg viewBox="0 0 24 24"><use href="#i-arrow-l"/></svg>{% trans "pull" %}</button>
+                <button type="submit" form="vw-form" name="__action" value="update_existing:{{ d.kind }}:{{ d.obj.pk }}" class="mbtn" title="{% trans 'Merge THIS lead into the duplicate, remove this lead' %}"
+                        onclick="return confirm('{% trans "Overwrite the existing record with THIS data and remove this lead?" %}');">{% trans "push" %}<svg viewBox="0 0 24 24"><use href="#i-arrow-r"/></svg></button>
+                <button type="submit" form="vw-form" name="__action" value="delete_existing:{{ d.kind }}:{{ d.obj.pk }}" class="mbtn del" title="{% trans 'Soft-delete this duplicate' %}"
+                        onclick="return confirm('{% trans "Move this duplicate to trash / cancel it?" %}');"><svg viewBox="0 0 24 24"><use href="#i-trash"/></svg>{% trans "del" %}</button>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="vw-no-dupes"><span class="vhint ok"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg> {% trans "No duplicate requests found — safe to approve." %}</span></div>
         {% endfor %}
       </div>
-    </section>
+      <div class="modal-foot">
+        <button type="submit" form="vw-form" name="__action" value="delete_duplicate" class="vw-btn danger"
+                onclick="return confirm('{% trans "Move THIS lead to trash as a duplicate? It can be restored later." %}');">
+          <svg class="i"><use href="#i-trash"/></svg> {% trans "Delete THIS request as duplicate" %}
+        </button>
+        <div class="actions"><button type="button" class="vw-btn" onclick="vwClose('vwModalDup')">{% trans "Close" %}</button></div>
+      </div>
+    </div>
+  </div>
 
-    {# ===== Step 02: Duplicate Check ===== #}
-    <section class="vw-card vw-s02">
-      <header class="card-h">
-        <h3><span class="step">02</span>{% trans "Duplicate Check" %}</h3>
-        <span class="right">{{ request_dupes|length }} {% trans "found" %}</span>
-      </header>
-      <div class="card-b">
-        {% if request_dupes %}
-          <div class="dupes-list">
-            {% for d in request_dupes %}
-              <div class="dupe-row">
-                <div class="dupe-info">
-                  <span class="dupe-kind {{ d.kind }}">{% if d.kind == "main" %}M{% else %}N{% endif %}#{{ d.obj.pk }}</span>
-                  <span class="dupe-name">{{ d.obj.full_name|default:"—" }}{% if d.obj.company_name %} · {{ d.obj.company_name }}{% endif %}</span>
-                  <span class="dupe-score {% if d.is_strong %}strong{% elif d.is_weak %}weak{% endif %}">{{ d.score }}</span>
-                  <span class="dupe-badges">{% for b in d.badges %}<span class="mb {{ b.kind }}">{{ b.label }}</span>{% endfor %}</span>
-                  {% if d.kind == "main" %}
-                    <a class="dupe-open" href="{% url 'admin:zetom_requestmain_change' d.obj.pk %}" target="_blank">↗</a>
-                  {% else %}
-                    <a class="dupe-open" href="{% url 'admin:zetom_requestnull_validate' d.obj.pk %}" target="_blank">↗</a>
-                  {% endif %}
+  {# ═══════════ MODAL B — CLIENT LINK ═══════════ #}
+  <div class="vw-modal-scrim" id="vwModalClient" role="dialog" aria-modal="true" aria-labelledby="vwCliTitle">
+    <div class="vw-modal">
+      <div class="modal-h client">
+        <span class="mh-ico"><svg class="i i-lg"><use href="#i-users"/></svg></span>
+        <div>
+          <h2 id="vwCliTitle">{% blocktrans count n=candidates|length %}Link to client — {{ n }} candidate{% plural %}Link to client — {{ n }} candidates{% endblocktrans %}</h2>
+          <div class="mh-sub">{% trans "Multi-select. Selection is saved only when you Approve." %}</div>
+        </div>
+        <button type="button" class="mh-close" onclick="vwClose('vwModalClient')" aria-label="{% trans 'Close' %}"><svg class="i i-md"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <div id="vwCliList" style="display:flex;flex-direction:column;gap:10px">
+          {% for c in candidates %}
+            <label class="cli {% if c.client.pk|stringformat:"s" in selected_client_ids %}on{% endif %}">
+              <input type="checkbox" name="link_client_ids" value="{{ c.client.pk }}" onchange="vwOnCliToggle()" {% if c.client.pk|stringformat:"s" in selected_client_ids %}checked{% endif %}>
+              <span class="cbx"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></span>
+              <div class="cli-main">
+                <div class="cli-top">
+                  <span class="cli-name">{{ c.client.full_name|default:"—" }}</span>
+                  {% if c.client.company_name %}<span class="cli-co">{{ c.client.company_name }}</span>{% endif %}
+                  <span class="cli-id mono">C-{{ c.client.pk|stringformat:"04d" }}</span>
                 </div>
-                {% if d.kind == "main" %}
-                  {% trans "Cancel the existing request as a duplicate?" as del_msg %}
-                {% else %}
-                  {% trans "Permanently delete the existing validation request?" as del_msg %}
-                {% endif %}
-                <div class="dupe-ops">
-                  <button type="submit" form="vw-form" name="__action" value="update_current:{{ d.kind }}:{{ d.obj.pk }}" class="btn xs" title="{% trans 'Overwrite THIS request with the existing data' %}">{% trans "← pull" %}</button>
-                  <button type="submit" form="vw-form" name="__action" value="update_existing:{{ d.kind }}:{{ d.obj.pk }}" class="btn xs" onclick="return confirm('{% trans "Overwrite the existing request with THIS data and remove this one?" %}');" title="{% trans 'Merge THIS data into the existing request, then delete this' %}">{% trans "push →" %}</button>
-                  <button type="submit" form="vw-form" name="__action" value="delete_existing:{{ d.kind }}:{{ d.obj.pk }}" class="btn xs danger-ghost" onclick="return confirm('{{ del_msg|escapejs }}');">{% trans "del" %}</button>
+                <div class="cli-fields">
+                  {% if c.client.phone %}<div class="cli-f"><span class="k">phone</span><span class="v mono">{% if c.highlights.phone %}<span class="hl">{{ c.client.phone }}</span>{% else %}{{ c.client.phone }}{% endif %}</span></div>{% endif %}
+                  {% if c.client.email %}<div class="cli-f"><span class="k">email</span><span class="v mono">{% if c.highlights.email %}<span class="hl">{{ c.client.email }}</span>{% else %}{{ c.client.email }}{% endif %}</span></div>{% endif %}
+                  {% if c.client.company_nip %}<div class="cli-f"><span class="k">nip</span><span class="v mono">{{ c.client.company_nip }}</span></div>{% endif %}
                 </div>
+                <div class="match-row">{% for b in c.badges %}<span class="mb {{ b.kind }}">{{ b.label }}</span>{% endfor %}</div>
               </div>
-            {% endfor %}
-          </div>
-          <div class="dupe-del-self">
-            <button type="submit" form="vw-form" name="__action" value="delete_duplicate" class="btn danger"
-                    onclick="return confirm('{% trans "Permanently delete THIS request as a duplicate? This is a hard delete and cannot be undone." %}');">
-              {% trans "Delete this request as duplicate" %}
-            </button>
-          </div>
-        {% else %}
-          <div class="vw-no-dupes">
-            <span class="vhint ok">✓ {% trans "No duplicate requests found" %}</span>
-          </div>
-        {% endif %}
-      </div>
-    </section>
+              <div class="cli-score"><span class="n"><strong>{{ c.score }}</strong>/100</span><span class="bar"><i style="width:{{ c.score }}%"></i></span></div>
+            </label>
+          {% empty %}
+            <div class="vw-no-dupes"><span class="vhint info">{% trans "No matching clients found. Create a new one below or leave unlinked." %}</span></div>
+          {% endfor %}
+        </div>
 
-    {# ===== Step 04: Assignment (right col, spans 2 rows) ===== #}
-    <section class="vw-card vw-s04">
-      <header class="card-h">
-        <h3><span class="step">04</span>{% trans "Assignment" %}</h3>
-        <span class="right">{% trans "future RequestMain" %}</span>
-      </header>
-      <div class="card-b">
-        <div class="field">
-          <label>{% trans "Departments" %} <span class="req">*</span></label>
-          <div class="chip-group">
-            {% for code, label in departments_choices %}
-              <label class="chip-pick">
-                <input type="checkbox" name="departments" value="{{ code }}"
-                  {% if code in form.departments.value %}checked{% endif %}>
-                {{ label }}
-              </label>
-            {% endfor %}
+        <label class="opt-toggle {% if create_new_checked %}on{% endif %}" id="vwCreateToggle">
+          <div class="oh">
+            <span class="oi"><svg class="i i-md"><use href="#i-user-plus"/></svg></span>
+            <div>
+              <div class="ot">{% trans "Create new client" %}</div>
+              <div class="os">{% trans "Prefilled from the snapshot. Can be combined with links above." %}</div>
+            </div>
+            <input type="checkbox" name="create_new" id="vwCreateNew" onchange="vwToggleCreate(this)" {% if create_new_checked %}checked{% endif %}>
+            <span class="cbx"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></span>
           </div>
-        </div>
-        <div class="field">
-          <label>{% trans "Owners" %} <span class="req">*</span></label>
-          <div class="userpop">
-            <div class="userpop-h">{% trans "All active users" %}</div>
-            {% for u in eligible_users %}
-              {% with prof=u.profile %}
-              <label class="urow">
-                <input type="checkbox" name="owners" value="{{ u.pk }}"
-                  {% if form.owners.value and u.pk|stringformat:"s" in form.owners.value|stringformat:"s" %}checked{% endif %}>
-                <span class="uav">{{ u.first_name|slice:":1"|upper }}{{ u.last_name|slice:":1"|upper }}</span>
-                <span class="uname">{{ u.get_full_name|default:u.username }}</span>
-                <span class="urole mono">{% if prof.role %}{% trans prof.role.name %}{% else %}—{% endif %}</span>
-                <span class="check"></span>
-              </label>
-              {% endwith %}
-            {% empty %}
-              <div class="urow"><span class="uname">{% trans "No active users." %}</span></div>
-            {% endfor %}
+          <div class="new-form">
+            <div class="field"><label>{% trans "First name" %}</label><input class="input" name="new_first_name" value="{{ form.new_first_name.value|default_if_none:"" }}"></div>
+            <div class="field"><label>{% trans "Last name" %}</label><input class="input" name="new_last_name" value="{{ form.new_last_name.value|default_if_none:"" }}"></div>
+            <div class="field full"><label>{% trans "Company name" %}</label><input class="input" name="new_company_name" value="{{ form.new_company_name.value|default_if_none:"" }}"></div>
+            <div class="field"><label>{% trans "NIP" %}</label><input class="input mono" name="new_company_nip" value="{{ form.new_company_nip.value|default_if_none:"" }}"></div>
+            <div class="field"><label>{% trans "Phone" %}</label><input class="input mono" name="new_phone" value="{{ form.new_phone.value|default_if_none:"" }}"></div>
+            <div class="field full"><label>{% trans "Email" %}</label><input class="input mono" name="new_email" value="{{ form.new_email.value|default_if_none:"" }}"></div>
           </div>
-        </div>
-        <div class="role-hint">
-          <div class="row mono role-hint-title">{% trans "Per-Req role ladder" %}</div>
-          <div class="row"><code>admin</code><span>›</span><code>dep_head</code><span>›</span><code class="cur">owner</code><span>›</span><code>specialist</code></div>
+        </label>
+
+        <div style="font-size:12px;color:var(--vw-text-3);padding:2px 2px 0;line-height:1.5">
+          <strong style="color:var(--vw-text-2)">{% trans "Leave unlinked:" %}</strong> {% trans "select nothing and don't create — the RequestMain is created without a client." %}
         </div>
       </div>
-    </section>
-
-    {# ===== Step 03: Link to Client ===== #}
-    <section class="vw-card vw-s03">
-      <header class="card-h">
-        <h3><span class="step">03</span>{% trans "Link to Client" %}</h3>
-        <span class="right">{% trans "sorted by signal strength" %}</span>
-      </header>
-      <div class="card-b">
-        <div class="cand-summary">
-          <span class="num">{{ candidates|length }}</span> {% trans "candidate(s) proposed by the duplicate matcher" %}
-        </div>
-        <div class="cand-list">
-          {% if candidates %}
-            {% for c in candidates %}
-              <label class="cand">
-                <input type="radio" name="link_choice" value="link:{{ c.client.pk }}"
-                  {% if selected_link == "link:"|add:c.client.pk|stringformat:"d" %}checked{% endif %}>
-                <span class="rdo"></span>
-                <div class="cand-main">
-                  <div class="cand-top">
-                    <span class="cand-name">{{ c.client.full_name|default:"—" }}</span>
-                    {% if c.client.company_name %}<span class="cand-co">{{ c.client.company_name }}</span>{% endif %}
-                    <span class="cand-id mono">C-{{ c.client.pk|stringformat:"04d" }}</span>
-                  </div>
-                  <div class="cand-fields">
-                    {% if c.client.phone %}<div class="cand-f"><span class="k">PHONE</span><span class="v mono{% if c.highlights.phone %} hl{% endif %}">{{ c.client.phone }}</span></div>{% endif %}
-                    {% if c.client.email %}<div class="cand-f"><span class="k">EMAIL</span><span class="v mono{% if c.highlights.email %} hl{% endif %}">{{ c.client.email }}</span></div>{% endif %}
-                    {% if c.client.company_nip %}<div class="cand-f"><span class="k">NIP</span><span class="v mono{% if c.highlights.company_nip %} hl{% endif %}">{{ c.client.company_nip }}</span></div>{% endif %}
-                  </div>
-                  <div class="match-row">
-                    {% for b in c.badges %}<span class="mb {{ b.kind }}">{{ b.label }}</span>{% endfor %}
-                  </div>
-                </div>
-                <div class="cand-score">
-                  <div class="score-num"><strong>{{ c.score }}</strong>/100</div>
-                  <div class="score-bar{% if c.is_weak %} weak{% endif %}"><i style="width:{{ c.score }}%"></i></div>
-                  <div class="score-tag {% if c.is_strong %}strong{% elif c.is_weak %}weak{% endif %}">
-                    {% if c.is_strong %}{% trans "strong" %}{% elif c.is_weak %}{% trans "weak" %}{% else %}{% trans "match" %}{% endif %}
-                  </div>
-                </div>
-              </label>
-            {% endfor %}
-          {% else %}
-            <div class="empty-state">
-              <div class="ico-ring">○</div>
-              <h4>{% trans "No matching clients found" %}</h4>
-            </div>
-          {% endif %}
-
-          {# Create as new client #}
-          <label class="cand alt">
-            <input type="radio" name="link_choice" value="{{ LINK_NEW }}"
-              {% if form.link_choice.value == LINK_NEW %}checked{% endif %}>
-            <span class="rdo"></span>
-            <div class="alt-ico">+</div>
-            <div class="cand-main">
-              <div class="alt-title">{% trans "Create as new client" %}</div>
-              <div class="alt-form">
-                <div class="field"><label>{% trans "First name" %}</label><input class="input" name="new_first_name" value="{{ form.new_first_name.value|default_if_none:'' }}"></div>
-                <div class="field"><label>{% trans "Last name" %}</label><input class="input" name="new_last_name" value="{{ form.new_last_name.value|default_if_none:'' }}"></div>
-                <div class="field full"><label>{% trans "Company name" %}</label><input class="input" name="new_company_name" value="{{ form.new_company_name.value|default_if_none:'' }}"></div>
-                <div class="field"><label>{% trans "NIP" %}</label><input class="input mono" name="new_company_nip" value="{{ form.new_company_nip.value|default_if_none:'' }}"></div>
-                <div class="field"><label>{% trans "Phone" %}</label><input class="input mono" name="new_phone" value="{{ form.new_phone.value|default_if_none:'' }}"></div>
-                <div class="field full"><label>{% trans "Email" %}</label><input class="input mono" name="new_email" value="{{ form.new_email.value|default_if_none:'' }}"></div>
-              </div>
-            </div>
-            <div class="cand-score"><span class="score-tag strong">{% trans "recommended" %}</span></div>
-          </label>
-
-          {# Leave unlinked #}
-          <label class="cand alt">
-            <input type="radio" name="link_choice" value="{{ LINK_UNLINKED }}"
-              {% if form.link_choice.value == LINK_UNLINKED %}checked{% endif %}>
-            <span class="rdo"></span>
-            <div class="alt-ico">∅</div>
-            <div class="cand-main">
-              <div class="alt-title">{% trans "Leave unlinked" %}</div>
-              <div class="alt-desc">{% trans "Approve without attaching a Client. Discouraged — use sparingly." %}</div>
-            </div>
-            <div class="cand-score"><span class="score-tag weak">{% trans "low usage" %}</span></div>
-          </label>
-        </div>
+      <div class="modal-foot">
+        <span class="lbl" style="font-size:12px;color:var(--vw-text-3)"><span id="vwCliFootCount" class="mono">{{ selected_client_ids|length }}</span> {% trans "selected" %}</span>
+        <div class="actions"><button type="button" class="vw-btn primary" onclick="vwClose('vwModalClient')"><svg class="i"><use href="#i-check"/></svg> {% trans "Done" %}</button></div>
       </div>
-    </section>
+    </div>
+  </div>
 
-  </div>{# /vw-grid4 #}
 </form>
 
-{# Footbar #}
-<div class="footbar">
+{# ── footbar (fixed, submits vw-form via form=) ── #}
+<div class="vw-footbar">
   <div class="sumline">
-    <span class="pip {% if request_dupes %}warn{% else %}ok{% endif %}">{% if request_dupes %}⚠ {{ request_dupes|length }} {% trans "duplicate(s)" %}{% else %}✓ {% trans "no duplicates" %}{% endif %}</span>
-    <span class="pip {% if candidates %}ok{% else %}miss{% endif %}">{% if candidates %}✓ {{ candidates|length }} {% trans "client candidate(s)" %}{% else %}⚠ {% trans "no clients" %}{% endif %}</span>
+    <span class="pip">{% if request_dupes %}<svg viewBox="0 0 24 24" style="color:var(--amber)"><use href="#i-warn"/></svg> {{ request_dupes|length }} {% trans "dupes" %}{% else %}<svg viewBox="0 0 24 24" style="color:var(--green-bright)"><use href="#i-check"/></svg> {% trans "no dupes" %}{% endif %}</span>
+    <span class="pip"><svg viewBox="0 0 24 24" style="color:var(--green-bright)"><use href="#i-check"/></svg> <span id="vwPipCli">{{ selected_client_ids|length }} {% trans "clients linked" %}</span></span>
   </div>
   <div class="actions">
-    <a href="{{ cancel_url }}" class="btn ghost">{% trans "Cancel" %}</a>
-    <button type="submit" form="vw-form" name="__action" value="discard" class="btn danger-ghost"
+    <a href="{{ cancel_url }}" class="vw-btn ghost">{% trans "Cancel" %}</a>
+    <button type="submit" form="vw-form" name="__action" value="discard" class="vw-btn danger-ghost"
             onclick="return confirm('{% trans "Discard this request as spam? This cannot be undone." %}');">
-      {% trans "Discard as spam" %}
+      <svg class="i"><use href="#i-trash"/></svg> {% trans "Discard as spam" %}
     </button>
-    <button type="submit" form="vw-form" class="btn primary">{% trans "Approve & create RequestMain" %}</button>
+    <button type="submit" form="vw-form" class="vw-btn primary" {% if banner.kind == 'err' %}disabled{% endif %}>
+      <svg class="i"><use href="#i-check"/></svg> {% trans "Approve & create RequestMain" %}
+    </button>
   </div>
 </div>
 
+<script>
+(function(){
+  "use strict";
+  var lastFocus=null;
+  window.vwOpen=function(id){var m=document.getElementById(id);lastFocus=document.activeElement;m.classList.add('open');var f=m.querySelector('button,input,a');if(f)f.focus();};
+  window.vwClose=function(id){document.getElementById(id).classList.remove('open');if(lastFocus)lastFocus.focus();};
+  document.querySelectorAll('.vw-modal-scrim').forEach(function(s){
+    s.addEventListener('mousedown',function(e){if(e.target===s)vwClose(s.id);});
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){document.querySelectorAll('.vw-modal-scrim.open').forEach(function(s){vwClose(s.id);});}
+    if(e.key==='Tab'){
+      var m=document.querySelector('.vw-modal-scrim.open .vw-modal');if(!m)return;
+      var f=[].slice.call(m.querySelectorAll('button,input,a,[tabindex]:not([tabindex="-1"])')).filter(function(el){return !el.disabled&&el.offsetParent!==null;});
+      if(!f.length)return;var first=f[0],last=f[f.length-1];
+      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+    }
+  });
+
+  window.vwToggleCreate=function(cb){
+    document.getElementById('vwCreateToggle').classList.toggle('on',cb.checked);
+    vwOnCliToggle();
+  };
+  window.vwOnCliToggle=function(){
+    document.querySelectorAll('#vwCliList .cli').forEach(function(l){l.classList.toggle('on',l.querySelector('input').checked);});
+    var n=document.querySelectorAll('#vwCliList input:checked').length;
+    var creating=document.getElementById('vwCreateNew').checked;
+    var label=(creating?(n+' + new'):(n))+' {% trans "selected" %}';
+    document.getElementById('vwCliSelectedTxt').textContent=label;
+    document.getElementById('vwCliFootCount').textContent=creating?(n+'+1'):n;
+    document.getElementById('vwPipCli').textContent=(creating?(n+1):n)+' {% trans "clients linked" %}';
+  };
+
+  document.querySelectorAll('.dchip input').forEach(function(i){i.addEventListener('change',function(){this.closest('.dchip').classList.toggle('on',this.checked);});});
+  document.querySelectorAll('.orow input').forEach(function(i){i.addEventListener('change',function(){this.closest('.orow').classList.toggle('on',this.checked);});});
+  vwOnCliToggle();
+})();
+</script>
 {% endblock content %}

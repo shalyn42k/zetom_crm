@@ -1,47 +1,44 @@
 // claude
-// Pre-save duplicate popup — multi-step mini-VW (steps 02 / 03 / 04).
-// Step 02: dup list with per-row fetch actions (delete existing / pull into form / dismiss).
-// Step 03: client candidates radio-select → stores popup_client_choice.
-// Step 04: departments + owners checkboxes → stored as popup_departments / popup_owners.
-// On "Save": adds hidden inputs to the form then submits.
+// Pre-save duplicate popup (redesign) — stepped modal, three sections.
+//  Section 1 (dupes): rows built from check-duplicates JSON. Per-row pull
+//    (copy into form) / del (soft-delete existing) / dismiss (hide row).
+//    Plus a "Delete all duplicates" bulk button (soft, one POST).
+//  Section 2 (clients): MULTI-SELECT checkboxes (popup_client_ids) + a
+//    "create new" toggle (popup_create_new).
+//  Section 3 (assignment): server-rendered departments + owners checkboxes.
+// On "Save request": inject hidden inputs into the add form and submit it.
 (function () {
   "use strict";
 
   var anchor, modal, form, checkUrl, dupActionUrl;
-  var currentStep = 2;
-  var clientChoice = "unlinked"; // "link:<pk>" | "create" | "unlinked"
-  var apiItems = [];   // raw response from check-duplicates
+  var apiItems = [];
+  var step = 1;
+  var STEPS = 3;
+
+  var badgeLabels = null;  // unused; badges arrive as [kind,label]
 
   function getCsrf() {
     var el = document.querySelector("[name=csrfmiddlewaretoken]");
     return el ? el.value : "";
   }
 
-  function postJson(url, data) {
+  function postForm(url, pairs) {
     var fd = new FormData();
-    Object.keys(data || {}).forEach(function (k) { fd.append(k, data[k]); });
+    pairs.forEach(function (p) { fd.append(p[0], p[1]); });
     fd.append("csrfmiddlewaretoken", getCsrf());
     return fetch(url, { method: "POST", body: fd }).then(function (r) { return r.json(); });
   }
 
-  // ---- Step navigation ----
-  function goTo(step) {
-    currentStep = step;
-    modal.querySelectorAll(".rm-popup-section").forEach(function (s) {
-      s.hidden = parseInt(s.dataset.section, 10) !== step;
-    });
-    modal.querySelectorAll(".rm-popup-step").forEach(function (b) {
-      b.classList.toggle("active", parseInt(b.dataset.step, 10) === step);
-    });
-    var prev = document.getElementById("rm-popup-prev");
-    var next = document.getElementById("rm-popup-next");
-    var proceed = document.getElementById("rm-dupe-proceed");
-    prev.hidden = (step === 2);
-    next.hidden = (step === 4);
-    proceed.hidden = (step !== 4);
+  function el(tag, cls) { var e = document.createElement(tag); if (cls) e.className = cls; return e; }
+
+  function mb(b) {
+    // b = [kind, label]
+    var s = el("span", "mb " + b[0]);
+    s.textContent = b[1];
+    return s;
   }
 
-  // ---- Render step 02: dup rows ----
+  // ---- render duplicates ----
   function renderDupes(items) {
     var list = document.getElementById("rm-dupe-list");
     var empty = document.getElementById("rm-dupe-empty");
@@ -49,194 +46,267 @@
     list.innerHTML = "";
     if (!dupes.length) { empty.hidden = false; return; }
     empty.hidden = true;
+
     dupes.forEach(function (it) {
-      var li = document.createElement("li");
-      li.className = "rm-dupe-modal__item";
+      var name = ((it.first_name || "") + " " + (it.last_name || "")).trim() || it.label || "—";
+      var li = el("li", "dup" + (it.strong ? " strong" : ""));
+      li.dataset.kind = it.type;
       li.dataset.pk = it.pk;
-      li.dataset.type = it.type;
 
-      var kindEl = document.createElement("span");
-      kindEl.className = "rm-dupe-modal__kind " + it.type;
-      kindEl.textContent = (it.type === "main" ? "M" : "N") + "#" + it.pk;
-      li.appendChild(kindEl);
+      var kind = el("span", "kind-badge " + it.type);
+      kind.textContent = (it.type === "main" ? "M" : "N") + "#" + it.pk;
+      li.appendChild(kind);
 
-      var labelEl = document.createElement("span");
-      labelEl.className = "rm-dupe-modal__label";
-      labelEl.textContent = it.label;
-      li.appendChild(labelEl);
-
-      (it.badges || []).forEach(function (b) {
-        var s = document.createElement("span");
-        s.className = "rm-dupe-modal__badge";
-        s.textContent = b;
-        li.appendChild(s);
-      });
-
-      var scoreEl = document.createElement("span");
-      scoreEl.className = "rm-dupe-modal__score";
-      scoreEl.textContent = it.score + "/100";
-      li.appendChild(scoreEl);
-
+      var main = el("div", "dup-main");
+      var top = el("div", "dup-top");
+      var nm = el("span", "dup-name"); nm.textContent = name; top.appendChild(nm);
+      if (it.company_name) { var co = el("span", "dup-co"); co.textContent = it.company_name; top.appendChild(co); }
       if (it.url) {
-        var a = document.createElement("a");
-        a.className = "rm-dupe-modal__open";
-        a.href = it.url;
-        a.target = "_blank";
-        a.textContent = "↗";
-        li.appendChild(a);
+        var a = el("a", "dup-open"); a.href = it.url; a.target = "_blank"; a.title = "Open in new tab";
+        a.innerHTML = '<svg class="i i-sm"><use href="#rmi-external"/></svg>';
+        top.appendChild(a);
       }
+      main.appendChild(top);
+      var badges = el("div", "match-row");
+      (it.badges || []).forEach(function (b) { badges.appendChild(mb(b)); });
+      main.appendChild(badges);
+      li.appendChild(main);
 
-      // pull info into form (pure JS, no server call)
-      var pullBtn = document.createElement("button");
-      pullBtn.type = "button";
-      pullBtn.className = "rm-dupe-modal__act";
-      pullBtn.textContent = "← pull";
-      pullBtn.title = "Copy this record’s data into the form";
-      pullBtn.addEventListener("click", function () {
-        var map = { first_name:"id_first_name", last_name:"id_last_name",
-                    phone:"id_phone", email:"id_email", company_name:"id_company_name" };
+      var right = el("div", "dup-right");
+      var score = el("div", "dup-score" + (it.score < 50 ? " weak" : ""));
+      score.innerHTML = '<span class="n"><strong>' + it.score + '</strong>/100</span>'
+        + '<span class="bar"><i style="width:' + it.score + '%"></i></span>';
+      right.appendChild(score);
+      var btns = el("div", "dup-btns");
+
+      var pull = el("button", "mbtn"); pull.type = "button";
+      pull.title = "Copy this record's fields into the form";
+      pull.innerHTML = '<svg viewBox="0 0 24 24"><use href="#rmi-arrow-l"/></svg>pull';
+      pull.addEventListener("click", function () {
+        var map = { first_name: "id_first_name", last_name: "id_last_name",
+                    phone: "id_phone", email: "id_email", company_name: "id_company_name" };
         Object.keys(map).forEach(function (k) {
-          var el = document.getElementById(map[k]);
-          if (el && it[k]) el.value = it[k];
+          var f = document.getElementById(map[k]);
+          if (f && it[k]) f.value = it[k];
         });
-        li.style.opacity = ".4";
-        pullBtn.disabled = true;
+        li.style.opacity = ".45"; pull.disabled = true;
       });
-      li.appendChild(pullBtn);
+      btns.appendChild(pull);
 
-      // delete existing
-      var delBtn = document.createElement("button");
-      delBtn.type = "button";
-      delBtn.className = "rm-dupe-modal__act danger";
-      delBtn.textContent = "del";
-      delBtn.title = it.type === "main" ? "Cancel this existing request" : "Hard-delete this validation request";
-      delBtn.addEventListener("click", function () {
-        if (!confirm(delBtn.title + "?")) return;
-        postJson(dupActionUrl, { action: "delete_existing:" + it.type + ":" + it.pk })
-          .then(function (d) {
-            if (d.ok) {
-              li.remove();
-              if (!list.children.length) empty.hidden = false;
-            }
-          });
+      var del = el("button", "mbtn del"); del.type = "button";
+      del.title = it.type === "main" ? "Cancel this existing request" : "Soft-delete this record";
+      del.innerHTML = '<svg viewBox="0 0 24 24"><use href="#rmi-trash"/></svg>del';
+      del.addEventListener("click", function () {
+        if (!confirm(del.title + "?")) return;
+        postForm(dupActionUrl, [["action", "delete_existing:" + it.type + ":" + it.pk]])
+          .then(function (d) { if (d && d.ok) { li.remove(); afterDupeRemoved(); } });
       });
-      li.appendChild(delBtn);
+      btns.appendChild(del);
 
-      // dismiss (hide row, keep record)
-      var dimBtn = document.createElement("button");
-      dimBtn.type = "button";
-      dimBtn.className = "rm-dupe-modal__act";
-      dimBtn.textContent = "×";
-      dimBtn.title = "Dismiss (keep existing record)";
-      dimBtn.addEventListener("click", function () { li.remove(); if (!list.children.length) empty.hidden = false; });
-      li.appendChild(dimBtn);
+      var dismiss = el("button", "mbtn icon"); dismiss.type = "button";
+      dismiss.title = "Dismiss row (keep record)";
+      dismiss.innerHTML = '<svg viewBox="0 0 24 24"><use href="#rmi-x"/></svg>';
+      dismiss.addEventListener("click", function () { li.remove(); afterDupeRemoved(); });
+      btns.appendChild(dismiss);
 
+      right.appendChild(btns);
+      li.appendChild(right);
       list.appendChild(li);
     });
   }
 
-  // ---- Render step 03: client candidates ----
+  function afterDupeRemoved() {
+    var list = document.getElementById("rm-dupe-list");
+    if (!list.children.length) document.getElementById("rm-dupe-empty").hidden = false;
+    updateSummary();
+  }
+
+  // ---- render clients (multi-select) ----
   function renderClients(items) {
-    var container = document.getElementById("rm-popup-clients");
-    container.innerHTML = "";
+    var box = document.getElementById("rm-popup-clients");
+    box.innerHTML = "";
     var clients = items.filter(function (it) { return it.type === "client"; });
-    if (!clients.length) return;
     clients.forEach(function (it) {
-      var label = document.createElement("label");
-      label.className = "rm-popup-opt";
-      var radio = document.createElement("input");
-      radio.type = "radio";
-      radio.name = "popup_client_internal";
-      radio.value = "link:" + it.pk;
-      var text = document.createElement("span");
-      text.textContent = it.label;
-      var badges = document.createElement("span");
-      badges.className = "rm-sug-badges";
-      (it.badges || []).forEach(function (b) {
-        var s = document.createElement("span");
-        s.className = "rm-dupe-modal__badge";
-        s.textContent = b;
-        badges.appendChild(s);
+      var name = ((it.first_name || "") + " " + (it.last_name || "")).trim() || it.label || "—";
+      var hl = it.highlights || {};
+      var label = el("label", "cli");
+      var cb = el("input"); cb.type = "checkbox"; cb.name = "popup_client_ids"; cb.value = it.pk;
+      cb.addEventListener("change", function () {
+        label.classList.toggle("on", cb.checked);
+        updateSummary();
       });
-      var score = document.createElement("span");
-      score.className = "rm-dupe-modal__score";
-      score.textContent = it.score + "/100";
-      label.appendChild(radio);
-      label.appendChild(text);
-      label.appendChild(badges);
-      label.appendChild(score);
-      container.appendChild(label);
+      label.appendChild(cb);
+      var box2 = el("span", "cbx"); box2.innerHTML = '<svg viewBox="0 0 24 24"><use href="#rmi-check"/></svg>';
+      label.appendChild(box2);
+
+      var main = el("div", "cli-main");
+      var top = el("div", "cli-top");
+      top.innerHTML = '<span class="cli-name"></span>'
+        + (it.company_name ? '<span class="cli-co"></span>' : '')
+        + '<span class="cli-id mono">C-' + it.pk + '</span>';
+      top.querySelector(".cli-name").textContent = name;
+      if (it.company_name) top.querySelector(".cli-co").textContent = it.company_name;
+      main.appendChild(top);
+
+      var fields = el("div", "cli-fields");
+      function f(k, v, on) {
+        if (!v) return "";
+        return '<div class="cli-f"><span class="k">' + k + '</span><span class="v mono">'
+          + (on ? '<span class="hl">' + v + '</span>' : v) + '</span></div>';
+      }
+      fields.innerHTML = f("phone", it.phone, hl.phone) + f("email", it.email, hl.email) + f("nip", it.company_nip, hl.company_nip);
+      main.appendChild(fields);
+
+      var badges = el("div", "match-row");
+      (it.badges || []).forEach(function (b) { badges.appendChild(mb(b)); });
+      main.appendChild(badges);
+      label.appendChild(main);
+
+      var sc = el("div", "cli-score");
+      sc.innerHTML = '<span class="n"><strong>' + it.score + '</strong>/100</span>'
+        + '<span class="bar"><i style="width:' + it.score + '%"></i></span>';
+      label.appendChild(sc);
+      box.appendChild(label);
     });
   }
 
-  // ---- Collect choices and submit ----
+  // ---- summary line ----
+  function updateSummary() {
+    var dupes = document.querySelectorAll("#rm-dupe-list .dup").length;
+    var n = document.querySelectorAll("#rm-popup-clients .cli input:checked").length;
+    var creating = document.getElementById("popup_create_new").checked;
+    var cl = n + " client" + (n === 1 ? "" : "s") + (creating ? " + new" : "");
+    document.getElementById("rm-foot-sum").textContent = dupes + " dupes · " + cl;
+  }
+
+  // ---- collect + submit ----
   function proceed() {
-    // Read client choice from radios
-    var radios = modal.querySelectorAll("[name=popup_client_internal]");
-    radios.forEach(function (r) { if (r.checked) clientChoice = r.value; });
-
-    // Add hidden inputs to form
-    var existing = form.querySelectorAll(".rm-popup-hidden");
-    existing.forEach(function (e) { e.remove(); });
-
+    form.querySelectorAll(".rm-popup-hidden").forEach(function (e) { e.remove(); });
     function addHidden(name, value) {
       var h = document.createElement("input");
-      h.type = "hidden";
-      h.name = name;
-      h.value = value;
-      h.className = "rm-popup-hidden";
+      h.type = "hidden"; h.name = name; h.value = value; h.className = "rm-popup-hidden";
       form.appendChild(h);
     }
-
-    addHidden("popup_client_choice", clientChoice);
-
+    modal.querySelectorAll("#rm-popup-clients input:checked").forEach(function (cb) {
+      addHidden("popup_client_ids", cb.value);
+    });
+    if (document.getElementById("popup_create_new").checked) addHidden("popup_create_new", "1");
     modal.querySelectorAll("[name=popup_departments]:checked").forEach(function (cb) {
       addHidden("popup_departments", cb.value);
     });
     modal.querySelectorAll("[name=popup_owners]:checked").forEach(function (cb) {
       addHidden("popup_owners", cb.value);
     });
-
     form.dataset.dupeConfirmed = "1";
-    if (form.requestSubmit) { form.requestSubmit(window._rmPendingSubmitter || undefined); }
-    else { form.submit(); }
+    if (form.requestSubmit) form.requestSubmit(window._rmPendingSubmitter || undefined);
+    else form.submit();
   }
 
-  // ---- Bootstrap ----
+  // ---- wizard nav ----
+  function goto(n) {
+    step = Math.max(1, Math.min(STEPS, n));
+    modal.querySelectorAll(".rm-sec").forEach(function (s) { s.classList.toggle("active", +s.dataset.step === step); });
+    modal.querySelectorAll(".rm-step").forEach(function (t) {
+      var k = +t.dataset.step;
+      t.classList.toggle("active", k === step);
+      t.classList.toggle("done", k < step);
+    });
+    document.getElementById("rm-back").style.visibility = step > 1 ? "visible" : "hidden";
+    document.getElementById("rm-next").hidden = step === STEPS;
+    document.getElementById("rm-dupe-proceed").hidden = step !== STEPS;
+    var body = modal.querySelector(".rm-body"); if (body) body.scrollTop = 0;
+  }
+
+  // ---- open / close ----
+  var lastFocus = null;
+  function open() { lastFocus = document.activeElement; modal.classList.add("open"); modal.querySelector(".hx").focus(); }
+  function close() { modal.classList.remove("open"); if (lastFocus) lastFocus.focus(); }
+
+  function collectParams() {
+    var map = { first_name: "id_first_name", last_name: "id_last_name", phone: "id_phone",
+                email: "id_email", company_name: "id_company_name", company_nip: "id_company_nip" };
+    var params = new URLSearchParams();
+    Object.keys(map).forEach(function (k) {
+      var f = document.getElementById(map[k]);
+      if (f && f.value) params.set(k, f.value);
+    });
+    return params.toString();
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     anchor = document.getElementById("rm-dupe-check");
     modal = document.getElementById("rm-dupe-modal");
     if (!anchor || !modal) return;
-
     form = document.getElementById(anchor.dataset.formId);
     if (!form) return;
-
     checkUrl = anchor.dataset.url;
     dupActionUrl = anchor.dataset.dupActionUrl;
 
-    var btnCancel = document.getElementById("rm-dupe-cancel");
-    var btnPrev = document.getElementById("rm-popup-prev");
-    var btnNext = document.getElementById("rm-popup-next");
-    var btnProceed = document.getElementById("rm-dupe-proceed");
+    // Reparent the modal to <body> so position:fixed anchors to the viewport.
+    // Inside the Unfold content column a transformed ancestor makes fixed
+    // behave like absolute, pinning the modal off-centre. The modal's own
+    // inputs are read by pk and copied into the form on submit, so moving it
+    // out of the content flow is safe.
+    document.body.appendChild(modal);
 
-    btnCancel.addEventListener("click", function () { modal.hidden = true; });
-    modal.addEventListener("click", function (e) { if (e.target === modal) modal.hidden = true; });
-
-    btnPrev.addEventListener("click", function () { goTo(currentStep - 1); });
-    btnNext.addEventListener("click", function () { goTo(currentStep + 1); });
-    btnProceed.addEventListener("click", proceed);
-
-    // Step nav tabs
-    modal.querySelectorAll(".rm-popup-step").forEach(function (btn) {
-      btn.addEventListener("click", function () { goTo(parseInt(btn.dataset.step, 10)); });
+    document.getElementById("rm-dupe-cancel").addEventListener("click", close);
+    document.getElementById("rm-dupe-x").addEventListener("click", close);
+    document.getElementById("rm-dupe-proceed").addEventListener("click", proceed);
+    document.getElementById("rm-back").addEventListener("click", function () { goto(step - 1); });
+    document.getElementById("rm-next").addEventListener("click", function () { goto(step + 1); });
+    modal.querySelectorAll(".rm-step").forEach(function (t) {
+      t.addEventListener("click", function () { goto(+t.dataset.step); });
+    });
+    modal.addEventListener("mousedown", function (e) { if (e.target === modal) close(); });
+    document.addEventListener("keydown", function (e) {
+      if (!modal.classList.contains("open")) return;
+      if (e.key === "Escape") { close(); return; }
+      if (e.key === "Tab") {
+        var box = modal.querySelector(".rm-modal");
+        var f = [].slice.call(box.querySelectorAll('button,input,a,[tabindex]:not([tabindex="-1"])'))
+          .filter(function (x) { return !x.disabled && x.offsetParent !== null; });
+        if (!f.length) return;
+        var first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
     });
 
-    // Intercept form save
+    // Delete-all-duplicates (bulk, soft).
+    document.getElementById("rm-dupe-delete-all").addEventListener("click", function () {
+      var rows = [].slice.call(document.querySelectorAll("#rm-dupe-list .dup"));
+      if (!rows.length) return;
+      if (!confirm("Move all duplicates to trash / cancel them? This can be undone.")) return;
+      var pairs = [["action", "delete_all_dupes"]];
+      rows.forEach(function (r) { pairs.push(["targets", r.dataset.kind + ":" + r.dataset.pk]); });
+      postForm(dupActionUrl, pairs).then(function (d) {
+        if (d && d.ok) {
+          document.getElementById("rm-dupe-list").innerHTML = "";
+          document.getElementById("rm-dupe-empty").hidden = false;
+          updateSummary();
+        }
+      });
+    });
+
+    // Create-new toggle.
+    document.getElementById("popup_create_new").addEventListener("change", function () {
+      document.getElementById("rm-create-toggle").classList.toggle("on", this.checked);
+      updateSummary();
+    });
+
+    // Assignment chips / owners.
+    modal.querySelectorAll("#popup-dep-group .dchip input").forEach(function (i) {
+      i.addEventListener("change", function () { this.closest(".dchip").classList.toggle("on", this.checked); });
+    });
+    modal.querySelectorAll("#popup-owner-list .orow input").forEach(function (i) {
+      i.addEventListener("change", function () { this.closest(".orow").classList.toggle("on", this.checked); });
+    });
+
+    // Intercept add-form save → run duplicate check.
     form.addEventListener("submit", function (e) {
       if (form.dataset.dupeConfirmed === "1") return;
       e.preventDefault();
       window._rmPendingSubmitter = e.submitter || null;
-
       fetch(checkUrl + "?" + collectParams(), { headers: { "X-Requested-With": "XMLHttpRequest" } })
         .then(function (r) { return r.json(); })
         .then(function (data) {
@@ -244,24 +314,13 @@
           apiItems = data.items || [];
           renderDupes(apiItems);
           renderClients(apiItems);
-          goTo(2);
-          modal.hidden = false;
+          updateSummary();
+          goto(1);
+          open();
         })
         .catch(function () {
           alert("Network error — could not check for duplicates. Check connection and try again.");
         });
     });
   });
-
-  function collectParams() {
-    var map = { first_name:"id_first_name", last_name:"id_last_name",
-                phone:"id_phone", email:"id_email",
-                company_name:"id_company_name", company_nip:"id_company_nip" };
-    var params = new URLSearchParams();
-    Object.keys(map).forEach(function (k) {
-      var el = document.getElementById(map[k]);
-      if (el && el.value) params.set(k, el.value);
-    });
-    return params.toString();
-  }
 })();
