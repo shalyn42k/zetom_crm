@@ -14,9 +14,8 @@ atomic transaction:
     5. Redirect to the RequestMain change page.
 
 NOTE — partial behaviour (see UI notices on the page):
-    * Owner filter "by department" is NOT live — owners list shows every
-      qualified user; the chosen-vs-filtered relationship is enforced on
-      submit (clean_owners). HTMX refresh is a follow-up.
+    * Owner filter "by department" is NOT live — owners list shows all active
+      users; any user can be selected regardless of department membership.
     * Drag-reorder of "primary owner" is NOT implemented — the first owner
       (by pk) is treated as primary.
     * The ad-hoc client search box is decorative — only auto-proposed
@@ -104,21 +103,6 @@ class ValidationWindowForm(forms.Form):
                     _("Provide at least a phone or email for the new client."),
                 )
 
-        # Enforce owners ⊆ users-with-any-of-selected-departments
-        departments = cleaned.get("departments") or []
-        owners = cleaned.get("owners")
-        if departments and owners:
-            invalid = [
-                u for u in owners
-                if not set(getattr(u.profile, "departments", []) or []) & set(departments)
-            ]
-            if invalid:
-                names = ", ".join(u.get_username() for u in invalid)
-                self.add_error(
-                    "owners",
-                    _("These users have no overlap with the selected departments: %(names)s")
-                    % {"names": names},
-                )
         return cleaned
 
 
