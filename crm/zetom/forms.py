@@ -33,7 +33,7 @@ class TemplateForm(forms.ModelForm):
 
     # claude
     company_nip = forms.CharField(
-        required=True,
+        required=False,
         max_length=20,
         validators=[validate_nip],
         widget=forms.TextInput(attrs={"placeholder": "7322215365"}),
