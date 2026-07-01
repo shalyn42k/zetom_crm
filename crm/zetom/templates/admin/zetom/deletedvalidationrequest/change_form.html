@@ -1,0 +1,125 @@
+{% extends "admin/change_form.html" %}
+{% comment %}
+Trash change form for a soft-deleted Validation Window lead (RequestNull).
+Slimmer than the RequestMain trash: no status/documents/address — a lead has
+none. Restore brings it back into the Validation Window.
+{% endcomment %}
+{% load i18n static %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'zetom/css/requestmain_detail.css' %}">
+{% endblock extrastyle %}
+
+{% block submit_buttons_bottom %}
+  <div id="submit-row" class="relative lg:sticky lg:bottom-0 z-40">
+    <div class="backdrop-blur-xs bg-white/80 rounded-b-default pb-4 px-4 dark:bg-base-900/80 lg:border-t lg:border-base-200 relative lg:py-0 dark:border-base-800">
+      <div class="flex flex-col-reverse gap-3 items-center mx-auto lg:flex-row-reverse container lg:h-[64px]">
+        <form method="post" action='{% url "admin:zetom_deletedvalidationrequest_restore" original.pk %}' class="w-full lg:w-auto">
+          {% csrf_token %}
+          <button type="submit" class="w-full lg:w-auto font-medium inline-flex items-center gap-1 rounded-default justify-center cursor-pointer px-3 py-2 bg-primary-600 border border-primary-600 text-white hover:bg-primary-600/80">
+            <span class="material-symbols-outlined -ml-0.5">restore</span>
+            {% trans "Restore to Validation Window" %}
+          </button>
+        </form>
+        <form method="post" action='{% url "admin:zetom_deletedvalidationrequest_hard_delete" original.pk %}' class="w-full lg:w-auto" onsubmit="return confirm('{% trans "Permanently delete this request? This cannot be undone." %}');">
+          {% csrf_token %}
+          <button type="submit" class="w-full lg:w-auto font-medium inline-flex items-center gap-1 rounded-default justify-center cursor-pointer px-3 py-2 bg-red-600 border border-red-600 text-white hover:bg-red-600/80">
+            <span class="material-symbols-outlined -ml-0.5">delete_forever</span>
+            {% trans "Hard delete" %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock submit_buttons_bottom %}
+
+{% block content %}
+<div id="content-main">
+<div class="rm-page">
+
+  <p class="rm-callout rm-callout--danger">
+    {% trans "This lead is in the trash. Restore brings it back into the Validation Window, or Hard delete removes it permanently." %}
+  </p>
+
+  <header class="rm-header">
+    <div class="rm-header__title">
+      <h1 class="rm-h1">{% trans "Validation Window lead" %} — {{ original.company_name|default:"—" }}</h1>
+      <span class="rm-tag">NULL-{{ original.pk }}</span>
+      {% if source_display %}
+        <span class="rm-tag rm-tag--source">{{ source_display }}</span>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="rm-grid">
+    <div class="rm-col rm-col--left">
+      <section class="rm-card">
+        <header class="rm-card__header">
+          <h2 class="rm-card__title">{% trans "Client" %}</h2>
+        </header>
+        <dl class="rm-linked-fields">
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "First name" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.first_name|default:"—" }}</dd>
+          </div>
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "Last name" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.last_name|default:"—" }}</dd>
+          </div>
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "Company" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.company_name|default:"—" }}</dd>
+          </div>
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "NIP" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.company_nip|default:"—" }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="rm-card">
+        <header class="rm-card__header">
+          <h2 class="rm-card__title">{% trans "Client information" %}</h2>
+        </header>
+        <dl class="rm-linked-fields">
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "Email" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.email|default:"—" }}</dd>
+          </div>
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "Phone" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.phone|default:"—" }}</dd>
+          </div>
+          <div class="rm-linked-field">
+            <dt class="rm-linked-field__label">{% trans "Message" %}</dt>
+            <dd class="rm-linked-field__value">{{ original.message|default:"—"|linebreaksbr }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+
+    <aside class="rm-col rm-col--right">
+      <section class="rm-card">
+        <header class="rm-card__header">
+          <h2 class="rm-card__title">
+            {% trans "Departments" %}
+            <span class="rm-counter">{{ assigned_departments|length }}</span>
+          </h2>
+        </header>
+        <ul class="rm-dept-list">
+          {% for code, label in assigned_departments %}
+            <li class="rm-dept-row {% if code in user_departments %}rm-dept-row--mine{% endif %}">
+              <span class="rm-avatar" aria-hidden="true">{{ label|slice:":1"|upper }}</span>
+              <span class="rm-dept-row__name">{{ label }}</span>
+            </li>
+          {% empty %}
+            <li class="rm-empty">{% trans "No departments." %}</li>
+          {% endfor %}
+        </ul>
+      </section>
+    </aside>
+  </div>
+</div>
+</div>
+{% endblock content %}
