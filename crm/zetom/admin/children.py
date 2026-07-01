@@ -10,6 +10,7 @@ from django.contrib import admin, messages
 from crm.status_manager.services.status_service import save_child_with_status
 from crm.zetom.forms import AddOferta, AddWniosek, AddZlecenie
 from crm.zetom.models import Oferta, Wniosek, Zlecenie
+from crm.zetom.services.status_orchestration import bump_new_to_in_progress
 
 from .base import BaseRequestAdmin
 
@@ -40,8 +41,12 @@ class OfertaAdmin(BaseRequestAdmin):
     warn_unsaved_form = True
 
     def save_model(self, request, obj, form, change):
+        # claude — снимаем статус до записи, чтобы поймать «был new»
+        old_status = type(obj).objects.get(pk=obj.pk).status if change else None
         if save_child_with_status(request, obj, form, change, messages):
             super().save_model(request, obj, form, change)
+            # claude — любая правка new-дока авто-двигает new -> in_progress
+            bump_new_to_in_progress(obj, old_status, change, request.user)
 
 
 @admin.register(Zlecenie)
@@ -71,8 +76,12 @@ class ZlecenieAdmin(BaseRequestAdmin):
     warn_unsaved_form = True
 
     def save_model(self, request, obj, form, change):
+        # claude — снимаем статус до записи, чтобы поймать «был new»
+        old_status = type(obj).objects.get(pk=obj.pk).status if change else None
         if save_child_with_status(request, obj, form, change, messages):
             super().save_model(request, obj, form, change)
+            # claude — любая правка new-дока авто-двигает new -> in_progress
+            bump_new_to_in_progress(obj, old_status, change, request.user)
 
 
 @admin.register(Wniosek)
@@ -101,5 +110,9 @@ class WniosekAdmin(BaseRequestAdmin):
     warn_unsaved_form = True
 
     def save_model(self, request, obj, form, change):
+        # claude — снимаем статус до записи, чтобы поймать «был new»
+        old_status = type(obj).objects.get(pk=obj.pk).status if change else None
         if save_child_with_status(request, obj, form, change, messages):
             super().save_model(request, obj, form, change)
+            # claude — любая правка new-дока авто-двигает new -> in_progress
+            bump_new_to_in_progress(obj, old_status, change, request.user)
