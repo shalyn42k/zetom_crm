@@ -24,7 +24,8 @@ from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
 from crm.zetom.forms import AddRequestFormMain
 from crm.zetom.models import (
-    DepartmentsVariants, RequestAttachment, RequestClientLink, RequestMain, RequestSource,
+    DepartmentsVariants, RequestAttachment, RequestClientLink, RequestMain,
+    RequestSource,
 )
 from crm.zetom.services.duplicate_matcher import find_candidates
 from crm.zetom.services.per_req_perms import (
@@ -124,9 +125,19 @@ class RequestMainAdmin(
 
     @transaction.atomic
     def response_add(self, request, obj, post_url_continue=None):
-        # claude — popup mini-VW choices: link/create client + assign.
-        choice = (request.POST.get("popup_client_choice") or "").strip()
-        if choice == "create":
+        # claude — popup mini-VW choices: link several existing clients and/or
+        # create a new one, then assign. Empty selection = leave unlinked.
+        for raw_pk in request.POST.getlist("popup_client_ids"):
+            try:
+                client_pk = int(raw_pk)
+            except (TypeError, ValueError):
+                continue
+            cl = Client.objects.filter(pk=client_pk).first()
+            if cl:
+                RequestClientLink.objects.get_or_create(
+                    request=obj, client=cl, defaults={"linked_by": request.user}
+                )
+        if request.POST.get("popup_create_new"):
             cl = Client.objects.create(
                 first_name=request.POST.get("first_name") or obj.first_name,
                 last_name=request.POST.get("last_name") or obj.last_name,
@@ -135,15 +146,9 @@ class RequestMainAdmin(
                 phone=request.POST.get("phone") or obj.phone,
                 email=request.POST.get("email") or obj.email,
             )
-            RequestClientLink.objects.get_or_create(request=obj, client=cl, defaults={"linked_by": request.user})
-        elif choice.startswith("link:"):
-            try:
-                client_pk = int(choice.split(":", 1)[1])
-                cl = Client.objects.filter(pk=client_pk).first()
-                if cl:
-                    RequestClientLink.objects.get_or_create(request=obj, client=cl, defaults={"linked_by": request.user})
-            except (ValueError, IndexError):
-                pass
+            RequestClientLink.objects.get_or_create(
+                request=obj, client=cl, defaults={"linked_by": request.user}
+            )
         departments = request.POST.getlist("popup_departments")
         owners_raw = request.POST.getlist("popup_owners")
         if departments:
@@ -645,7 +650,8 @@ class RequestMainAdmin(
                 "phone": str(cl.phone) if cl.phone else "",
                 "email": cl.email or "",
                 "score": c.score,
-                "badges": [str(b.label) for b in c.badges],
+                "badges": [[b.kind, str(b.label)] for b in c.badges],
+                "highlights": {k: True for k in c.highlights},
                 "url": reverse("admin:clients_client_change", args=[cl.pk]),
             })
         for d in find_request_duplicates(probe):
@@ -662,7 +668,8 @@ class RequestMainAdmin(
                 "phone": str(d.obj.phone) if d.obj.phone else "",
                 "email": d.obj.email or "",
                 "score": d.score,
-                "badges": [str(b.label) for b in d.badges],
+                "badges": [[b.kind, str(b.label)] for b in d.badges],
+                "strong": d.is_strong,
                 "url": (
                     reverse("admin:zetom_requestmain_change", args=[d.obj.pk])
                     if d.kind == "main" else None
@@ -675,16 +682,47 @@ class RequestMainAdmin(
     def dup_request_action(self, request):
         if request.method != "POST":
             return JsonResponse({"ok": False, "error": "POST required"}, status=405)
-        from safedelete.config import HARD_DELETE
-
         from crm.status_manager.services.status_service import (
             cancel_request as _cancel,
         )
         from crm.zetom.models import RequestNull as RN
-        from crm.zetom.services.request_duplicate_finder import (
-            KIND_MAIN, KIND_NULL,
-        )
+        from crm.zetom.services.request_duplicate_finder import KIND_NULL
+
+        # claude — soft-delete one existing duplicate, type-aware:
+        # RequestMain → soft-cancel (auditable); RequestNull → safedelete soft
+        # (SOFT_DELETE_CASCADE → trash). Both recoverable. Returns error string
+        # or None.
+        def _soft_delete_existing(kind, pk):
+            if kind == KIND_NULL:
+                obj = RN.objects.filter(pk=pk).first()
+                if obj:
+                    obj.delete()  # default policy = SOFT_DELETE_CASCADE → trash
+            else:
+                obj = RequestMain.objects.filter(pk=pk).first()
+                if obj:
+                    try:
+                        _cancel(obj, request.user,
+                                reason=_("Cancelled as duplicate from the add form."))
+                    except ValueError as exc:
+                        return str(exc)
+            return None
+
         action = request.POST.get("action", "")
+
+        # Bulk: soft-delete every rendered duplicate. The popup JS posts the
+        # "<kind>:<pk>" identifiers it already has as repeated `targets` values.
+        if action == "delete_all_dupes":
+            count = 0
+            for raw in request.POST.getlist("targets"):
+                kind, _sep, raw_pk = raw.partition(":")
+                try:
+                    pk = int(raw_pk)
+                except ValueError:
+                    continue
+                _soft_delete_existing(kind, pk)
+                count += 1
+            return JsonResponse({"ok": True, "count": count})
+
         if ":" not in action:
             return JsonResponse({"ok": False, "error": "bad action"}, status=400)
         op, kind, raw_pk = (action.split(":", 2) + ["", ""])[:3]
@@ -693,17 +731,9 @@ class RequestMainAdmin(
         except ValueError:
             return JsonResponse({"ok": False, "error": "bad pk"}, status=400)
         if op == "delete_existing":
-            if kind == KIND_NULL:
-                obj = RN.objects.filter(pk=pk).first()
-                if obj:
-                    obj.delete(force_policy=HARD_DELETE)
-            else:
-                obj = RequestMain.objects.filter(pk=pk).first()
-                if obj:
-                    try:
-                        _cancel(obj, request.user, reason=_("Cancelled as duplicate from the add form."))
-                    except ValueError as exc:
-                        return JsonResponse({"ok": False, "error": str(exc)}, status=400)
+            err = _soft_delete_existing(kind, pk)
+            if err:
+                return JsonResponse({"ok": False, "error": err}, status=400)
             return JsonResponse({"ok": True})
         return JsonResponse({"ok": False, "error": "unknown op"}, status=400)
 

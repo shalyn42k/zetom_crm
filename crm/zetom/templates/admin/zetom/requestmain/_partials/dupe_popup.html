@@ -1,11 +1,26 @@
 {% load i18n %}
 {% comment %}
-Pre-save duplicate popup — mini Validation Window with steps 02/03/04.
-Shell rendered server-side; steps 02 (dupe list) and 03 (client candidates)
-are filled by requestmain_dupe_check.js using the check-duplicates API.
-Step 04 (assignment) is rendered here from server context.
-All choices are collected as hidden inputs before form submission.
+Pre-save duplicate popup (redesign) — three stacked sections in a stepped modal.
+Shell rendered server-side; the duplicate rows (#rm-dupe-list) and client rows
+(#rm-popup-clients) are filled at runtime by requestmain_dupe_check.js from the
+check-duplicates JSON API. Assignment is server-rendered here. On "Save request"
+the JS injects hidden inputs (popup_client_ids / popup_create_new /
+popup_departments / popup_owners) and submits the real add form.
 {% endcomment %}
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="rmi-chev-r" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="rmi-arrow-l" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+  <symbol id="rmi-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="rmi-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="rmi-warn" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="rmi-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="rmi-external" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></symbol>
+  <symbol id="rmi-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+  <symbol id="rmi-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="rmi-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></symbol>
+  <symbol id="rmi-briefcase" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></symbol>
+</svg>
 
 {# Anchor: JS reads data-urls from here #}
 <div id="rm-dupe-check"
@@ -13,88 +28,100 @@ All choices are collected as hidden inputs before form submission.
      data-dup-action-url="{% url 'admin:zetom_requestmain_dup_request_action' %}"
      data-form-id="{{ opts.model_name }}_form"></div>
 
-<div id="rm-dupe-modal" class="rm-dupe-modal" hidden>
-  <div class="rm-dupe-modal__box" role="dialog" aria-modal="true" aria-labelledby="rm-popup-title">
-
-    {# Step nav #}
-    <div class="rm-popup-steps">
-      <button type="button" class="rm-popup-step active" data-step="2">
-        <span class="rm-popup-step__n">02</span> {% trans "Duplicate Check" %}
-      </button>
-      <button type="button" class="rm-popup-step" data-step="3">
-        <span class="rm-popup-step__n">03</span> {% trans "Link to Client" %}
-      </button>
-      <button type="button" class="rm-popup-step" data-step="4">
-        <span class="rm-popup-step__n">04</span> {% trans "Assignment" %}
-      </button>
+<div class="rm-scrim" id="rm-dupe-modal" role="dialog" aria-modal="true" aria-labelledby="rm-dupe-title">
+  <div class="rm-modal">
+    <div class="rm-head">
+      <span class="hi"><svg class="i i-lg"><use href="#rmi-warn"/></svg></span>
+      <div>
+        <h2 id="rm-dupe-title">{% trans "Possible duplicates found" %}</h2>
+        <div class="hs">{% trans "Resolve duplicates and choose a client before this request is saved." %}</div>
+      </div>
+      <button type="button" class="hx" id="rm-dupe-x" aria-label="{% trans 'Close' %}"><svg class="i i-md"><use href="#rmi-x"/></svg></button>
     </div>
 
-    {# Step 02: Duplicate Check #}
-    <div class="rm-popup-section" data-section="2">
-      <h3 id="rm-popup-title" class="rm-popup-section__h">{% trans "Possible duplicates found" %}</h3>
-      <p class="rm-popup-section__sub">{% trans "Similar records already exist. Act on them or proceed to save." %}</p>
-      <ul id="rm-dupe-list" class="rm-dupe-modal__list"></ul>
-      <p id="rm-dupe-empty" class="rm-popup-ok" hidden>✓ {% trans "No duplicates found — safe to save." %}</p>
+    <div class="rm-steps" id="rm-steps" role="tablist">
+      <button type="button" class="rm-step active" data-step="1"><span class="rn">02</span> {% trans "Duplicate Check" %}</button>
+      <button type="button" class="rm-step" data-step="2"><span class="rn">03</span> {% trans "Link to Client" %}</button>
+      <button type="button" class="rm-step" data-step="3"><span class="rn">04</span> {% trans "Assignment" %}</button>
     </div>
 
-    {# Step 03: Link to Client #}
-    <div class="rm-popup-section" data-section="3" hidden>
-      <h3 class="rm-popup-section__h">{% trans "Link to Client" %}</h3>
-      <p class="rm-popup-section__sub">{% trans "Optionally link this request to a client record." %}</p>
-      <div id="rm-popup-clients" class="rm-popup-cands"></div>
-      <label class="rm-popup-opt">
-        <input type="radio" name="popup_client_internal" value="create" id="popup-create">
-        <span>{% trans "Create a new client from this request" %}</span>
-      </label>
-      <label class="rm-popup-opt">
-        <input type="radio" name="popup_client_internal" value="unlinked" id="popup-skip" checked>
-        <span>{% trans "Skip — don't link a client now" %}</span>
-      </label>
-    </div>
+    <div class="rm-body">
 
-    {# Step 04: Assignment #}
-    <div class="rm-popup-section" data-section="4" hidden>
-      <h3 class="rm-popup-section__h">{% trans "Assignment" %}</h3>
-      <p class="rm-popup-section__sub">{% trans "Set departments and owners for the new request. You can change these later." %}</p>
+      {# ── SECTION 1: DUPLICATES ── #}
+      <div class="rm-sec active" data-step="1">
+        <div class="rm-sec-h">
+          <span class="st"><svg class="i i-md" style="color:var(--amber)"><use href="#rmi-target"/></svg> {% trans "Possible duplicates" %}</span>
+          <span class="sa"><button type="button" class="btn danger-ghost" id="rm-dupe-delete-all" style="padding:5px 10px;font-size:12px"><svg class="i i-sm"><use href="#rmi-trash"/></svg> {% trans "Delete all duplicates" %}</button></span>
+        </div>
+        <p class="rm-sec-desc">{% trans "Existing records that share a phone, email or company with this request. Pull data in, soft-delete a stale record, or dismiss a row." %}</p>
+        <ul class="rm-dupe-list" id="rm-dupe-list"></ul>
+        <p class="rm-empty" id="rm-dupe-empty" hidden><svg viewBox="0 0 24 24"><use href="#rmi-check"/></svg> {% trans "No duplicates — safe to save." %}</p>
+      </div>
 
-      <div class="rm-popup-assign">
-        <div class="rm-popup-assign__col">
-          <label class="rm-popup-assign__label">{% trans "Departments" %}</label>
-          <div class="rm-popup-depts">
+      {# ── SECTION 2: CLIENTS ── #}
+      <div class="rm-sec" data-step="2">
+        <div class="rm-sec-h">
+          <span class="st"><svg class="i i-md" style="color:var(--blue)"><use href="#rmi-users"/></svg> {% trans "Link to client" %}</span>
+        </div>
+        <p class="rm-sec-desc">{% trans "Select one or more clients to attach to this request. Matches are proposed by the same detector." %}</p>
+        <div class="rm-clients" id="rm-popup-clients"></div>
+
+        <div class="rm-extra">
+          <label class="rm-check" id="rm-create-toggle">
+            <span class="ci"><svg class="i i-md"><use href="#rmi-user-plus"/></svg></span>
+            <div><div class="ct">{% trans "Create a new client from this request" %}</div><div class="cs">{% trans "Uses the first/last name, phone, email and company above." %}</div></div>
+            <input type="checkbox" name="popup_create_new" id="popup_create_new">
+            <span class="cbx"><svg viewBox="0 0 24 24"><use href="#rmi-check"/></svg></span>
+          </label>
+          <p class="rm-note"><strong>{% trans "Link nothing" %}</strong> {% trans "and the request is saved unlinked — you can attach a client later." %}</p>
+        </div>
+      </div>
+
+      {# ── SECTION 3: ASSIGNMENT (server-rendered) ── #}
+      <div class="rm-sec" data-step="3">
+        <div class="rm-sec-h">
+          <span class="st"><svg class="i i-md" style="color:var(--green-bright)"><use href="#rmi-briefcase"/></svg> {% trans "Assignment" %}</span>
+          <span class="ss sa">{% trans "You can change these later." %}</span>
+        </div>
+
+        <div class="field" style="margin-bottom:12px">
+          <label>{% trans "Departments" %}</label>
+          <div class="chip-group" id="popup-dep-group">
             {% for code, label in departments_choices %}
-              <label class="rm-popup-chip">
-                <input type="checkbox" name="popup_departments" value="{{ code }}">{{ label }}
-              </label>
+              <label class="dchip"><input type="checkbox" name="popup_departments" value="{{ code }}"><span class="dot"></span>{{ label }}</label>
             {% endfor %}
           </div>
         </div>
-        <div class="rm-popup-assign__col">
-          <label class="rm-popup-assign__label">{% trans "Owners" %}</label>
-          <div class="rm-popup-owners">
+
+        <div class="field">
+          <label>{% trans "Owners" %}</label>
+          <div class="owner-list" id="popup-owner-list">
+            <div class="lh">{% trans "Eligible users" %}</div>
             {% for u in eligible_users_popup %}
-              <label class="rm-popup-urow">
+              <label class="orow">
                 <input type="checkbox" name="popup_owners" value="{{ u.pk }}">
-                <span class="rm-popup-uav">{{ u.first_name|slice:":1"|upper }}{{ u.last_name|slice:":1"|upper }}</span>
-                <span class="rm-popup-uname">{{ u.get_full_name|default:u.username }}</span>
-                {% with prof=u.profile %}
-                  {% if prof.role %}<span class="rm-dupe-modal__kind">{{ prof.role.code }}</span>{% endif %}
-                {% endwith %}
+                <span class="oav">{{ u.first_name|slice:":1"|upper }}{{ u.last_name|slice:":1"|upper }}</span>
+                <span class="oname">{{ u.get_full_name|default:u.username }}</span>
+                {% if u.profile.role %}<span class="orole">{{ u.profile.role.code }}</span>{% endif %}
+                <span class="ock"><svg viewBox="0 0 24 24"><use href="#rmi-check"/></svg></span>
               </label>
             {% empty %}
-              <p class="rm-popup-section__sub">{% trans "No active users." %}</p>
+              <p class="rm-sec-desc">{% trans "No active users." %}</p>
             {% endfor %}
           </div>
         </div>
       </div>
+
     </div>
 
-    {# Footer #}
-    <div class="rm-dupe-modal__actions">
-      <button type="button" id="rm-dupe-cancel" class="rm-dupe-btn">{% trans "Go back and edit" %}</button>
-      <button type="button" id="rm-popup-prev" class="rm-dupe-btn" hidden>{% trans "← Back" %}</button>
-      <button type="button" id="rm-popup-next" class="rm-dupe-btn create">{% trans "Next →" %}</button>
-      <button type="button" id="rm-dupe-proceed" class="rm-dupe-btn create" hidden>{% trans "Save" %}</button>
+    <div class="rm-foot">
+      <button type="button" class="btn ghost" id="rm-dupe-cancel">{% trans "Go back and edit" %}</button>
+      <span class="fsum" id="rm-foot-sum"></span>
+      <div class="actions">
+        <button type="button" class="btn ghost" id="rm-back" style="visibility:hidden"><svg class="i"><use href="#rmi-arrow-l"/></svg> {% trans "Back" %}</button>
+        <button type="button" class="btn primary" id="rm-next">{% trans "Next" %} <svg class="i"><use href="#rmi-chev-r"/></svg></button>
+        <button type="button" class="btn primary" id="rm-dupe-proceed" hidden><svg class="i"><use href="#rmi-check"/></svg> {% trans "Save request" %}</button>
+      </div>
     </div>
-
   </div>
 </div>

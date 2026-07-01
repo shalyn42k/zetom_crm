@@ -50,18 +50,21 @@ from crm.zetom.services.duplicate_matcher import find_candidates
 from crm.zetom.services.request_duplicate_finder import find_request_duplicates
 from crm.zetom.services.request_service import approve_null_action
 
-LINK_NEW = "new"
-LINK_UNLINKED = "unlinked"
-
-
 # ---------------------------------------------------------------------------
 # Form
 # ---------------------------------------------------------------------------
 
 class ValidationWindowForm(forms.Form):
-    link_choice = forms.CharField(required=True)
+    # claude — multi-client link: a request can be attached to several existing
+    # Clients at once (checkboxes), and/or a brand-new Client can be created.
+    # Empty selection + create_new=False means "leave unlinked".
+    link_client_ids = forms.ModelMultipleChoiceField(
+        queryset=Client.objects.none(),  # restricted to proposed candidates
+        required=False,
+    )
+    create_new = forms.BooleanField(required=False)
 
-    # new-client inline form (used only when link_choice == "new")
+    # new-client inline form (used only when create_new is checked)
     new_first_name = forms.CharField(required=False, max_length=100)
     new_last_name = forms.CharField(required=False, max_length=100)
     new_company_name = forms.CharField(required=False, max_length=255)
@@ -80,29 +83,20 @@ class ValidationWindowForm(forms.Form):
 
     def __init__(self, *args, candidate_ids=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._candidate_ids = set(candidate_ids or [])
+        # Only the matcher-proposed candidates are linkable (the ad-hoc search
+        # box is decorative). Restricting the queryset here also validates that
+        # a posted client id really was one of the offered candidates.
+        self.fields["link_client_ids"].queryset = Client.objects.filter(
+            pk__in=list(candidate_ids or [])
+        )
         # All active users — the eligibility-by-department check happens in
-        # clean_owners. We can't restrict the queryset here because we
-        # don't know which departments the validator picks until cleaning.
+        # clean(). We can't restrict the queryset here because we don't know
+        # which departments the validator picks until cleaning.
         self.fields["owners"].queryset = User.objects.filter(is_active=True)
-
-    def clean_link_choice(self):
-        choice = (self.cleaned_data.get("link_choice") or "").strip()
-        if choice in (LINK_NEW, LINK_UNLINKED):
-            return choice
-        if choice.startswith("link:"):
-            try:
-                pk = int(choice.split(":", 1)[1])
-            except ValueError:
-                raise forms.ValidationError(_("Bad link choice."))
-            if pk not in self._candidate_ids:
-                raise forms.ValidationError(_("Selected client is not in the candidate list."))
-            return choice
-        raise forms.ValidationError(_("Please pick how to link this request."))
 
     def clean(self):
         cleaned = super().clean()
-        if cleaned.get("link_choice") == LINK_NEW:
+        if cleaned.get("create_new"):
             # Require at minimum a phone or email so the new Client is searchable
             if not (cleaned.get("new_phone") or cleaned.get("new_email")):
                 self.add_error(
@@ -217,12 +211,6 @@ def _banner_state(rn: RequestNull, candidates) -> dict:
     }
 
 
-def _initial_link_choice(candidates) -> str:
-    if candidates and candidates[0].is_strong:
-        return f"link:{candidates[0].client.pk}"
-    return LINK_NEW
-
-
 def _eligible_users():
     return (
         User.objects
@@ -234,29 +222,27 @@ def _eligible_users():
 
 @transaction.atomic
 def _do_approve(rn: RequestNull, cleaned: dict, user=None):
-    choice = cleaned["link_choice"]
-    client = None
-    if choice == LINK_NEW:
-        client = Client.objects.create(
-            first_name=cleaned.get("new_first_name") or rn.first_name,
-            last_name=cleaned.get("new_last_name") or rn.last_name,
-            company_name=cleaned.get("new_company_name") or rn.company_name,
-            company_nip=cleaned.get("new_company_nip") or None,
-            phone=cleaned.get("new_phone") or rn.phone,
-            email=cleaned.get("new_email") or rn.email,
-        )
-    elif choice.startswith("link:"):
-        client = Client.objects.filter(pk=int(choice.split(":", 1)[1])).first()
-
     # 1) Promote RequestNull -> RequestMain using the existing service.
     new_main: RequestMain = approve_null_action(rn.pk)
 
     new_main.departments = list(cleaned["departments"])
     new_main.save()
 
-    # 2) Persist the Client ↔ RequestMain relation (M2M through-table).
-    #    LINK_UNLINKED leaves client=None → no link row created.
-    if client is not None:
+    # 2) Collect clients to link: the selected existing candidates plus, if
+    #    requested, a freshly created one. Empty list = leave unlinked.
+    clients = list(cleaned.get("link_client_ids") or [])
+    if cleaned.get("create_new"):
+        clients.append(Client.objects.create(
+            first_name=cleaned.get("new_first_name") or rn.first_name,
+            last_name=cleaned.get("new_last_name") or rn.last_name,
+            company_name=cleaned.get("new_company_name") or rn.company_name,
+            company_nip=cleaned.get("new_company_nip") or None,
+            phone=cleaned.get("new_phone") or rn.phone,
+            email=cleaned.get("new_email") or rn.email,
+        ))
+
+    # 3) Persist the Client ↔ RequestMain relations (M2M through-table).
+    for client in clients:
         RequestClientLink.objects.get_or_create(
             request=new_main, client=client, defaults={"linked_by": user},
         )
@@ -294,28 +280,55 @@ def _resolve_dupe_target(kind: str, raw_pk: str):
     return model.objects.filter(pk=pk).first()
 
 
+def _soft_delete_request_dupe(target, user) -> None:
+    """Soft-delete an existing duplicate request, type-aware.
+
+    A RequestMain may carry child documents / history, so it is soft-cancelled
+    (auditable) via the status service. A RequestNull is soft-deleted through
+    safedelete (SOFT_DELETE_CASCADE) so it lands in the trash and can be
+    restored back into the Validation Window. Both are recoverable.
+    """
+    if isinstance(target, RequestMain):
+        try:
+            cancel_request(
+                target, user,
+                reason=_("Cancelled as duplicate from the Validation Window."),
+            )
+        except ValueError:
+            pass  # already cancelled/deleted
+    else:
+        target.delete()  # default policy = SOFT_DELETE_CASCADE → trash
+
+
 def _dispatch_dupe_op(request, rn: RequestNull, action: str):
     """Handle a duplicate-panel POST. Returns an HttpResponse to short-circuit
     the view, or None when `action` isn't a dupe op (normal approve flow).
     """
-    from safedelete.config import HARD_DELETE
-
-    # Discard-as-spam (footbar): promote then cancel, keeping an audit trail.
+    # Discard-as-spam (footbar): mark as cancelled so it appears in the
+    # Cancelled Validation Requests section and restore returns it to the VW.
     if action == "discard":
-        with transaction.atomic():
-            new_main = approve_null_action(rn.pk)
-            cancel_request(
-                new_main, request.user,
-                reason=_("Discarded as spam from the Validation Window."),
-            )
+        rn.status = RequestStatus.cancelled
+        rn.save()
         messages.success(request, _("Request discarded as spam (moved to Cancelled)."))
-        return redirect("admin:zetom_cancelledrequest_changelist")
+        return redirect("admin:zetom_cancelledvalidationrequest_changelist")
 
-    # Hard-delete THIS incoming RequestNull (the copy).
+    # Soft-delete THIS incoming RequestNull (the copy) → trash, restorable.
     if action == "delete_duplicate":
-        rn.delete(force_policy=HARD_DELETE)
-        messages.success(request, _("This request was permanently deleted as a duplicate."))
+        rn.delete()  # default policy = SOFT_DELETE_CASCADE
+        messages.success(request, _("This request was moved to trash as a duplicate."))
         return redirect("admin:zetom_requestnull_changelist")
+
+    # Soft-delete EVERY duplicate of this request in one click.
+    if action == "delete_all_dupes":
+        with transaction.atomic():
+            dupes = find_request_duplicates(rn)
+            for d in dupes:
+                _soft_delete_request_dupe(d.obj, request.user)
+        messages.success(
+            request,
+            _("%(n)d duplicate(s) moved to trash / cancelled.") % {"n": len(dupes)},
+        )
+        return redirect("admin:zetom_requestnull_validate", rn.pk)
 
     if ":" not in action:
         return None
@@ -329,39 +342,31 @@ def _dispatch_dupe_op(request, rn: RequestNull, action: str):
         messages.error(request, _("Duplicate target not found."))
         return redirect("admin:zetom_requestnull_validate", rn.pk)
 
-    # Delete the EXISTING duplicate. Type-aware: a RequestMain may have child
-    # documents / history, so it's soft-cancelled (auditable); a RequestNull
-    # has no children, so it's hard-deleted.
+    # Soft-delete the EXISTING duplicate → trash / cancelled, both recoverable.
     if op == "delete_existing":
+        pk = target.pk
+        _soft_delete_request_dupe(target, request.user)
         if kind == "main":
-            try:
-                cancel_request(
-                    target, request.user,
-                    reason=_("Cancelled as duplicate from the Validation Window."),
-                )
-                messages.success(
-                    request,
-                    _("Existing request #%(id)d cancelled as duplicate.") % {"id": target.pk},
-                )
-            except ValueError:
-                messages.info(request, _("Existing request was already cancelled/deleted."))
-        else:
-            pk = target.pk
-            target.delete(force_policy=HARD_DELETE)
             messages.success(
                 request,
-                _("Existing validation request #%(id)d permanently deleted.") % {"id": pk},
+                _("Existing request #%(id)d cancelled as duplicate.") % {"id": pk},
+            )
+        else:
+            messages.success(
+                request,
+                _("Existing validation request #%(id)d moved to trash.") % {"id": pk},
             )
         return redirect("admin:zetom_requestnull_validate", rn.pk)
 
     # Transfer THIS request's data onto the existing duplicate, then drop this
-    # one (merge into existing — existing stays canonical).
+    # one (merge into existing — existing stays canonical). The current lead is
+    # soft-deleted so it stays recoverable from the trash.
     if op == "update_existing":
         with transaction.atomic():
             _copy_request_fields(rn, target)
             target.save()
             pk = target.pk
-            rn.delete(force_policy=HARD_DELETE)
+            rn.delete()  # default policy = SOFT_DELETE_CASCADE
         messages.success(
             request,
             _("Existing request updated with this data; this request was removed."),
@@ -436,7 +441,6 @@ class ValidationWindowMixin:
         else:
             form = ValidationWindowForm(
                 initial={
-                    "link_choice": _initial_link_choice(candidates),
                     "new_first_name": rn.first_name or "",
                     "new_last_name": rn.last_name or "",
                     "new_phone": str(rn.phone) if rn.phone else "",
@@ -449,10 +453,11 @@ class ValidationWindowMixin:
         # Pull selection state out of bound/unbound form into plain
         # collections so the template doesn't have to wrestle with
         # form.<field>.value() returning None on GET.
-        selected_link = form["link_choice"].value() or _initial_link_choice(candidates)
         selected_depts = set(form["departments"].value() or [])
         owner_raw = form["owners"].value() or []
         selected_owner_ids = {str(v) for v in owner_raw}
+        link_raw = form["link_client_ids"].value() or []
+        selected_client_ids = {str(v) for v in link_raw}
 
         context = {
             **self.admin_site.each_context(request),
@@ -466,11 +471,10 @@ class ValidationWindowMixin:
             "departments_choices": DepartmentsVariants.choices,
             "eligible_users": eligible_users,
             "form": form,
-            "selected_link": selected_link,
             "selected_depts": selected_depts,
             "selected_owner_ids": selected_owner_ids,
-            "LINK_NEW": LINK_NEW,
-            "LINK_UNLINKED": LINK_UNLINKED,
+            "selected_client_ids": selected_client_ids,
+            "create_new_checked": bool(form["create_new"].value()),
             "cancel_url": reverse("admin:zetom_requestnull_changelist"),
             "opts": self.model._meta,
             "has_view_permission": True,

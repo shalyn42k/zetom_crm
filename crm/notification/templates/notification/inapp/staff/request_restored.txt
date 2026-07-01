@@ -1,0 +1,10 @@
+{% load i18n %}{% comment %}Inapp-уведомление стаффу: лид Validation Window восстановлен из корзины.
+   Рендерится при отображении в UI, не в момент создания записи.
+   Контекст рендера (из Notification.payload):
+       request_id     — pk RequestNull
+       request_label  — короткая строка-заголовок, e.g. "NULL-42 — Acme"
+       source         — источник лида
+       actor_name     — кто восстановил (или "system")
+   Первая строка — title уведомления.{% endcomment %}{% blocktrans %}Lead {{ request_label }} restored{% endblocktrans %}
+
+{% blocktrans %}{{ actor_name }} restored this lead to the Validation Window.{% endblocktrans %}

@@ -11,9 +11,10 @@ yet and is owned by another dev — the local function mirrors the pattern.
 from django.db import transaction
 
 from crm.status_manager.models import StatusHistory
-from crm.status_manager.services.status_service import (cancel_request,
-                                                        delete_request)
-from crm.status_manager.services.statuses import RequestStatus
+from crm.status_manager.services.status_service import (
+    cancel_request, delete_request, handle_child_change,
+)
+from crm.status_manager.services.statuses import RequestStatus, Status
 
 REASON_REQUIRED_STATUSES = {
     RequestStatus.inactive,
@@ -24,6 +25,19 @@ REASON_REQUIRED_STATUSES = {
 
 class ReasonRequired(Exception):
     """Signal to caller: this transition needs a reason; show the reason form."""
+
+
+# claude
+def bump_new_to_in_progress(obj, old_status, change, user):
+    """After a child-doc edit, auto-advance new -> in_progress.
+
+    Only on edits (change=True), and only when the doc was `new` and stayed
+    `new` (i.e. the form itself didn't move the status). Routed through the
+    FSM service so the parent cascade and the client-email signal fire the
+    same way as a manual transition.
+    """
+    if change and old_status == Status.new and obj.status == Status.new:
+        handle_child_change(obj, Status.in_progress, reason=None, user=user)
 
 
 def _inactive_request(obj, user, reason):
