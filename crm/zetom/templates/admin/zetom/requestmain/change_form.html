@@ -94,8 +94,66 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
               {% trans "Attachments" %}
             </h2>
           </div>
-          <div style="padding:0.75rem 1rem 1rem;">
-            <input type="file" name="attachments" multiple style="font-size:0.85rem; width:100%;">
+          <div style="padding:0.75rem 1rem 1rem;"
+               x-data="{
+                 files: [],
+                 active: false,
+                 onDrop(e) {
+                   this.active = false;
+                   const dt = e.dataTransfer.files;
+                   this.files = Array.from(dt);
+                   this.$refs.inp.files = dt;
+                 },
+                 onPick(e) { this.files = Array.from(e.target.files); },
+                 fmt(n) {
+                   if (n < 1024) return n + ' B';
+                   if (n < 1048576) return (n/1024).toFixed(1) + ' KB';
+                   return (n/1048576).toFixed(1) + ' MB';
+                 }
+               }">
+            <div class="rm-dropzone"
+                 :class="{ 'rm-dropzone--active': active }"
+                 @dragover.prevent="active = true"
+                 @dragleave.prevent="active = false"
+                 @drop.prevent="onDrop($event)"
+                 @click="$refs.inp.click()">
+              <template x-if="!files.length">
+                <div class="rm-dropzone__idle">
+                  <svg class="rm-dropzone__icon" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  <span class="rm-dropzone__label">{% trans "Drop files here or click to browse" %}</span>
+                </div>
+              </template>
+              <template x-if="files.length">
+                <ul class="rm-dropzone__filelist" @click.stop>
+                  <template x-for="f in files" :key="f.name">
+                    <li class="rm-dropzone__file">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                           stroke-linecap="round" stroke-linejoin="round"
+                           style="width:14px;height:14px;flex-shrink:0;color:var(--rm-text-muted)">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                      </svg>
+                      <span x-text="f.name" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                      <span x-text="fmt(f.size)" style="flex-shrink:0;color:var(--rm-text-muted);"></span>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+              <input type="file" name="attachments" multiple
+                     x-ref="inp" @change="onPick($event)"
+                     style="display:none;" tabindex="-1">
+            </div>
+            <button type="button" class="rm-btn rm-btn--sm" x-show="files.length"
+                    @click="files = []; $refs.inp.value = ''"
+                    style="margin-top:0.4rem;">
+              {% trans "Clear" %}
+            </button>
           </div>
         </section>
       {% endif %}
