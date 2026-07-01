@@ -5,10 +5,10 @@ from django.db import models
 # Other imports
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
-from simple_history.models import HistoricalRecords
 # Other imports
 from safedelete.config import SOFT_DELETE_CASCADE
 from safedelete.models import SafeDeleteModel
+from simple_history.models import HistoricalRecords
 
 # claude
 from crm.clients.validators import normalize_nip, validate_nip
@@ -79,6 +79,12 @@ class RequestTemplate(SafeDeleteModel):
 
 
 class RequestNull(RequestTemplate):
+    status = models.CharField(
+        max_length=20,
+        choices=RequestStatus.choices,
+        default=RequestStatus.active,
+    )
+
     class Meta:
         verbose_name = _("Validation Window")
         verbose_name_plural = _("Validation Window")
@@ -326,3 +332,22 @@ class CancelledRequest(RequestMain):
         proxy = True
         verbose_name = _("Cancelled Request")
         verbose_name_plural = _("Cancelled Requests")
+
+
+# claude — корзина для soft-удалённых лидов Validation Window (RequestNull).
+# Отдельный proxy, т.к. база — RequestNull, а не RequestMain: restore из этой
+# корзины возвращает заявку обратно в Validation Window, а не в RequestMain.
+class DeletedValidationRequest(RequestNull):
+    class Meta:
+        proxy = True
+        verbose_name = _("Deleted Validation Request")
+        verbose_name_plural = _("Deleted Validation Requests")
+
+
+# claude — корзина cancelled-лидов Validation Window (RequestNull).
+# Отдельный proxy, т.к. база — RequestNull: restore возвращает обратно в VW.
+class CancelledValidationRequest(RequestNull):
+    class Meta:
+        proxy = True
+        verbose_name = _("Cancelled Validation Request")
+        verbose_name_plural = _("Cancelled Validation Requests")
