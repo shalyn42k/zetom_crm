@@ -136,6 +136,9 @@ class DeletedRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             return denied
         obj.undelete()
         obj.status = RequestStatus.active
+        # claude — hand the actor to the status-change signal so the resulting
+        # in-app notification is attributed to the restorer, not "system".
+        obj._actor = request.user
         obj.save()
         StatusHistory.objects.create(
             request=obj,
