@@ -83,6 +83,9 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
     <div class="rm-col rm-col--left">
       {% include "admin/zetom/requestmain/_partials/client_card.html" %}
       {% include "admin/zetom/requestmain/_partials/client_information.html" %}
+      {% if original.pk %}
+        {% include "admin/zetom/requestmain/_partials/attachments_card.html" %}
+      {% endif %}
       {% if not original.pk %}
         {% include "admin/zetom/requestmain/_partials/source_picker.html" %}
         <section class="rm-card" style="margin-top:1rem;">
@@ -166,7 +169,6 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
         {% include "admin/zetom/requestmain/_partials/status_grid.html" %}
         {% include "admin/zetom/requestmain/_partials/departments.html" %}
         {% include "admin/zetom/requestmain/_partials/documents.html" %}
-        {% include "admin/zetom/requestmain/_partials/attachments_card.html" %}
         {% include "admin/zetom/requestmain/_partials/history_card.html" %}
       </aside>
     {% endif %}

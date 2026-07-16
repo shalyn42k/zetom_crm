@@ -244,7 +244,7 @@ class RequestMainAdmin(
             form.helper = helper
             context["form"] = form
 
-        context["status_choices"] = RequestStatus.choices
+        context["status_choices"] = [(RequestStatus.cancelled, RequestStatus.cancelled.label)]
         has_obj = obj is not None and obj.pk is not None
         context["attachments"] = (
             list(obj.attachments.order_by("-uploaded_at")) if has_obj else []
