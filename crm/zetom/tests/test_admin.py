@@ -126,13 +126,15 @@ class MainAdminActionTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Wniosek.objects.filter(from_main=self.main).count(), 1)
 
-    def test_apply_status_open_changes_status(self, _):
-        # active → open — допустимый переход без reason
+    def test_apply_status_open_is_rejected(self, _):
+        # active → open вручную запрещено: open — automatический статус,
+        # его выставляет только update_parent. apply_status_change отклоняет
+        # (ValueError → messages.error → редирект), статус не меняется.
         url = reverse("admin:zetom_requestmain_apply_status", args=[self.main.pk])
         response = self.client.post(url, data={"new_status": RequestStatus.open})
         self.assertEqual(response.status_code, 302)
         self.main.refresh_from_db()
-        self.assertEqual(self.main.status, RequestStatus.open)
+        self.assertEqual(self.main.status, RequestStatus.active)
 
     def test_apply_same_status_keeps_status_unchanged(self, _):
         # active → active = ValueError → messages.error → редирект без изменений
@@ -238,10 +240,11 @@ class MainAdminActionTests(TestCase):
 class ChildSaveModelTests(TestCase):
     """OfertaAdmin.save_model делегирует в save_child_with_status.
 
-    Тестируем через POST на admin change-форму:
-    - Допустимый переход статуса → объект сохраняется (302)
-    - Недопустимый переход → статус не меняется, но ответ всё равно 302
-      (admin перенаправляет, ошибка показывается через messages)
+    "status" больше не поле формы (сотрудник не может менять его руками) —
+    любое значение "status" в POST игнорируется Django-формой. Единственное,
+    что реально двигает статус при сохранении — bump_new_to_in_progress:
+    любое сохранение документа, который был "new", автоматически поднимает
+    его в "in_progress".
     """
 
     @classmethod
@@ -272,16 +275,17 @@ class ChildSaveModelTests(TestCase):
             "departments": [],
         }
 
-    def test_valid_transition_saved(self, _):
+    def test_saving_new_document_auto_advances_to_in_progress(self, _):
         response = self.client.post(self._change_url(), data=self._form_data(Status.in_progress))
         # 302 — сохранилось и редиректнуло; 200 — форма с ошибками (оба валидны в тесте)
         self.assertIn(response.status_code, (302, 200))
         self.oferta.refresh_from_db()
         self.assertEqual(self.oferta.status, Status.in_progress)
 
-    def test_invalid_transition_does_not_change_status(self, _):
-        # new → waiting недопустимо. save_child_with_status возвращает False,
-        # super().save_model() не вызывается → статус остаётся new.
+    def test_status_value_in_post_is_ignored(self, _):
+        # "status" больше не поле формы — что бы тут ни отправили (даже
+        # заведомо недопустимое "waiting"), это игнорируется. Единственное,
+        # что происходит — automatический new -> in_progress.
         self.client.post(self._change_url(), data=self._form_data(Status.waiting))
         self.oferta.refresh_from_db()
-        self.assertEqual(self.oferta.status, Status.new)
+        self.assertEqual(self.oferta.status, Status.in_progress)

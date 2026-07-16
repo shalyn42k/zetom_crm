@@ -28,7 +28,6 @@ class OfertaAdmin(BaseRequestAdmin):
     fields = (
         "from_main",
         "phone",
-        "status",
         "departments",
         "assigned_to",
         "email",
@@ -63,7 +62,6 @@ class ZlecenieAdmin(BaseRequestAdmin):
         "from_main",
         "deadline",
         "phone",
-        "status",
         "departments",
         "assigned_to",
         "email",
@@ -98,7 +96,6 @@ class WniosekAdmin(BaseRequestAdmin):
         "from_main",
         "application_number",
         "phone",
-        "status",
         "departments",
         "assigned_to",
         "email",

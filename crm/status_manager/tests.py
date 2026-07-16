@@ -6,10 +6,12 @@
 #   • apply_status_change — оркестратор смены статуса из change-view RequestMain
 #
 # apply_status_change — точка входа из admin change-view:
-#   1. Проверяет что статус допустим
-#   2. Для cancelled/deleted/inactive требует reason (бросает ReasonRequired)
-#   3. Делегирует в cancel_request / delete_request / _inactive_request
-#   4. Для остальных статусов просто сохраняет + пишет в StatusHistory
+#   1. Единственный статус, который можно установить вручную — cancelled
+#   2. Требует reason (бросает ReasonRequired, если его нет)
+#   3. Делегирует в cancel_request
+#   4. Любой другой статус (active/open/closed/inactive/deleted) отклоняется:
+#      они либо автоматические (update_parent), либо идут через отдельный
+#      delete-flow (RequestMainAdmin.delete_view), а не через эту функцию
 # ──────────────────────────────────────────────────────────────────────────────
 
 from django.contrib.auth import get_user_model
@@ -69,6 +71,11 @@ class StatusHistoryModelTests(TestCase):
 class ApplyStatusChangeTests(TestCase):
     """Оркестратор смены статуса RequestMain из admin change-view.
 
+    Единственный статус, который сотрудник/админ может установить руками —
+    cancelled (с обязательной причиной). Всё остальное — либо automatика
+    (update_parent), либо отдельный delete-flow (RequestMainAdmin.delete_view),
+    и через apply_status_change недостижимо.
+
     ReasonRequired — кастомное исключение-сигнал:
         «Нужна причина → покажи форму ввода reason».
         Это НЕ ошибка, это flow-control.
@@ -78,53 +85,38 @@ class ApplyStatusChangeTests(TestCase):
         self.user = User.objects.create_user(username="manager", password="x")
         self.main = RequestMain.objects.create(**BASE_DATA)
 
-    def test_valid_transition_changes_status(self):
-        apply_status_change(self.main, self.user, RequestStatus.open)
-        self.main.refresh_from_db()
-        self.assertEqual(self.main.status, RequestStatus.open)
-
-    def test_valid_transition_creates_history_entry(self):
-        apply_status_change(self.main, self.user, RequestStatus.open)
-        self.assertEqual(StatusHistory.objects.filter(request=self.main).count(), 1)
-        entry = StatusHistory.objects.get(request=self.main)
-        self.assertEqual(entry.old_status, RequestStatus.active)
-        self.assertEqual(entry.new_status, RequestStatus.open)
-        self.assertEqual(entry.changed_by, self.user)
-
-    def test_same_status_raises_value_error(self):
+    def test_automatic_status_cannot_be_set_manually(self):
         with self.assertRaises(ValueError):
-            apply_status_change(self.main, self.user, RequestStatus.active)
+            apply_status_change(self.main, self.user, RequestStatus.open)
+
+    def test_deleted_cannot_be_set_through_this_path(self):
+        # Deleted идёт только через RequestMainAdmin.delete_view, не отсюда.
+        with self.assertRaises(ValueError):
+            apply_status_change(self.main, self.user, RequestStatus.deleted, reason="spam")
+
+    def test_inactive_cannot_be_set_manually(self):
+        with self.assertRaises(ValueError):
+            apply_status_change(self.main, self.user, RequestStatus.inactive, reason="on hold")
 
     def test_invalid_status_string_raises_value_error(self):
         with self.assertRaises(ValueError):
             apply_status_change(self.main, self.user, "nonsense_status")
 
     def test_cancelled_without_reason_raises_reason_required(self):
-        # Для cancelled/deleted/inactive нужна reason.
-        # ReasonRequired — сигнал для view: «покажи форму».
         with self.assertRaises(ReasonRequired):
             apply_status_change(self.main, self.user, RequestStatus.cancelled)
 
-    def test_deleted_without_reason_raises_reason_required(self):
-        with self.assertRaises(ReasonRequired):
-            apply_status_change(self.main, self.user, RequestStatus.deleted)
-
-    def test_inactive_without_reason_raises_reason_required(self):
-        with self.assertRaises(ReasonRequired):
-            apply_status_change(self.main, self.user, RequestStatus.inactive)
-
-    def test_cancelled_with_reason_changes_status(self):
+    def test_cancelled_with_reason_changes_status_and_creates_history(self):
         apply_status_change(self.main, self.user, RequestStatus.cancelled, reason="client withdrew")
         self.main.refresh_from_db()
         self.assertEqual(self.main.status, RequestStatus.cancelled)
+        entry = StatusHistory.objects.get(request=self.main)
+        self.assertEqual(entry.old_status, RequestStatus.active)
+        self.assertEqual(entry.new_status, RequestStatus.cancelled)
+        self.assertEqual(entry.reason, "client withdrew")
+        self.assertEqual(entry.changed_by, self.user)
 
-    def test_deleted_with_reason_soft_deletes_object(self):
-        # delete_request → статус deleted + мягкое удаление через safedelete
-        apply_status_change(self.main, self.user, RequestStatus.deleted, reason="spam")
-        # После мягкого удаления объект не виден через стандартный менеджер
-        self.assertFalse(RequestMain.objects.filter(pk=self.main.pk).exists())
-
-    def test_inactive_with_reason_changes_status(self):
-        apply_status_change(self.main, self.user, RequestStatus.inactive, reason="on hold")
-        self.main.refresh_from_db()
-        self.assertEqual(self.main.status, RequestStatus.inactive)
+    def test_cancelled_twice_raises_value_error(self):
+        apply_status_change(self.main, self.user, RequestStatus.cancelled, reason="client withdrew")
+        with self.assertRaises(ValueError):
+            apply_status_change(self.main, self.user, RequestStatus.cancelled, reason="again")
