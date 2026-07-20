@@ -1,0 +1,82 @@
+{% load i18n humanize %}
+{% if step_notes_enabled %}
+<div x-data="{ open: false }" class="sn-root" @open-step-notes.window="open = true">
+  {% if not step_notes_hide_inline_trigger %}
+  <div class="sn-trigger-wrap">
+    <button type="button" class="sn-trigger rm-btn rm-btn--primary rm-btn--sm" @click="open = true">
+      {% trans "Step notes" %}
+    </button>
+  </div>
+  {% endif %}
+
+  <div class="sn-modal" x-show="open" x-cloak role="dialog" aria-modal="true" aria-labelledby="sn-modal-title">
+    <div class="sn-modal__backdrop" @click="open = false"></div>
+    <div class="sn-modal__panel" @click.stop>
+      <header class="sn-modal__header">
+        <h2 id="sn-modal-title" class="sn-modal__title">{% trans "Work log" %}</h2>
+        <button type="button" class="sn-modal__close" @click="open = false" aria-label='{% trans "Close" %}'>×</button>
+      </header>
+
+      <p class="sn-modal__hint">
+        {% blocktrans with target=step_notes_target_label %}
+          Timeline for: <strong>{{ target }}</strong>
+        {% endblocktrans %}
+      </p>
+
+      <form method="post" action="{{ step_notes_create_url }}" class="sn-form">
+        {% csrf_token %}
+        <div class="sn-form__group">
+          <label for="sn-action">{% trans "What was done" %}</label>
+             <input id="sn-action" name="action" type="text" maxlength="255" class="sn-input"
+               placeholder="{% trans "e.g. Called client, clarified deadline" %}">
+        </div>
+        <div class="sn-form__group">
+          <label for="sn-text">{% trans "Note for colleagues" %}</label>
+          <textarea id="sn-text" name="text" rows="4" class="sn-textarea" required
+                    placeholder="{% trans 'Add context for the next employee working on this case' %}"></textarea>
+        </div>
+        <div class="sn-form__group">
+          <label for="sn-next-contact">{% trans "Next client date (optional)" %}</label>
+          <input id="sn-next-contact" name="next_contact_at" type="datetime-local" class="sn-input">
+        </div>
+        <footer class="sn-form__footer">
+          <button type="button" class="sn-btn" @click="open = false">{% trans "Cancel" %}</button>
+          <button type="submit" class="sn-btn sn-btn--primary">{% trans "Add note" %}</button>
+        </footer>
+      </form>
+
+      <div class="sn-thread">
+        <h3>{% trans "Timeline" %}</h3>
+        <ul class="sn-list">
+          {% for entry in step_notes %}
+            <li class="sn-item">
+              <span class="sn-avatar" aria-hidden="true">
+                {{ entry.author.first_name|default:entry.author.username|default:'?'|slice:":1"|upper }}
+              </span>
+              <div class="sn-item__body">
+                <div class="sn-item__meta">
+                  <strong>{{ entry.author.get_full_name|default:entry.author.username|default:'—' }}</strong>
+                  <span>·</span>
+                  <span title="{{ entry.created_at|date:'Y-m-d H:i' }}">{{ entry.created_at|naturaltime }}</span>
+                </div>
+                {% if entry.next_contact_at %}
+                  <div class="sn-item__next-contact">
+                    {% trans "Next client date:" %}
+                    <strong>{{ entry.next_contact_at|date:"Y-m-d H:i" }}</strong>
+                  </div>
+                {% endif %}
+                {% if entry.action %}
+                  <div class="sn-item__action">{{ entry.action }}</div>
+                {% endif %}
+                <div class="sn-item__text">{{ entry.text|linebreaksbr }}</div>
+              </div>
+            </li>
+          {% empty %}
+            <li class="sn-empty">{% trans "No notes yet." %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}

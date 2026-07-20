@@ -19,6 +19,7 @@ from .base import BaseRequestAdmin
 class OfertaAdmin(BaseRequestAdmin):
     actions = []
     form = AddOferta
+    change_form_template = "admin/zetom/oferta/change_form.html"
     list_display = (
         "from_main", "created_at", "updated_at", "company_name",
         "display_departments", "assignees_display", "colored_status", "source",
@@ -53,6 +54,7 @@ class OfertaAdmin(BaseRequestAdmin):
 class ZlecenieAdmin(BaseRequestAdmin):
     actions = []
     form = AddZlecenie
+    change_form_template = "admin/zetom/zlecenie/change_form.html"
     list_display = (
         "from_main", "created_at", "updated_at", "company_name",
         "display_departments", "assignees_display", "colored_status", "source",
@@ -88,6 +90,7 @@ class ZlecenieAdmin(BaseRequestAdmin):
 class WniosekAdmin(BaseRequestAdmin):
     actions = []
     form = AddWniosek
+    change_form_template = "admin/zetom/wniosek/change_form.html"
     list_display = (
         "from_main", "created_at", "updated_at", "company_name",
         "display_departments", "assignees_display", "colored_status", "source",

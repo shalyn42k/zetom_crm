@@ -86,6 +86,9 @@ class RequestMainAdmin(
     warn_unsaved_form = True
 
     class Media:
+        css = {
+            "all": ("zetom/css/step_notes.css",),
+        }
         js = [
             "client/client_autofill.js",
             "client/client_search.js",

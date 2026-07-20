@@ -4,13 +4,16 @@ Imported by every admin submodule. Keep small and dependency-light —
 this module is loaded first and shouldn't pull in Crispy / heavy stuff.
 """
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.http import HttpResponseForbidden
+from django.shortcuts import redirect
+from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
 from crm.users.utils import user_has_perm
-from crm.zetom.models import DepartmentsVariants
+from crm.zetom.models import DepartmentsVariants, StepNote
 from crm.zetom.services.visibility import visible_requests_for
 
 
@@ -21,6 +24,15 @@ class ReasonForm(forms.Form):
         widget=forms.Textarea,
         label=_("Reason"),
         required=True,
+    )
+
+
+class StepNoteCreateForm(forms.Form):
+    action = forms.CharField(max_length=255, required=False)
+    text = forms.CharField(required=True)
+    next_contact_at = forms.DateTimeField(
+        required=False,
+        input_formats=["%Y-%m-%dT%H:%M"],
     )
 
 
@@ -55,6 +67,82 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
         qs = super().get_queryset(request)
         qs = visible_requests_for(request.user, qs)
         return qs.prefetch_related("assigned_to")
+
+    class Media:
+        css = {
+            "all": ("zetom/css/step_notes.css",),
+        }
+
+    def get_urls(self):
+        urls = super().get_urls()
+        opts = self.model._meta
+        custom = [
+            path(
+                "<path:object_id>/step-notes/create/",
+                self.admin_site.admin_view(self.step_note_create_action),
+                name=f"{opts.app_label}_{opts.model_name}_step_note_create",
+            ),
+        ]
+        return custom + urls
+
+    def _get_obj_for_step_note(self, request, object_id):
+        obj = self.get_queryset(request).filter(pk=object_id).first()
+        if obj is None:
+            return None, HttpResponseForbidden(_("Request not found."))
+        if not self.has_change_permission(request, obj):
+            return None, HttpResponseForbidden(_("You don't have permission for this action."))
+        return obj, None
+
+    def step_note_create_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect(self._change_url_for_id(object_id))
+
+        obj, forbidden = self._get_obj_for_step_note(request, object_id)
+        if forbidden is not None:
+            return forbidden
+
+        form = StepNoteCreateForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, _("Could not add note. Check note text/date format."))
+            return redirect(self._change_url_for_id(object_id))
+
+        StepNote.objects.create(
+            author=request.user,
+            action=form.cleaned_data["action"],
+            text=form.cleaned_data["text"],
+            next_contact_at=form.cleaned_data["next_contact_at"],
+            target=obj,
+        )
+        messages.success(request, _("Step note added."))
+        return redirect(self._change_url_for_id(object_id))
+
+    def _change_url_for_id(self, object_id):
+        opts = self.model._meta
+        return reverse(f"admin:{opts.app_label}_{opts.model_name}_change", args=[object_id])
+
+    def _build_step_notes_context(self, obj):
+        opts = self.model._meta
+        if not obj or not obj.pk:
+            return {
+                "step_notes_enabled": False,
+                "step_notes": [],
+                "step_notes_create_url": "",
+                "step_notes_target_label": "",
+            }
+        return {
+            "step_notes_enabled": True,
+            "step_notes": obj.step_notes.select_related("author").all()[:50],
+            "step_notes_create_url": reverse(
+                f"admin:{opts.app_label}_{opts.model_name}_step_note_create",
+                args=[obj.pk],
+            ),
+            "step_notes_target_label": str(obj),
+        }
+
+    def render_change_form(self, request, context, *args, **kwargs):
+        obj = context.get("original")
+        context.update(self._build_step_notes_context(obj))
+        return super().render_change_form(request, context, *args, **kwargs)
 
     # claude — "Create new" from the Client Detail tabs lands here with
     # ?client=<pk>. The clients M2M uses a through-model so it can't be a form
