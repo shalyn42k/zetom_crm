@@ -60,9 +60,13 @@ class ClientSearchView(View):
             .order_by("last_name")[:20]
         )
 
+        # claude — .first() clones the manager's queryset (order_by('pk')[:1]),
+        # which bypasses the prefetch_related cache and re-hits the DB per row.
+        # .all() on a manager with a populated prefetch cache returns the
+        # cached, already-evaluated queryset, so indexing it is free.
         def _company_of(c):
-            link = c.company_links.first()
-            return link.company if link else None
+            links = list(c.company_links.all())
+            return links[0].company if links else None
 
         results = []
         for c in clients:

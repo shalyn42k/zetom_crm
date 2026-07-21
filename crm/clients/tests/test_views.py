@@ -32,7 +32,10 @@ class ClientAutofillTests(TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content.decode())
         self.assertTrue(data["results"])
-        self.assertEqual(data["results"][0]["id"], self.person.id)
+        row = data["results"][0]
+        self.assertEqual(row["id"], self.person.id)
+        self.assertEqual(row["company_nip"], "5262706346")
+        self.assertEqual(row["label"], "Sigma Company")
 
     def test_client_autofill_by_nip(self):
         request = self.factory.get("/clients/autofill/", {"nip": "5262706346"})
