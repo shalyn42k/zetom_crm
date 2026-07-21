@@ -99,10 +99,22 @@ NIP и название фирмы уезжают с `Person` на `Company`. В
 - **Фаза 2 — Company-aware консьюмеры + удаление company_* (БЕЗ rename).** Дробится:
   - **2a** — Company-aware read-слой: хелпер «фирмы человека» на `Client`; переписать VW-дедуп (`duplicate_matcher`) и search/autofill (`views.py`) читать NIP/название из `Company` через связь (company_* ещё существуют как fallback, тесты зелёные).
   - **2b** — интейк create/link (`requestnull_validate._do_approve`, `requestmain.response_add`, `admin/base.py` prefill) через общий хелпер `create_person_with_company`: создавать/находить `Company` по NIP + `Client`(person) + связь, ставить `RequestMain.company`; перестать писать `company_*` на `Client`.
-  - **2c** — `ClientForm` без company-полей + `ClientAdmin` без сегмента `client_type`/колонок company + миграция очистки company-only строк + удалить `company_name`/`company_nip`/`client_type` с `Client` + UI-лейбл `Client`→«Osoba» + i18n. (ClientForm/ClientAdmin здесь, а не в 2b: они связаны с существованием полей и с Phase-3 переверсткой List.)
-- **Фаза 3 — поверхности #11/#12:** единый список «Klienci», карточки фирмы/человека, блок «Osoby kontaktowe» + «+» — по выходу дизайн-агента.
+  - **2c (ПЕРЕСЕКВЕНЦИЯ — идёт ПОСЛЕ Phase 3, не до)** — удалить `company_name`/`company_nip`/`client_type` с `Client` + `ClientType`; миграция; UI-лейбл `Client`→«Osoba» + i18n. Это **финальный** шаг: дроп полей возможен только когда ВСЕ консьюмеры мигрированы, а часть из них — это UI, который переверстывает Phase 3 (см. ниже).
+- **Фаза 3 — поверхности #11/#12 + миграция оставшихся UI-консьюмеров:** единый список «Klienci», карточки фирмы/человека, блок «Osoby kontaktowe» + «+». Сюда же входит переписка **inline-client-редактора на RequestMain** (`requestmain.py`: `create_client_json`/`edit_client_json`/`save_client_json`/`check_duplicates` — сейчас read/create/edit `cl.company_*`) и кастомных шаблонов `clients/templates/.../client/change_form.html`+`change_list.html` (сегмент `client_type`, колонки company). Эти UI-эндпоинты редактируют фирму «внутри человека», что противоречит нормализации → переезжают на Company-модель вместе с версткой handoff.
 
-Планы пишутся по фазам: Фаза 1 (готово); Фаза 2 по под-этапам 2a→2b→2c; Фаза 3 — после дизайн-агента.
+**Скорректированная последовательность (2026-07-21):** Фаза 1 ✅ → 2a ✅ → 2b ✅ → **Phase 3 (UI + миграция UI-консьюмеров)** → **2c (финальный field-drop)**. Причина: дроп `Client.company_*` сцеплен с UI (inline-client-редактор + Client List/Detail шаблоны), который переверстывает Phase 3. Дропать поля раньше = сломать live-модалку/шаблоны.
+
+## Полный список оставшихся `Client.company_*`/`client_type` консьюмеров (перед 2c должны быть = 0)
+
+Найдено грепом 2026-07-21 (после 2a+2b):
+- `crm/clients/forms.py` — `ClientForm` (fields `client_type`/`company_name`/`company_nip`, `clean_company_nip`, `ClientType` import).
+- `crm/clients/admin.py` — `ClientAdmin.list_display`/`search_fields`/`list_filter`/`changelist_view` (type_counts по `client_type`); `ClientInteractionAdmin.search_fields` (`client__company_name`); `ClientType` import.
+- `crm/clients/models.py` — сами поля + `clean()` normalize + `ClientType`.
+- `crm/clients/templates/admin/clients/client/change_form.html`, `change_list.html` — рендер company-полей + сегмент `client_type`.
+- `crm/zetom/admin/requestmain.py` — `create_client_json` (create с company_*), `edit_client_json`/`save_client_json` (read/write `cl.company_*`), `link_client_json`/`check_duplicates` (return `cl.company_nip`).
+- (НЕ трогать: `RequestTemplate.company_name`/`company_nip` снапшот-поля заявок; `request_service`, `request_duplicate_finder`, `children`, `cancelled*`/`deleted*` admin, `zetom/forms.py` — все они про поля ЗАЯВКИ, а не Client.)
+
+Планы: Фаза 1/2a/2b (готово); **Phase 3 — следующий план** (UI + миграция UI-консьюмеров выше); **2c — последний план** (field-drop, когда список консьюмеров = 0).
 
 ## 4. Стратегия миграции данных
 
