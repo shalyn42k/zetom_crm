@@ -494,3 +494,33 @@ def company_person_delete(request, pk, link_pk):
     # Removes only the link row — the person (Client) is left intact.
     CompanyPersonLink.objects.filter(pk=link_pk, company=company).delete()
     return JsonResponse({"ok": True})
+
+
+# claude — Dane osobowe save endpoint for the Person (Osoba) card (Phase 3b
+# Task 1, mOsobowe modal). Only touches first_name/last_name/phone/email —
+# never company_name/company_nip/client_type (those belong to Company now).
+@login_required
+@require_POST
+def person_save(request, pk):
+    if not user_has_perm(request.user, "edit_clients"):
+        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+
+    person = get_object_or_404(Client, pk=pk)
+    email = request.POST.get("email", "").strip()
+    error = _invalid_email_error(email)
+    if error:
+        return JsonResponse({"ok": False, "error": error}, status=400)
+
+    person.first_name = request.POST.get("first_name", "").strip()
+    person.last_name = request.POST.get("last_name", "").strip()
+    person.email = email
+    person.phone = request.POST.get("phone", "").strip() or None
+    person.save()
+
+    return JsonResponse({
+        "ok": True,
+        "first_name": person.first_name or "",
+        "last_name": person.last_name or "",
+        "phone": person.phone.as_international if person.phone else "",
+        "email": person.email or "",
+    })

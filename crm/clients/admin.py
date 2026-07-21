@@ -1,16 +1,15 @@
-from django.contrib import admin, messages
+from django.contrib import admin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, render
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 
-from crm.status_manager.services.statuses import RequestStatus
+from crm.status_manager.services.statuses import RequestStatus, Status
 from crm.users.utils import user_has_perm
 from crm.zetom.models import DepartmentsVariants, RequestMain
 
 from . import views
-from .forms import ClientForm
 from .models import (
     Client, ClientInteraction, ClientType, Company, CompanyPersonLink,
 )
@@ -28,7 +27,31 @@ _ZGLOSZENIE_STATUS_CLASS = {
     RequestStatus.inactive: "zamkniete",
     RequestStatus.cancelled: "zamkniete",
     RequestStatus.deleted: "zamkniete",
+    # claude — Phase 3b Task 1: Oferta/Zlecenie/Wniosek use the separate
+    # Status enum (new/in_progress/waiting/done), not RequestStatus. Same
+    # dict so the Person card's combined "Powiązane zgłoszenia" list can map
+    # either enum's raw value straight to a badge class.
+    Status.new: "oczekuje",
+    Status.in_progress: "aktywne",
+    Status.waiting: "oczekuje",
+    Status.done: "zamkniete",
 }
+
+# claude — Phase 3b Task 1: human PL name per request type, used to build
+# "<Typ> nr <pk> / <rok>" row titles on the Person card (no raw model names
+# in UI, same rule as _zgloszenie_label above).
+_PERSON_REQ_TYPE_LABEL = {
+    "main": _("Zgłoszenie"),
+    "oferta": _("Oferta"),
+    "zlecenie": _("Zlecenie"),
+    "wniosek": _("Wniosek"),
+}
+
+# claude — build_request_rows() only returns the raw status value (not its
+# display label), and RequestMain/Oferta/Zlecenie/Wniosek pull from two
+# different TextChoices (RequestStatus vs Status — no overlapping values),
+# so one merged value→label dict covers every row the Person card builds.
+_STATUS_DISPLAY = dict(RequestStatus.choices) | dict(Status.choices)
 
 
 # claude — human, non-technical row title for a RequestMain on the Company
@@ -45,6 +68,53 @@ def _zgloszenie_dept_label(codes) -> str:
         return ""
     labels = dict(DepartmentsVariants.choices)
     return str(labels.get(codes[0], codes[0]))
+
+
+# claude — Phase 3b Task 1: combined "Powiązane zgłoszenia" rows for the
+# Person card (RequestMain + Oferta + Zlecenie + Wniosek together, newest
+# first). Reuses build_request_rows for the per-type query shaping (same
+# querysets/prefetches the old change_view's tabs used) and just relabels
+# each row for the flat list; get_client_request_summary still backs the
+# panel's total count so it stays in sync with the four underlying counts.
+def _person_zgloszenia_rows(client) -> list[dict]:
+    sources = [
+        (
+            "main",
+            client.requests
+            .exclude(status__in=[RequestStatus.cancelled, RequestStatus.deleted])
+            .prefetch_related("owners")
+            .order_by("-created_at"),
+            "owners", "admin:zetom_requestmain_change",
+        ),
+        (
+            "oferta", client.ofertas.prefetch_related("assigned_to").order_by("-created_at"),
+            "assigned_to", "admin:zetom_oferta_change",
+        ),
+        (
+            "zlecenie", client.zlecenia.prefetch_related("assigned_to").order_by("-created_at"),
+            "assigned_to", "admin:zetom_zlecenie_change",
+        ),
+        (
+            "wniosek", client.wnioski.prefetch_related("assigned_to").order_by("-created_at"),
+            "assigned_to", "admin:zetom_wniosek_change",
+        ),
+    ]
+    rows = []
+    for type_key, qs, owners_attr, change_name in sources:
+        for row in build_request_rows(qs, type_key, owners_attr=owners_attr):
+            rows.append({
+                "label": _("%(type)s nr %(pk)s / %(year)s") % {
+                    "type": _PERSON_REQ_TYPE_LABEL[type_key],
+                    "pk": row["pk"], "year": row["date"].year,
+                },
+                "data": row["date"],
+                "dept": row["dept"],
+                "status_label": _STATUS_DISPLAY.get(row["status"], row["status"]),
+                "status_class": _ZGLOSZENIE_STATUS_CLASS.get(row["status"], "zamkniete"),
+                "url": row["change_url"],
+            })
+    rows.sort(key=lambda r: r["data"], reverse=True)
+    return rows
 
 
 # БАГ-9 + БАГ-10: inline история контактов прямо в карточке клиента
@@ -71,8 +141,12 @@ class ClientAdmin(admin.ModelAdmin):
     list_filter = ["client_type"]
 
     # claude — custom List + Detail screens (see design_handoff_client_pages).
+    # Phase 3b Task 1: Detail switched from the old two-column identity +
+    # request-tabs layout to the Person (Osoba) card from
+    # design_handoff_clients_unified §3. The old change_form.html is left in
+    # place (unused) rather than deleted.
     change_list_template = "admin/clients/client/change_list.html"
-    change_form_template = "admin/clients/client/change_form.html"
+    change_form_template = "admin/clients/client/person_card.html"
 
     # claude
     def get_queryset(self, request):
@@ -160,6 +234,14 @@ class ClientAdmin(admin.ModelAdmin):
                 view(views.request_search),
                 name="clients_client_request_search",
             ),
+            # claude — Dane osobowe save endpoint for the Person card
+            # (mOsobowe modal, Phase 3b Task 1). RBAC edit_clients, enforced
+            # again inside the view itself (views.person_save).
+            path(
+                "<int:pk>/person/save/",
+                view(views.person_save),
+                name="clients_client_person_save",
+            ),
         ]
         return custom + urls
 
@@ -197,85 +279,90 @@ class ClientAdmin(admin.ModelAdmin):
             pass
         return response
 
-    # claude — fully custom Detail (change_form). Renders the two-column
-    # identity + linked-requests layout and binds the inline ClientForm. We
-    # bypass the default change_view rendering but keep its permission gate.
+    # claude — Phase 3b Task 1: panel data-contract for the Person (Osoba)
+    # card. Firmy comes only from company_links (never Client.company_*, per
+    # the normalization — a Person can sit in N companies via
+    # CompanyPersonLink). Zgłoszenia/historia mirror CompanyAdmin's
+    # _build_company_context so both cards share one visual language.
+    def _build_person_context(self, request, client):
+        can_edit = user_has_perm(request.user, "edit_clients")
+        # client.company_links is prefetched by change_view (see below);
+        # list(...) reads the prefetch cache — calling .first() here instead
+        # would silently re-query and defeat that prefetch.
+        links = sorted(
+            list(client.company_links.all()),
+            key=lambda link: (not link.is_primary, link.company.name),
+        )
+        # claude — summary's counts (request_main/oferta/zlecenie/wniosek)
+        # sum to exactly len(zgloszenia) below; kept as the panel's header
+        # count so it comes from the same shared service as the old tabs did.
+        summary = get_client_request_summary(client)
+        return {
+            **self.admin_site.each_context(request),
+            "title": _("Person Detail"),
+            "opts": self.model._meta,
+            "client": client,
+            "can_edit": can_edit,
+            "has_view_permission": True,
+            # claude — Dane osobowe panel + mOsobowe modal seed. Never reads
+            # Client.company_name/company_nip/client_type — only the
+            # person's own identity fields.
+            "dane_osobowe": {
+                "imie": client.first_name or "",
+                "nazwisko": client.last_name or "",
+                "telefon": client.phone.as_international if client.phone else "",
+                "email": client.email or "",
+            },
+            "firmy": [
+                {
+                    "nazwa": link.company.name,
+                    "stanowisko": link.position,
+                    "is_primary": link.is_primary,
+                    "url": reverse("admin:clients_company_change", args=[link.company_id]),
+                }
+                for link in links
+            ],
+            # claude — Powiązane zgłoszenia: combined RequestMain/Oferta/
+            # Zlecenie/Wniosek list (see _person_zgloszenia_rows above).
+            "zgloszenia": _person_zgloszenia_rows(client),
+            "total_requests": sum(summary.values()),
+            # claude — Historia kontaktów (read-only), same row shape as
+            # CompanyAdmin._build_company_context's historia (README §3:
+            # "Historia kontaktów (read-only, как выше)" — reuse as-is).
+            "historia": [
+                {
+                    "data": interaction.contacted_at,
+                    "kanal_label": interaction.get_channel_display(),
+                    "sotrudnik": (
+                        interaction.contacted_by.get_full_name()
+                        or interaction.contacted_by.username
+                    ) if interaction.contacted_by else "",
+                    "kontakt_osoba": interaction.contact_person or client.full_name(),
+                    "zaglowek": _zgloszenie_label(interaction.request) if interaction.request else "",
+                    "summary": interaction.summary,
+                }
+                for interaction in (
+                    ClientInteraction.objects
+                    .filter(client=client)
+                    .select_related("contacted_by", "request")
+                    .order_by("-contacted_at")
+                )
+            ],
+        }
+
+    # claude — fully custom Detail (change_form). Renders the Person (Osoba)
+    # card (Dane osobowe + Firmy + Powiązane zgłoszenia + Historia kontaktów).
+    # Bypasses the default change_view rendering but keeps the permission gate.
     def change_view(self, request, object_id, form_url="", extra_context=None):
         if not self.has_change_permission(request):
             raise PermissionDenied
 
-        client = get_object_or_404(Client, pk=object_id)
-        can_edit = user_has_perm(request.user, "edit_clients")
-
-        if request.method == "POST":
-            if not can_edit:
-                raise PermissionDenied
-            form = ClientForm(request.POST, instance=client)
-            if form.is_valid():
-                form.save()
-                messages.success(request, _("Client saved."))
-                return redirect("admin:clients_client_change", client.pk)
-        else:
-            form = ClientForm(instance=client)
-
-        summary = get_client_request_summary(client)
-
-        # RequestMain owners come from the per-Req owners M2M; the child docs
-        # show assigned_to. Cancelled/deleted RequestMain excluded to match the
-        # summary count.
-        main_qs = (
-            client.requests
-            .exclude(status__in=[RequestStatus.cancelled, RequestStatus.deleted])
-            .prefetch_related("owners")
-            .order_by("-created_at")
+        client = get_object_or_404(
+            Client.objects.prefetch_related("company_links__company"),
+            pk=object_id,
         )
-        tabs = [
-            {
-                "key": "main", "label": "RequestMain", "count": summary["request_main"],
-                "rows": build_request_rows(main_qs, "main", owners_attr="owners"),
-                "filter_url": "admin:zetom_requestmain_changelist",
-                "add_url": "admin:zetom_requestmain_add",
-            },
-            {
-                "key": "oferta", "label": "Oferta", "count": summary["oferta"],
-                "rows": build_request_rows(
-                    client.ofertas.prefetch_related("assigned_to").order_by("-created_at"),
-                    "oferta",
-                ),
-                "filter_url": "admin:zetom_oferta_changelist",
-                "add_url": "admin:zetom_oferta_add",
-            },
-            {
-                "key": "zlecenie", "label": "Zlecenie", "count": summary["zlecenie"],
-                "rows": build_request_rows(
-                    client.zlecenia.prefetch_related("assigned_to").order_by("-created_at"),
-                    "zlecenie",
-                ),
-                "filter_url": "admin:zetom_zlecenie_changelist",
-                "add_url": "admin:zetom_zlecenie_add",
-            },
-            {
-                "key": "wniosek", "label": "Wniosek", "count": summary["wniosek"],
-                "rows": build_request_rows(
-                    client.wnioski.prefetch_related("assigned_to").order_by("-created_at"),
-                    "wniosek",
-                ),
-                "filter_url": "admin:zetom_wniosek_changelist",
-                "add_url": "admin:zetom_wniosek_add",
-            },
-        ]
-
         context = {
-            **self.admin_site.each_context(request),
-            "title": _("Client Detail"),
-            "opts": self.model._meta,
-            "client": client,
-            "form": form,
-            "summary": summary,
-            "tabs": tabs,
-            "total_requests": sum(t["count"] for t in tabs),
-            "can_edit": can_edit,
-            "has_view_permission": True,
+            **self._build_person_context(request, client),
             **(extra_context or {}),
         }
         return render(request, self.change_form_template, context)

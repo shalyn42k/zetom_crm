@@ -69,11 +69,16 @@ html.dark .cc-stage {
 /* identity header */
 .cc-stage .id-hero { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
 .cc-stage .id-hero .ava { width: 68px; height: 68px; border-radius: 16px; font-size: 24px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; background: linear-gradient(135deg, #8b5cf6, #6d28d9); flex-shrink: 0; }
+/* claude — Person (Osoba) hero avatar/pill, Phase 3b Task 1. Blue gradient
+   per README §"Design Tokens" row colour (person: #3b82f6→#2563eb, vs.
+   company's purple #8b5cf6→#6d28d9 above). */
+.cc-stage .id-hero .ava.person { background: linear-gradient(135deg, #3b82f6, #2563eb); }
 .cc-stage .id-hero .h-nm { font-size: 28px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .cc-stage .id-hero .h-sub { margin-top: 6px; font-size: 15.5px; color: var(--text-3); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 .cc-stage .pill { display: inline-flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 24px; font-size: 14px; font-weight: 700; border: 1px solid transparent; white-space: nowrap; }
 .cc-stage .pill.company { background: var(--purple-bg); color: var(--purple); border-color: color-mix(in srgb, var(--purple) 26%, transparent); }
+.cc-stage .pill.person { background: var(--blue-bg); color: var(--blue); border-color: color-mix(in srgb, var(--blue) 26%, transparent); }
 
 .cc-stage .chip { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 20px; font-size: 13px; font-weight: 700; border: 1px solid transparent; }
 .cc-stage .chip.lokalny { background: var(--slate-bg); color: var(--slate); border-color: color-mix(in srgb, var(--slate) 26%, transparent); }
@@ -108,6 +113,12 @@ html.dark .cc-stage {
 .cc-stage table.inner thead th.act { text-align: right; }
 .cc-stage table.inner tbody td { padding: 15px 22px; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); vertical-align: middle; font-size: 15.5px; }
 .cc-stage table.inner tbody tr:last-child td { border-bottom: none; }
+/* claude — Firmy table rows (Person card, Phase 3b Task 1): whole row links
+   to the company card, per README §3 "строки кликабельны → карточка фирмы".
+   The row itself navigates via a small onclick (see person_card.html); the
+   chevron button is a real <a> so the row stays keyboard/no-JS reachable. */
+.cc-stage table.inner tbody tr.rowlink { cursor: pointer; }
+.cc-stage table.inner tbody tr.rowlink:hover { background: var(--bg-2); }
 .cc-stage .pname { font-weight: 700; color: var(--text); display: inline-flex; align-items: center; gap: 9px; }
 .cc-stage .primary-star { color: var(--amber); }
 .cc-stage .stan { color: var(--text-2); }

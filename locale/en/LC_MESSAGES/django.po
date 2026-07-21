@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-21 14:33+0200\n"
+"POT-Creation-Date: 2026-07-21 20:28+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -47,15 +47,15 @@ msgstr ""
 msgid "Information"
 msgstr ""
 
-#: config/unfold_config.py:154 crm/clients/admin.py:93 crm/zetom/models.py:166
+#: config/unfold_config.py:154 crm/clients/admin.py:167 crm/zetom/models.py:166
 msgid "Offers"
 msgstr ""
 
-#: config/unfold_config.py:162 crm/clients/admin.py:98 crm/zetom/models.py:187
+#: config/unfold_config.py:162 crm/clients/admin.py:172 crm/zetom/models.py:187
 msgid "Orders"
 msgstr ""
 
-#: config/unfold_config.py:170 crm/clients/admin.py:103 crm/zetom/models.py:207
+#: config/unfold_config.py:170 crm/clients/admin.py:177 crm/zetom/models.py:207
 msgid "Applications"
 msgstr ""
 
@@ -108,26 +108,44 @@ msgstr ""
 msgid "Email log"
 msgstr ""
 
-#: crm/clients/admin.py:37
+#: crm/clients/admin.py:44
+msgid "Zgłoszenie"
+msgstr "Zgłoszenie"
+
+#: crm/clients/admin.py:45
+#: crm/clients/templates/admin/clients/client/change_list.html:70
+msgid "Oferta"
+msgstr "Oferta"
+
+#: crm/clients/admin.py:46
+#: crm/clients/templates/admin/clients/client/change_list.html:71
+msgid "Zlecenie"
+msgstr "Zlecenie"
+
+#: crm/clients/admin.py:47
+#: crm/clients/templates/admin/clients/client/change_list.html:72
+msgid "Wniosek"
+msgstr "Wniosek"
+
+#: crm/clients/admin.py:60
 #, python-format
 msgid "Zgłoszenie nr %(pk)s / %(year)s"
 msgstr "Zgłoszenie nr %(pk)s / %(year)s"
 
-#: crm/clients/admin.py:88 crm/users/admin/user.py:34
+#: crm/clients/admin.py:106
+msgid "%(type)s nr %(pk)s / %(year)s"
+msgstr "%(type)s nr %(pk)s / %(year)s"
+
+#: crm/clients/admin.py:162 crm/users/admin/user.py:34
 #: crm/users/templates/admin/auth/user/_partials/tab_notifications.html:14
 msgid "Requests"
 msgstr ""
 
-#: crm/clients/admin.py:216
-msgid "Client saved."
-msgstr ""
+#: crm/clients/admin.py:302
+msgid "Person Detail"
+msgstr "Person Detail"
 
-#: crm/clients/admin.py:270
-#: crm/clients/templates/admin/clients/client/change_form.html:39
-msgid "Client Detail"
-msgstr ""
-
-#: crm/clients/admin.py:352
+#: crm/clients/admin.py:430
 msgid "Company Detail"
 msgstr "Company Detail"
 
@@ -404,6 +422,10 @@ msgstr "Company contact"
 msgid "Company contacts"
 msgstr "Company contacts"
 
+#: crm/clients/templates/admin/clients/client/change_form.html:39
+msgid "Client Detail"
+msgstr ""
+
 #: crm/clients/templates/admin/clients/client/change_form.html:40
 msgid ""
 "Inline-edit the client on the left; manage every linked request on the "
@@ -582,18 +604,6 @@ msgstr ""
 msgid "RequestMain"
 msgstr ""
 
-#: crm/clients/templates/admin/clients/client/change_list.html:70
-msgid "Oferta"
-msgstr ""
-
-#: crm/clients/templates/admin/clients/client/change_list.html:71
-msgid "Zlecenie"
-msgstr ""
-
-#: crm/clients/templates/admin/clients/client/change_list.html:72
-msgid "Wniosek"
-msgstr ""
-
 #: crm/clients/templates/admin/clients/client/change_list.html:73
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/history_card.html:54
 #, fuzzy
@@ -734,27 +744,157 @@ msgstr ""
 msgid "Discard unsaved data?"
 msgstr ""
 
+#: crm/clients/templates/admin/clients/client/person_card.html:37
 #: crm/clients/templates/admin/clients/company/change_form.html:36
 msgid "Wróć"
 msgstr "Wróć"
 
-#: crm/clients/templates/admin/clients/company/change_form.html:37
-msgid "Klient / Firma"
-msgstr "Klient / Firma"
+#: crm/clients/templates/admin/clients/client/person_card.html:38
+#: crm/clients/templates/admin/clients/client/person_card.html:46
+msgid "Osoba"
+msgstr "Osoba"
 
-#: crm/clients/templates/admin/clients/company/change_form.html:45
-msgid "Firma"
-msgstr "Firma"
+#: crm/clients/templates/admin/clients/client/person_card.html:48
+msgid "Osoba prywatna"
+msgstr "Osoba prywatna"
 
-#: crm/clients/templates/admin/clients/company/change_form.html:59
-msgid "Dane podstawowe"
-msgstr "Dane podstawowe"
+#: crm/clients/templates/admin/clients/client/person_card.html:64
+msgid "Dane osobowe"
+msgstr "Dane osobowe"
 
+#: crm/clients/templates/admin/clients/client/person_card.html:65
 #: crm/clients/templates/admin/clients/company/change_form.html:60
 #: crm/clients/templates/admin/clients/company/change_form.html:74
 #: crm/clients/templates/admin/clients/company/change_form.html:120
 msgid "Edytuj"
 msgstr "Edytuj"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:68
+#: crm/clients/templates/admin/clients/client/person_card.html:86
+#: crm/clients/templates/admin/clients/company/change_form.html:104
+#: crm/clients/templates/admin/clients/company/change_form.html:147
+msgid "Imię"
+msgstr "Imię"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:69
+#: crm/clients/templates/admin/clients/client/person_card.html:87
+#: crm/clients/templates/admin/clients/company/change_form.html:104
+#: crm/clients/templates/admin/clients/company/change_form.html:148
+msgid "Nazwisko"
+msgstr "Nazwisko"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:70
+#: crm/clients/templates/admin/clients/client/person_card.html:90
+#: crm/clients/templates/admin/clients/company/change_form.html:83
+#: crm/clients/templates/admin/clients/company/change_form.html:105
+#: crm/clients/templates/admin/clients/company/change_form.html:151
+msgid "Telefon"
+msgstr "Telefon"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:71
+#: crm/clients/templates/admin/clients/client/person_card.html:91
+#: crm/clients/templates/admin/clients/company/change_form.html:82
+#: crm/clients/templates/admin/clients/company/change_form.html:104
+#: crm/clients/templates/admin/clients/company/change_form.html:152
+msgid "E-mail"
+msgstr "E-mail"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:79
+msgid "Edytuj dane osobowe"
+msgstr "Edytuj dane osobowe"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:80
+msgid "Dane osoby."
+msgstr "Dane osoby."
+
+#: crm/clients/templates/admin/clients/client/person_card.html:86
+#, fuzzy
+#| msgid "np. Marek"
+msgid "np. Jan"
+msgstr "np. Marek"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:87
+msgid "np. Kowalski"
+msgstr ""
+
+#: crm/clients/templates/admin/clients/client/person_card.html:95
+#: crm/clients/templates/admin/clients/company/change_form.html:161
+msgid "Anuluj"
+msgstr "Anuluj"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:96
+#: crm/clients/templates/admin/clients/company/change_form.html:162
+msgid "Zapisz"
+msgstr "Zapisz"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:106
+msgid "Firmy"
+msgstr "Firmy"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:110
+#: crm/clients/templates/admin/clients/company/change_form.html:45
+msgid "Firma"
+msgstr "Firma"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:110
+#: crm/clients/templates/admin/clients/company/change_form.html:105
+#: crm/clients/templates/admin/clients/company/change_form.html:154
+msgid "Stanowisko"
+msgstr "Stanowisko"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:116
+msgid "Główny"
+msgstr "Główny"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:121
+msgid "Otwórz firmę"
+msgstr "Otwórz firmę"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:129
+msgid "Ta osoba nie jest jeszcze powiązana z żadną firmą."
+msgstr "Ta osoba nie jest jeszcze powiązana z żadną firmą."
+
+#: crm/clients/templates/admin/clients/client/person_card.html:139
+#: crm/clients/templates/admin/clients/company/change_form.html:173
+msgid "Powiązane zgłoszenia"
+msgstr "Powiązane zgłoszenia"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:157
+msgid "Brak zgłoszeń powiązanych z tą osobą."
+msgstr "Brak zgłoszeń powiązanych z tą osobą."
+
+#: crm/clients/templates/admin/clients/client/person_card.html:165
+#: crm/clients/templates/admin/clients/company/change_form.html:199
+msgid "Historia kontaktów"
+msgstr "Historia kontaktów"
+
+#: crm/clients/templates/admin/clients/client/person_card.html:184
+#: crm/clients/templates/admin/clients/company/change_form.html:218
+msgid "Brak historii kontaktów."
+msgstr "Brak historii kontaktów."
+
+#: crm/clients/templates/admin/clients/client/person_card.html:187
+#: crm/clients/templates/admin/clients/company/change_form.html:221
+msgid "Tylko podgląd — dodawanie wpisów będzie dostępne później."
+msgstr "Tylko podgląd — dodawanie wpisów będzie dostępne później."
+
+#: crm/clients/templates/admin/clients/client/person_card.html:238
+#: crm/clients/templates/admin/clients/company/change_form.html:300
+msgid "Nie udało się zapisać."
+msgstr "Nie udało się zapisać."
+
+#: crm/clients/templates/admin/clients/client/person_card.html:244
+#: crm/clients/templates/admin/clients/company/change_form.html:311
+msgid "Błąd sieci — spróbuj ponownie."
+msgstr "Błąd sieci — spróbuj ponownie."
+
+#: crm/clients/templates/admin/clients/company/change_form.html:37
+msgid "Klient / Firma"
+msgstr "Klient / Firma"
+
+#: crm/clients/templates/admin/clients/company/change_form.html:59
+msgid "Dane podstawowe"
+msgstr "Dane podstawowe"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:63
 msgid "Nazwa"
@@ -788,18 +928,6 @@ msgstr "Kod pocztowy"
 msgid "Ulica"
 msgstr "Ulica"
 
-#: crm/clients/templates/admin/clients/company/change_form.html:82
-#: crm/clients/templates/admin/clients/company/change_form.html:104
-#: crm/clients/templates/admin/clients/company/change_form.html:152
-msgid "E-mail"
-msgstr "E-mail"
-
-#: crm/clients/templates/admin/clients/company/change_form.html:83
-#: crm/clients/templates/admin/clients/company/change_form.html:105
-#: crm/clients/templates/admin/clients/company/change_form.html:151
-msgid "Telefon"
-msgstr "Telefon"
-
 #: crm/clients/templates/admin/clients/company/change_form.html:98
 msgid "Osoby kontaktowe"
 msgstr "Osoby kontaktowe"
@@ -808,21 +936,6 @@ msgstr "Osoby kontaktowe"
 #: crm/clients/templates/admin/clients/company/change_form.html:140
 msgid "Dodaj osobę kontaktową"
 msgstr "Dodaj osobę kontaktową"
-
-#: crm/clients/templates/admin/clients/company/change_form.html:104
-#: crm/clients/templates/admin/clients/company/change_form.html:147
-msgid "Imię"
-msgstr "Imię"
-
-#: crm/clients/templates/admin/clients/company/change_form.html:104
-#: crm/clients/templates/admin/clients/company/change_form.html:148
-msgid "Nazwisko"
-msgstr "Nazwisko"
-
-#: crm/clients/templates/admin/clients/company/change_form.html:105
-#: crm/clients/templates/admin/clients/company/change_form.html:154
-msgid "Stanowisko"
-msgstr "Stanowisko"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:106
 msgid "Operacje"
@@ -869,45 +982,13 @@ msgstr "np. Dyrektor techniczny"
 msgid "Główna osoba do kontaktu w tej firmie."
 msgstr "Główna osoba do kontaktu w tej firmie."
 
-#: crm/clients/templates/admin/clients/company/change_form.html:161
-msgid "Anuluj"
-msgstr "Anuluj"
-
-#: crm/clients/templates/admin/clients/company/change_form.html:162
-msgid "Zapisz"
-msgstr "Zapisz"
-
-#: crm/clients/templates/admin/clients/company/change_form.html:173
-msgid "Powiązane zgłoszenia"
-msgstr "Powiązane zgłoszenia"
-
 #: crm/clients/templates/admin/clients/company/change_form.html:191
 msgid "Brak zgłoszeń powiązanych z tą firmą."
 msgstr "Brak zgłoszeń powiązanych z tą firmą."
 
-#: crm/clients/templates/admin/clients/company/change_form.html:199
-msgid "Historia kontaktów"
-msgstr "Historia kontaktów"
-
-#: crm/clients/templates/admin/clients/company/change_form.html:218
-msgid "Brak historii kontaktów."
-msgstr "Brak historii kontaktów."
-
-#: crm/clients/templates/admin/clients/company/change_form.html:221
-msgid "Tylko podgląd — dodawanie wpisów będzie dostępne później."
-msgstr "Tylko podgląd — dodawanie wpisów będzie dostępne później."
-
 #: crm/clients/templates/admin/clients/company/change_form.html:242
 msgid "Czy na pewno chcesz usunąć tę osobę kontaktową?"
 msgstr "Czy na pewno chcesz usunąć tę osobę kontaktową?"
-
-#: crm/clients/templates/admin/clients/company/change_form.html:300
-msgid "Nie udało się zapisać."
-msgstr "Nie udało się zapisać."
-
-#: crm/clients/templates/admin/clients/company/change_form.html:311
-msgid "Błąd sieci — spróbuj ponownie."
-msgstr "Błąd sieci — spróbuj ponownie."
 
 #: crm/clients/validators.py:20
 msgid ""
