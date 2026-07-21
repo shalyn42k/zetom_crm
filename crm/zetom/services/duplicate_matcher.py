@@ -115,11 +115,14 @@ def _name_similarity(a: str, b: str) -> float:
 # A wide-net prefilter so we don't scan the whole Clients table every time.
 # We pull anything that touches phone / email / NIP / company / surname,
 # then rescore in Python.
+# claude — prefilter теперь тянет по NIP/названию ПРИВЯЗАННОЙ фирмы
+# (Client.company_links → Company), а не по Client.company_*.
 def _candidate_queryset(rn) -> "models.QuerySet[Client]":
     phone = _phone_str(rn.phone)
     email = _norm(rn.email)
     domain = _email_domain(rn.email)
     company = _norm(rn.company_name)
+    nip = _norm(getattr(rn, "company_nip", None))
     last_name = _norm(rn.last_name)
 
     q = Q()
@@ -130,12 +133,18 @@ def _candidate_queryset(rn) -> "models.QuerySet[Client]":
     if domain:
         q |= Q(email__iendswith=f"@{domain}")
     if company:
-        q |= Q(company_name__icontains=company)
+        q |= Q(company_links__company__name__icontains=company)
+    if nip:
+        q |= Q(company_links__company__nip=nip)
     if last_name:
         q |= Q(last_name__iexact=last_name)
     if not q:
         return Client.objects.none()
-    return Client.objects.filter(q).distinct()
+    return (
+        Client.objects.filter(q)
+        .prefetch_related("company_links__company")
+        .distinct()
+    )
 
 
 def _score_one(rn, client: Client) -> Candidate:
@@ -157,19 +166,25 @@ def _score_one(rn, client: Client) -> Candidate:
         badges.append(Badge.of(BADGE_EXACT_EMAIL))
         highlights["email"] = client.email or ""
 
+    # claude — сигналы фирмы берём из ПРИВЯЗАННЫХ Company (человек может быть
+    # в нескольких фирмах → совпадение по любой). company_links prefetch'ится.
+    companies = [pl.company for pl in client.company_links.all()]
+    cl_nips = {_norm(c.nip) for c in companies if c.nip}
+    cl_names = {_norm(c.name) for c in companies if c.name}
+
     rn_nip = _norm(getattr(rn, "company_nip", None))
-    cl_nip = _norm(client.company_nip)
-    if rn_nip and cl_nip and rn_nip == cl_nip:
+    if rn_nip and rn_nip in cl_nips:
         score += 50
         badges.append(Badge.of(BADGE_SAME_NIP))
-        highlights["company_nip"] = client.company_nip or ""
+        highlights["company_nip"] = rn_nip
 
     rn_company = _norm(rn.company_name)
-    cl_company = _norm(client.company_name)
-    if rn_company and cl_company and rn_company == cl_company:
+    if rn_company and rn_company in cl_names:
         score += 20
         badges.append(Badge.of(BADGE_SAME_COMPANY))
-        highlights["company_name"] = client.company_name or ""
+        highlights["company_name"] = next(
+            (c.name for c in companies if _norm(c.name) == rn_company), ""
+        )
 
     rn_fullname = f"{_norm(rn.first_name)} {_norm(rn.last_name)}".strip()
     cl_fullname = f"{_norm(client.first_name)} {_norm(client.last_name)}".strip()

@@ -37,6 +37,7 @@ from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 
 from crm.clients.models import Client
+from crm.clients.services import create_person_with_company
 from crm.notification.services.notification_service import (
     send_notification_approve_null,
 )
@@ -216,14 +217,21 @@ def _do_approve(rn: RequestNull, cleaned: dict, user=None):
     #    requested, a freshly created one. Empty list = leave unlinked.
     clients = list(cleaned.get("link_client_ids") or [])
     if cleaned.get("create_new"):
-        clients.append(Client.objects.create(
+        # claude — интейк создаёт человека + (опц.) нормализованную Company,
+        # вместо записи company_* на Client. Фирму вешаем на new_main.
+        person, company = create_person_with_company(
             first_name=cleaned.get("new_first_name") or rn.first_name,
             last_name=cleaned.get("new_last_name") or rn.last_name,
-            company_name=cleaned.get("new_company_name") or rn.company_name,
-            company_nip=cleaned.get("new_company_nip") or None,
             phone=cleaned.get("new_phone") or rn.phone,
             email=cleaned.get("new_email") or rn.email,
-        ))
+            company_name=cleaned.get("new_company_name") or rn.company_name,
+            company_nip=cleaned.get("new_company_nip") or None,
+            linked_by=user,
+        )
+        clients.append(person)
+        if company is not None and new_main.company_id is None:
+            new_main.company = company
+            new_main.save(update_fields=["company"])
 
     # 3) Persist the Client ↔ RequestMain relations (M2M through-table).
     for client in clients:

@@ -1,5 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -10,7 +13,7 @@ from django.views import View
 from django.views.decorators.http import require_POST
 
 from crm.clients.forms import ClientForm
-from crm.clients.models import Client
+from crm.clients.models import Client, Company, CompanyPersonLink
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
 from crm.zetom.models import (
@@ -44,28 +47,47 @@ class ClientSearchView(View):
             if maybe_nip:
                 query_terms.append(maybe_nip)
 
+        # claude — Company-aware search: match Client by first/last name AND by linked
+        # Company name/nip; derive label/company_nip/address from first linked company.
         query = Q()
         for term in set(query_terms):
-            query |= Q(company_name__icontains=term)
-            query |= Q(company_nip__icontains=term)
             query |= Q(first_name__icontains=term)
             query |= Q(last_name__icontains=term)
+            query |= Q(company_links__company__name__icontains=term)
+            query |= Q(company_links__company__nip__icontains=term)
 
-        clients = Client.objects.filter(query).order_by("company_name", "last_name")[:20]
+        clients = (
+            Client.objects.filter(query)
+            .prefetch_related("company_links__company")
+            .distinct()
+            .order_by("last_name")[:20]
+        )
 
-        return JsonResponse({
-            "results": [
-                {
-                    "id": c.id,
-                    "label": c.company_name or f"{c.first_name} {c.last_name}" or f"Client #{c.id}",
-                    "email": c.email,
-                    "phone": c.phone.as_international if c.phone else "",
-                    "company_nip": c.company_nip,
-                    "address": c.address,
-                }
-                for c in clients
-            ]
-        })
+        # claude — .first() clones the manager's queryset (order_by('pk')[:1]),
+        # which bypasses the prefetch_related cache and re-hits the DB per row.
+        # .all() on a manager with a populated prefetch cache returns the
+        # cached, already-evaluated queryset, so indexing it is free.
+        def _company_of(c):
+            links = list(c.company_links.all())
+            return links[0].company if links else None
+
+        results = []
+        for c in clients:
+            company = _company_of(c)
+            label = (
+                (company.name if company else None)
+                or f"{c.first_name or ''} {c.last_name or ''}".strip()
+                or f"Client #{c.id}"
+            )
+            results.append({
+                "id": c.id,
+                "label": label,
+                "email": c.email,
+                "phone": c.phone.as_international if c.phone else "",
+                "company_nip": company.nip if company else "",
+                "address": company.comments if company else "",
+            })
+        return JsonResponse({"results": results})
 
 
 
@@ -79,20 +101,23 @@ def client_autofill(request):
     if not nip:
         return JsonResponse({"error": "no_nip"}, status=400)
 
-    try:
-        client = Client.objects.get(company_nip=nip)
-        return JsonResponse({
-            "exists": True,
-            "first_name": client.first_name,
-            "last_name": client.last_name,
-            "company_name": client.company_name,
-            "company_nip": client.company_nip,
-            "email": client.email,
-            "phone": client.phone.as_international if client.phone else "",
-            "address": client.address,
-        })
-    except Client.DoesNotExist:
+    # claude — autofill now resolves Company by NIP (NIP moved from Client to
+    # Company), and pulls the first linked person.
+    company = Company.objects.filter(nip=nip).first()
+    if company is None:
         return JsonResponse({"exists": False})
+    link = company.person_links.first()
+    person = link.person if link else None
+    return JsonResponse({
+        "exists": True,
+        "first_name": person.first_name if person else "",
+        "last_name": person.last_name if person else "",
+        "company_name": company.name,
+        "company_nip": company.nip,
+        "email": (person.email if person else "") or "",
+        "phone": person.phone.as_international if (person and person.phone) else "",
+        "address": company.comments or "",
+    })
 
 
 # claude — attach/detach/search for the Client Detail request tabs.
@@ -361,3 +386,111 @@ def client_create(request):
         "ok": True,
         "redirect_url": reverse("admin:clients_client_change", args=[client.pk]),
     })
+
+
+# claude — Osoby kontaktowe panel backend (Company detail card, Phase 3a
+# Task 2). Mounted under CompanyAdmin.get_urls so admin_view enforces staff
+# auth; edit_clients is re-checked on top, mirroring the Client endpoints
+# above. add/edit return the row JSON the panel's JS needs to redraw the
+# table row without a full page reload; delete only drops the link (the
+# underlying Client/person is never deleted from here).
+# claude — shared email guard for the add/edit endpoints below; empty email
+# is allowed (field is optional), only a non-empty invalid value is rejected.
+def _invalid_email_error(email: str):
+    if not email:
+        return None
+    try:
+        validate_email(email)
+    except ValidationError:
+        return gettext("Nieprawidłowy adres e-mail.")
+    return None
+
+
+def company_person_row(link):
+    person = link.person
+    return {
+        "link_pk": link.pk,
+        "imie": person.first_name or "",
+        "nazwisko": person.last_name or "",
+        "email": person.email or "",
+        "telefon": person.phone.as_international if person.phone else "",
+        "stanowisko": link.position or "",
+        "glowny": link.is_primary,
+    }
+
+
+# claude
+@login_required
+@require_POST
+def company_person_add(request, pk):
+    if not user_has_perm(request.user, "edit_clients"):
+        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+
+    company = get_object_or_404(Company, pk=pk)
+    is_primary = bool(request.POST.get("is_primary"))
+    email = request.POST.get("email", "").strip()
+    error = _invalid_email_error(email)
+    if error:
+        return JsonResponse({"ok": False, "error": error}, status=400)
+
+    with transaction.atomic():
+        person = Client.objects.create(
+            first_name=request.POST.get("first_name", "").strip(),
+            last_name=request.POST.get("last_name", "").strip(),
+            email=email,
+            phone=request.POST.get("phone", "").strip() or None,
+        )
+        if is_primary:
+            company.person_links.filter(is_primary=True).update(is_primary=False)
+        link = CompanyPersonLink.objects.create(
+            company=company, person=person,
+            position=request.POST.get("position", "").strip(),
+            is_primary=is_primary,
+            linked_by=request.user,
+        )
+    return JsonResponse({"ok": True, "row": company_person_row(link)})
+
+
+# claude
+@login_required
+@require_POST
+def company_person_edit(request, pk, link_pk):
+    if not user_has_perm(request.user, "edit_clients"):
+        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+
+    company = get_object_or_404(Company, pk=pk)
+    link = get_object_or_404(CompanyPersonLink, pk=link_pk, company=company)
+    is_primary = bool(request.POST.get("is_primary"))
+    email = request.POST.get("email", "").strip()
+    error = _invalid_email_error(email)
+    if error:
+        return JsonResponse({"ok": False, "error": error}, status=400)
+
+    with transaction.atomic():
+        person = link.person
+        person.first_name = request.POST.get("first_name", "").strip()
+        person.last_name = request.POST.get("last_name", "").strip()
+        person.email = email
+        person.phone = request.POST.get("phone", "").strip() or None
+        person.save()
+
+        if is_primary:
+            company.person_links.exclude(pk=link.pk).filter(is_primary=True).update(is_primary=False)
+        link.position = request.POST.get("position", "").strip()
+        link.is_primary = is_primary
+        link.save()
+
+    return JsonResponse({"ok": True, "row": company_person_row(link)})
+
+
+# claude
+@login_required
+@require_POST
+def company_person_delete(request, pk, link_pk):
+    if not user_has_perm(request.user, "edit_clients"):
+        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+
+    company = get_object_or_404(Company, pk=pk)
+    # Removes only the link row — the person (Client) is left intact.
+    CompanyPersonLink.objects.filter(pk=link_pk, company=company).delete()
+    return JsonResponse({"ok": True})

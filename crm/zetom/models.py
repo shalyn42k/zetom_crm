@@ -1,6 +1,8 @@
 # Django imports
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey, GenericRelation,
+)
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
@@ -124,6 +126,17 @@ class RequestMain(RequestTemplate):
         through="RequestClientLink",
         related_name="requests",
         blank=True,
+    )
+    # claude — нормализованная привязка заявки к фирме (в дополнение к
+    # снапшот-полям company_name/company_nip на самой заявке). Nullable:
+    # заявка от частного лица без фирмы её не имеет.
+    company = models.ForeignKey(
+        "clients.Company",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="requests",
+        verbose_name=_("Company"),
     )
     # БАГ-2: полная история всех изменений полей (кто/что/когда изменил)
     history = HistoricalRecords()
