@@ -168,6 +168,14 @@ class Company(models.Model):
     class Meta:
         verbose_name = _("Company")
         verbose_name_plural = _("Companies")
+        # claude
+        constraints = [
+            models.UniqueConstraint(
+                fields=["nip"],
+                condition=models.Q(nip__isnull=False),
+                name="uniq_company_nip",
+            ),
+        ]
 
     def clean(self):
         super().clean()
