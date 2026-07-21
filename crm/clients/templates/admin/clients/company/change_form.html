@@ -85,10 +85,12 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
       </div>
     </div>
 
-    {# Osoby kontaktowe — table + add/edit/delete are client-side via Alpine
-       (personPanel(), defined in the <script> block below); the server only
-       seeds the initial rows (json_script keeps this XSS-safe) so the panel
-       renders real data on first paint. #}
+    {% comment %}
+    Osoby kontaktowe — table + add/edit/delete are client-side via Alpine
+    (personPanel(), defined in the <script> block below); the server only
+    seeds the initial rows (json_script keeps this XSS-safe) so the panel
+    renders real data on first paint.
+    {% endcomment %}
     {{ osoby_data|json_script:"osoby-data" }}
     <div class="panel" x-data="personPanel(JSON.parse(document.getElementById('osoby-data').textContent), {{ can_edit|yesno:'true,false' }})">
       <div class="panel-h">
@@ -221,9 +223,11 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
   </div>
 </div>
 
-{# claude — personPanel() must be defined unconditionally: x-data="personPanel(...)"
-   on the Osoby kontaktowe panel evaluates for every viewer (view-only users just
-   never get the add/edit/delete controls rendered, per can_edit checks above). #}
+{% comment %}
+claude — personPanel() must be defined unconditionally: x-data="personPanel(...)"
+on the Osoby kontaktowe panel evaluates for every viewer (view-only users just
+never get the add/edit/delete controls rendered, per can_edit checks above).
+{% endcomment %}
 <script>
 // claude — Osoby kontaktowe panel (Phase 3a Task 2). Alpine component that
 // drives the mPerson modal and redraws the table from the add/edit/delete

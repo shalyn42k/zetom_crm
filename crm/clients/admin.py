@@ -372,8 +372,8 @@ class CompanyAdmin(admin.ModelAdmin):
             # claude — Osoby kontaktowe panel (Task 2). The table itself is
             # rendered client-side by Alpine (see the template's personPanel()),
             # so we hand it the same row shape the add/edit endpoints return
-            # (views.company_person_row) as a JSON blob; `osoby` stays around only for
-            # the initial count/empty-state checks server-side.
+            # (views.company_person_row) as a JSON blob; `osoby` is kept only
+            # to build `osoby_data` below (not read directly by the template).
             "osoby": (osoby := list(
                 company.person_links.select_related("person").order_by(
                     "-is_primary", "person__last_name",
@@ -382,7 +382,8 @@ class CompanyAdmin(admin.ModelAdmin):
             "osoby_data": [views.company_person_row(link) for link in osoby],
             # claude — Powiązane zgłoszenia (Task 3). Real RequestMain rows,
             # newest first; whole `.req` row links to the standard admin
-            # change view (see change_form.html).
+            # change view (see change_form.html). Cancelled/deleted excluded,
+            # matching ClientAdmin.change_view's main_qs.
             "zgloszenia": [
                 {
                     "label": _zgloszenie_label(req),
@@ -392,7 +393,9 @@ class CompanyAdmin(admin.ModelAdmin):
                     "status_class": _ZGLOSZENIE_STATUS_CLASS.get(req.status, "zamkniete"),
                     "url": reverse("admin:zetom_requestmain_change", args=[req.pk]),
                 }
-                for req in RequestMain.objects.filter(company=company).order_by("-created_at")
+                for req in RequestMain.objects.filter(company=company)
+                .exclude(status__in=[RequestStatus.cancelled, RequestStatus.deleted])
+                .order_by("-created_at")
             ],
             # claude — Historia kontaktów (Task 3), read-only. Interactions of
             # every person linked to this company (CompanyPersonLink), newest

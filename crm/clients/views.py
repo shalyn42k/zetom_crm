@@ -1,5 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -391,6 +394,18 @@ def client_create(request):
 # above. add/edit return the row JSON the panel's JS needs to redraw the
 # table row without a full page reload; delete only drops the link (the
 # underlying Client/person is never deleted from here).
+# claude — shared email guard for the add/edit endpoints below; empty email
+# is allowed (field is optional), only a non-empty invalid value is rejected.
+def _invalid_email_error(email: str):
+    if not email:
+        return None
+    try:
+        validate_email(email)
+    except ValidationError:
+        return gettext("Nieprawidłowy adres e-mail.")
+    return None
+
+
 def company_person_row(link):
     person = link.person
     return {
@@ -413,21 +428,26 @@ def company_person_add(request, pk):
 
     company = get_object_or_404(Company, pk=pk)
     is_primary = bool(request.POST.get("is_primary"))
+    email = request.POST.get("email", "").strip()
+    error = _invalid_email_error(email)
+    if error:
+        return JsonResponse({"ok": False, "error": error}, status=400)
 
-    person = Client.objects.create(
-        first_name=request.POST.get("first_name", "").strip(),
-        last_name=request.POST.get("last_name", "").strip(),
-        email=request.POST.get("email", "").strip(),
-        phone=request.POST.get("phone", "").strip() or None,
-    )
-    if is_primary:
-        company.person_links.filter(is_primary=True).update(is_primary=False)
-    link = CompanyPersonLink.objects.create(
-        company=company, person=person,
-        position=request.POST.get("position", "").strip(),
-        is_primary=is_primary,
-        linked_by=request.user,
-    )
+    with transaction.atomic():
+        person = Client.objects.create(
+            first_name=request.POST.get("first_name", "").strip(),
+            last_name=request.POST.get("last_name", "").strip(),
+            email=email,
+            phone=request.POST.get("phone", "").strip() or None,
+        )
+        if is_primary:
+            company.person_links.filter(is_primary=True).update(is_primary=False)
+        link = CompanyPersonLink.objects.create(
+            company=company, person=person,
+            position=request.POST.get("position", "").strip(),
+            is_primary=is_primary,
+            linked_by=request.user,
+        )
     return JsonResponse({"ok": True, "row": company_person_row(link)})
 
 
@@ -441,19 +461,24 @@ def company_person_edit(request, pk, link_pk):
     company = get_object_or_404(Company, pk=pk)
     link = get_object_or_404(CompanyPersonLink, pk=link_pk, company=company)
     is_primary = bool(request.POST.get("is_primary"))
+    email = request.POST.get("email", "").strip()
+    error = _invalid_email_error(email)
+    if error:
+        return JsonResponse({"ok": False, "error": error}, status=400)
 
-    person = link.person
-    person.first_name = request.POST.get("first_name", "").strip()
-    person.last_name = request.POST.get("last_name", "").strip()
-    person.email = request.POST.get("email", "").strip()
-    person.phone = request.POST.get("phone", "").strip() or None
-    person.save()
+    with transaction.atomic():
+        person = link.person
+        person.first_name = request.POST.get("first_name", "").strip()
+        person.last_name = request.POST.get("last_name", "").strip()
+        person.email = email
+        person.phone = request.POST.get("phone", "").strip() or None
+        person.save()
 
-    if is_primary:
-        company.person_links.exclude(pk=link.pk).filter(is_primary=True).update(is_primary=False)
-    link.position = request.POST.get("position", "").strip()
-    link.is_primary = is_primary
-    link.save()
+        if is_primary:
+            company.person_links.exclude(pk=link.pk).filter(is_primary=True).update(is_primary=False)
+        link.position = request.POST.get("position", "").strip()
+        link.is_primary = is_primary
+        link.save()
 
     return JsonResponse({"ok": True, "row": company_person_row(link)})
 
