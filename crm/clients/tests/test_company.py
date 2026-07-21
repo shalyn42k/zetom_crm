@@ -1,5 +1,6 @@
 # claude
 from django.contrib.auth.models import User
+from django.db import IntegrityError, transaction
 from django.test import TestCase
 
 from crm.clients.models import Client, Company, CompanyPersonLink, SupplierType
@@ -18,6 +19,18 @@ class CompanyModelTest(TestCase):
     def test_supplier_type_choices(self):
         self.assertEqual(SupplierType.LOCAL, "lokalny")
         self.assertEqual(SupplierType.INTERNATIONAL, "miedzynarodowy")
+
+    # claude
+    def test_multiple_blank_nip_companies_allowed(self):
+        Company.objects.create(name="Zetom A")
+        Company.objects.create(name="Zetom B")
+        self.assertEqual(Company.objects.count(), 2)
+
+    # claude
+    def test_duplicate_set_nip_raises(self):
+        Company.objects.create(name="Zetom A", nip="1234563218")
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Company.objects.create(name="Zetom B", nip="1234563218")
 
 
 class CompanyPersonLinkTest(TestCase):

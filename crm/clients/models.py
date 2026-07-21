@@ -170,9 +170,10 @@ class Company(models.Model):
         verbose_name_plural = _("Companies")
         # claude
         constraints = [
+            # claude
             models.UniqueConstraint(
                 fields=["nip"],
-                condition=models.Q(nip__isnull=False),
+                condition=models.Q(nip__isnull=False) & ~models.Q(nip=""),
                 name="uniq_company_nip",
             ),
         ]
