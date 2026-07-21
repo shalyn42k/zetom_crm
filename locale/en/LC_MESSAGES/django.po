@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-21 14:10+0200\n"
+"POT-Creation-Date: 2026-07-21 14:28+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -47,15 +47,15 @@ msgstr ""
 msgid "Information"
 msgstr ""
 
-#: config/unfold_config.py:154 crm/clients/admin.py:62 crm/zetom/models.py:166
+#: config/unfold_config.py:154 crm/clients/admin.py:93 crm/zetom/models.py:166
 msgid "Offers"
 msgstr ""
 
-#: config/unfold_config.py:162 crm/clients/admin.py:67 crm/zetom/models.py:187
+#: config/unfold_config.py:162 crm/clients/admin.py:98 crm/zetom/models.py:187
 msgid "Orders"
 msgstr ""
 
-#: config/unfold_config.py:170 crm/clients/admin.py:72 crm/zetom/models.py:207
+#: config/unfold_config.py:170 crm/clients/admin.py:103 crm/zetom/models.py:207
 msgid "Applications"
 msgstr ""
 
@@ -108,21 +108,26 @@ msgstr ""
 msgid "Email log"
 msgstr ""
 
-#: crm/clients/admin.py:57 crm/users/admin/user.py:34
+#: crm/clients/admin.py:37
+#, python-format
+msgid "Zgłoszenie nr %(pk)s / %(year)s"
+msgstr "Zgłoszenie nr %(pk)s / %(year)s"
+
+#: crm/clients/admin.py:88 crm/users/admin/user.py:34
 #: crm/users/templates/admin/auth/user/_partials/tab_notifications.html:14
 msgid "Requests"
 msgstr ""
 
-#: crm/clients/admin.py:185
+#: crm/clients/admin.py:216
 msgid "Client saved."
 msgstr ""
 
-#: crm/clients/admin.py:239
+#: crm/clients/admin.py:270
 #: crm/clients/templates/admin/clients/client/change_form.html:39
 msgid "Client Detail"
 msgstr ""
 
-#: crm/clients/admin.py:321
+#: crm/clients/admin.py:352
 msgid "Company Detail"
 msgstr "Company Detail"
 
@@ -884,23 +889,23 @@ msgstr "Brak zgłoszeń powiązanych z tą firmą."
 msgid "Historia kontaktów"
 msgstr "Historia kontaktów"
 
-#: crm/clients/templates/admin/clients/company/change_form.html:213
+#: crm/clients/templates/admin/clients/company/change_form.html:215
 msgid "Brak historii kontaktów."
 msgstr "Brak historii kontaktów."
 
-#: crm/clients/templates/admin/clients/company/change_form.html:216
+#: crm/clients/templates/admin/clients/company/change_form.html:218
 msgid "Tylko podgląd — dodawanie wpisów będzie dostępne później."
 msgstr "Tylko podgląd — dodawanie wpisów będzie dostępne później."
 
-#: crm/clients/templates/admin/clients/company/change_form.html:235
+#: crm/clients/templates/admin/clients/company/change_form.html:237
 msgid "Czy na pewno chcesz usunąć tę osobę kontaktową?"
 msgstr "Are you sure you want to remove this contact person?"
 
-#: crm/clients/templates/admin/clients/company/change_form.html:293
+#: crm/clients/templates/admin/clients/company/change_form.html:295
 msgid "Nie udało się zapisać."
 msgstr "Failed to save."
 
-#: crm/clients/templates/admin/clients/company/change_form.html:304
+#: crm/clients/templates/admin/clients/company/change_form.html:306
 msgid "Błąd sieci — spróbuj ponownie."
 msgstr "Network error — please try again."
 
@@ -1076,7 +1081,8 @@ msgstr ""
 
 #: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:12
 #, python-format
-msgid "%(actor_name)s changed status from \"%(old_status)s\" to \"%(new_status)s\"."
+msgid ""
+"%(actor_name)s changed status from \"%(old_status)s\" to \"%(new_status)s\"."
 msgstr ""
 
 #: crm/notification/templates/notification/inapp/staff/review_requested.txt:9
@@ -1438,8 +1444,7 @@ msgstr ""
 msgid "Revoke head status for this department before removing."
 msgstr ""
 
-#: crm/users/admin/user.py:46 crm/users/admin/user.py:290
-#: crm/users/forms.py:34
+#: crm/users/admin/user.py:46 crm/users/admin/user.py:290 crm/users/forms.py:34
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:31
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:24
 #: crm/users/templates/users/user_detail.html:15 crm/zetom/admin/base.py:43
@@ -1529,8 +1534,7 @@ msgstr ""
 
 #: crm/users/models.py:95
 msgid ""
-"A department can be marked as head-of only if the user already belongs to "
-"it."
+"A department can be marked as head-of only if the user already belongs to it."
 msgstr ""
 
 #: crm/users/signals.py:41
@@ -1864,8 +1868,8 @@ msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:107
 msgid ""
-"You can view permissions but not change them. The 'edit_roles' permission is"
-" required to assign roles and individual permissions."
+"You can view permissions but not change them. The 'edit_roles' permission is "
+"required to assign roles and individual permissions."
 msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:111
@@ -2734,8 +2738,7 @@ msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:316
 msgid ""
-"Notification will be sent in-app to the specialist who requested this "
-"review."
+"Notification will be sent in-app to the specialist who requested this review."
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:320
@@ -3134,8 +3137,8 @@ msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:201
 msgid ""
-"Move all duplicates to trash / cancel them? This is a soft delete and can be"
-" undone."
+"Move all duplicates to trash / cancel them? This is a soft delete and can be "
+"undone."
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:202

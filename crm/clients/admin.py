@@ -2,11 +2,12 @@ from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import path
+from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
+from crm.zetom.models import DepartmentsVariants, RequestMain
 
 from . import views
 from .forms import ClientForm
@@ -14,6 +15,36 @@ from .models import (
     Client, ClientInteraction, ClientType, Company, CompanyPersonLink,
 )
 from .services import build_request_rows, get_client_request_summary
+
+# claude — Phase 3a Task 3: RequestStatus → the four status-badge CSS classes
+# the design defines (company_card.css `.st.*`). RequestMain's real statuses
+# don't map 1:1 onto the handoff's Aktywne/Oczekuje/Wygrane/Zamknięte set (no
+# "won" concept here), so closed/inactive/cancelled/deleted all fall back to
+# the neutral "zamkniete" bucket.
+_ZGLOSZENIE_STATUS_CLASS = {
+    RequestStatus.active: "aktywne",
+    RequestStatus.open: "oczekuje",
+    RequestStatus.closed: "zamkniete",
+    RequestStatus.inactive: "zamkniete",
+    RequestStatus.cancelled: "zamkniete",
+    RequestStatus.deleted: "zamkniete",
+}
+
+
+# claude — human, non-technical row title for a RequestMain on the Company
+# card (README §"НЕ делать": no raw model names like RequestMain in UI).
+def _zgloszenie_label(req: RequestMain) -> str:
+    return _("Zgłoszenie nr %(pk)s / %(year)s") % {
+        "pk": req.pk, "year": req.created_at.year,
+    }
+
+
+# claude — first department code of a request → its PL label (ArrayField).
+def _zgloszenie_dept_label(codes) -> str:
+    if not codes:
+        return ""
+    labels = dict(DepartmentsVariants.choices)
+    return str(labels.get(codes[0], codes[0]))
 
 
 # БАГ-9 + БАГ-10: inline история контактов прямо в карточке клиента
@@ -349,8 +380,42 @@ class CompanyAdmin(admin.ModelAdmin):
                 )
             )),
             "osoby_data": [views.company_person_row(link) for link in osoby],
-            "zgloszenia": [],
-            "historia": [],
+            # claude — Powiązane zgłoszenia (Task 3). Real RequestMain rows,
+            # newest first; whole `.req` row links to the standard admin
+            # change view (see change_form.html).
+            "zgloszenia": [
+                {
+                    "label": _zgloszenie_label(req),
+                    "data": req.created_at,
+                    "dept": _zgloszenie_dept_label(req.departments),
+                    "status_label": req.get_status_display(),
+                    "status_class": _ZGLOSZENIE_STATUS_CLASS.get(req.status, "zamkniete"),
+                    "url": reverse("admin:zetom_requestmain_change", args=[req.pk]),
+                }
+                for req in RequestMain.objects.filter(company=company).order_by("-created_at")
+            ],
+            # claude — Historia kontaktów (Task 3), read-only. Interactions of
+            # every person linked to this company (CompanyPersonLink), newest
+            # first. No write endpoint — the template shows the readonly-note.
+            "historia": [
+                {
+                    "data": interaction.contacted_at,
+                    "kanal_label": interaction.get_channel_display(),
+                    "sotrudnik": (
+                        interaction.contacted_by.get_full_name()
+                        or interaction.contacted_by.username
+                    ) if interaction.contacted_by else "",
+                    "kontakt_osoba": interaction.contact_person or interaction.client.full_name(),
+                    "zaglowek": _zgloszenie_label(interaction.request) if interaction.request else "",
+                    "summary": interaction.summary,
+                }
+                for interaction in (
+                    ClientInteraction.objects
+                    .filter(client__company_links__company=company)
+                    .select_related("client", "contacted_by", "request")
+                    .order_by("-contacted_at")
+                )
+            ],
         }
 
     # claude — fully custom Detail (change_form). Bypasses the default

@@ -123,7 +123,7 @@ html.dark .cc-stage {
 
 /* powiazane zgloszenia */
 .cc-stage .reqs { display: flex; flex-direction: column; }
-.cc-stage .req { display: flex; align-items: center; gap: 16px; padding: 16px 22px; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); cursor: pointer; }
+.cc-stage .req { display: flex; align-items: center; gap: 16px; padding: 16px 22px; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); cursor: pointer; text-decoration: none; color: inherit; }
 .cc-stage .req:last-child { border-bottom: none; }
 .cc-stage .req:hover { background: var(--bg-2); }
 .cc-stage .req-ico { width: 42px; height: 42px; border-radius: 11px; background: var(--bg-3); color: var(--text-2); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }

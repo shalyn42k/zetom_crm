@@ -172,14 +172,14 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
         {% if zgloszenia %}
         <div class="reqs">
           {% for r in zgloszenia %}
-          <div class="req">
+          <a class="req" href="{{ r.url }}">
             <span class="req-ico"><svg class="i"><use href="#cc-i-doc"/></svg></span>
             <div class="req-main">
-              <div class="req-title">{{ r.title }}</div>
-              <div class="req-meta">{{ r.date }} · {{ r.dept }}</div>
+              <div class="req-title">{{ r.label }}</div>
+              <div class="req-meta">{{ r.data|date:"d.m.Y" }}{% if r.dept %} · {{ r.dept }}{% endif %}</div>
             </div>
             <span class="st {{ r.status_class }}">{{ r.status_label }}</span>
-          </div>
+          </a>
           {% endfor %}
         </div>
         {% else %}
@@ -201,8 +201,10 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
           <div class="hev">
             <div class="dotcol"><span class="dot"></span><span class="line"></span></div>
             <div class="hbody">
-              <div class="hmeta"><span class="hdate">{{ h.date }}</span>·<span class="hwho">{{ h.who }}</span></div>
-              <div class="htext">{{ h.text }}</div>
+              <div class="hmeta">
+                <span class="hdate">{{ h.data|date:"d.m.Y H:i" }}</span>·<span class="hwho">{{ h.kanal_label }}</span>·<span class="hwho">{{ h.sotrudnik|default:"—" }} → {{ h.kontakt_osoba|default:"—" }}</span>{% if h.zaglowek %}·<span class="hwho">{{ h.zaglowek }}</span>{% endif %}
+              </div>
+              <div class="htext">{{ h.summary }}</div>
             </div>
           </div>
           {% endfor %}
