@@ -1,5 +1,7 @@
 # Django imports
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 # Other imports
@@ -59,6 +61,14 @@ class RequestTemplate(SafeDeleteModel):
         models.CharField(max_length=30, choices=DepartmentsVariants.choices),
         default=list,
         blank=True,
+    )
+    # Unified timeline notes ("what was done" + note body) used across
+    # RequestMain and child documents.
+    step_notes = GenericRelation(
+        "StepNote",
+        content_type_field="target_content_type",
+        object_id_field="target_object_id",
+        related_query_name="request_objects",
     )
 
     class Meta:
@@ -319,6 +329,46 @@ class WniosekClientLink(models.Model):
 
     def __str__(self):
         return f"{self.request_id} ↔ {self.client_id}"
+
+
+class StepNote(models.Model):
+    author = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="step_notes",
+        verbose_name=_("Author"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
+    action = models.CharField(max_length=255, blank=True, verbose_name=_("What was done"))
+    text = models.TextField(verbose_name=_("Note"))
+    next_contact_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Next client contact at"),
+    )
+
+    target_content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        related_name="step_notes",
+        verbose_name=_("Target content type"),
+    )
+    target_object_id = models.PositiveIntegerField(verbose_name=_("Target object id"))
+    target = GenericForeignKey("target_content_type", "target_object_id")
+
+    class Meta:
+        verbose_name = _("Step note")
+        verbose_name_plural = _("Step notes")
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["target_content_type", "target_object_id", "-created_at"]),
+        ]
+
+    def __str__(self):
+        who = self.author.username if self.author_id else "system"
+        return f"{who}: {self.action or self.text[:40]}"
 
 
 class DeletedRequest(RequestMain):  # proxy może otwierać te same dane w innych klasach

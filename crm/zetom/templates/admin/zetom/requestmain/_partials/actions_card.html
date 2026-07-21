@@ -77,6 +77,21 @@
         </button>
       </li>
       {% endif %}
+
+      {% if step_notes_enabled %}
+      <li class="rm-action">
+        <span class="rm-action__icon" aria-hidden="true">📝</span>
+        <span class="rm-action__meta">
+          <span class="rm-action__name">{% trans "Step notes" %}</span>
+          <span class="rm-action__sub">{% trans "Timeline of actions and notes for colleagues" %}</span>
+        </span>
+        <button type="button"
+                class="rm-btn rm-btn--primary rm-btn--sm"
+                @click="$dispatch('open-step-notes')">
+          {% trans "Open" %}
+        </button>
+      </li>
+      {% endif %}
     </ul>
   </div>
 
