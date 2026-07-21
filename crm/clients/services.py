@@ -1,7 +1,10 @@
 # claude
+# claude
+from django.core.exceptions import ValidationError
 from django.urls import reverse
 
-from crm.clients.models import Client
+from crm.clients.models import Client, Company, CompanyPersonLink
+from crm.clients.validators import normalize_nip
 from crm.status_manager.services.statuses import RequestStatus
 from crm.zetom.models import DepartmentsVariants
 
@@ -82,3 +85,42 @@ def get_client_request_summary(client: Client) -> dict:
         "zlecenie": zlecenie_count,
         "wniosek": wniosek_count,
     }
+
+
+# claude — единая точка создания «человек + (опц.) фирма» для интейка.
+# Дедуп фирмы повторяет логику backfill: по NIP, иначе по имени.
+def create_person_with_company(
+    *, first_name="", last_name="", phone=None, email="",
+    company_name="", company_nip=None, address="", linked_by=None,
+):
+    client = Client.objects.create(
+        first_name=first_name or None,
+        last_name=last_name or None,
+        phone=phone or None,
+        email=email or None,
+    )
+
+    nip = None
+    if company_nip:
+        try:
+            nip = normalize_nip(company_nip)
+        except ValidationError:
+            nip = None
+
+    company = None
+    if nip:
+        company, _created = Company.objects.get_or_create(
+            nip=nip,
+            defaults={"name": company_name or nip, "comments": address or ""},
+        )
+    elif company_name:
+        stripped = company_name.strip()
+        company = Company.objects.filter(name__iexact=stripped).order_by("id").first()
+        if company is None:
+            company = Company.objects.create(name=stripped, comments=address or "")
+
+    if company is not None:
+        CompanyPersonLink.objects.get_or_create(
+            company=company, person=client, defaults={"linked_by": linked_by},
+        )
+    return client, company
