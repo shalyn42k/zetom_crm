@@ -819,14 +819,10 @@ msgid "Dane osoby."
 msgstr "Dane osoby."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:86
-#, fuzzy
-#| msgid "e.g. Jan"
 msgid "np. Jan"
 msgstr "np. Jan"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:87
-#, fuzzy
-#| msgid "e.g. Kowalski"
 msgid "np. Kowalski"
 msgstr "np. Kowalski"
 

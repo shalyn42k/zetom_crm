@@ -70,6 +70,20 @@ def _zgloszenie_dept_label(codes) -> str:
     return str(labels.get(codes[0], codes[0]))
 
 
+# claude — Phase 3b Task 1: id-hero avatar initials for the Person card.
+# Prefers first_name/last_name (uppercased first letters); if both are
+# blank, falls back to the first two characters of str(client) (e.g. a
+# person recorded under a company-style display name); "?" if there's
+# nothing at all to build initials from.
+def _person_initials(client) -> str:
+    first = (client.first_name or "").strip()
+    last = (client.last_name or "").strip()
+    if first or last:
+        return (first[:1] + last[:1]).upper()
+    fallback = str(client).strip()
+    return fallback[:2].upper() if fallback else "?"
+
+
 # claude — Phase 3b Task 1: combined "Powiązane zgłoszenia" rows for the
 # Person card (RequestMain + Oferta + Zlecenie + Wniosek together, newest
 # first). Reuses build_request_rows for the per-type query shaping (same
@@ -304,6 +318,10 @@ class ClientAdmin(admin.ModelAdmin):
             "client": client,
             "can_edit": can_edit,
             "has_view_permission": True,
+            # claude — id-hero avatar initials: first_name[0]+last_name[0]
+            # uppercased; falls back to str(client)'s first two chars, then
+            # "?" if there's nothing at all to build initials from.
+            "person_initials": _person_initials(client),
             # claude — Dane osobowe panel + mOsobowe modal seed. Never reads
             # Client.company_name/company_nip/client_type — only the
             # person's own identity fields.

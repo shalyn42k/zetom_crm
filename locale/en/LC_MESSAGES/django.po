@@ -808,10 +808,8 @@ msgid "Dane osoby."
 msgstr "Dane osoby."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:86
-#, fuzzy
-#| msgid "np. Marek"
 msgid "np. Jan"
-msgstr "np. Marek"
+msgstr "np. Jan"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:87
 msgid "np. Kowalski"
