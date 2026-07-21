@@ -98,8 +98,8 @@ NIP и название фирмы уезжают с `Person` на `Company`. В
 - **Фаза 1 — фундамент (additive, ничего не ломает):** модели `Company` + `CompanyPersonLink`; `RequestMain.company` (nullable); admin-регистрация Company + inline; data-migration бэкфилла из существующих `Client.company_*`. `Client` пока не трогаем — дуальное состояние, всё работает.
 - **Фаза 2 — Company-aware консьюмеры + удаление company_* (БЕЗ rename).** Дробится:
   - **2a** — Company-aware read-слой: хелпер «фирмы человека» на `Client`; переписать VW-дедуп (`duplicate_matcher`) и search/autofill (`views.py`) читать NIP/название из `Company` через связь (company_* ещё существуют как fallback, тесты зелёные).
-  - **2b** — интейк create/link (`requestmain.py`, `requestnull_validate.py`, `admin/base.py`) → выбирать/создавать `Company` по NIP + `Client`(person), ставить `RequestMain.company`; `ClientForm` без company-полей; `ClientAdmin` без сегмента `client_type`.
-  - **2c** — удалить `company_name`/`company_nip`/`client_type` с `Client` + миграция очистки company-only строк + UI-лейбл `Client`→«Osoba» + i18n.
+  - **2b** — интейк create/link (`requestnull_validate._do_approve`, `requestmain.response_add`, `admin/base.py` prefill) через общий хелпер `create_person_with_company`: создавать/находить `Company` по NIP + `Client`(person) + связь, ставить `RequestMain.company`; перестать писать `company_*` на `Client`.
+  - **2c** — `ClientForm` без company-полей + `ClientAdmin` без сегмента `client_type`/колонок company + миграция очистки company-only строк + удалить `company_name`/`company_nip`/`client_type` с `Client` + UI-лейбл `Client`→«Osoba» + i18n. (ClientForm/ClientAdmin здесь, а не в 2b: они связаны с существованием полей и с Phase-3 переверсткой List.)
 - **Фаза 3 — поверхности #11/#12:** единый список «Klienci», карточки фирмы/человека, блок «Osoby kontaktowe» + «+» — по выходу дизайн-агента.
 
 Планы пишутся по фазам: Фаза 1 (готово); Фаза 2 по под-этапам 2a→2b→2c; Фаза 3 — после дизайн-агента.
