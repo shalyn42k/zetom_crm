@@ -50,3 +50,14 @@ class BackfillTest(TestCase):
         _run()
         self.assertEqual(Company.objects.count(), 1)
         self.assertEqual(CompanyPersonLink.objects.count(), 1)
+
+    def test_duplicate_company_name_no_crash(self):
+        # Два клиента с разными валидными по формату NIP → две разные фирмы
+        # "Zetom" (дедуп по NIP). Третий клиент без NIP уходит в name-ветку,
+        # где name="Zetom" уже неоднозначен (две записи Company).
+        Client.objects.create(first_name="A", company_name="Zetom", company_nip="1234567890")
+        Client.objects.create(first_name="B", company_name="Zetom", company_nip="1111111111")
+        Client.objects.create(first_name="C", company_name="Zetom")
+        _run()
+        self.assertEqual(Company.objects.filter(name__iexact="Zetom").count(), 2)
+        self.assertEqual(CompanyPersonLink.objects.count(), 3)

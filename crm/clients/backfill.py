@@ -30,12 +30,15 @@ def backfill_companies(Client, Company, CompanyPersonLink, RequestMain, RequestC
         if company is None:
             kind, value = key
             if kind == "nip":
-                lookup = {"nip": value}
-                defaults = {"name": client.company_name or value, "comments": client.address or ""}
-            else:  # dedup by name
-                lookup = {"name": client.company_name.strip()}
-                defaults = {"comments": client.address or ""}
-            company, _created = Company.objects.get_or_create(**lookup, defaults=defaults)
+                company, _created = Company.objects.get_or_create(
+                    nip=value,
+                    defaults={"name": client.company_name or value, "comments": client.address or ""},
+                )
+            else:  # dedup by name — case-insensitive, tolerant of pre-existing duplicate names
+                stripped = client.company_name.strip()
+                company = Company.objects.filter(name__iexact=stripped).order_by("id").first()
+                if company is None:
+                    company = Company.objects.create(name=stripped, comments=client.address or "")
             cache[key] = company
         CompanyPersonLink.objects.get_or_create(company=company, person=client)
 
