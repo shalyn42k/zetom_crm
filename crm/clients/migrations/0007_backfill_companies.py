@@ -14,16 +14,11 @@ def forwards(apps, schema_editor):
     )
 
 
-def backwards(apps, schema_editor):
-    # Реверс: снять company с заявок, удалить связи и компании.
-    apps.get_model("zetom", "RequestMain").objects.update(company=None)
-    apps.get_model("clients", "CompanyPersonLink").objects.all().delete()
-    apps.get_model("clients", "Company").objects.all().delete()
-
-
 class Migration(migrations.Migration):
     dependencies = [
         ("clients", "0006_company_companypersonlink"),
         ("zetom", "0013_historicalrequestmain_company_requestmain_company"),
     ]
-    operations = [migrations.RunPython(forwards, backwards)]
+    # claude — реверс сделан no-op: старый backwards() необратимо удалял
+    # все Company/CompanyPersonLink и обнулял RequestMain.company.
+    operations = [migrations.RunPython(forwards, migrations.RunPython.noop)]
