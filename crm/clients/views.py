@@ -10,7 +10,7 @@ from django.views import View
 from django.views.decorators.http import require_POST
 
 from crm.clients.forms import ClientForm
-from crm.clients.models import Client
+from crm.clients.models import Client, Company
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
 from crm.zetom.models import (
@@ -44,28 +44,43 @@ class ClientSearchView(View):
             if maybe_nip:
                 query_terms.append(maybe_nip)
 
+        # claude — Company-aware search: match Client by first/last name AND by linked
+        # Company name/nip; derive label/company_nip/address from first linked company.
         query = Q()
         for term in set(query_terms):
-            query |= Q(company_name__icontains=term)
-            query |= Q(company_nip__icontains=term)
             query |= Q(first_name__icontains=term)
             query |= Q(last_name__icontains=term)
+            query |= Q(company_links__company__name__icontains=term)
+            query |= Q(company_links__company__nip__icontains=term)
 
-        clients = Client.objects.filter(query).order_by("company_name", "last_name")[:20]
+        clients = (
+            Client.objects.filter(query)
+            .prefetch_related("company_links__company")
+            .distinct()
+            .order_by("last_name")[:20]
+        )
 
-        return JsonResponse({
-            "results": [
-                {
-                    "id": c.id,
-                    "label": c.company_name or f"{c.first_name} {c.last_name}" or f"Client #{c.id}",
-                    "email": c.email,
-                    "phone": c.phone.as_international if c.phone else "",
-                    "company_nip": c.company_nip,
-                    "address": c.address,
-                }
-                for c in clients
-            ]
-        })
+        def _company_of(c):
+            link = c.company_links.first()
+            return link.company if link else None
+
+        results = []
+        for c in clients:
+            company = _company_of(c)
+            label = (
+                (company.name if company else None)
+                or f"{c.first_name or ''} {c.last_name or ''}".strip()
+                or f"Client #{c.id}"
+            )
+            results.append({
+                "id": c.id,
+                "label": label,
+                "email": c.email,
+                "phone": c.phone.as_international if c.phone else "",
+                "company_nip": company.nip if company else "",
+                "address": company.comments if company else "",
+            })
+        return JsonResponse({"results": results})
 
 
 
@@ -79,20 +94,23 @@ def client_autofill(request):
     if not nip:
         return JsonResponse({"error": "no_nip"}, status=400)
 
-    try:
-        client = Client.objects.get(company_nip=nip)
-        return JsonResponse({
-            "exists": True,
-            "first_name": client.first_name,
-            "last_name": client.last_name,
-            "company_name": client.company_name,
-            "company_nip": client.company_nip,
-            "email": client.email,
-            "phone": client.phone.as_international if client.phone else "",
-            "address": client.address,
-        })
-    except Client.DoesNotExist:
+    # claude — autofill now resolves Company by NIP (NIP moved from Client to
+    # Company), and pulls the first linked person.
+    company = Company.objects.filter(nip=nip).first()
+    if company is None:
         return JsonResponse({"exists": False})
+    link = company.person_links.first()
+    person = link.person if link else None
+    return JsonResponse({
+        "exists": True,
+        "first_name": person.first_name if person else "",
+        "last_name": person.last_name if person else "",
+        "company_name": company.name,
+        "company_nip": company.nip,
+        "email": (person.email if person else "") or "",
+        "phone": person.phone.as_international if (person and person.phone) else "",
+        "address": company.comments or "",
+    })
 
 
 # claude — attach/detach/search for the Client Detail request tabs.
