@@ -16,6 +16,7 @@ from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 
 from crm.clients.models import Client
+from crm.clients.services import create_person_with_company
 from crm.notification.services.inapp_service import (
     dismiss_pending_review_requests,
 )
@@ -141,17 +142,22 @@ class RequestMainAdmin(
                     request=obj, client=cl, defaults={"linked_by": request.user}
                 )
         if request.POST.get("popup_create_new"):
-            cl = Client.objects.create(
+            # claude — человек + (опц.) нормализованная Company вместо company_* на Client.
+            cl, company = create_person_with_company(
                 first_name=request.POST.get("first_name") or obj.first_name,
                 last_name=request.POST.get("last_name") or obj.last_name,
-                company_name=request.POST.get("company_name") or obj.company_name,
-                company_nip=request.POST.get("company_nip") or obj.company_nip or None,
                 phone=request.POST.get("phone") or obj.phone,
                 email=request.POST.get("email") or obj.email,
+                company_name=request.POST.get("company_name") or obj.company_name,
+                company_nip=request.POST.get("company_nip") or obj.company_nip or None,
+                linked_by=request.user,
             )
             RequestClientLink.objects.get_or_create(
                 request=obj, client=cl, defaults={"linked_by": request.user}
             )
+            if company is not None and obj.company_id is None:
+                obj.company = company
+                obj.save(update_fields=["company"])
         departments = request.POST.getlist("popup_departments")
         owners_raw = request.POST.getlist("popup_owners")
         if departments:
