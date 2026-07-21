@@ -75,6 +75,30 @@ ClientInteraction  (без изменений в этом заходе; толь
 - «Контактные лица фирмы» = `Person`, связанные с данной `Company`.
 - Заявитель по заявке может отличаться от того, с кем реально идёт контакт (это уровень истории/нот — паркуется).
 
+## 3.1. Search / autofill / intake — Company-aware (решение)
+
+NIP и название фирмы уезжают с `Person` на `Company`. Все консьюмеры этих полей переписываются на Company (без денормализованного зеркала):
+- **Поиск клиента** (`ClientSearchView`): матчит `Company`(name/nip) + `Person`(имя).
+- **Autofill-по-NIP** (`client_autofill`): резолвит `Company` по NIP, префиллит фирменный блок.
+- **VW-дедуп** (`duplicate_matcher._candidate_queryset`/`_score_one`): ранжирует кандидатов по `Company.nip`/`Company.name` (+ `Person` по имени/контактам); highlights бьют по Company-полям.
+- **Интейк-создание** (`requestmain.py`, `requestnull_validate.py`, `admin/base.py`): при линке/создании выбирает/создаёт `Company` по NIP + опц. `Person`, вешает `RequestClientLink`(→Person) и `RequestMain.company`.
+- Снапшот `company_name`/`company_nip` НА самой заявке (`RequestTemplate`) — **остаётся** (интейк-текст, как в Zetbase); autofill префиллит его из найденной `Company`.
+
+## 3.2. Blast radius (уточнённый, честный)
+
+Не «механический rename». Затрагивает недавно доделанное:
+- `crm/clients/`: models, forms(`ClientForm`), fields(`ClientField`), views(search/autofill/attach/detach/suggest/create), admin(`ClientAdmin` List/Detail + сегмент `client_type`, `ClientInteractionInline`/`Admin`), services, urls, tests.
+- `crm/zetom/`: `services/duplicate_matcher.py` (VW-дедуп), `admin/requestnull_validate.py` (VW-форма), `admin/requestmain.py` (create/link на save), `admin/base.py` («Create new» prefill), 4 through-модели (`*ClientLink` → авто-follow rename), tests.
+- Не затрагивает: `notification` (читает `parent.company_name` заявки), request-снапшот-поля.
+
+## 3.3. Фазировка (каждая фаза — рабочий, тестируемый софт)
+
+- **Фаза 1 — фундамент (additive, ничего не ломает):** модели `Company` + `CompanyPersonLink`; `RequestMain.company` (nullable); admin-регистрация Company + inline; data-migration бэкфилла из существующих `Client.company_*`. `Client` пока не трогаем — дуальное состояние, всё работает.
+- **Фаза 2 — rename + Company-aware консьюмеры:** `Client`→`Person`; переписать search/autofill/VW-дедуп/интейк на Company; `ClientForm`→`PersonForm` + `CompanyForm`; `ClientAdmin`→`PersonAdmin`+`CompanyAdmin`; удалить `company_name`/`company_nip`/`client_type` с `Person`.
+- **Фаза 3 — поверхности #11/#12:** единый список «Klienci», карточки фирмы/человека, блок «Osoby kontaktowe» + «+» — по выходу дизайн-агента.
+
+Планы пишутся по фазам: Фаза 1 сейчас; Фаза 2 — после того как Фаза 1 применена и оттестирована; Фаза 3 — после дизайн-агента.
+
 ## 4. Стратегия миграции данных
 
 1. Создать `Company`, `CompanyPersonLink` (пустые).
@@ -125,5 +149,7 @@ powiązane zgłoszenia; historia kontaktów (read-only).
 ## 8. Открытые/паркованные вопросы
 
 - Ноты (`StepNote`) + запись разговоров + напоминания «кому написать»/`next_contact`→дедлайн — **отдельная тема**, кросс-модуль (владельцы пункта 1, #7). Решить где живёт «дата следующего контакта» до реализации #7.
+- **Event-уведомления** «сотруднику пришло: клиент ответил / кто-то оставил запись» — новая фича поверх модуля `notification` (уже умеет in-app + mail + роутинг на dep_head). Downstream от write-флоу нот/ContactLog: событие появляется только когда есть запись. Порядок: структура → ноты/ContactLog write → event-уведомления.
 - Филиалы `Oddziały`/`Filia` — v2.
 - Дашборд #13 — отдельный спек.
+- Права на `Company`/`CompanyPersonLink` в RBAC (`users/signals.py`, чужой модуль) — координация с владельцем ролей.
