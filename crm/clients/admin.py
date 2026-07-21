@@ -268,6 +268,9 @@ class CompanyAdmin(admin.ModelAdmin):
     list_filter = ("type_supplier",)
     inlines = [CompanyPersonLinkInline]
 
+    # claude — Фаза 3a: кастомная карточка фирмы (см. design_handoff_clients_unified §2).
+    change_form_template = "admin/clients/company/change_form.html"
+
     def has_module_permission(self, request):
         return user_has_perm(request.user, "view_clients")
 
@@ -282,6 +285,56 @@ class CompanyAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return user_has_perm(request.user, "delete_clients")
+
+    # claude — panel data-contract for the change_form template. Osoby/
+    # zgloszenia/historia are wired for real (Task 3 polishes their visuals);
+    # empty querysets render the `.empty` panel states from the handoff.
+    def _build_company_context(self, request, company):
+        can_edit = user_has_perm(request.user, "edit_clients")
+        return {
+            **self.admin_site.each_context(request),
+            "title": _("Company Detail"),
+            "opts": self.model._meta,
+            "company": company,
+            "can_edit": can_edit,
+            "has_view_permission": True,
+            "dane_podstawowe": {
+                "nazwa": company.name,
+                "nip": company.nip,
+                "regon": company.regon,
+                "typ_label": company.get_type_supplier_display(),
+            },
+            "dane_szczegolowe": {
+                "kraj": company.country,
+                "miasto": company.city,
+                "wojewodztwo": company.voivodeship,
+                "kod": company.post_code,
+                "ulica": company.street,
+                "email": company.email,
+                "telefon": company.phone,
+            },
+            "osoby": list(
+                company.person_links.select_related("person").order_by(
+                    "-is_primary", "person__last_name",
+                )
+            ),
+            "zgloszenia": [],
+            "historia": [],
+        }
+
+    # claude — fully custom Detail (change_form). Bypasses the default
+    # change_view rendering (renders the id-hero + Dane panels layout from
+    # the design handoff) but keeps the standard permission gate.
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+
+        company = get_object_or_404(Company, pk=object_id)
+        context = {
+            **self._build_company_context(request, company),
+            **(extra_context or {}),
+        }
+        return render(request, self.change_form_template, context)
 
 
 # БАГ-9 + БАГ-10: отдельный раздел для просмотра всех контактов

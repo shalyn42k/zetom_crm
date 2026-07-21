@@ -1,0 +1,186 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% comment %}
+Company Detail — custom change_form for CompanyAdmin (Phase 3a Task 1).
+Identity hero + Dane podstawowe / Dane szczegółowe panels, plus empty
+scaffolds for Osoby kontaktowe / Powiązane zgłoszenia / Historia kontaktów
+(filled in by later Phase 3a tasks). Reproduces the "Firma" screen from
+design_handoff_clients_unified/Zetom Klienci.html §2.
+{% endcomment %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}">
+{% endblock extrastyle %}
+
+{% block content %}
+<svg class="cc-sprite" xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0">
+  <symbol id="cc-i-arrow-l" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+  <symbol id="cc-i-building" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></symbol>
+  <symbol id="cc-i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+  <symbol id="cc-i-map" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></symbol>
+  <symbol id="cc-i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="cc-i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+  <symbol id="cc-i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="cc-i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="cc-i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+  <symbol id="cc-i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="cc-i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+</svg>
+
+<div class="cc-stage">
+
+  <div class="backrow">
+    <a class="btn-back" href="{% url 'admin:clients_company_changelist' %}"><svg class="i"><use href="#cc-i-arrow-l"/></svg> {% trans "Wróć" %}</a>
+    <span class="podglad-tag"><b>{% trans "Klient / Firma" %}</b> · podgląd</span>
+  </div>
+
+  <div class="id-hero">
+    <span class="ava">{{ company.name|slice:":2"|upper }}</span>
+    <div>
+      <div class="h-nm">
+        {{ company.name }}
+        <span class="pill company"><svg class="i"><use href="#cc-i-building"/></svg> {% trans "Firma" %}</span>
+      </div>
+      <div class="h-sub">
+        {% if company.type_supplier %}<span class="chip {{ company.type_supplier }}">{{ dane_podstawowe.typ_label }}</span>{% endif %}
+        {% if company.nip %}<span>{% trans "NIP" %} {{ company.nip }}</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="grid2">
+      {# Dane podstawowe #}
+      <div class="panel">
+        <div class="panel-h">
+          <h2><svg class="i hico"><use href="#cc-i-info"/></svg> {% trans "Dane podstawowe" %}</h2>
+          {% if can_edit %}<button type="button" class="edit-btn" title="{% trans 'Edytuj' %}"><svg class="i"><use href="#cc-i-edit"/></svg></button>{% endif %}
+        </div>
+        <div class="fields">
+          <div class="frow"><span class="fk">{% trans "Nazwa" %}</span><span class="fv{% if not dane_podstawowe.nazwa %} none{% endif %}">{{ dane_podstawowe.nazwa|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "NIP" %}</span><span class="fv{% if not dane_podstawowe.nip %} none{% endif %}">{{ dane_podstawowe.nip|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "REGON" %}</span><span class="fv{% if not dane_podstawowe.regon %} none{% endif %}">{{ dane_podstawowe.regon|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "Typ dostawcy" %}</span><span class="fv">{% if company.type_supplier %}<span class="chip {{ company.type_supplier }}">{{ dane_podstawowe.typ_label }}</span>{% else %}<span class="fv none">—</span>{% endif %}</span></div>
+        </div>
+      </div>
+
+      {# Dane szczegółowe #}
+      <div class="panel">
+        <div class="panel-h">
+          <h2><svg class="i hico"><use href="#cc-i-map"/></svg> {% trans "Dane szczegółowe" %}</h2>
+          {% if can_edit %}<button type="button" class="edit-btn" title="{% trans 'Edytuj' %}"><svg class="i"><use href="#cc-i-edit"/></svg></button>{% endif %}
+        </div>
+        <div class="fields">
+          <div class="frow"><span class="fk">{% trans "Kraj" %}</span><span class="fv{% if not dane_szczegolowe.kraj %} none{% endif %}">{{ dane_szczegolowe.kraj|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "Miasto" %}</span><span class="fv{% if not dane_szczegolowe.miasto %} none{% endif %}">{{ dane_szczegolowe.miasto|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "Województwo" %}</span><span class="fv{% if not dane_szczegolowe.wojewodztwo %} none{% endif %}">{{ dane_szczegolowe.wojewodztwo|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "Kod pocztowy" %}</span><span class="fv{% if not dane_szczegolowe.kod %} none{% endif %}">{{ dane_szczegolowe.kod|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "Ulica" %}</span><span class="fv{% if not dane_szczegolowe.ulica %} none{% endif %}">{{ dane_szczegolowe.ulica|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "E-mail" %}</span><span class="fv{% if not dane_szczegolowe.email %} none{% endif %}">{{ dane_szczegolowe.email|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "Telefon" %}</span><span class="fv{% if not dane_szczegolowe.telefon %} none{% endif %}">{{ dane_szczegolowe.telefon|default:"—" }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    {# Osoby kontaktowe #}
+    <div class="panel">
+      <div class="panel-h">
+        <h2><svg class="i hico"><use href="#cc-i-users"/></svg> {% trans "Osoby kontaktowe" %}{% if osoby %} <span class="count">{{ osoby|length }}</span>{% endif %}</h2>
+        {% if can_edit %}<button type="button" class="btn sm"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Dodaj osobę kontaktową" %}</button>{% endif %}
+      </div>
+      {% if osoby %}
+      <table class="inner">
+        <thead>
+          <tr>
+            <th>{% trans "Imię" %}</th><th>{% trans "Nazwisko" %}</th><th>{% trans "E-mail" %}</th>
+            <th>{% trans "Telefon" %}</th><th>{% trans "Stanowisko" %}</th>
+            {% if can_edit %}<th class="act">{% trans "Operacje" %}</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for link in osoby %}
+          <tr>
+            <td><span class="pname">{% if link.is_primary %}<svg class="i i-sm primary-star" title="{% trans 'Główny kontakt' %}"><use href="#cc-i-star"/></svg>{% endif %} {{ link.person.first_name }}</span></td>
+            <td>{{ link.person.last_name }}</td>
+            <td class="muted">{{ link.person.email|default:"—" }}</td>
+            <td>{{ link.person.phone|default:"—" }}</td>
+            <td class="stan">{{ link.position|default:"—" }}</td>
+            {% if can_edit %}
+            <td>
+              <div class="ops">
+                <button type="button" class="opbtn" title="{% trans 'Edytuj' %}"><svg class="i i-sm"><use href="#cc-i-edit"/></svg></button>
+                <button type="button" class="opbtn del" title="{% trans 'Usuń' %}"><svg class="i i-sm"><use href="#cc-i-trash"/></svg></button>
+              </div>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty">
+        <span class="ring"><svg class="i"><use href="#cc-i-users"/></svg></span>
+        <p>{% trans "Brak osób kontaktowych przypisanych do tej firmy." %}</p>
+        {% if can_edit %}<button type="button" class="btn"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Dodaj osobę" %}</button>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="grid2">
+      {# Powiązane zgłoszenia #}
+      <div class="panel">
+        <div class="panel-h">
+          <h2><svg class="i hico"><use href="#cc-i-doc"/></svg> {% trans "Powiązane zgłoszenia" %}{% if zgloszenia %} <span class="count">{{ zgloszenia|length }}</span>{% endif %}</h2>
+        </div>
+        {% if zgloszenia %}
+        <div class="reqs">
+          {% for r in zgloszenia %}
+          <div class="req">
+            <span class="req-ico"><svg class="i"><use href="#cc-i-doc"/></svg></span>
+            <div class="req-main">
+              <div class="req-title">{{ r.title }}</div>
+              <div class="req-meta">{{ r.date }} · {{ r.dept }}</div>
+            </div>
+            <span class="st {{ r.status_class }}">{{ r.status_label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty">
+          <span class="ring"><svg class="i"><use href="#cc-i-doc"/></svg></span>
+          <p>{% trans "Brak zgłoszeń powiązanych z tą firmą." %}</p>
+        </div>
+        {% endif %}
+      </div>
+
+      {# Historia kontaktów (read-only) #}
+      <div class="panel">
+        <div class="panel-h">
+          <h2><svg class="i hico"><use href="#cc-i-clock"/></svg> {% trans "Historia kontaktów" %}</h2>
+        </div>
+        {% if historia %}
+        <div class="hist">
+          {% for h in historia %}
+          <div class="hev">
+            <div class="dotcol"><span class="dot"></span><span class="line"></span></div>
+            <div class="hbody">
+              <div class="hmeta"><span class="hdate">{{ h.date }}</span>·<span class="hwho">{{ h.who }}</span></div>
+              <div class="htext">{{ h.text }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty">
+          <span class="ring"><svg class="i"><use href="#cc-i-clock"/></svg></span>
+          <p>{% trans "Brak historii kontaktów." %}</p>
+        </div>
+        {% endif %}
+        <div class="readonly-note"><svg class="i i-sm"><use href="#cc-i-info"/></svg> {% trans "Tylko podgląd — dodawanie wpisów będzie dostępne później." %}</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
