@@ -10,7 +10,9 @@ from crm.users.utils import user_has_perm
 
 from . import views
 from .forms import ClientForm
-from .models import Client, ClientInteraction, ClientType
+from .models import (
+    Client, ClientInteraction, ClientType, Company, CompanyPersonLink,
+)
 from .services import build_request_rows, get_client_request_summary
 
 
@@ -246,6 +248,40 @@ class ClientAdmin(admin.ModelAdmin):
             **(extra_context or {}),
         }
         return render(request, self.change_form_template, context)
+
+
+# claude — контактные лица фирмы прямо в карточке Company (Osoby kontaktowe).
+class CompanyPersonLinkInline(admin.TabularInline):
+    model = CompanyPersonLink
+    extra = 0
+    fields = ("person", "position", "is_primary", "linked_by")
+    autocomplete_fields = ("person",)
+    readonly_fields = ("created_at",)
+
+
+# claude — базовая регистрация фирмы (Klient/Firma). Кастомные List/Detail
+# поверхности — Фаза 3. Права через те же RBAC-коды, что и ClientAdmin.
+@admin.register(Company)
+class CompanyAdmin(admin.ModelAdmin):
+    list_display = ("name", "nip", "type_supplier", "city", "phone", "email")
+    search_fields = ("name", "short_name", "full_name", "nip")
+    list_filter = ("type_supplier",)
+    inlines = [CompanyPersonLinkInline]
+
+    def has_module_permission(self, request):
+        return user_has_perm(request.user, "view_clients")
+
+    def has_view_permission(self, request, obj=None):
+        return user_has_perm(request.user, "view_clients")
+
+    def has_add_permission(self, request):
+        return user_has_perm(request.user, "edit_clients")
+
+    def has_change_permission(self, request, obj=None):
+        return user_has_perm(request.user, "edit_clients")
+
+    def has_delete_permission(self, request, obj=None):
+        return user_has_perm(request.user, "delete_clients")
 
 
 # БАГ-9 + БАГ-10: отдельный раздел для просмотра всех контактов
