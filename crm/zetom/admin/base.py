@@ -155,11 +155,15 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             from crm.clients.models import Client
             client = Client.objects.filter(pk=client_id).first()
             if client:
+                # claude — фирменные поля снапшота берём из связанной Company
+                # (company_* уезжают с Client в 2c).
+                link = client.company_links.first()
+                company = link.company if link else None
                 initial.update({
                     "first_name": client.first_name,
                     "last_name": client.last_name,
-                    "company_name": client.company_name,
-                    "company_nip": client.company_nip,
+                    "company_name": company.name if company else "",
+                    "company_nip": company.nip if company else "",
                     "phone": client.phone,
                     "email": client.email,
                 })
