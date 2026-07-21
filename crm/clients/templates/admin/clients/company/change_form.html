@@ -27,6 +27,7 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
   <symbol id="cc-i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
   <symbol id="cc-i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
   <symbol id="cc-i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+  <symbol id="cc-i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
 </svg>
 
 <div class="cc-stage">
@@ -84,14 +85,17 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
       </div>
     </div>
 
-    {# Osoby kontaktowe #}
-    <div class="panel">
+    {# Osoby kontaktowe — table + add/edit/delete are client-side via Alpine
+       (personPanel(), defined in the <script> block below); the server only
+       seeds the initial rows (json_script keeps this XSS-safe) so the panel
+       renders real data on first paint. #}
+    {{ osoby_data|json_script:"osoby-data" }}
+    <div class="panel" x-data="personPanel(JSON.parse(document.getElementById('osoby-data').textContent), {{ can_edit|yesno:'true,false' }})">
       <div class="panel-h">
-        <h2><svg class="i hico"><use href="#cc-i-users"/></svg> {% trans "Osoby kontaktowe" %}{% if osoby %} <span class="count">{{ osoby|length }}</span>{% endif %}</h2>
-        {% if can_edit %}<button type="button" class="btn sm"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Dodaj osobę kontaktową" %}</button>{% endif %}
+        <h2><svg class="i hico"><use href="#cc-i-users"/></svg> {% trans "Osoby kontaktowe" %} <span class="count" x-show="rows.length" x-text="rows.length" x-cloak></span></h2>
+        {% if can_edit %}<button type="button" class="btn sm" @click="openAdd()"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Dodaj osobę kontaktową" %}</button>{% endif %}
       </div>
-      {% if osoby %}
-      <table class="inner">
+      <table class="inner" x-show="rows.length" x-cloak>
         <thead>
           <tr>
             <th>{% trans "Imię" %}</th><th>{% trans "Nazwisko" %}</th><th>{% trans "E-mail" %}</th>
@@ -100,30 +104,61 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
           </tr>
         </thead>
         <tbody>
-          {% for link in osoby %}
-          <tr>
-            <td><span class="pname">{% if link.is_primary %}<svg class="i i-sm primary-star" title="{% trans 'Główny kontakt' %}"><use href="#cc-i-star"/></svg>{% endif %} {{ link.person.first_name }}</span></td>
-            <td>{{ link.person.last_name }}</td>
-            <td class="muted">{{ link.person.email|default:"—" }}</td>
-            <td>{{ link.person.phone|default:"—" }}</td>
-            <td class="stan">{{ link.position|default:"—" }}</td>
-            {% if can_edit %}
-            <td>
-              <div class="ops">
-                <button type="button" class="opbtn" title="{% trans 'Edytuj' %}"><svg class="i i-sm"><use href="#cc-i-edit"/></svg></button>
-                <button type="button" class="opbtn del" title="{% trans 'Usuń' %}"><svg class="i i-sm"><use href="#cc-i-trash"/></svg></button>
-              </div>
-            </td>
-            {% endif %}
-          </tr>
-          {% endfor %}
+          <template x-for="row in rows" :key="row.link_pk">
+            <tr>
+              <td><span class="pname"><svg class="i i-sm primary-star" title="{% trans 'Główny kontakt' %}" x-show="row.glowny"><use href="#cc-i-star"/></svg> <span x-text="row.imie"></span></span></td>
+              <td x-text="row.nazwisko"></td>
+              <td class="muted" x-text="row.email || '—'"></td>
+              <td x-text="row.telefon || '—'"></td>
+              <td class="stan" x-text="row.stanowisko || '—'"></td>
+              {% if can_edit %}
+              <td>
+                <div class="ops">
+                  <button type="button" class="opbtn" @click="openEdit(row)" title="{% trans 'Edytuj' %}"><svg class="i i-sm"><use href="#cc-i-edit"/></svg></button>
+                  <button type="button" class="opbtn del" @click="del(row)" title="{% trans 'Usuń' %}"><svg class="i i-sm"><use href="#cc-i-trash"/></svg></button>
+                </div>
+              </td>
+              {% endif %}
+            </tr>
+          </template>
         </tbody>
       </table>
-      {% else %}
-      <div class="empty">
+      <div class="empty" x-show="!rows.length" x-cloak>
         <span class="ring"><svg class="i"><use href="#cc-i-users"/></svg></span>
         <p>{% trans "Brak osób kontaktowych przypisanych do tej firmy." %}</p>
-        {% if can_edit %}<button type="button" class="btn"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Dodaj osobę" %}</button>{% endif %}
+        {% if can_edit %}<button type="button" class="btn" @click="openAdd()"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Dodaj osobę" %}</button>{% endif %}
+      </div>
+
+      {% if can_edit %}
+      {# mPerson — add/edit modal, reproduces design_handoff_clients_unified §4 #}
+      <div class="overlay" x-show="modalOpen" x-cloak @click.self="close()" @keydown.escape.window="close()">
+        <div class="modal">
+          <div class="modal-h">
+            <h3 x-text="mode === 'edit' ? '{% trans "Edytuj osobę kontaktową" %}' : '{% trans "Dodaj osobę kontaktową" %}'"></h3>
+            <p>{% trans "Osoba kontaktowa powiązana z firmą." %}</p>
+            <button type="button" class="modal-x" @click="close()"><svg class="i"><use href="#cc-i-x"/></svg></button>
+          </div>
+          <form class="modal-b" @submit.prevent="submit()">
+            <template x-if="errors.length"><div class="form-errors"><template x-for="e in errors" :key="e"><div x-text="e"></div></template></div></template>
+            <div class="field-row">
+              <div class="field"><label>{% trans "Imię" %}</label><input type="text" x-model="form.first_name" placeholder="{% trans 'np. Marek' %}"></div>
+              <div class="field"><label>{% trans "Nazwisko" %}</label><input type="text" x-model="form.last_name" placeholder="{% trans 'np. Wiśniewski' %}"></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>{% trans "Telefon" %}</label><input type="text" x-model="form.phone" placeholder="+48 …"></div>
+              <div class="field"><label>{% trans "E-mail" %}</label><input type="email" x-model="form.email" placeholder="nazwa@firma.pl"></div>
+            </div>
+            <div class="field"><label>{% trans "Stanowisko" %}</label><input type="text" x-model="form.position" placeholder="{% trans 'np. Dyrektor techniczny' %}"></div>
+            <label class="check">
+              <input type="checkbox" x-model="form.is_primary">
+              <span><span class="ct">{% trans "Główny kontakt" %}</span><span class="cd" style="display:block">{% trans "Główna osoba do kontaktu w tej firmie." %}</span></span>
+            </label>
+          </form>
+          <div class="modal-f">
+            <button type="button" class="btn" @click="close()">{% trans "Anuluj" %}</button>
+            <button type="button" class="btn primary" :disabled="saving" @click="submit()"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Zapisz" %}</button>
+          </div>
+        </div>
       </div>
       {% endif %}
     </div>
@@ -183,4 +218,106 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
     </div>
   </div>
 </div>
+
+{# claude — personPanel() must be defined unconditionally: x-data="personPanel(...)"
+   on the Osoby kontaktowe panel evaluates for every viewer (view-only users just
+   never get the add/edit/delete controls rendered, per can_edit checks above). #}
+<script>
+// claude — Osoby kontaktowe panel (Phase 3a Task 2). Alpine component that
+// drives the mPerson modal and redraws the table from the add/edit/delete
+// JSON endpoints (CompanyAdmin.get_urls: clients_company_person_add/edit/
+// delete), without a full page reload. Mirrors the fetch/CSRF pattern
+// already used by addClientModal() in the Client change_list template.
+function personPanel(initialRows, canEdit) {
+  const addUrl = "{% url 'admin:clients_company_person_add' company.pk %}";
+  const personBase = addUrl.replace(/add\/$/, '');
+  const csrfToken = '{{ csrf_token }}';
+  const confirmMsg = "{% trans 'Czy na pewno chcesz usunąć tę osobę kontaktową?' %}";
+  const emptyForm = () => ({
+    first_name: '', last_name: '', phone: '', email: '', position: '', is_primary: false,
+  });
+
+  return {
+    rows: initialRows,
+    canEdit: canEdit,
+    modalOpen: false,
+    mode: 'add',
+    editingPk: null,
+    saving: false,
+    errors: [],
+    form: emptyForm(),
+
+    openAdd() {
+      this.mode = 'add';
+      this.editingPk = null;
+      this.form = emptyForm();
+      this.errors = [];
+      this.modalOpen = true;
+    },
+    openEdit(row) {
+      this.mode = 'edit';
+      this.editingPk = row.link_pk;
+      this.form = {
+        first_name: row.imie, last_name: row.nazwisko, phone: row.telefon,
+        email: row.email, position: row.stanowisko, is_primary: row.glowny,
+      };
+      this.errors = [];
+      this.modalOpen = true;
+    },
+    close() { this.modalOpen = false; },
+
+    sortRows() {
+      this.rows.sort((a, b) => (b.glowny - a.glowny) || a.nazwisko.localeCompare(b.nazwisko));
+    },
+
+    async submit() {
+      this.saving = true;
+      this.errors = [];
+      const data = new FormData();
+      data.set('first_name', this.form.first_name);
+      data.set('last_name', this.form.last_name);
+      data.set('phone', this.form.phone);
+      data.set('email', this.form.email);
+      data.set('position', this.form.position);
+      if (this.form.is_primary) data.set('is_primary', '1');
+
+      const url = this.mode === 'add' ? addUrl : (personBase + this.editingPk + '/edit/');
+      try {
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken },
+          body: data,
+        });
+        const j = await r.json();
+        if (!j.ok) {
+          this.errors = [j.error || "{% trans 'Nie udało się zapisać.' %}"];
+          return;
+        }
+        if (j.row.glowny) {
+          this.rows.forEach((row) => { if (row.link_pk !== j.row.link_pk) row.glowny = false; });
+        }
+        const idx = this.rows.findIndex((row) => row.link_pk === j.row.link_pk);
+        if (idx === -1) this.rows.push(j.row); else this.rows[idx] = j.row;
+        this.sortRows();
+        this.modalOpen = false;
+      } catch (e) {
+        this.errors = ["{% trans 'Błąd sieci — spróbuj ponownie.' %}"];
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    async del(row) {
+      if (!window.confirm(confirmMsg)) return;
+      const url = personBase + row.link_pk + '/delete/';
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken },
+      });
+      const j = await r.json();
+      if (j.ok) this.rows = this.rows.filter((r2) => r2.link_pk !== row.link_pk);
+    },
+  };
+}
+</script>
 {% endblock content %}

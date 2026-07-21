@@ -14,6 +14,7 @@
   --text-3: #77746e; --input-bg: #ffffff; --green: #15803d; --green-bright: #16a34a;
   --green-dim: #166534; --red: #dc2626; --amber: #b45309; --blue: #1d4ed8;
   --purple: #6d28d9; --slate: #475569;
+  --shadow-lg: 0 24px 48px rgba(0, 0, 0, .14), 0 4px 12px rgba(0, 0, 0, .08);
 }
 html.dark {
   --bg: #0f1419; --bg-2: #151b22; --bg-3: #1f2732; --surface: #1a2028;
@@ -21,7 +22,12 @@ html.dark {
   --text-3: #8592a2; --input-bg: #11161c; --green: #22c55e; --green-bright: #4ade80;
   --green-dim: #16a34a; --red: #f87171; --amber: #fbbf24; --blue: #60a5fa;
   --purple: #a78bfa; --slate: #94a3b8;
+  --shadow-lg: 0 28px 60px rgba(0, 0, 0, .6), 0 6px 16px rgba(0, 0, 0, .45);
 }
+
+/* claude — Alpine hides x-cloak'd elements until it finishes initializing;
+   without this the modal overlay flashes open for a frame on page load. */
+[x-cloak] { display: none !important; }
 
 /* Derived tint backgrounds (not in the token list, mirrors the prototype's
    *-bg custom props built from the tokens above via color-mix). */
@@ -144,3 +150,39 @@ html.dark .cc-stage {
 .cc-stage .hev .hmeta .hwho { color: var(--text-2); }
 .cc-stage .hev .htext { font-size: 15.5px; color: var(--text); margin-top: 5px; line-height: 1.5; }
 .cc-stage .readonly-note { padding: 14px 22px; border-top: 1px solid var(--border); background: var(--bg-2); font-size: 14px; color: var(--text-3); display: flex; align-items: center; gap: 9px; }
+
+/* claude — mPerson add/edit modal (Task 2), reproduces
+   design_handoff_clients_unified/Zetom Klienci.html §4 "Modalka Osoba
+   kontaktowa". Scoped to .cc-stage like the rest of the sheet even though
+   the overlay renders at the panel's DOM position (position:fixed lifts it
+   out of layout regardless of nesting). */
+.cc-stage .btn.primary { background: var(--green-bright); border-color: var(--green-bright); color: #06230f; }
+html.dark .cc-stage .btn.primary { color: #052e16; }
+.cc-stage .btn.primary:hover { background: var(--green); border-color: var(--green); }
+.cc-stage .btn.primary:disabled { opacity: .6; cursor: default; }
+
+.cc-stage .overlay { position: fixed; inset: 0; background: rgba(8, 11, 15, .6); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: flex; align-items: flex-start; justify-content: center; padding: 60px 20px 40px; overflow-y: auto; z-index: 200; }
+.cc-stage .modal { width: 100%; max-width: 540px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; overflow: hidden; animation: cc-modal-pop .16s ease-out; }
+@keyframes cc-modal-pop { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+.cc-stage .modal-h { position: relative; padding: 22px 24px 18px; border-bottom: 1px solid var(--border); }
+.cc-stage .modal-h h3 { margin: 0; font-size: 20px; font-weight: 800; }
+.cc-stage .modal-h p { margin: 5px 0 0; font-size: 14.5px; color: var(--text-3); }
+.cc-stage .modal-x { position: absolute; top: 16px; right: 16px; width: 38px; height: 38px; border-radius: 10px; border: 1px solid transparent; background: transparent; color: var(--text-3); display: inline-flex; align-items: center; justify-content: center; }
+.cc-stage .modal-x:hover { background: var(--bg-3); color: var(--text); border-color: var(--border); }
+.cc-stage .modal-b { padding: 22px 24px; display: flex; flex-direction: column; gap: 18px; }
+.cc-stage .modal-f { padding: 18px 24px; border-top: 1px solid var(--border); background: var(--bg-2); display: flex; justify-content: flex-end; gap: 12px; }
+
+.cc-stage .field { display: flex; flex-direction: column; gap: 8px; }
+.cc-stage .field > label { font-size: 14.5px; font-weight: 600; color: var(--text-2); }
+.cc-stage .field input { width: 100%; padding: 13px 15px; border: 1px solid var(--border-2); border-radius: 11px; background: var(--input-bg); color: var(--text); font-size: 16px; font-family: inherit; outline: none; transition: border-color .12s, box-shadow .12s; }
+.cc-stage .field input:focus { border-color: var(--green-bright); box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 22%, transparent); }
+.cc-stage .field input::placeholder { color: var(--text-3); }
+.cc-stage .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 480px) { .cc-stage .field-row { grid-template-columns: 1fr; } }
+
+.cc-stage .check { display: flex; align-items: center; gap: 13px; padding: 15px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-2); cursor: pointer; }
+.cc-stage .check input { width: 22px; height: 22px; accent-color: var(--green-bright); cursor: pointer; flex-shrink: 0; }
+.cc-stage .check .ct { font-size: 15.5px; font-weight: 600; color: var(--text); }
+.cc-stage .check .cd { font-size: 13.5px; color: var(--text-3); margin-top: 1px; }
+
+.cc-stage .form-errors { padding: 12px 15px; border-radius: 10px; background: var(--red-bg); color: var(--red); font-size: 14.5px; font-weight: 600; }

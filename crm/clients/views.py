@@ -10,7 +10,7 @@ from django.views import View
 from django.views.decorators.http import require_POST
 
 from crm.clients.forms import ClientForm
-from crm.clients.models import Client, Company
+from crm.clients.models import Client, Company, CompanyPersonLink
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
 from crm.zetom.models import (
@@ -383,3 +383,89 @@ def client_create(request):
         "ok": True,
         "redirect_url": reverse("admin:clients_client_change", args=[client.pk]),
     })
+
+
+# claude — Osoby kontaktowe panel backend (Company detail card, Phase 3a
+# Task 2). Mounted under CompanyAdmin.get_urls so admin_view enforces staff
+# auth; edit_clients is re-checked on top, mirroring the Client endpoints
+# above. add/edit return the row JSON the panel's JS needs to redraw the
+# table row without a full page reload; delete only drops the link (the
+# underlying Client/person is never deleted from here).
+def company_person_row(link):
+    person = link.person
+    return {
+        "link_pk": link.pk,
+        "imie": person.first_name or "",
+        "nazwisko": person.last_name or "",
+        "email": person.email or "",
+        "telefon": person.phone.as_international if person.phone else "",
+        "stanowisko": link.position or "",
+        "glowny": link.is_primary,
+    }
+
+
+# claude
+@login_required
+@require_POST
+def company_person_add(request, pk):
+    if not user_has_perm(request.user, "edit_clients"):
+        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+
+    company = get_object_or_404(Company, pk=pk)
+    is_primary = bool(request.POST.get("is_primary"))
+
+    person = Client.objects.create(
+        first_name=request.POST.get("first_name", "").strip(),
+        last_name=request.POST.get("last_name", "").strip(),
+        email=request.POST.get("email", "").strip(),
+        phone=request.POST.get("phone", "").strip() or None,
+    )
+    if is_primary:
+        company.person_links.filter(is_primary=True).update(is_primary=False)
+    link = CompanyPersonLink.objects.create(
+        company=company, person=person,
+        position=request.POST.get("position", "").strip(),
+        is_primary=is_primary,
+        linked_by=request.user,
+    )
+    return JsonResponse({"ok": True, "row": company_person_row(link)})
+
+
+# claude
+@login_required
+@require_POST
+def company_person_edit(request, pk, link_pk):
+    if not user_has_perm(request.user, "edit_clients"):
+        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+
+    company = get_object_or_404(Company, pk=pk)
+    link = get_object_or_404(CompanyPersonLink, pk=link_pk, company=company)
+    is_primary = bool(request.POST.get("is_primary"))
+
+    person = link.person
+    person.first_name = request.POST.get("first_name", "").strip()
+    person.last_name = request.POST.get("last_name", "").strip()
+    person.email = request.POST.get("email", "").strip()
+    person.phone = request.POST.get("phone", "").strip() or None
+    person.save()
+
+    if is_primary:
+        company.person_links.exclude(pk=link.pk).filter(is_primary=True).update(is_primary=False)
+    link.position = request.POST.get("position", "").strip()
+    link.is_primary = is_primary
+    link.save()
+
+    return JsonResponse({"ok": True, "row": company_person_row(link)})
+
+
+# claude
+@login_required
+@require_POST
+def company_person_delete(request, pk, link_pk):
+    if not user_has_perm(request.user, "edit_clients"):
+        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+
+    company = get_object_or_404(Company, pk=pk)
+    # Removes only the link row — the person (Client) is left intact.
+    CompanyPersonLink.objects.filter(pk=link_pk, company=company).delete()
+    return JsonResponse({"ok": True})

@@ -271,6 +271,31 @@ class CompanyAdmin(admin.ModelAdmin):
     # claude — Фаза 3a: кастомная карточка фирмы (см. design_handoff_clients_unified §2).
     change_form_template = "admin/clients/company/change_form.html"
 
+    # claude — Osoby kontaktowe add/edit/delete JSON endpoints (Task 2).
+    # Same admin_view + RBAC pattern as ClientAdmin.get_urls above; the view
+    # functions live in views.py alongside the other client-admin endpoints.
+    def get_urls(self):
+        urls = super().get_urls()
+        view = self.admin_site.admin_view
+        custom = [
+            path(
+                "<int:pk>/person/add/",
+                view(views.company_person_add),
+                name="clients_company_person_add",
+            ),
+            path(
+                "<int:pk>/person/<int:link_pk>/edit/",
+                view(views.company_person_edit),
+                name="clients_company_person_edit",
+            ),
+            path(
+                "<int:pk>/person/<int:link_pk>/delete/",
+                view(views.company_person_delete),
+                name="clients_company_person_delete",
+            ),
+        ]
+        return custom + urls
+
     def has_module_permission(self, request):
         return user_has_perm(request.user, "view_clients")
 
@@ -313,11 +338,17 @@ class CompanyAdmin(admin.ModelAdmin):
                 "email": company.email,
                 "telefon": company.phone,
             },
-            "osoby": list(
+            # claude — Osoby kontaktowe panel (Task 2). The table itself is
+            # rendered client-side by Alpine (see the template's personPanel()),
+            # so we hand it the same row shape the add/edit endpoints return
+            # (views.company_person_row) as a JSON blob; `osoby` stays around only for
+            # the initial count/empty-state checks server-side.
+            "osoby": (osoby := list(
                 company.person_links.select_related("person").order_by(
                     "-is_primary", "person__last_name",
                 )
-            ),
+            )),
+            "osoby_data": [views.company_person_row(link) for link in osoby],
             "zgloszenia": [],
             "historia": [],
         }
