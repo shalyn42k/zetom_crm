@@ -25,10 +25,12 @@ Legacy Zetbase (эталон UX) хранит всё embedded в один док
 
 **В этом заходе:**
 - модель `Company` (фирма);
-- переименование `Client` → `Person` (человек);
-- M2M `Company ↔ Person` через `CompanyPersonLink` (должность/роль);
+- **rename `Client`→`Person` ОТМЕНЁН** (решение 2026-07-21): класс остаётся `Client` (= теперь человек), UI-лейбл меняется на «Osoba» через `verbose_name`/i18n. Причина: rename = ~15 файлов чистого churn поверх обязательной Company-aware переписки, риск задеть свежий код (VW/client-pages/add-client);
+- M2M `Company ↔ Client` через `CompanyPersonLink` (должность/роль);
 - FK `RequestMain.company`; заявитель-люди остаются через существующий M2M;
-- миграция данных: разбить существующие `Client` на `Company` (+ `Person`), перецепить M2M заявок;
+- Company-aware переписка консьюмеров (VW-дедуп, search/autofill, интейк) — NIP/название фирмы берутся из `Company` через связь, а не из `Client.company_*`;
+- удаление `company_name`/`company_nip`/`client_type` с `Client`;
+- миграция данных: бэкфилл `Company` (Phase 1, готово), очистка company-only `Client`-строк;
 - поверхности (Unfold admin): единый список «Klienci», карточка фирмы (Dane + Osoby kontaktowe + «+»),
   карточка человека; история контактов показывается **read-only** (существующий `ClientInteraction`).
 
@@ -94,10 +96,13 @@ NIP и название фирмы уезжают с `Person` на `Company`. В
 ## 3.3. Фазировка (каждая фаза — рабочий, тестируемый софт)
 
 - **Фаза 1 — фундамент (additive, ничего не ломает):** модели `Company` + `CompanyPersonLink`; `RequestMain.company` (nullable); admin-регистрация Company + inline; data-migration бэкфилла из существующих `Client.company_*`. `Client` пока не трогаем — дуальное состояние, всё работает.
-- **Фаза 2 — rename + Company-aware консьюмеры:** `Client`→`Person`; переписать search/autofill/VW-дедуп/интейк на Company; `ClientForm`→`PersonForm` + `CompanyForm`; `ClientAdmin`→`PersonAdmin`+`CompanyAdmin`; удалить `company_name`/`company_nip`/`client_type` с `Person`.
+- **Фаза 2 — Company-aware консьюмеры + удаление company_* (БЕЗ rename).** Дробится:
+  - **2a** — Company-aware read-слой: хелпер «фирмы человека» на `Client`; переписать VW-дедуп (`duplicate_matcher`) и search/autofill (`views.py`) читать NIP/название из `Company` через связь (company_* ещё существуют как fallback, тесты зелёные).
+  - **2b** — интейк create/link (`requestmain.py`, `requestnull_validate.py`, `admin/base.py`) → выбирать/создавать `Company` по NIP + `Client`(person), ставить `RequestMain.company`; `ClientForm` без company-полей; `ClientAdmin` без сегмента `client_type`.
+  - **2c** — удалить `company_name`/`company_nip`/`client_type` с `Client` + миграция очистки company-only строк + UI-лейбл `Client`→«Osoba» + i18n.
 - **Фаза 3 — поверхности #11/#12:** единый список «Klienci», карточки фирмы/человека, блок «Osoby kontaktowe» + «+» — по выходу дизайн-агента.
 
-Планы пишутся по фазам: Фаза 1 сейчас; Фаза 2 — после того как Фаза 1 применена и оттестирована; Фаза 3 — после дизайн-агента.
+Планы пишутся по фазам: Фаза 1 (готово); Фаза 2 по под-этапам 2a→2b→2c; Фаза 3 — после дизайн-агента.
 
 ## 4. Стратегия миграции данных
 
