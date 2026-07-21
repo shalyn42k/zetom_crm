@@ -126,3 +126,89 @@ class ClientInteraction(models.Model):
 
     def __str__(self):
         return f"{self.get_channel_display()} · {self.client} · {self.contacted_at:%Y-%m-%d}"
+
+
+# claude
+class SupplierType(models.TextChoices):
+    LOCAL = "lokalny", _("Lokalny")
+    REGIONAL = "regionalny", _("Regionalny")
+    INTERNATIONAL = "miedzynarodowy", _("Międzynarodowy")
+
+
+# claude
+class Company(models.Model):
+    """Фирма (Klient/Firma). Нормализованная сущность взамен текст-полей
+    company_name/company_nip на Client."""
+
+    name = models.CharField(_("Name"), max_length=255)
+    short_name = models.CharField(_("Short name"), max_length=255, blank=True)
+    full_name = models.CharField(_("Full name"), max_length=500, blank=True)
+
+    nip = models.CharField(
+        _("NIP"), max_length=20, blank=True, null=True, db_index=True,
+        validators=[validate_nip],
+    )
+    regon = models.CharField(_("REGON"), max_length=14, blank=True)
+    type_supplier = models.CharField(
+        _("Supplier type"), max_length=20, choices=SupplierType.choices, blank=True,
+    )
+
+    country = models.CharField(_("Country"), max_length=100, blank=True)
+    city = models.CharField(_("City"), max_length=100, blank=True)
+    voivodeship = models.CharField(_("Voivodeship"), max_length=100, blank=True)
+    post_code = models.CharField(_("Post code"), max_length=20, blank=True)
+    street = models.CharField(_("Street"), max_length=255, blank=True)
+
+    phone = PhoneNumberField(_("Phone"), null=True, blank=True)
+    email = models.EmailField(_("Email"), blank=True)
+
+    comments = models.TextField(_("Comments"), blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Company")
+        verbose_name_plural = _("Companies")
+
+    def clean(self):
+        super().clean()
+        if self.nip:
+            self.nip = normalize_nip(self.nip)
+
+    def __str__(self):
+        if self.nip:
+            return f"{self.name} ({self.nip})"
+        return self.name or f"Company #{self.pk}"
+
+
+# claude
+class CompanyPersonLink(models.Model):
+    """M2M связь Company ↔ Client(=Person) с должностью. Человек может быть в
+    нескольких фирмах (несколько связей)."""
+
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, related_name="person_links",
+        verbose_name=_("Company"),
+    )
+    person = models.ForeignKey(
+        "clients.Client", on_delete=models.CASCADE, related_name="company_links",
+        verbose_name=_("Person"),
+    )
+    position = models.CharField(_("Position"), max_length=255, blank=True)
+    is_primary = models.BooleanField(_("Primary contact"), default=False)
+    linked_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="+", verbose_name=_("Linked by"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Company contact")
+        verbose_name_plural = _("Company contacts")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "person"], name="uniq_company_person",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.person_id} @ {self.company_id}"
