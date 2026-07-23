@@ -137,3 +137,25 @@ class ApproveChildActionTests(TestCase):
                 # subTest: даже если один падает, остальные продолжают выполняться
                 with self.assertRaises(Http404):
                     fn(999999)
+
+    def test_approve_zlecenie_closes_waiting_oferta(self):
+        # Клиент подтвердил оферту (waiting) → менеджер открывает zlecenie →
+        # оферта должна автоматически перейти в done.
+        oferta = approve_oferta_action(self.main.pk)
+        oferta.status = Status.waiting
+        oferta.save()
+
+        approve_zlecenie_action(self.main.pk)
+
+        oferta.refresh_from_db()
+        self.assertEqual(oferta.status, Status.done)
+
+    def test_approve_zlecenie_does_not_touch_oferta_in_other_statuses(self):
+        # Только waiting -> done. new/in_progress оферты не трогаем.
+        oferta = approve_oferta_action(self.main.pk)
+        self.assertEqual(oferta.status, Status.new)
+
+        approve_zlecenie_action(self.main.pk)
+
+        oferta.refresh_from_db()
+        self.assertEqual(oferta.status, Status.new)
