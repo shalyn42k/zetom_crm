@@ -42,14 +42,15 @@
             <span title="{{ att.uploaded_at|date:'Y-m-d H:i' }}">{{ att.uploaded_at|naturaltime }}</span>
           </div>
         </div>
-        <form method="post"
-              action="{% url 'admin:zetom_requestmain_delete_attachment' original.pk att.pk %}"
-              style="flex-shrink:0;"
-              onsubmit="return confirm('{% trans "Delete this attachment?" %}')">
-          {% csrf_token %}
-          <button type="submit" class="rm-btn rm-btn--sm rm-btn--danger"
-                  title="{% trans 'Delete' %}">✕</button>
-        </form>
+        {% trans "Delete" as delete_label %}
+        <button type="submit"
+                formaction="{% url 'admin:zetom_requestmain_delete_attachment' original.pk att.pk %}"
+                formmethod="post"
+                formnovalidate
+                class="rm-btn rm-btn--sm rm-btn--danger"
+                style="flex-shrink:0;"
+                onclick="return confirm('{% trans "Delete this attachment?" %}')"
+                title="{{ delete_label }}">✕</button>
       </li>
       {% endfor %}
     </ul>
@@ -58,10 +59,7 @@
     {% endif %}
 
     {# Форма загрузки — drag-and-drop зона #}
-    <form method="post"
-          enctype="multipart/form-data"
-          action="{% url 'admin:zetom_requestmain_upload_attachment' original.pk %}"
-          x-data="{
+    <div x-data="{
             files: [],
             active: false,
             onDrop(e) {
@@ -80,8 +78,6 @@
             }
           }"
           style="padding:0.75rem 1rem 1rem;">
-      {% csrf_token %}
-
       <div class="rm-dropzone"
            :class="{ 'rm-dropzone--active': active }"
            @dragover.prevent="active = true"
@@ -133,7 +129,11 @@
                 style="flex-shrink:0;">
           {% trans "Clear" %}
         </button>
-        <button type="submit" class="rm-btn rm-btn--primary rm-btn--sm"
+        <button type="submit"
+                formaction="{% url 'admin:zetom_requestmain_upload_attachment' original.pk %}"
+                formmethod="post"
+                formnovalidate
+                class="rm-btn rm-btn--primary rm-btn--sm"
                 style="flex:1;justify-content:center;"
                 :disabled="!files.length">
           <span x-show="files.length">
@@ -142,7 +142,7 @@
           <span x-show="!files.length">{% trans "Upload" %}</span>
         </button>
       </div>
-    </form>
+    </div>
 
   </div>
 </section>

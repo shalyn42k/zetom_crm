@@ -20,4 +20,6 @@ class NotificationConfig(AppConfig):
         from django.contrib.admin import ModelAdmin
 
         from . import signals  # noqa: F401
+        from .services.followup_scheduler import start_followup_scheduler
         ModelAdmin.list_per_page = settings.PAGE_SIZE
+        start_followup_scheduler()

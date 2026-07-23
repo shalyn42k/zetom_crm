@@ -1,0 +1,6 @@
+Follow-up due: {{ target_label }}
+Next client contact: {{ next_contact_at }}
+
+{% if note_action %}Action: {{ note_action }}
+{% endif %}Author: {{ author }}
+{% if note_text %}Note: {{ note_text }}{% endif %}
