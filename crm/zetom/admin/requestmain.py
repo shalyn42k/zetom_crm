@@ -1046,7 +1046,7 @@ class RequestMainAdmin(
         _obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
         if denied is not None:
             return denied
-        approve_zlecenie_action(object_id)
+        approve_zlecenie_action(object_id, user=request.user)
         messages.success(request, _("Order created."))
         return redirect("admin:zetom_requestmain_change", object_id)
 
