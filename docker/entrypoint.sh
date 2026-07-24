@@ -7,8 +7,12 @@ until python -c "import socket; s = socket.socket(); s.settimeout(2); s.connect(
 done
 echo "Postgres is up"
 
-python manage.py migrate --noinput
-python manage.py compilemessages
-python manage.py collectstatic --noinput --clear
+if [ "${SKIP_DJANGO_INIT:-0}" != "1" ]; then
+  python manage.py migrate --noinput
+  python manage.py compilemessages
+  python manage.py collectstatic --noinput --clear
+else
+  echo "Skipping Django init tasks (SKIP_DJANGO_INIT=1)"
+fi
 
 exec "$@"

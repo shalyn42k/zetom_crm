@@ -17,7 +17,7 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-RUN chmod +x docker/entrypoint.sh \
+RUN chmod +x docker/entrypoint.sh docker/followup_scheduler.sh \
     && useradd --create-home --shell /bin/bash app \
     && chown -R app:app /app
 USER app

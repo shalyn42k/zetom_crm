@@ -27,6 +27,21 @@ services:
       db:
         condition: service_healthy
 
+  scheduler:
+    build: .
+    container_name: zetom-scheduler
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SKIP_DJANGO_INIT: "1"
+      FOLLOWUP_REMINDERS_INTERVAL_SECONDS: ${FOLLOWUP_REMINDERS_INTERVAL_SECONDS:-60}
+      DB_HOST: db
+      DB_PORT: 5432
+    command: ["./docker/followup_scheduler.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: zetom-cloudflared

@@ -11,6 +11,26 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  scheduler:
+    build: .
+    container_name: zetom-scheduler-dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SKIP_DJANGO_INIT: "1"
+      FOLLOWUP_REMINDERS_INTERVAL_SECONDS: ${FOLLOWUP_REMINDERS_INTERVAL_SECONDS:-60}
+      DB_HOST: db
+      DB_PORT: 5432
+    command: ["./docker/followup_scheduler.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:
