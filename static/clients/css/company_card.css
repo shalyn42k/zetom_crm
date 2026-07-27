@@ -197,3 +197,76 @@ html.dark .cc-stage .btn.primary { color: #052e16; }
 .cc-stage .check .cd { font-size: 13.5px; color: var(--text-3); margin-top: 1px; }
 
 .cc-stage .form-errors { padding: 12px 15px; border-radius: 10px; background: var(--red-bg); color: var(--red); font-size: 14.5px; font-weight: 600; }
+
+/* claude — Phase 3b Task 2: unified Klienci list (klienci_list.html).
+   Rules mirror design_handoff_clients_unified/Zetom Klienci.html §1 "Klienci",
+   adapted from its <button> segments/pager to the template's <a> links.
+   Scoped under .cc-stage; tokens/derived tints come from the block above. */
+
+/* page header */
+.cc-stage .phead { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 26px; }
+.cc-stage .phead h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -.02em; }
+.cc-stage .phead .desc { margin: 8px 0 0; font-size: 16px; color: var(--text-3); max-width: 640px; }
+.cc-stage .phead-actions { display: flex; align-items: center; gap: 12px; }
+
+/* toolbar / filters */
+.cc-stage .toolbar { display: flex; align-items: center; gap: 16px 20px; flex-wrap: wrap; margin-bottom: 20px; }
+.cc-stage .filt { display: flex; flex-direction: column; gap: 7px; }
+.cc-stage .filt > span { font-size: 13px; font-weight: 600; color: var(--text-3); }
+
+/* Rodzaj segmented control (template uses <a>, not <button>) */
+.cc-stage .seg2 { display: flex; gap: 5px; background: var(--surface); border: 1px solid var(--border); padding: 5px; border-radius: 12px; box-shadow: var(--shadow-sm); }
+.cc-stage .seg2 a { padding: 10px 16px; border-radius: 8px; background: transparent; border: none; color: var(--text-2); font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 9px; }
+.cc-stage .seg2 a:hover { color: var(--text); }
+.cc-stage .seg2 a.active { background: var(--bg-3); color: var(--text); }
+.cc-stage .seg2 .cnt { font-size: 13px; color: var(--text-3); font-weight: 700; background: var(--bg-2); padding: 1px 8px; border-radius: 20px; }
+.cc-stage .seg2 a.active .cnt { color: var(--green-bright); }
+
+/* Typ dostawcy dropdown */
+.cc-stage select.dropdown { appearance: none; padding: 11px 40px 11px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 15px; font-weight: 600; font-family: inherit; box-shadow: var(--shadow-sm); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2377746e' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; }
+html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%238592a2' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+.cc-stage .search { display: flex; align-items: center; gap: 11px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-sm); color: var(--text-3); }
+.cc-stage .search input { flex: 1; border: none; background: transparent; outline: none; font-size: 15.5px; font-family: inherit; color: var(--text); }
+.cc-stage .search input::placeholder { color: var(--text-3); }
+
+/* table */
+.cc-stage .tbl-scroll { overflow-x: auto; }
+.cc-stage table.tbl { width: 100%; border-collapse: collapse; min-width: 760px; }
+.cc-stage table.tbl thead th { text-align: left; padding: 14px 22px; font-size: 13px; font-weight: 700; letter-spacing: .02em; color: var(--text-3); border-bottom: 1px solid var(--border); background: var(--bg-2); white-space: nowrap; }
+.cc-stage table.tbl thead th.c { text-align: center; }
+.cc-stage table.tbl tbody td { padding: 16px 22px; border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent); vertical-align: middle; }
+.cc-stage table.tbl tbody td.c { text-align: center; }
+.cc-stage table.tbl tbody tr:last-child td { border-bottom: none; }
+.cc-stage table.tbl tbody tr.rowlink { cursor: pointer; transition: background .1s; }
+.cc-stage table.tbl tbody tr.rowlink:hover { background: var(--bg-2); }
+
+/* name cell */
+.cc-stage .who { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.cc-stage .who-nm { min-width: 0; }
+.cc-stage .who-nm .nm { font-size: 16.5px; font-weight: 700; color: var(--text); line-height: 1.25; }
+.cc-stage .who-nm .nm a { color: inherit; }
+.cc-stage .who-nm .sub { font-size: 13.5px; color: var(--text-3); margin-top: 2px; }
+.cc-stage .cell-nip { font-size: 15.5px; color: var(--text-2); letter-spacing: .02em; }
+.cc-stage .cell-nip.none { color: var(--text-3); }
+.cc-stage .cell-c { font-size: 15px; color: var(--text-2); }
+.cc-stage .cell-c.em { color: var(--text-3); font-size: 14px; }
+
+/* list avatar (44px) — hero override (.id-hero .ava) stays more specific */
+.cc-stage .ava { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #fff; flex-shrink: 0; }
+.cc-stage .ava.person { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.cc-stage .ava.company { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+
+/* zgłoszenia badge */
+.cc-stage .zgcount { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 52px; height: 38px; padding: 0 14px; border-radius: 11px; font-size: 16px; font-weight: 800; border: 1px solid var(--border); background: var(--bg-2); color: var(--text); }
+.cc-stage .zgcount.zero { color: var(--text-3); opacity: .6; background: transparent; border-color: transparent; font-weight: 600; }
+.cc-stage .zgcount.hot { border-color: color-mix(in srgb, var(--green) 40%, var(--border)); color: var(--green-bright); background: color-mix(in srgb, var(--green) 12%, transparent); }
+
+/* table footer + pager (template uses <a>/<span>, not <button>) */
+.cc-stage .tbl-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 22px; border-top: 1px solid var(--border); background: var(--bg-2); font-size: 15px; color: var(--text-3); }
+.cc-stage .tbl-foot b { color: var(--text-2); font-weight: 700; }
+.cc-stage .pager { display: flex; gap: 6px; }
+.cc-stage .pager a, .cc-stage .pager span { min-width: 38px; height: 38px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+.cc-stage .pager a:hover { background: var(--bg-3); color: var(--text); }
+.cc-stage .pager span.active { background: var(--green-bright); border-color: var(--green-bright); color: #052e16; }
+.cc-stage .pager span.dis { opacity: .4; cursor: default; }
+.cc-stage .pager span.gap { border-color: transparent; background: transparent; }
