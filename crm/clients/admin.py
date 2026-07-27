@@ -240,11 +240,6 @@ class ClientAdmin(admin.ModelAdmin):
             ),
             # claude — Add Client modal endpoints (see design_handoff_add_client).
             path(
-                "create/",
-                view(views.client_create),
-                name="clients_client_create",
-            ),
-            path(
                 "request-suggest/",
                 view(views.request_suggest),
                 name="clients_client_request_suggest",

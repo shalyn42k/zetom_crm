@@ -6,13 +6,11 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext, gettext_lazy as _
 from django.views import View
 from django.views.decorators.http import require_POST
 
-from crm.clients.forms import ClientForm
 from crm.clients.models import Client, Company, CompanyPersonLink
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
@@ -355,37 +353,6 @@ def request_search(request):
             results.append(_req_result(obj, type_key, badge))
 
     return JsonResponse({"results": results[:limit], "total": total})
-
-
-# claude
-@login_required
-@require_POST
-def client_create(request):
-    if not user_has_perm(request.user, "edit_clients"):
-        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
-
-    form = ClientForm(request.POST)
-    if not form.is_valid():
-        return JsonResponse(
-            {"ok": False, "errors": form.errors.get_json_data()}, status=422
-        )
-
-    client = form.save()
-
-    link_type = request.POST.get("link_type")
-    link_req_pk = request.POST.get("link_req_pk")
-    if link_type and link_req_pk and link_type in _TYPE_MAP:
-        model, link_model, _prefix = _TYPE_MAP[link_type]
-        req_obj = get_object_or_404(model, pk=link_req_pk)
-        link_model.objects.get_or_create(
-            request=req_obj, client=client,
-            defaults={"linked_by": request.user},
-        )
-
-    return JsonResponse({
-        "ok": True,
-        "redirect_url": reverse("admin:clients_client_change", args=[client.pk]),
-    })
 
 
 # claude — Osoby kontaktowe panel backend (Company detail card, Phase 3a
