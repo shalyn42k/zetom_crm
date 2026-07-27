@@ -145,28 +145,26 @@ class ClientInteractionInline(admin.TabularInline):
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
+    # claude — list_display/search_fields feed Django's default changelist
+    # fallback only; the live list is the custom changelist_view below. Kept
+    # off the dead company_name/client_type fields (Company data now lives on
+    # Company via company_links; those columns drop in a later phase).
     list_display = (
-        "first_name", "last_name", "company_name", "email", "phone",
-        "client_type",
-        # claude
+        "first_name", "last_name", "email", "phone",
         "col_requests", "col_ofertas", "col_zlecenia", "col_wnioski",
     )
-    search_fields = ("first_name", "last_name", "company_name", "email", "phone")
+    search_fields = ("first_name", "last_name", "email", "phone")
     inlines = [ClientInteractionInline]
-    # claude
-    list_filter = ["client_type"]
     # claude — Phase 3b Task 2: page size for the unified Klienci list
     # (changelist_view paginates a plain list, not list_display's QuerySet).
     list_per_page = 25
 
     # claude — custom List + Detail screens (see design_handoff_client_pages).
-    # Phase 3b Task 1: Detail switched from the old two-column identity +
-    # request-tabs layout to the Person (Osoba) card from
-    # design_handoff_clients_unified §3. Phase 3b Task 2: List switched from
-    # the old client_type-segmented view to the unified Klienci list
-    # (Company + private Client rows, see changelist_view below). Both old
-    # templates (change_list.html / change_form.html) are left in place
-    # unused rather than deleted.
+    # Phase 3b Task 1: Detail is the Person (Osoba) card from
+    # design_handoff_clients_unified §3. Phase 3b Task 2: List is the unified
+    # Klienci list (Company + private Client rows, see changelist_view below),
+    # replacing the old client_type-segmented view. The old change_list.html /
+    # change_form.html templates were removed once these took over.
     change_list_template = "admin/clients/client/klienci_list.html"
     change_form_template = "admin/clients/client/person_card.html"
 
