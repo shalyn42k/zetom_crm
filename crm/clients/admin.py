@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count
+from django.core.paginator import Paginator
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, render
+from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -11,7 +13,7 @@ from crm.zetom.models import DepartmentsVariants, RequestMain
 
 from . import views
 from .models import (
-    Client, ClientInteraction, ClientType, Company, CompanyPersonLink,
+    Client, ClientInteraction, Company, CompanyPersonLink, SupplierType,
 )
 from .services import build_request_rows, get_client_request_summary
 
@@ -153,13 +155,19 @@ class ClientAdmin(admin.ModelAdmin):
     inlines = [ClientInteractionInline]
     # claude
     list_filter = ["client_type"]
+    # claude — Phase 3b Task 2: page size for the unified Klienci list
+    # (changelist_view paginates a plain list, not list_display's QuerySet).
+    list_per_page = 25
 
     # claude — custom List + Detail screens (see design_handoff_client_pages).
     # Phase 3b Task 1: Detail switched from the old two-column identity +
     # request-tabs layout to the Person (Osoba) card from
-    # design_handoff_clients_unified §3. The old change_form.html is left in
-    # place (unused) rather than deleted.
-    change_list_template = "admin/clients/client/change_list.html"
+    # design_handoff_clients_unified §3. Phase 3b Task 2: List switched from
+    # the old client_type-segmented view to the unified Klienci list
+    # (Company + private Client rows, see changelist_view below). Both old
+    # templates (change_list.html / change_form.html) are left in place
+    # unused rather than deleted.
+    change_list_template = "admin/clients/client/klienci_list.html"
     change_form_template = "admin/clients/client/person_card.html"
 
     # claude
@@ -259,39 +267,117 @@ class ClientAdmin(admin.ModelAdmin):
         ]
         return custom + urls
 
-    # claude — segmented-type counts + current filter for the custom List.
-    def changelist_view(self, request, extra_context=None):
-        extra_context = extra_context or {}
-        base = Client.objects.all()
-        extra_context["type_counts"] = {
-            "all": base.count(),
-            "person": base.filter(client_type=ClientType.PERSON).count(),
-            "company": base.filter(client_type=ClientType.COMPANY).count(),
+    # claude — Phase 3b Task 2: row builders for the unified Klienci list.
+    # Company rows never touch Client.company_*/client_type (per the
+    # normalization); private-person rows are Client objects with zero
+    # company_links (contacts are excluded — they live under their Company's
+    # Osoby kontaktowe panel, not in this top-level list).
+    def _company_row(self, company):
+        return {
+            "kind": "company",
+            "pk": company.pk,
+            "nazwa": company.name,
+            "nip": company.nip or "",
+            "typ_value": company.type_supplier,
+            "typ_label": company.get_type_supplier_display(),
+            "telefon": company.phone,
+            "email": company.email,
+            "zgloszenia_count": company._zgloszenia_count,
+            "url": reverse("admin:clients_company_change", args=[company.pk]),
         }
-        # The sidebar list_filter uses client_type__exact; mirror that param so
-        # the segmented control highlights the active type.
-        extra_context["current_client_type"] = (
-            request.GET.get("client_type__exact")
-            or request.GET.get("client_type")
-            or ""
-        )
-        response = super().changelist_view(request, extra_context=extra_context)
-        # Pre-compute the elided page range (template tags can't pass the
-        # current page number to get_elided_page_range).
-        try:
-            cl = response.context_data["cl"]
-            response.context_data["page_range"] = list(
-                cl.paginator.get_elided_page_range(cl.page_num)
-            )
-            # Templates can't read leading-underscore annotations; expose aliases.
-            for obj in cl.result_list:
-                obj.request_count = obj._request_count
-                obj.oferta_count = obj._oferta_count
-                obj.zlecenie_count = obj._zlecenie_count
-                obj.wniosek_count = obj._wniosek_count
-        except (AttributeError, KeyError, TypeError):
-            pass
-        return response
+
+    def _person_row(self, client):
+        return {
+            "kind": "person",
+            "pk": client.pk,
+            "nazwa": client.full_name() or _("Client #%(pk)s") % {"pk": client.pk},
+            "nip": "",
+            "typ_value": "",
+            "typ_label": _("Osoba prywatna"),
+            "telefon": client.phone,
+            "email": client.email,
+            "zgloszenia_count": client._zgloszenia_count,
+            "url": reverse("admin:clients_client_change", args=[client.pk]),
+        }
+
+    # claude — Phase 3b Task 2: unified "Klienci" list = Company rows +
+    # private-person rows (Client with no company_links) merged into one
+    # table. Fully custom (no ModelAdmin ChangeList machinery — same pattern
+    # as change_view above) because the merged result is a plain Python
+    # list, not a QuerySet, and the two very different row shapes need
+    # normalizing before they can share one Paginator/table. Filters
+    # (?rodzaj=firmy|osoby, ?typ=<supplier>, ?q=<search>) are applied at
+    # build time, before pagination.
+    def changelist_view(self, request, extra_context=None):
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+
+        rodzaj = request.GET.get("rodzaj", "")
+        typ = request.GET.get("typ", "")
+        q = request.GET.get("q", "").strip()
+        typ_active = typ and typ != "all"
+
+        excluded_statuses = [RequestStatus.cancelled, RequestStatus.deleted]
+
+        # claude — annotate() (not a per-row query) keeps this N+1-free: one
+        # extra join per queryset, not one query per row.
+        companies = Company.objects.annotate(
+            _zgloszenia_count=Count(
+                "requests",
+                filter=~Q(requests__status__in=excluded_statuses),
+                distinct=True,
+            ),
+        ).order_by("name")
+        if typ_active:
+            companies = companies.filter(type_supplier=typ)
+        if q:
+            companies = companies.filter(Q(name__icontains=q) | Q(nip__icontains=q))
+
+        persons = Client.objects.filter(company_links__isnull=True).annotate(
+            _zgloszenia_count=Count(
+                "requests",
+                filter=~Q(requests__status__in=excluded_statuses),
+                distinct=True,
+            ),
+        ).order_by("first_name", "last_name")
+        if typ_active:
+            # claude — Typ dostawcy only exists on Company; a person can
+            # never match a supplier type, so selecting one zeroes this side.
+            persons = persons.none()
+        if q:
+            persons = persons.filter(Q(first_name__icontains=q) | Q(last_name__icontains=q))
+
+        counts = {
+            "all": companies.count() + persons.count(),
+            "firmy": companies.count(),
+            "osoby": persons.count(),
+        }
+
+        rows = []
+        if rodzaj != "osoby":
+            rows += [self._company_row(c) for c in companies]
+        if rodzaj != "firmy":
+            rows += [self._person_row(p) for p in persons]
+
+        paginator = Paginator(rows, self.list_per_page)
+        page_obj = paginator.get_page(request.GET.get("page"))
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": _("Clients"),
+            "opts": self.model._meta,
+            "has_add_permission": self.has_add_permission(request),
+            "counts": counts,
+            "current_rodzaj": rodzaj,
+            "current_typ": typ,
+            "current_q": q,
+            "supplier_types": SupplierType.choices,
+            "page_obj": page_obj,
+            "paginator": paginator,
+            "page_range": list(paginator.get_elided_page_range(page_obj.number)),
+            **(extra_context or {}),
+        }
+        return TemplateResponse(request, self.change_list_template, context)
 
     # claude — Phase 3b Task 1: panel data-contract for the Person (Osoba)
     # card. Firmy comes only from company_links (never Client.company_*, per

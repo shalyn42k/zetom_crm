@@ -1,0 +1,175 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% comment %}
+Klienci — unified list (Phase 3b Task 2). Merges Company rows + private-
+person rows (Client with zero company_links) into one table; contacts
+(Client rows linked to a Company via CompanyPersonLink) are intentionally
+excluded — they live under their Company's Osoby kontaktowe panel, not
+here. Reproduces design_handoff_clients_unified/Zetom Klienci.html §1,
+reusing the .cc-stage tokens/components the Company/Person cards (Phase
+3a/3b Task 1) already established in company_card.css.
+
+changelist_view() builds `page_obj`/`paginator`/`counts` itself (the merged
+result is a plain Python list, not a QuerySet, so the standard admin `cl`
+ChangeList object never exists here) — this template does not use `cl`.
+{% endcomment %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}">
+{% endblock extrastyle %}
+
+{% block content %}
+<svg class="cc-sprite" xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0">
+  <symbol id="cc-i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="cc-i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="cc-i-building" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></symbol>
+  <symbol id="cc-i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="cc-i-chev-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="cc-i-chev-r" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+</svg>
+
+<div class="cc-stage">
+
+  <div class="phead">
+    <div>
+      <h1>{% trans "Klienci" %}</h1>
+      <p class="desc">{% trans "Wspólna baza firm i osób prywatnych. Kliknij wiersz, aby otworzyć kartę." %}</p>
+    </div>
+    {% if has_add_permission %}
+    <div class="phead-actions">
+      <a class="btn primary lg" href="{% url 'admin:clients_client_add' %}">
+        <svg class="i"><use href="#cc-i-plus"/></svg> {% trans "Dodaj klienta" %}
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <form class="toolbar" method="get">
+    <input type="hidden" name="rodzaj" value="{{ current_rodzaj }}">
+
+    <div class="filt">
+      <span>{% trans "Rodzaj" %}</span>
+      <div class="seg2">
+        <a href="{% querystring rodzaj=None page=None %}" class="{% if not current_rodzaj %}active{% endif %}">
+          {% trans "Wszyscy" %} <span class="cnt">{{ counts.all }}</span>
+        </a>
+        <a href="{% querystring rodzaj="firmy" page=None %}" class="{% if current_rodzaj == "firmy" %}active{% endif %}">
+          <svg class="i i-sm"><use href="#cc-i-building"/></svg> {% trans "Firmy" %} <span class="cnt">{{ counts.firmy }}</span>
+        </a>
+        <a href="{% querystring rodzaj="osoby" page=None %}" class="{% if current_rodzaj == "osoby" %}active{% endif %}">
+          <svg class="i i-sm"><use href="#cc-i-user"/></svg> {% trans "Osoby" %} <span class="cnt">{{ counts.osoby }}</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="filt">
+      <span>{% trans "Typ dostawcy" %}</span>
+      <select name="typ" class="dropdown" onchange="this.form.submit()">
+        <option value="all" {% if not current_typ or current_typ == "all" %}selected{% endif %}>{% trans "Wszystkie typy" %}</option>
+        {% for value, label in supplier_types %}
+          <option value="{{ value }}" {% if current_typ == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filt" style="flex:1;min-width:260px">
+      <span>{% trans "Szukaj" %}</span>
+      <div class="search">
+        <svg class="i i-sm"><use href="#cc-i-search"/></svg>
+        <input type="text" name="q" value="{{ current_q }}" placeholder="{% trans 'Nazwa, imię, NIP…' %}">
+      </div>
+    </div>
+  </form>
+
+  <div class="panel">
+    <div class="tbl-scroll">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>{% trans "Nazwa / Imię" %}</th>
+            <th>{% trans "NIP" %}</th>
+            <th>{% trans "Typ" %}</th>
+            <th>{% trans "Telefon" %}</th>
+            <th>{% trans "E-mail" %}</th>
+            <th class="c">{% trans "Zgłoszenia" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in page_obj %}
+            <tr class="rowlink" onclick="window.location='{{ row.url }}'">
+              <td>
+                <div class="who">
+                  <span class="ava {{ row.kind }}">{{ row.nazwa|slice:":2"|upper }}</span>
+                  <div class="who-nm">
+                    <div class="nm"><a href="{{ row.url }}">{{ row.nazwa }}</a></div>
+                    <div class="sub">
+                      {% if row.kind == "company" %}
+                        {% blocktrans with typ=row.typ_label %}Firma · {{ typ }}{% endblocktrans %}
+                      {% else %}
+                        {% trans "Osoba prywatna" %}
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                {% if row.nip %}<span class="cell-nip">{{ row.nip }}</span>{% else %}<span class="cell-nip none">—</span>{% endif %}
+              </td>
+              <td>
+                {% if row.kind == "company" %}
+                  <span class="pill company"><svg class="i"><use href="#cc-i-building"/></svg> {% trans "Firma" %}</span>
+                {% else %}
+                  <span class="pill person"><svg class="i"><use href="#cc-i-user"/></svg> {% trans "Osoba" %}</span>
+                {% endif %}
+              </td>
+              <td><span class="cell-c">{{ row.telefon|default:"—" }}</span></td>
+              <td><span class="cell-c em">{{ row.email|default:"" }}</span></td>
+              <td class="c">
+                <span class="zgcount{% if row.zgloszenia_count == 0 %} zero{% elif row.zgloszenia_count >= 5 %} hot{% endif %}">{{ row.zgloszenia_count }}</span>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6"><div class="empty"><p>{% trans "Nie znaleziono klientów." %}</p></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tbl-foot">
+      <span>
+        {% blocktrans count counter=paginator.count with start=page_obj.start_index end=page_obj.end_index total=paginator.count %}
+          Pokazano {{ start }}–{{ end }} z {{ total }} klienta
+        {% plural %}
+          Pokazano {{ start }}–{{ end }} z {{ total }} klientów
+        {% endblocktrans %}
+      </span>
+      {% if paginator.num_pages > 1 %}
+      <div class="pager">
+        {% if page_obj.has_previous %}
+          <a href="{% querystring page=page_obj.previous_page_number %}"><svg class="i i-sm"><use href="#cc-i-chev-l"/></svg></a>
+        {% else %}
+          <span class="dis"><svg class="i i-sm"><use href="#cc-i-chev-l"/></svg></span>
+        {% endif %}
+        {% for num in page_range %}
+          {% if num == paginator.ELLIPSIS %}
+            <span class="gap">{{ num }}</span>
+          {% elif num == page_obj.number %}
+            <span class="active">{{ num }}</span>
+          {% else %}
+            <a href="{% querystring page=num %}">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="{% querystring page=page_obj.next_page_number %}"><svg class="i i-sm"><use href="#cc-i-chev-r"/></svg></a>
+        {% else %}
+          <span class="dis"><svg class="i i-sm"><use href="#cc-i-chev-r"/></svg></span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock content %}
