@@ -361,6 +361,11 @@ class StepNote(models.Model):
         blank=True,
         verbose_name=_("Next client contact at"),
     )
+    reminder_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Reminder sent at"),
+    )
 
     target_content_type = models.ForeignKey(
         ContentType,

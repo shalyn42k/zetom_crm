@@ -1,7 +1,9 @@
 # Django imports
 from django.shortcuts import get_object_or_404
 
-from crm.status_manager.services.status_service import update_parent
+from crm.status_manager.services.status_service import (handle_child_change,
+                                                          update_parent)
+from crm.status_manager.services.statuses import Status
 # Zetom app imports
 from crm.zetom.models import (Oferta, RequestMain, RequestNull, RequestSource,
                               Wniosek, Zlecenie)
@@ -52,8 +54,13 @@ def approve_oferta_action(main_id):
     return _approve_child(Oferta, main_id, price=0)
 
 
-def approve_zlecenie_action(main_id):
-    return _approve_child(Zlecenie, main_id, price=0)
+def approve_zlecenie_action(main_id, user=None):
+    zlecenie = _approve_child(Zlecenie, main_id, price=0)
+    # claude — клиент подтвердил оферту (waiting) и по ней открыли zlecenie:
+    # оферта автоматически закрывается как "Готово".
+    for oferta in zlecenie.from_main.oferta_set.filter(status=Status.waiting):
+        handle_child_change(oferta, Status.done, reason=None, user=user)
+    return zlecenie
 
 
 def approve_wniosek_action(main_id):

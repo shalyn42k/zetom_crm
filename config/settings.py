@@ -44,6 +44,16 @@ CSRF_TRUSTED_ORIGINS = [
 # `django.contrib.admin.ModelAdmin.list_per_page` в NotificationConfig.ready().
 PAGE_SIZE = int(os.getenv("PAGE_SIZE", "20"))
 
+# Автообработка next_contact_at прямо при runserver (dev/local):
+# если True, в NotificationConfig.ready стартует фоновый поток, который
+# каждые FOLLOWUP_REMINDERS_INTERVAL_SECONDS запускает обработку дедлайнов.
+# По умолчанию включено в DEBUG-режиме.
+FOLLOWUP_REMINDERS_AUTOSTART = os.getenv(
+    "FOLLOWUP_REMINDERS_AUTOSTART",
+    "True" if DEBUG else "False",
+).lower() == "true"
+FOLLOWUP_REMINDERS_INTERVAL_SECONDS = int(os.getenv("FOLLOWUP_REMINDERS_INTERVAL_SECONDS", "60"))
+
 # Прод-настройки безопасности (включаются автоматически при DEBUG=False).
 # Cloudflare терминирует TLS, поэтому редирект и сертификаты не наша забота.
 if not DEBUG:

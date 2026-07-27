@@ -145,14 +145,24 @@ class MainAdminActionTests(TestCase):
         self.assertEqual(self.main.status, RequestStatus.active)
 
     @patch("crm.zetom.admin.requestmain.user_has_perm")
-    def test_status_grid_disabled_without_change_status_perm(self, perm_mock, _):
+    def test_cancel_button_hidden_without_change_status_perm(self, perm_mock, _):
+        # "Cancel request" sits next to Delete in the submit row (see
+        # submit_line.html) and is gated by can_change_request_status.
         perm_mock.side_effect = lambda user, perm: perm != "change_request_status"
         url = reverse("admin:zetom_requestmain_change", args=[self.main.pk])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'name="new_status"')
-        self.assertContains(response, 'disabled aria-disabled="true"')
-        self.assertContains(response, "You don't have permission to change status.")
+        self.assertNotContains(response, "Cancel request")
+
+    def test_cancel_button_shown_with_change_status_perm(self, _):
+        url = reverse("admin:zetom_requestmain_change", args=[self.main.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Cancel request")
+        self.assertContains(
+            response,
+            reverse("admin:zetom_requestmain_cancel", args=[self.main.pk]),
+        )
 
     def test_apply_cancelled_without_reason_renders_reason_form(self, _):
         # cancelled требует reason → ReasonRequired → рендерит форму для ввода причины.
@@ -171,6 +181,42 @@ class MainAdminActionTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.main.refresh_from_db()
         self.assertEqual(self.main.status, RequestStatus.cancelled)
+
+    def test_cancel_view_get_renders_reason_form(self, _):
+        url = reverse("admin:zetom_requestmain_cancel", args=[self.main.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("form", response.context)
+
+    def test_cancel_view_post_without_reason_rerenders_form(self, _):
+        url = reverse("admin:zetom_requestmain_cancel", args=[self.main.pk])
+        response = self.client.post(url, data={})
+        self.assertEqual(response.status_code, 200)
+        self.main.refresh_from_db()
+        self.assertEqual(self.main.status, RequestStatus.active)
+
+    def test_cancel_view_post_with_reason_redirects_to_cancelled_archive(self, _):
+        url = reverse("admin:zetom_requestmain_cancel", args=[self.main.pk])
+        response = self.client.post(url, data={"reason": "Client asked to cancel"})
+        self.assertRedirects(
+            response, reverse("admin:zetom_cancelledrequest_changelist")
+        )
+        self.main.refresh_from_db()
+        self.assertEqual(self.main.status, RequestStatus.cancelled)
+
+    def test_cancel_view_already_cancelled_redirects_back(self, _):
+        # fetch_redirect_response=False — RequestMainAdmin.get_queryset excludes
+        # cancelled/deleted, so the change view itself would redirect again
+        # (unrelated to this view); we only assert cancel_view's own redirect.
+        self.main.status = RequestStatus.cancelled
+        self.main.save(update_fields=["status"])
+        url = reverse("admin:zetom_requestmain_cancel", args=[self.main.pk])
+        response = self.client.get(url)
+        self.assertRedirects(
+            response,
+            reverse("admin:zetom_requestmain_change", args=[self.main.pk]),
+            fetch_redirect_response=False,
+        )
 
     @patch("crm.zetom.admin.requestmain_mail.user_has_perm", return_value=False)
     def test_mail_freeform_returns_403_without_send_documents_permission(

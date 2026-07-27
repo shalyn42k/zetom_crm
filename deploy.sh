@@ -9,7 +9,7 @@ git -C "$SCRIPT_DIR" pull
 
 echo "=== [2/3] build image ==="
 docker compose -f "$SCRIPT_DIR/$COMPOSE_FILE" pull --ignore-buildable
-docker compose -f "$SCRIPT_DIR/$COMPOSE_FILE" build --pull web
+docker compose -f "$SCRIPT_DIR/$COMPOSE_FILE" build --pull web scheduler
 
 echo "=== [3/3] spawn helper to restart containers ==="
 docker run --rm -d \

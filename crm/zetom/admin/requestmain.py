@@ -413,6 +413,11 @@ class RequestMainAdmin(
                 name="zetom_requestmain_apply_status",
             ),
             path(
+                "<path:object_id>/cancel/",
+                view(self.cancel_view),
+                name="zetom_requestmain_cancel",
+            ),
+            path(
                 "<path:object_id>/oferta/",
                 view(self.oferta_action),
                 name="zetom_requestmain_oferta_action",
@@ -1028,6 +1033,39 @@ class RequestMainAdmin(
             return redirect("admin:zetom_requestmain_changelist")
         return redirect("admin:zetom_requestmain_change", object_id)
 
+    # claude — "Cancel request" button lives next to Delete in the submit
+    # row (submit_line.html override). Same shape as delete_view: GET shows
+    # the reason form, POST processes it and lands on the Cancelled archive.
+    def cancel_view(self, request, object_id):
+        obj, denied = self._get_req_for_action(
+            request, object_id, "change_request_status"
+        )
+        if denied is not None:
+            return denied
+
+        if obj.status == RequestStatus.cancelled:
+            messages.info(request, _("This request is already cancelled."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        if request.method == "POST":
+            reason = (request.POST.get("reason") or "").strip()
+            if reason:
+                apply_status_change(obj, request.user, RequestStatus.cancelled, reason=reason)
+                messages.success(request, _("Request cancelled."))
+                return redirect("admin:zetom_cancelledrequest_changelist")
+            messages.error(request, _("Reason is required."))
+
+        form = ReasonForm()
+        return render(
+            request,
+            "admin/zetom/requestmain/reason_form.html",
+            {
+                "form": form,
+                "obj": obj,
+                **self.admin_site.each_context(request),
+            },
+        )
+
     # ---------- Document creation actions ----------
 
     def oferta_action(self, request, object_id):
@@ -1046,7 +1084,7 @@ class RequestMainAdmin(
         _obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
         if denied is not None:
             return denied
-        approve_zlecenie_action(object_id)
+        approve_zlecenie_action(object_id, user=request.user)
         messages.success(request, _("Order created."))
         return redirect("admin:zetom_requestmain_change", object_id)
 
