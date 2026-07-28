@@ -491,3 +491,38 @@ def person_save(request, pk):
         "phone": person.phone.as_international if person.phone else "",
         "email": person.email or "",
     })
+
+
+# claude — Phase 3c: attach an existing person to another Company from the
+# Person card's Firmy panel. Two endpoints mounted on ClientAdmin.get_urls
+# (admin_view enforces staff auth; RBAC re-checked here). Search feeds the
+# picker; attach creates the CompanyPersonLink (idempotent).
+@login_required
+def company_search(request, pk):
+    if not user_has_perm(request.user, "view_clients"):
+        return JsonResponse({"results": []}, status=403)
+
+    person = get_object_or_404(Client, pk=pk)
+    q = request.GET.get("q", "").strip()
+    qs = Company.objects.exclude(person_links__person=person)
+    if q:
+        qs = qs.filter(Q(name__icontains=q) | Q(nip__icontains=q))
+    qs = qs.order_by("name")[:8]
+    return JsonResponse({
+        "results": [{"id": c.pk, "name": c.name, "nip": c.nip or ""} for c in qs]
+    })
+
+
+# claude
+@login_required
+@require_POST
+def attach_company(request, pk):
+    if not user_has_perm(request.user, "edit_clients"):
+        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+
+    person = get_object_or_404(Client, pk=pk)
+    company = get_object_or_404(Company, pk=request.POST.get("company_id"))
+    CompanyPersonLink.objects.get_or_create(
+        company=company, person=person, defaults={"linked_by": request.user},
+    )
+    return JsonResponse({"ok": True})

@@ -29,6 +29,8 @@ company_card.css.
   <symbol id="cc-i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
   <symbol id="cc-i-chev-r" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
   <symbol id="cc-i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="cc-i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="cc-i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
 </svg>
 
 <div class="cc-stage">
@@ -100,9 +102,10 @@ company_card.css.
       </div>
 
       {# Firmy — sourced from client.company_links, never Client.company_* #}
-      <div class="panel">
+      <div class="panel" x-data="firmaPicker({{ can_edit|yesno:'true,false' }})">
         <div class="panel-h">
           <h2><svg class="i hico"><use href="#cc-i-briefcase"/></svg> {% trans "Firmy" %}{% if firmy %} <span class="count">{{ firmy|length }}</span>{% endif %}</h2>
+          {% if can_edit %}<button type="button" class="btn sm" @click="open()"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Przypisz do firmy" %}</button>{% endif %}
         </div>
         {% if firmy %}
         <table class="inner">
@@ -126,6 +129,35 @@ company_card.css.
         <div class="empty">
           <span class="ring"><svg class="i"><use href="#cc-i-briefcase"/></svg></span>
           <p>{% trans "Ta osoba nie jest jeszcze powiązana z żadną firmą." %}</p>
+        </div>
+        {% endif %}
+
+        {% if can_edit %}
+        {# mFirma — przypisanie osoby do istniejącej firmy (Phase 3c) #}
+        <div class="overlay" x-show="modalOpen" x-cloak @click.self="close()" @keydown.escape.window="close()">
+          <div class="modal">
+            <div class="modal-h">
+              <h3>{% trans "Przypisz do firmy" %}</h3>
+              <button type="button" class="modal-x" @click="close()"><svg class="i"><use href="#cc-i-x"/></svg></button>
+            </div>
+            <div class="modal-b">
+              <div class="search">
+                <svg class="i i-sm"><use href="#cc-i-search"/></svg>
+                <input type="text" x-model="q" @input.debounce.250ms="search()" placeholder="{% trans 'Nazwa lub NIP…' %}" autofocus>
+              </div>
+              <div class="picker-list">
+                <template x-for="c in results" :key="c.id">
+                  <button type="button" class="picker-row" @click="attach(c.id)">
+                    <span class="pr-nm" x-text="c.name"></span>
+                    <span class="pr-nip mono" x-text="c.nip ? 'NIP ' + c.nip : ''"></span>
+                    <svg class="i i-sm"><use href="#cc-i-plus"/></svg>
+                  </button>
+                </template>
+                <p class="picker-empty" x-show="!results.length" x-text="q ? '{% trans "Nie znaleziono firm." %}' : '{% trans "Wpisz nazwę lub NIP firmy." %}'"></p>
+              </div>
+              <p class="picker-err" x-show="error" x-text="error"></p>
+            </div>
+          </div>
         </div>
         {% endif %}
       </div>
@@ -243,6 +275,65 @@ function osoboweModal(initial, canEdit) {
         this.errors = ["{% trans 'Błąd sieci — spróbuj ponownie.' %}"];
       } finally {
         this.saving = false;
+      }
+    },
+  };
+}
+
+// claude — Phase 3c: attach this person to another Company. Searches
+// clients_client_company_search (excludes already-linked firms) and posts to
+// clients_client_attach_company, then reloads to redraw the Firmy panel.
+function firmaPicker(canEdit) {
+  const searchUrl = "{% url 'admin:clients_client_company_search' client.pk %}";
+  const attachUrl = "{% url 'admin:clients_client_attach_company' client.pk %}";
+  const csrfToken = '{{ csrf_token }}';
+
+  return {
+    canEdit: canEdit,
+    modalOpen: false,
+    q: '',
+    results: [],
+    error: '',
+
+    open() {
+      this.q = '';
+      this.results = [];
+      this.error = '';
+      this.modalOpen = true;
+      this.search();
+    },
+    close() { this.modalOpen = false; },
+
+    async search() {
+      try {
+        const r = await fetch(searchUrl + '?q=' + encodeURIComponent(this.q), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const j = await r.json();
+        this.results = j.results || [];
+      } catch (e) {
+        this.error = "{% trans 'Błąd sieci — spróbuj ponownie.' %}";
+      }
+    },
+
+    async attach(companyId) {
+      this.error = '';
+      const body = new FormData();
+      body.set('company_id', companyId);
+      try {
+        const r = await fetch(attachUrl, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken },
+          body,
+        });
+        const j = await r.json();
+        if (!j.ok) {
+          this.error = j.error || "{% trans 'Nie udało się przypisać.' %}";
+          return;
+        }
+        window.location.reload();
+      } catch (e) {
+        this.error = "{% trans 'Błąd sieci — spróbuj ponownie.' %}";
       }
     },
   };

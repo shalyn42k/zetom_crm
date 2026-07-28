@@ -257,6 +257,19 @@ class ClientAdmin(admin.ModelAdmin):
                 view(views.person_save),
                 name="clients_client_person_save",
             ),
+            # claude — Phase 3c: attach existing person to another Company
+            # (Firmy panel picker on the Person card). view_clients to search,
+            # edit_clients to attach — re-checked inside each view.
+            path(
+                "<int:pk>/company-search/",
+                view(views.company_search),
+                name="clients_client_company_search",
+            ),
+            path(
+                "<int:pk>/attach-company/",
+                view(views.attach_company),
+                name="clients_client_attach_company",
+            ),
         ]
         return custom + urls
 

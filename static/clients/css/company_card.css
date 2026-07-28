@@ -270,3 +270,15 @@ html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,
 .cc-stage .pager span.active { background: var(--green-bright); border-color: var(--green-bright); color: #052e16; }
 .cc-stage .pager span.dis { opacity: .4; cursor: default; }
 .cc-stage .pager span.gap { border-color: transparent; background: transparent; }
+
+/* claude — Phase 3c: "Przypisz do firmy" picker on the Person card Firmy panel.
+   Reuses the shared .overlay/.modal/.search; only the results list is new. */
+.cc-stage .panel-h .btn.sm { margin-left: auto; }
+.cc-stage .picker-list { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; }
+.cc-stage .picker-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 13px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.cc-stage .picker-row:hover { background: var(--bg-3); border-color: var(--border-2); }
+.cc-stage .picker-row .pr-nm { font-weight: 600; }
+.cc-stage .picker-row .pr-nip { color: var(--text-3); font-size: 13.5px; margin-left: auto; }
+.cc-stage .picker-row .i { color: var(--green-bright); flex-shrink: 0; }
+.cc-stage .picker-empty { padding: 20px 4px; text-align: center; color: var(--text-3); font-size: 14.5px; }
+.cc-stage .picker-err { margin-top: 10px; color: var(--red); font-size: 14px; font-weight: 600; }
