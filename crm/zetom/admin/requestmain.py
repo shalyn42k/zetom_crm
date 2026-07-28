@@ -653,14 +653,19 @@ class RequestMainAdmin(
         items = []
         for c in find_candidates(probe):
             cl = c.client
+            # claude — company data lives on Company via company_links since
+            # phase 2c (Client.company_* dropped); find_candidates prefetches
+            # company_links__company, so .all()[0] hits the cache, no N+1.
+            _links = list(cl.company_links.all())
+            _company = _links[0].company if _links else None
             items.append({
                 "type": "client",
                 "pk": cl.pk,
                 "label": str(cl),
                 "first_name": cl.first_name or "",
                 "last_name": cl.last_name or "",
-                "company_name": cl.company_name or "",
-                "company_nip": cl.company_nip or "",
+                "company_name": _company.name if _company else "",
+                "company_nip": _company.nip if _company else "",
                 "phone": str(cl.phone) if cl.phone else "",
                 "email": cl.email or "",
                 "score": c.score,
@@ -862,14 +867,18 @@ class RequestMainAdmin(
         if denied is not None:
             return denied
 
-        client = Client.objects.create(
+        # claude — phase 2c: person + Company + link (Client.company_* dropped).
+        # create_person_with_company dedups the firm by NIP/name and wires the
+        # CompanyPersonLink; the request's company data comes from its snapshot.
+        client, _company = create_person_with_company(
             first_name=obj.first_name,
             last_name=obj.last_name,
-            company_name=obj.company_name,
-            company_nip=obj.company_nip or None,
             phone=obj.phone,
             email=obj.email,
-            address=obj.address,
+            company_name=obj.company_name or "",
+            company_nip=obj.company_nip or None,
+            address=obj.address or "",
+            linked_by=request.user,
         )
         RequestClientLink.objects.create(
             request=obj, client=client, linked_by=request.user,

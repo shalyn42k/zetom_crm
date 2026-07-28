@@ -35,7 +35,6 @@ class VWApproveCompanyTest(TestCase):
         company = Company.objects.get(nip="1234563218")
         self.assertEqual(new_main.company_id, company.pk)
         person = Client.objects.get(first_name="Jan")
+        # claude — company-данные живут на Company + CompanyPersonLink, не на
+        # Client (Client.company_* дропнуты в phase 2c).
         self.assertEqual(CompanyPersonLink.objects.filter(company=company, person=person).count(), 1)
-        # company_* НЕ записаны на человека
-        self.assertFalse(person.company_name)
-        self.assertFalse(person.company_nip)
