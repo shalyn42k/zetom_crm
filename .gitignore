@@ -214,6 +214,7 @@ __marimo__/
 handoff/
 design_handoff_client_pages/
 design_handoff_add_client/
+design_handoff_clients_unified/
 
 # Lab2 — временно, не трекать
 DOCS/lab2/

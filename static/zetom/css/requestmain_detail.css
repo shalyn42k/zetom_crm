@@ -945,6 +945,17 @@ a.rm-linked-name:hover { text-decoration:underline; }
   font-size: 13px;
 }
 
+/* claude — phase 3c: read-only company line in the person editor (company is
+   edited on the Company card, not here). */
+.rm-form-ro {
+  padding: 8px 10px;
+  border: 1px dashed var(--rm-card-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--rm-text-muted, var(--rm-text));
+  font-size: 13px;
+}
+
 .rm-form-input:focus {
   outline: 2px solid var(--rm-st-active);
   outline-offset: 1px;

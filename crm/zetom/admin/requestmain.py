@@ -527,6 +527,13 @@ class RequestMainAdmin(
 
     # ---------- JSON client-link endpoints (for card JS) ----------
 
+    # claude — phase 3c: Client is person-only, so its company (name/NIP shown
+    # in the card + editor) comes from the first CompanyPersonLink → Company.
+    @staticmethod
+    def _client_company(cl):
+        link = cl.company_links.select_related("company").first()
+        return link.company if link else None
+
     def link_client_json(self, request, object_id, client_id):
         if request.method != "POST":
             return JsonResponse({"ok": False}, status=405)
@@ -539,7 +546,8 @@ class RequestMainAdmin(
         _, created = RequestClientLink.objects.get_or_create(
             request=obj, client=cl, defaults={"linked_by": request.user}
         )
-        return JsonResponse({"ok": True, "created": created, "label": str(cl), "pk": cl.pk, "nip": cl.company_nip or ""})
+        company = self._client_company(cl)
+        return JsonResponse({"ok": True, "created": created, "label": str(cl), "pk": cl.pk, "nip": company.nip if company else ""})
 
     def unlink_client_json(self, request, object_id, client_id):
         if request.method != "POST":
@@ -556,17 +564,20 @@ class RequestMainAdmin(
         obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
         if denied:
             return JsonResponse({"ok": False, "error": "permission"}, status=403)
-        cl = Client.objects.create(
+        # claude — phase 3c: person + deduped Company + link (Client.company_*
+        # dropped). Company data comes from the request's own snapshot.
+        cl, company = create_person_with_company(
             first_name=obj.first_name,
             last_name=obj.last_name,
-            company_name=obj.company_name,
-            company_nip=obj.company_nip or None,
             phone=obj.phone,
             email=obj.email,
-            address=obj.address,
+            company_name=obj.company_name or "",
+            company_nip=obj.company_nip or None,
+            address=obj.address or "",
+            linked_by=request.user,
         )
         RequestClientLink.objects.create(request=obj, client=cl, linked_by=request.user)
-        return JsonResponse({"ok": True, "label": str(cl), "pk": cl.pk, "nip": cl.company_nip or ""})
+        return JsonResponse({"ok": True, "label": str(cl), "pk": cl.pk, "nip": company.nip if company else ""})
 
     def edit_client_json(self, request, object_id, client_id):
         """Returns client data in JSON format for inline editing in a modal."""
@@ -578,13 +589,17 @@ class RequestMainAdmin(
         cl = Client.objects.filter(pk=client_id).first()
         if not cl:
             return JsonResponse({"ok": False, "error": "not found"}, status=404)
+        # claude — phase 3c: person fields are editable; company_name/company_nip
+        # are read-only, derived from the linked Company (edit them on the
+        # Company card, not here).
+        company = self._client_company(cl)
         return JsonResponse({
             "ok": True,
             "pk": cl.pk,
             "first_name": cl.first_name or "",
             "last_name": cl.last_name or "",
-            "company_name": cl.company_name or "",
-            "company_nip": cl.company_nip or "",
+            "company_name": company.name if company else "",
+            "company_nip": company.nip if company else "",
             "phone": str(cl.phone) if cl.phone else "",
             "email": cl.email or "",
             "address": cl.address or "",
@@ -601,31 +616,30 @@ class RequestMainAdmin(
         if not cl:
             return JsonResponse({"ok": False, "error": "not found"}, status=404)
         
-        # Update client fields
+        # claude — phase 3c: person-only save. Company (name/NIP) belongs to the
+        # linked Company and is not edited here.
         cl.first_name = (request.POST.get("first_name") or "").strip() or None
         cl.last_name = (request.POST.get("last_name") or "").strip() or None
-        cl.company_name = (request.POST.get("company_name") or "").strip() or None
-        cl.company_nip = (request.POST.get("company_nip") or "").strip() or None
         phone_raw = (request.POST.get("phone") or "").strip()
         cl.phone = phone_raw or None
         cl.email = (request.POST.get("email") or "").strip() or None
         cl.address = (request.POST.get("address") or "").strip() or None
 
         try:
-            cl.clean()  # normalizes NIP, no validate_unique side-effects
+            cl.clean()
             cl.save(update_fields=[
-                "first_name", "last_name", "company_name", "company_nip",
-                "phone", "email", "address",
+                "first_name", "last_name", "phone", "email", "address",
             ])
+            company = self._client_company(cl)
             return JsonResponse({
                 "ok": True,
                 "pk": cl.pk,
                 "label": cl.short_label(),
-                "nip": cl.company_nip or "",
+                "nip": company.nip if company else "",
                 "first_name": cl.first_name or "",
                 "last_name": cl.last_name or "",
-                "company_name": cl.company_name or "",
-                "company_nip": cl.company_nip or "",
+                "company_name": company.name if company else "",
+                "company_nip": company.nip if company else "",
                 "phone": str(cl.phone) if cl.phone else "",
                 "email": cl.email or "",
                 "address": cl.address or "",
@@ -653,14 +667,19 @@ class RequestMainAdmin(
         items = []
         for c in find_candidates(probe):
             cl = c.client
+            # claude — company data lives on Company via company_links since
+            # phase 2c (Client.company_* dropped); find_candidates prefetches
+            # company_links__company, so .all()[0] hits the cache, no N+1.
+            _links = list(cl.company_links.all())
+            _company = _links[0].company if _links else None
             items.append({
                 "type": "client",
                 "pk": cl.pk,
                 "label": str(cl),
                 "first_name": cl.first_name or "",
                 "last_name": cl.last_name or "",
-                "company_name": cl.company_name or "",
-                "company_nip": cl.company_nip or "",
+                "company_name": _company.name if _company else "",
+                "company_nip": _company.nip if _company else "",
                 "phone": str(cl.phone) if cl.phone else "",
                 "email": cl.email or "",
                 "score": c.score,
@@ -862,14 +881,18 @@ class RequestMainAdmin(
         if denied is not None:
             return denied
 
-        client = Client.objects.create(
+        # claude — phase 2c: person + Company + link (Client.company_* dropped).
+        # create_person_with_company dedups the firm by NIP/name and wires the
+        # CompanyPersonLink; the request's company data comes from its snapshot.
+        client, _company = create_person_with_company(
             first_name=obj.first_name,
             last_name=obj.last_name,
-            company_name=obj.company_name,
-            company_nip=obj.company_nip or None,
             phone=obj.phone,
             email=obj.email,
-            address=obj.address,
+            company_name=obj.company_name or "",
+            company_nip=obj.company_nip or None,
+            address=obj.address or "",
+            linked_by=request.user,
         )
         RequestClientLink.objects.create(
             request=obj, client=client, linked_by=request.user,

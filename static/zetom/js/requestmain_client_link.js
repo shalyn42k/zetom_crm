@@ -45,10 +45,20 @@
         '<input type="' + type + '" name="' + name + '" value="' + escapeHtml(value) + '" class="rm-form-input">' +
         '</div>';
     }
+    // claude — phase 3c: person-only editor. Company (name/NIP) is read-only
+    // here — it lives on the linked Company, edited on the Company card.
+    function companyRow() {
+      if (!data.company_name && !data.company_nip) return "";
+      var txt = data.company_name || "";
+      if (data.company_nip) txt += (txt ? " · " : "") + "NIP " + data.company_nip;
+      return '<div class="rm-form-group">' +
+        '<label class="rm-label">Firma</label>' +
+        '<div class="rm-form-ro">' + escapeHtml(txt) + '</div>' +
+        '</div>';
+    }
     return field("First name", "first_name", "text", data.first_name) +
       field("Last name", "last_name", "text", data.last_name) +
-      field("Company", "company_name", "text", data.company_name) +
-      field("NIP", "company_nip", "text", data.company_nip) +
+      companyRow() +
       field("Phone", "phone", "text", data.phone) +
       field("Email", "email", "email", data.email) +
       field("Address", "address", "text", data.address);
@@ -230,12 +240,12 @@
                 var nipEl = row.querySelector(".rm-linked-nip");
                 if (nipEl) nipEl.textContent = d.nip ? "NIP " + d.nip : "";
               }
-              // Update main RequestMain form fields so they match the saved client
+              // claude — phase 3c: sync only person fields to the RequestMain
+              // form; the request keeps its own company snapshot (not edited
+              // through the person editor).
               var fieldMap = {
                 "id_first_name":   d.first_name,
                 "id_last_name":    d.last_name,
-                "id_company_name": d.company_name,
-                "id_company_nip":  d.company_nip,
                 "id_email":        d.email,
                 "id_phone":        d.phone,
               };

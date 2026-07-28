@@ -6,13 +6,11 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext, gettext_lazy as _
 from django.views import View
 from django.views.decorators.http import require_POST
 
-from crm.clients.forms import ClientForm
 from crm.clients.models import Client, Company, CompanyPersonLink
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
@@ -357,37 +355,6 @@ def request_search(request):
     return JsonResponse({"results": results[:limit], "total": total})
 
 
-# claude
-@login_required
-@require_POST
-def client_create(request):
-    if not user_has_perm(request.user, "edit_clients"):
-        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
-
-    form = ClientForm(request.POST)
-    if not form.is_valid():
-        return JsonResponse(
-            {"ok": False, "errors": form.errors.get_json_data()}, status=422
-        )
-
-    client = form.save()
-
-    link_type = request.POST.get("link_type")
-    link_req_pk = request.POST.get("link_req_pk")
-    if link_type and link_req_pk and link_type in _TYPE_MAP:
-        model, link_model, _prefix = _TYPE_MAP[link_type]
-        req_obj = get_object_or_404(model, pk=link_req_pk)
-        link_model.objects.get_or_create(
-            request=req_obj, client=client,
-            defaults={"linked_by": request.user},
-        )
-
-    return JsonResponse({
-        "ok": True,
-        "redirect_url": reverse("admin:clients_client_change", args=[client.pk]),
-    })
-
-
 # claude — Osoby kontaktowe panel backend (Company detail card, Phase 3a
 # Task 2). Mounted under CompanyAdmin.get_urls so admin_view enforces staff
 # auth; edit_clients is re-checked on top, mirroring the Client endpoints
@@ -493,4 +460,69 @@ def company_person_delete(request, pk, link_pk):
     company = get_object_or_404(Company, pk=pk)
     # Removes only the link row — the person (Client) is left intact.
     CompanyPersonLink.objects.filter(pk=link_pk, company=company).delete()
+    return JsonResponse({"ok": True})
+
+
+# claude — Dane osobowe save endpoint for the Person (Osoba) card (Phase 3b
+# Task 1, mOsobowe modal). Only touches first_name/last_name/phone/email —
+# never company_name/company_nip/client_type (those belong to Company now).
+@login_required
+@require_POST
+def person_save(request, pk):
+    if not user_has_perm(request.user, "edit_clients"):
+        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+
+    person = get_object_or_404(Client, pk=pk)
+    email = request.POST.get("email", "").strip()
+    error = _invalid_email_error(email)
+    if error:
+        return JsonResponse({"ok": False, "error": error}, status=400)
+
+    person.first_name = request.POST.get("first_name", "").strip()
+    person.last_name = request.POST.get("last_name", "").strip()
+    person.email = email
+    person.phone = request.POST.get("phone", "").strip() or None
+    person.save()
+
+    return JsonResponse({
+        "ok": True,
+        "first_name": person.first_name or "",
+        "last_name": person.last_name or "",
+        "phone": person.phone.as_international if person.phone else "",
+        "email": person.email or "",
+    })
+
+
+# claude — Phase 3c: attach an existing person to another Company from the
+# Person card's Firmy panel. Two endpoints mounted on ClientAdmin.get_urls
+# (admin_view enforces staff auth; RBAC re-checked here). Search feeds the
+# picker; attach creates the CompanyPersonLink (idempotent).
+@login_required
+def company_search(request, pk):
+    if not user_has_perm(request.user, "view_clients"):
+        return JsonResponse({"results": []}, status=403)
+
+    person = get_object_or_404(Client, pk=pk)
+    q = request.GET.get("q", "").strip()
+    qs = Company.objects.exclude(person_links__person=person)
+    if q:
+        qs = qs.filter(Q(name__icontains=q) | Q(nip__icontains=q))
+    qs = qs.order_by("name")[:8]
+    return JsonResponse({
+        "results": [{"id": c.pk, "name": c.name, "nip": c.nip or ""} for c in qs]
+    })
+
+
+# claude
+@login_required
+@require_POST
+def attach_company(request, pk):
+    if not user_has_perm(request.user, "edit_clients"):
+        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+
+    person = get_object_or_404(Client, pk=pk)
+    company = get_object_or_404(Company, pk=request.POST.get("company_id"))
+    CompanyPersonLink.objects.get_or_create(
+        company=company, person=person, defaults={"linked_by": request.user},
+    )
     return JsonResponse({"ok": True})

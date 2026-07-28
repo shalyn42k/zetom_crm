@@ -48,9 +48,11 @@ class ClientLinkActionTests(TestCase):
     def setUp(self):
         self.client.force_login(self.user)
         self.req = RequestMain.objects.create(**BASE_DATA)
+        # claude — Client is person-only since phase 2c (no company_name);
+        # duplicate match below keys on phone+email, not company data.
         self.cl = Client.objects.create(
             first_name="Jan", last_name="Kowalski",
-            phone="+48501600300", email="jan@zetom.pl", company_name="Zetom",
+            phone="+48501600300", email="jan@zetom.pl",
         )
 
     def test_link_existing_client(self, _perm):
