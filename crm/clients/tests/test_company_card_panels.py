@@ -45,9 +45,9 @@ class CompanyCardPanelsTest(TestCase):
         resp = self.client.get(url)
 
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "Powiązane zgłoszenia")
-        self.assertContains(resp, "Historia kontaktów")
-        self.assertContains(resp, f"Zgłoszenie nr {request_main.pk}")
+        self.assertContains(resp, "Related requests")   # EN locale (LANGUAGE_CODE=en)
+        self.assertContains(resp, "Contact history")
+        self.assertContains(resp, f"Request no. {request_main.pk}")
         self.assertContains(resp, "Rozmowa o ofercie kalibracji")
 
     def test_unrelated_company_history_not_leaked(self):

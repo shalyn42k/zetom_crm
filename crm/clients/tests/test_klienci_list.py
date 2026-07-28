@@ -23,7 +23,7 @@ class KlienciListTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Zetom Sp.")       # firma
         self.assertContains(resp, "Jan Prywatny")     # private person
-        self.assertContains(resp, "Osoba prywatna")
+        self.assertContains(resp, "Private person")  # EN locale (LANGUAGE_CODE=en)
 
     def test_filter_firmy_only(self):
         resp = self._get(rodzaj="firmy")

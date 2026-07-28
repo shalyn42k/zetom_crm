@@ -20,5 +20,5 @@ class CompanyCardTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Zetom Sp. z o.o.")
         self.assertContains(resp, "1234563218")
-        self.assertContains(resp, "Dane podstawowe")
-        self.assertContains(resp, "Osoby kontaktowe")
+        self.assertContains(resp, "Basic data")       # EN locale (LANGUAGE_CODE=en)
+        self.assertContains(resp, "Contact persons")

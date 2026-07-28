@@ -18,8 +18,8 @@ class PersonCardTest(TestCase):
         resp = self.client.get(reverse("admin:clients_client_change", args=[person.pk]), HTTP_HOST="127.0.0.1")
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Jan")
-        self.assertContains(resp, "Dane osobowe")
-        self.assertContains(resp, "Firmy")
+        self.assertContains(resp, "Personal data")  # EN locale (LANGUAGE_CODE=en)
+        self.assertContains(resp, "Companies")
         self.assertContains(resp, "Zetom")
         self.assertContains(resp, "Kierownik")
 
