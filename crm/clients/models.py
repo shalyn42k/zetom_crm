@@ -40,6 +40,13 @@ class Client(models.Model):
     def short_label(self):
         return self.full_name() or f"Client #{self.pk}"
 
+    # claude — phase 3c: first linked Company (company data lives on Company via
+    # company_links). Callers that render many rows should prefetch
+    # company_links__company to avoid a query per person.
+    def primary_company(self):
+        link = self.company_links.first()
+        return link.company if link else None
+
 
 class ClientInteraction(models.Model):
     """БАГ-9 + БАГ-10: история контактов с клиентом — канал, суть, участники."""

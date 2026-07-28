@@ -39,7 +39,7 @@ URLs injected via data- attributes; JS lives in requestmain_client_link.js.
       {% for cl in linked_clients %}
         <div class="rm-linked-row" data-client-pk="{{ cl.pk }}">
           <a class="rm-linked-name" href="{% url 'admin:clients_client_change' cl.pk %}" target="_blank">{{ cl.short_label }}</a>
-          {% if cl.company_nip %}<span class="rm-linked-nip mono">NIP {{ cl.company_nip }}</span>{% endif %}
+          {% with pc=cl.primary_company %}{% if pc and pc.nip %}<span class="rm-linked-nip mono">NIP {{ pc.nip }}</span>{% endif %}{% endwith %}
           {% if original.pk %}
             <button type="button" class="rm-linked-edit js-edit-client" data-client="{{ cl.pk }}" title="{% trans "Edit" %}">✎</button>
             <button type="button" class="rm-linked-x js-unlink-client" data-client="{{ cl.pk }}" title="{% trans "Unlink" %}">×</button>
