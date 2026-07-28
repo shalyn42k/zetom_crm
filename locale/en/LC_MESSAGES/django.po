@@ -112,29 +112,29 @@ msgstr ""
 
 #: crm/clients/admin.py:46
 msgid "Zgłoszenie"
-msgstr "Zgłoszenie"
+msgstr "Request"
 
 #: crm/clients/admin.py:47
 msgid "Oferta"
-msgstr "Oferta"
+msgstr "Offer"
 
 #: crm/clients/admin.py:48
 msgid "Zlecenie"
-msgstr "Zlecenie"
+msgstr "Order"
 
 #: crm/clients/admin.py:49
 msgid "Wniosek"
-msgstr "Wniosek"
+msgstr "Application"
 
 #: crm/clients/admin.py:62
 #, python-format
 msgid "Zgłoszenie nr %(pk)s / %(year)s"
-msgstr "Zgłoszenie nr %(pk)s / %(year)s"
+msgstr "Request no. %(pk)s / %(year)s"
 
 #: crm/clients/admin.py:122
 #, python-format
 msgid "%(type)s nr %(pk)s / %(year)s"
-msgstr "%(type)s nr %(pk)s / %(year)s"
+msgstr "%(type)s no. %(pk)s / %(year)s"
 
 #: crm/clients/admin.py:182 crm/users/admin/user.py:34
 #: crm/users/templates/admin/auth/user/_partials/tab_notifications.html:14
@@ -150,7 +150,7 @@ msgstr "Klient #%(pk)s"
 #: crm/clients/templates/admin/clients/client/klienci_list.html:111
 #: crm/clients/templates/admin/clients/client/person_card.html:50
 msgid "Osoba prywatna"
-msgstr "Osoba prywatna"
+msgstr "Private person"
 
 #: crm/clients/admin.py:408
 msgid "Person Detail"
@@ -376,59 +376,60 @@ msgstr "Company contacts"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:37
 msgid "Klienci"
-msgstr "Klienci"
+msgstr "Clients"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:38
 msgid ""
 "Wspólna baza firm i osób prywatnych. Kliknij wiersz, aby otworzyć kartę."
 msgstr ""
-"Wspólna baza firm i osób prywatnych. Kliknij wiersz, aby otworzyć kartę."
+"Shared database of companies and private persons. Click a row to open the "
+"card."
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:43
 msgid "Dodaj klienta"
-msgstr "Dodaj klienta"
+msgstr "Add client"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:53
 msgid "Rodzaj"
-msgstr "Rodzaj"
+msgstr "Type"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:56
 msgid "Wszyscy"
-msgstr "Wszyscy"
+msgstr "All"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:59
 #: crm/clients/templates/admin/clients/client/person_card.html:108
 msgid "Firmy"
-msgstr "Firmy"
+msgstr "Companies"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:62
 msgid "Osoby"
-msgstr "Osoby"
+msgstr "Persons"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:68
 #: crm/clients/templates/admin/clients/company/change_form.html:66
 msgid "Typ dostawcy"
-msgstr "Typ dostawcy"
+msgstr "Supplier type"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:70
 msgid "Wszystkie typy"
-msgstr "Wszystkie typy"
+msgstr "All types"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:78
 msgid "Szukaj"
-msgstr "Szukaj"
+msgstr "Search"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:81
 msgid "Nazwa, imię, NIP…"
-msgstr "Nazwa, imię, NIP…"
+msgstr "Name, first name, NIP…"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:91
 msgid "Nazwa / Imię"
-msgstr "Nazwa / Imię"
+msgstr "Name / First name"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:93
 msgid "Typ"
-msgstr "Typ"
+msgstr "Type"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:94
 #: crm/clients/templates/admin/clients/client/person_card.html:72
@@ -437,7 +438,7 @@ msgstr "Typ"
 #: crm/clients/templates/admin/clients/company/change_form.html:105
 #: crm/clients/templates/admin/clients/company/change_form.html:151
 msgid "Telefon"
-msgstr "Telefon"
+msgstr "Phone"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:95
 #: crm/clients/templates/admin/clients/client/person_card.html:73
@@ -450,28 +451,28 @@ msgstr "E-mail"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:96
 msgid "Zgłoszenia"
-msgstr "Zgłoszenia"
+msgstr "Requests"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:109
 #, python-format
 msgid "Firma · %(typ)s"
-msgstr "Firma · %(typ)s"
+msgstr "Company · %(typ)s"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:122
 #: crm/clients/templates/admin/clients/client/person_card.html:113
 #: crm/clients/templates/admin/clients/company/change_form.html:45
 msgid "Firma"
-msgstr "Firma"
+msgstr "Company"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:124
 #: crm/clients/templates/admin/clients/client/person_card.html:40
 #: crm/clients/templates/admin/clients/client/person_card.html:48
 msgid "Osoba"
-msgstr "Osoba"
+msgstr "Person"
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:134
 msgid "Nie znaleziono klientów."
-msgstr "Nie znaleziono klientów."
+msgstr "No clients found."
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:142
 #, python-format
@@ -485,248 +486,244 @@ msgid_plural ""
 "        "
 msgstr[0] ""
 "\n"
-"          Pokazano %(start)s–%(end)s z %(total)s klienta\n"
+"          Showing %(start)s–%(end)s of %(total)s client\n"
 "        "
 msgstr[1] ""
 "\n"
-"          Pokazano %(start)s–%(end)s z %(total)s klientów\n"
-"        "
-msgstr[2] ""
-"\n"
-"          Pokazano %(start)s–%(end)s z %(total)s klientów\n"
+"          Showing %(start)s–%(end)s of %(total)s clients\n"
 "        "
 
 #: crm/clients/templates/admin/clients/client/person_card.html:39
 #: crm/clients/templates/admin/clients/company/change_form.html:36
 msgid "Wróć"
-msgstr "Wróć"
+msgstr "Back"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:66
 msgid "Dane osobowe"
-msgstr "Dane osobowe"
+msgstr "Personal data"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:67
 #: crm/clients/templates/admin/clients/company/change_form.html:60
 #: crm/clients/templates/admin/clients/company/change_form.html:74
 #: crm/clients/templates/admin/clients/company/change_form.html:120
 msgid "Edytuj"
-msgstr "Edytuj"
+msgstr "Edit"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:70
 #: crm/clients/templates/admin/clients/client/person_card.html:88
 #: crm/clients/templates/admin/clients/company/change_form.html:104
 #: crm/clients/templates/admin/clients/company/change_form.html:147
 msgid "Imię"
-msgstr "Imię"
+msgstr "First name"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:71
 #: crm/clients/templates/admin/clients/client/person_card.html:89
 #: crm/clients/templates/admin/clients/company/change_form.html:104
 #: crm/clients/templates/admin/clients/company/change_form.html:148
 msgid "Nazwisko"
-msgstr "Nazwisko"
+msgstr "Last name"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:81
 msgid "Edytuj dane osobowe"
-msgstr "Edytuj dane osobowe"
+msgstr "Edit personal data"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:82
 msgid "Dane osoby."
-msgstr "Dane osoby."
+msgstr "Person data."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:88
 msgid "np. Jan"
-msgstr "np. Jan"
+msgstr "e.g. John"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:89
 msgid "np. Kowalski"
-msgstr "np. Kowalski"
+msgstr "e.g. Smith"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:97
 #: crm/clients/templates/admin/clients/company/change_form.html:161
 msgid "Anuluj"
-msgstr "Anuluj"
+msgstr "Cancel"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:98
 #: crm/clients/templates/admin/clients/company/change_form.html:162
 msgid "Zapisz"
-msgstr "Zapisz"
+msgstr "Save"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:109
 #: crm/clients/templates/admin/clients/client/person_card.html:141
 msgid "Przypisz do firmy"
-msgstr "Przypisz do firmy"
+msgstr "Assign to company"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:113
 #: crm/clients/templates/admin/clients/company/change_form.html:105
 #: crm/clients/templates/admin/clients/company/change_form.html:154
 msgid "Stanowisko"
-msgstr "Stanowisko"
+msgstr "Position"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:119
 msgid "Główny"
-msgstr "Główny"
+msgstr "Primary"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:124
 msgid "Otwórz firmę"
-msgstr "Otwórz firmę"
+msgstr "Open company"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:132
 msgid "Ta osoba nie jest jeszcze powiązana z żadną firmą."
-msgstr "Ta osoba nie jest jeszcze powiązana z żadną firmą."
+msgstr "This person is not linked to any company yet."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:147
 #| msgid "Nazwa, imię, NIP…"
 msgid "Nazwa lub NIP…"
-msgstr "Nazwa lub NIP…"
+msgstr "Name or NIP…"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:157
 #| msgid "Nie znaleziono klientów."
 msgid "Nie znaleziono firm."
-msgstr "Nie znaleziono firm."
+msgstr "No companies found."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:157
 msgid "Wpisz nazwę lub NIP firmy."
-msgstr "Wpisz nazwę lub NIP firmy."
+msgstr "Enter a company name or NIP."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:171
 #: crm/clients/templates/admin/clients/company/change_form.html:173
 msgid "Powiązane zgłoszenia"
-msgstr "Powiązane zgłoszenia"
+msgstr "Related requests"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:189
 msgid "Brak zgłoszeń powiązanych z tą osobą."
-msgstr "Brak zgłoszeń powiązanych z tą osobą."
+msgstr "No requests linked to this person."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:197
 #: crm/clients/templates/admin/clients/company/change_form.html:199
 msgid "Historia kontaktów"
-msgstr "Historia kontaktów"
+msgstr "Contact history"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:216
 #: crm/clients/templates/admin/clients/company/change_form.html:218
 msgid "Brak historii kontaktów."
-msgstr "Brak historii kontaktów."
+msgstr "No contact history."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:219
 #: crm/clients/templates/admin/clients/company/change_form.html:221
 msgid "Tylko podgląd — dodawanie wpisów będzie dostępne później."
-msgstr "Tylko podgląd — dodawanie wpisów będzie dostępne później."
+msgstr "Preview only — adding entries will be available later."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:270
 #: crm/clients/templates/admin/clients/company/change_form.html:300
 msgid "Nie udało się zapisać."
-msgstr "Nie udało się zapisać."
+msgstr "Could not save."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:276
 #: crm/clients/templates/admin/clients/client/person_card.html:316
 #: crm/clients/templates/admin/clients/client/person_card.html:337
 #: crm/clients/templates/admin/clients/company/change_form.html:311
 msgid "Błąd sieci — spróbuj ponownie."
-msgstr "Błąd sieci — spróbuj ponownie."
+msgstr "Network error — please try again."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:332
 #| msgid "Nie udało się zapisać."
 msgid "Nie udało się przypisać."
-msgstr "Nie udało się przypisać."
+msgstr "Could not assign."
 
 #: crm/clients/templates/admin/clients/company/change_form.html:37
 msgid "Klient / Firma"
-msgstr "Klient / Firma"
+msgstr "Client / Company"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:59
 msgid "Dane podstawowe"
-msgstr "Dane podstawowe"
+msgstr "Basic data"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:63
 msgid "Nazwa"
-msgstr "Nazwa"
+msgstr "Name"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:73
 msgid "Dane szczegółowe"
-msgstr "Dane szczegółowe"
+msgstr "Detailed data"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:77
 msgid "Kraj"
-msgstr "Kraj"
+msgstr "Country"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:78
 msgid "Miasto"
-msgstr "Miasto"
+msgstr "City"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:79
 msgid "Województwo"
-msgstr "Województwo"
+msgstr "Voivodeship"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:80
 msgid "Kod pocztowy"
-msgstr "Kod pocztowy"
+msgstr "Post code"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:81
 msgid "Ulica"
-msgstr "Ulica"
+msgstr "Street"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:98
 msgid "Osoby kontaktowe"
-msgstr "Osoby kontaktowe"
+msgstr "Contact persons"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:99
 #: crm/clients/templates/admin/clients/company/change_form.html:140
 msgid "Dodaj osobę kontaktową"
-msgstr "Dodaj osobę kontaktową"
+msgstr "Add contact person"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:106
 msgid "Operacje"
-msgstr "Operacje"
+msgstr "Actions"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:112
 #: crm/clients/templates/admin/clients/company/change_form.html:157
 msgid "Główny kontakt"
-msgstr "Główny kontakt"
+msgstr "Primary contact"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:121
 msgid "Usuń"
-msgstr "Usuń"
+msgstr "Delete"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:131
 msgid "Brak osób kontaktowych przypisanych do tej firmy."
-msgstr "Brak osób kontaktowych przypisanych do tej firmy."
+msgstr "No contact persons assigned to this company."
 
 #: crm/clients/templates/admin/clients/company/change_form.html:132
 msgid "Dodaj osobę"
-msgstr "Dodaj osobę"
+msgstr "Add person"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:140
 msgid "Edytuj osobę kontaktową"
-msgstr "Edytuj osobę kontaktową"
+msgstr "Edit contact person"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:141
 msgid "Osoba kontaktowa powiązana z firmą."
-msgstr "Osoba kontaktowa powiązana z firmą."
+msgstr "Contact person linked to the company."
 
 #: crm/clients/templates/admin/clients/company/change_form.html:147
 msgid "np. Marek"
-msgstr "np. Marek"
+msgstr "e.g. Mark"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:148
 msgid "np. Wiśniewski"
-msgstr "np. Wiśniewski"
+msgstr "e.g. Johnson"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:154
 msgid "np. Dyrektor techniczny"
-msgstr "np. Dyrektor techniczny"
+msgstr "e.g. Technical director"
 
 #: crm/clients/templates/admin/clients/company/change_form.html:157
 msgid "Główna osoba do kontaktu w tej firmie."
-msgstr "Główna osoba do kontaktu w tej firmie."
+msgstr "Primary contact person for this company."
 
 #: crm/clients/templates/admin/clients/company/change_form.html:191
 msgid "Brak zgłoszeń powiązanych z tą firmą."
-msgstr "Brak zgłoszeń powiązanych z tą firmą."
+msgstr "No requests linked to this company."
 
 #: crm/clients/templates/admin/clients/company/change_form.html:242
 msgid "Czy na pewno chcesz usunąć tę osobę kontaktową?"
-msgstr "Czy na pewno chcesz usunąć tę osobę kontaktową?"
+msgstr "Are you sure you want to delete this contact person?"
 
 #: crm/clients/validators.py:20
 msgid ""
@@ -763,7 +760,7 @@ msgstr ""
 
 #: crm/clients/views.py:372
 msgid "Nieprawidłowy adres e-mail."
-msgstr "Nieprawidłowy adres e-mail."
+msgstr "Invalid e-mail address."
 
 #: crm/notification/admin.py:63
 msgid "Title"
