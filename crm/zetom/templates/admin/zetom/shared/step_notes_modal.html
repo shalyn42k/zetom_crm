@@ -9,9 +9,31 @@
   </div>
   {% endif %}
 
-  <div class="sn-modal" x-show="open" x-cloak role="dialog" aria-modal="true" aria-labelledby="sn-modal-title">
-    <div class="sn-modal__backdrop" @click="open = false"></div>
-    <div class="sn-modal__panel" @click.stop>
+    <div class="sn-modal"
+      x-show="open"
+      x-transition:enter="sn-trans-enter"
+      x-transition:enter-start="sn-trans-enter-start"
+      x-transition:enter-end="sn-trans-enter-end"
+      x-transition:leave="sn-trans-leave"
+      x-transition:leave-start="sn-trans-leave-start"
+      x-transition:leave-end="sn-trans-leave-end"
+      x-cloak role="dialog" aria-modal="true" aria-labelledby="sn-modal-title">
+      <div class="sn-modal__backdrop"
+        x-transition:enter="sn-backdrop-enter"
+        x-transition:enter-start="sn-backdrop-enter-start"
+        x-transition:enter-end="sn-backdrop-enter-end"
+        x-transition:leave="sn-backdrop-leave"
+        x-transition:leave-start="sn-backdrop-leave-start"
+        x-transition:leave-end="sn-backdrop-leave-end"
+        @click="open = false"></div>
+      <div class="sn-modal__panel"
+        x-transition:enter="sn-panel-enter"
+        x-transition:enter-start="sn-panel-enter-start"
+        x-transition:enter-end="sn-panel-enter-end"
+        x-transition:leave="sn-panel-leave"
+        x-transition:leave-start="sn-panel-leave-start"
+        x-transition:leave-end="sn-panel-leave-end"
+        @click.stop>
       <header class="sn-modal__header">
         <h2 id="sn-modal-title" class="sn-modal__title">{% trans "Work log" %}</h2>
         <button type="button" class="sn-modal__close" @click="open = false" aria-label='{% trans "Close" %}'>×</button>
@@ -58,6 +80,10 @@
                   <strong>{{ entry.author.get_full_name|default:entry.author.username|default:'—' }}</strong>
                   <span>·</span>
                   <span title="{{ entry.created_at|date:'Y-m-d H:i' }}">{{ entry.created_at|naturaltime }}</span>
+                  {% if entry.stage_label %}
+                    <span>·</span>
+                    <span>{{ entry.stage_label }}</span>
+                  {% endif %}
                 </div>
                 {% if entry.next_contact_at %}
                   <div class="sn-item__next-contact">

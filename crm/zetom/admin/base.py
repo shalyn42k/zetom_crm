@@ -5,6 +5,8 @@ this module is loaded first and shouldn't pull in Crispy / heavy stuff.
 """
 from django import forms
 from django.contrib import admin, messages
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect
 from django.urls import path, reverse
@@ -13,7 +15,7 @@ from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
 from crm.users.utils import user_has_perm
-from crm.zetom.models import DepartmentsVariants, StepNote
+from crm.zetom.models import DepartmentsVariants, Oferta, RequestMain, StepNote, Wniosek, Zlecenie
 from crm.zetom.services.visibility import visible_requests_for
 
 
@@ -120,6 +122,85 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
         opts = self.model._meta
         return reverse(f"admin:{opts.app_label}_{opts.model_name}_change", args=[object_id])
 
+    def _step_note_targets(self, obj):
+        """Return objects whose notes belong to one request thread.
+
+        Thread = RequestMain plus all its child docs. For child docs, this
+        includes parent RequestMain and sibling children from the same parent.
+        """
+        if not obj or not obj.pk:
+            return []
+
+        request_main = obj if isinstance(obj, RequestMain) else None
+        if request_main is None and hasattr(obj, "from_main_id") and obj.from_main_id:
+            request_main = obj.from_main
+
+        targets = []
+        if request_main is not None:
+            targets.append(request_main)
+            targets.extend(list(request_main.oferta_set.only("pk", "created_at")))
+            targets.extend(list(request_main.zlecenie_set.only("pk", "created_at")))
+            targets.extend(list(request_main.wniosek_set.only("pk", "created_at")))
+        else:
+            targets.append(obj)
+
+        seen = set()
+        deduped = []
+        for target in targets:
+            if target is None or not target.pk:
+                continue
+            key = (target._meta.label_lower, target.pk)
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(target)
+        return deduped
+
+    def _step_note_target_label(self, target):
+        if isinstance(target, RequestMain):
+            return _("Request")
+        if isinstance(target, Oferta):
+            return _("Offer")
+        if isinstance(target, Zlecenie):
+            return _("Order")
+        if isinstance(target, Wniosek):
+            return _("Application")
+        return str(target._meta.verbose_name)
+
+    def _step_note_scope_title(self, obj, targets):
+        request_main = obj if isinstance(obj, RequestMain) else None
+        if request_main is None and hasattr(obj, "from_main"):
+            request_main = obj.from_main
+
+        if request_main is not None and request_main.pk:
+            return _("Request no. %(pk)s thread") % {"pk": request_main.pk}
+        return str(obj)
+
+    def _step_notes_for_targets(self, targets):
+        if not targets:
+            return []
+
+        type_ids = {}
+        for model in {target.__class__ for target in targets}:
+            type_ids[model] = ContentType.objects.get_for_model(model).pk
+
+        filters = Q()
+        labels = {}
+        for target in targets:
+            ct_id = type_ids[target.__class__]
+            filters |= Q(target_content_type_id=ct_id, target_object_id=target.pk)
+            labels[(ct_id, target.pk)] = self._step_note_target_label(target)
+
+        notes = list(
+            StepNote.objects
+            .filter(filters)
+            .select_related("author")
+            .order_by("-created_at")[:100]
+        )
+        for note in notes:
+            note.stage_label = labels.get((note.target_content_type_id, note.target_object_id), "")
+        return notes
+
     def _build_step_notes_context(self, obj):
         opts = self.model._meta
         if not obj or not obj.pk:
@@ -129,14 +210,16 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
                 "step_notes_create_url": "",
                 "step_notes_target_label": "",
             }
+
+        targets = self._step_note_targets(obj)
         return {
             "step_notes_enabled": True,
-            "step_notes": obj.step_notes.select_related("author").all()[:50],
+            "step_notes": self._step_notes_for_targets(targets),
             "step_notes_create_url": reverse(
                 f"admin:{opts.app_label}_{opts.model_name}_step_note_create",
                 args=[obj.pk],
             ),
-            "step_notes_target_label": str(obj),
+            "step_notes_target_label": self._step_note_scope_title(obj, targets),
         }
 
     def render_change_form(self, request, context, *args, **kwargs):
