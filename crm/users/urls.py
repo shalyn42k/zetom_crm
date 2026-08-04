@@ -9,4 +9,6 @@ urlpatterns = [
     path("<int:pk>/delete/", views.UserDeleteView.as_view(), name="user_delete"),
     path("<int:pk>/", views.UserDetailView.as_view(), name="user_detail"),
     path("me/", views.UserProfileEditView.as_view(), name="user_profile_edit"),
+    path("2fa/", views.otp_gate, name="otp_gate"),
+    path("2fa/backup-codes/", views.otp_backup_codes, name="otp_backup_codes"),
 ]

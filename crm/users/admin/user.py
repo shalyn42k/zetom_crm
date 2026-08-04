@@ -66,6 +66,7 @@ STUB_PERMISSIONS = frozenset()
 class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin):
     add_form = CustomUserCreateForm
     form = CustomUserChangeForm
+    actions = ["reset_2fa"]
 
     fieldsets = (
         (_("Personal info"), {
@@ -335,8 +336,24 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
             context.update(self._build_dept_context(request, obj))
         return super().render_change_form(request, context, *args, **kwargs)
 
+    # claude — bulk action: сброс 2FA (на случай утери телефона + backup-кодов).
+    # Юзер снова встретит /users/2fa/ (регистрация) на следующем логине.
+    @admin.action(description=_("Reset 2FA (delete OTP devices)"))
+    def reset_2fa(self, request, queryset):
+        if not user_has_perm(request.user, "edit_users"):
+            self.message_user(request, _("No permission."), level="error")
+            return
+        from django_otp.plugins.otp_static.models import StaticDevice
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        for u in queryset:
+            TOTPDevice.objects.filter(user=u).delete()
+            StaticDevice.objects.filter(user=u).delete()
+        self.message_user(
+            request,
+            _("2FA reset for %(n)s user(s). They will set it up again on next login.") % {"n": queryset.count()},
+        )
 
 
-#  Регистрация 
+#  Регистрация
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)

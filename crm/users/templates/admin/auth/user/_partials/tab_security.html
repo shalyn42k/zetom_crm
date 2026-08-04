@@ -11,6 +11,21 @@
     {% trans "Leave fields empty to keep the current password. Fill both to set a new one — it will be saved together with the rest of the user’s data." %}
   </p>
 
+  {% comment %}
+    2FA обязателен для всех без исключений (crm.users.middleware
+    Enforce2FAMiddleware) — переключателя тут больше нет. Статус read-only;
+    сброс (при утере телефона) — bulk-action "Reset 2FA" в списке Users.
+  {% endcomment %}
+  <p class="up-callout" style="margin-top:1rem;">
+    {% trans "Two-factor authentication:" %}
+    {% if original.totpdevice_set.exists %}
+      <strong>{% trans "configured" %}</strong>
+    {% else %}
+      <strong>{% trans "not configured yet" %}</strong> — {% trans "required on next login." %}
+    {% endif %}
+    — {% trans "to reset a lost device, use the “Reset 2FA” action from the Users list." %}
+  </p>
+
   <div class="up-form-stack">
     {% with f1=adminform.form.new_password1 %}
       <label class="up-field">

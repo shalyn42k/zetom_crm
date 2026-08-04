@@ -1,0 +1,28 @@
+{% extends "unfold/layouts/unauthenticated.html" %}
+{% load i18n unfold %}
+
+{% block content %}
+    <div class="border-b border-base-200 mb-8 pb-6 dark:border-base-800">
+        <h1 class="font-semibold">
+            <span class="block text-font-important-light dark:text-font-important-dark">{% trans "Last step" %}</span>
+            <span class="block font-semibold text-primary-600 tracking-tight text-xl dark:text-primary-500">{% trans "Save your backup codes" %}</span>
+        </h1>
+    </div>
+
+    <div class="bg-red-50 border border-red-200 mb-6 p-4 rounded-default dark:bg-red-950 dark:border-red-900">
+        <p class="font-semibold text-red-700 text-sm dark:text-red-400">
+            {% trans "This is the only time these codes will be shown. Save them somewhere safe — each one works once, if you ever lose your phone." %}
+        </p>
+    </div>
+
+    <ul class="bg-base-100 dark:bg-base-800 font-mono grid gap-1 mb-8 p-4 rounded-default select-all text-font-important-light dark:text-font-important-dark text-base">
+        {% for code in codes %}
+            <li>{{ code }}</li>
+        {% endfor %}
+    </ul>
+
+    {% url 'admin:index' as admin_index_url %}
+    {% component "unfold/components/button.html" with href=admin_index_url variant="primary" class="w-full" %}
+        {% trans "I've saved them — continue" %}
+    {% endcomponent %}
+{% endblock %}
