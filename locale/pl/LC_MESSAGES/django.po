@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-28 10:32+0200\n"
+"POT-Creation-Date: 2026-08-04 13:07+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,13 +16,15 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
+"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && "
+"(n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && "
+"n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 
-#: config/settings.py:197
+#: config/settings.py:202
 msgid "English"
 msgstr "Angielski"
 
-#: config/settings.py:198
+#: config/settings.py:203
 msgid "Polish"
 msgstr "Polski"
 
@@ -47,18 +49,15 @@ msgstr "Walidacja"
 msgid "Information"
 msgstr "Informacje"
 
-#: config/unfold_config.py:154 crm/clients/admin.py:187
-#: crm/zetom/models.py:166
+#: config/unfold_config.py:154 crm/clients/admin.py:187 crm/zetom/models.py:166
 msgid "Offers"
 msgstr "Oferty"
 
-#: config/unfold_config.py:162 crm/clients/admin.py:192
-#: crm/zetom/models.py:187
+#: config/unfold_config.py:162 crm/clients/admin.py:192 crm/zetom/models.py:187
 msgid "Orders"
 msgstr "Zlecenia"
 
-#: config/unfold_config.py:170 crm/clients/admin.py:197
-#: crm/zetom/models.py:207
+#: config/unfold_config.py:170 crm/clients/admin.py:197 crm/zetom/models.py:207
 msgid "Applications"
 msgstr "Wnioski"
 
@@ -75,8 +74,7 @@ msgid "Trash"
 msgstr "Kosz"
 
 #: config/unfold_config.py:206 config/unfold_config.py:210
-#: crm/clients/admin.py:373 crm/clients/models.py:29
-#: crm/users/admin/user.py:45
+#: crm/clients/admin.py:373 crm/clients/models.py:29 crm/users/admin/user.py:45
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:127
 msgid "Clients"
 msgstr "Klienci"
@@ -221,7 +219,7 @@ msgstr ""
 msgid "Chat"
 msgstr ""
 
-#: crm/clients/models.py:59 crm/users/admin/user.py:202 crm/zetom/models.py:38
+#: crm/clients/models.py:59 crm/users/admin/user.py:203 crm/zetom/models.py:38
 msgid "Other"
 msgstr "Inne"
 
@@ -584,12 +582,10 @@ msgid "Ta osoba nie jest jeszcze powiązana z żadną firmą."
 msgstr "Ta osoba nie jest jeszcze powiązana z żadną firmą."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:147
-#| msgid "Nazwa, imię, NIP…"
 msgid "Nazwa lub NIP…"
 msgstr "Nazwa lub NIP…"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:157
-#| msgid "Nie znaleziono klientów."
 msgid "Nie znaleziono firm."
 msgstr "Nie znaleziono firm."
 
@@ -634,7 +630,6 @@ msgid "Błąd sieci — spróbuj ponownie."
 msgstr "Błąd sieci — spróbuj ponownie."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:332
-#| msgid "Nie udało się zapisać."
 msgid "Nie udało się przypisać."
 msgstr "Nie udało się przypisać."
 
@@ -915,8 +910,10 @@ msgstr "Zlecenie %(request_label)s: zmiana statusu"
 
 #: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:12
 #, python-format
-msgid "%(actor_name)s changed status from \"%(old_status)s\" to \"%(new_status)s\"."
-msgstr "%(actor_name)s zmienił/a status z \"%(old_status)s\" na \"%(new_status)s\"."
+msgid ""
+"%(actor_name)s changed status from \"%(old_status)s\" to \"%(new_status)s\"."
+msgstr ""
+"%(actor_name)s zmienił/a status z \"%(old_status)s\" na \"%(new_status)s\"."
 
 #: crm/notification/templates/notification/inapp/staff/review_requested.txt:9
 #, python-format
@@ -1293,8 +1290,7 @@ msgstr "Najpierw obniż ten dział z pozycji głównego przed usunięciem."
 msgid "Revoke head status for this department before removing."
 msgstr "Najpierw cofnij status kierownika tego działu przed usunięciem."
 
-#: crm/users/admin/user.py:46 crm/users/admin/user.py:290
-#: crm/users/forms.py:34
+#: crm/users/admin/user.py:46 crm/users/admin/user.py:291 crm/users/forms.py:34
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:31
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:24
 #: crm/users/templates/users/user_detail.html:15 crm/zetom/admin/base.py:43
@@ -1310,23 +1306,38 @@ msgstr "Działy"
 msgid "Logs"
 msgstr "Logi"
 
-#: crm/users/admin/user.py:71
+#: crm/users/admin/user.py:72
 msgid "Personal info"
 msgstr "Dane osobowe"
 
-#: crm/users/admin/user.py:74
+#: crm/users/admin/user.py:75
 msgid "Access"
 msgstr "Dostęp"
 
-#: crm/users/admin/user.py:281 crm/users/forms.py:28 crm/users/forms.py:102
+#: crm/users/admin/user.py:282 crm/users/forms.py:28 crm/users/forms.py:102
 #: crm/users/templates/users/user_detail.html:14
 #: crm/users/templates/users/user_list.html:21
 msgid "Role"
 msgstr "Rola"
 
-#: crm/users/admin/user.py:294 crm/users/forms.py:40 crm/users/forms.py:108
+#: crm/users/admin/user.py:295 crm/users/forms.py:40 crm/users/forms.py:108
 msgid "Job title"
 msgstr "Stanowisko"
+
+#: crm/users/admin/user.py:341
+msgid "Reset 2FA (delete OTP devices)"
+msgstr "Resetuj 2FA (usuń urządzenia OTP)"
+
+#: crm/users/admin/user.py:344
+msgid "No permission."
+msgstr "Brak uprawnień."
+
+#: crm/users/admin/user.py:353
+#, python-format
+msgid "2FA reset for %(n)s user(s). They will set it up again on next login."
+msgstr ""
+"Zresetowano 2FA dla %(n)s użytkownika(ów). Skonfigurują je ponownie przy "
+"następnym logowaniu."
 
 #: crm/users/forms.py:17
 msgid "Password"
@@ -1365,6 +1376,7 @@ msgid "The two password fields didn’t match."
 msgstr "Podane hasła nie są identyczne."
 
 #: crm/users/models.py:13 crm/users/models.py:24
+#: crm/users/templates/users/otp_verify.html:22
 msgid "Code"
 msgstr "Kod"
 
@@ -1377,17 +1389,16 @@ msgstr "Kategoria"
 msgid "Permissions"
 msgstr "Uprawnienia"
 
-#: crm/users/models.py:87
+#: crm/users/models.py:86
 msgid ""
 "A department can be marked as main only if the user already belongs to it."
 msgstr ""
 "Dział może być oznaczony jako główny tylko jeśli użytkownik już do niego "
 "należy."
 
-#: crm/users/models.py:95
+#: crm/users/models.py:94
 msgid ""
-"A department can be marked as head-of only if the user already belongs to "
-"it."
+"A department can be marked as head-of only if the user already belongs to it."
 msgstr ""
 "Dział może być oznaczony jako kierowany tylko jeśli użytkownik już do niego "
 "należy."
@@ -1611,8 +1622,8 @@ msgid ""
 "Primary marks the user's main department. Head status is granted separately "
 "by an admin and identifies the department lead."
 msgstr ""
-"Główny oznacza podstawowy dział użytkownika. Status kierownika jest nadawany"
-" przez administratora i identyfikuje szefa działu."
+"Główny oznacza podstawowy dział użytkownika. Status kierownika jest nadawany "
+"przez administratora i identyfikuje szefa działu."
 
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:186
 msgid "Team in your departments"
@@ -1730,8 +1741,8 @@ msgstr "Jeszcze nie zaimplementowane"
 
 #: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:107
 msgid ""
-"You can view permissions but not change them. The 'edit_roles' permission is"
-" required to assign roles and individual permissions."
+"You can view permissions but not change them. The 'edit_roles' permission is "
+"required to assign roles and individual permissions."
 msgstr ""
 "Możesz przeglądać uprawnienia, ale nie możesz ich zmieniać. Uprawnienie "
 "'edit_roles' jest wymagane do przypisywania ról i indywidualnych uprawnień."
@@ -1773,6 +1784,28 @@ msgstr ""
 "Pozostaw pola puste, aby zachować aktualne hasło. Wypełnij oba, aby ustawić "
 "nowe — zostanie zapisane razem z pozostałymi danymi użytkownika."
 
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:21
+msgid "Two-factor authentication:"
+msgstr "Uwierzytelnianie dwuskładnikowe:"
+
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:23
+msgid "configured"
+msgstr "skonfigurowane"
+
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:25
+msgid "not configured yet"
+msgstr "jeszcze nieskonfigurowane"
+
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:25
+msgid "required on next login."
+msgstr "wymagane przy następnym logowaniu."
+
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:27
+msgid "to reset a lost device, use the “Reset 2FA” action from the Users list."
+msgstr ""
+"aby zresetować zgubione urządzenie, użyj akcji „Resetuj 2FA” z listy "
+"Użytkownicy."
+
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:7
 msgid "User profile sections"
 msgstr "Sekcje profilu użytkownika"
@@ -1780,6 +1813,72 @@ msgstr "Sekcje profilu użytkownika"
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:12
 msgid "Profile"
 msgstr "Profil"
+
+#: crm/users/templates/users/otp_backup_codes.html:7
+msgid "Last step"
+msgstr "Ostatni krok"
+
+#: crm/users/templates/users/otp_backup_codes.html:8
+msgid "Save your backup codes"
+msgstr "Zapisz kody zapasowe"
+
+#: crm/users/templates/users/otp_backup_codes.html:14
+msgid ""
+"This is the only time these codes will be shown. Save them somewhere safe — "
+"each one works once, if you ever lose your phone."
+msgstr ""
+"Te kody zostaną pokazane tylko ten jeden raz. Zapisz je w bezpiecznym "
+"miejscu — każdy działa jednorazowo, na wypadek zgubienia telefonu."
+
+#: crm/users/templates/users/otp_backup_codes.html:26
+msgid "I've saved them — continue"
+msgstr "Zapisałem/am je — dalej"
+
+#: crm/users/templates/users/otp_setup.html:7
+msgid "Set up"
+msgstr "Konfiguracja"
+
+#: crm/users/templates/users/otp_setup.html:8
+msgid "Two-factor authentication"
+msgstr "Uwierzytelnianie dwuskładnikowe"
+
+#: crm/users/templates/users/otp_setup.html:15
+msgid ""
+"Scan this code with Google Authenticator, Authy or 1Password, then enter the "
+"6-digit code it shows."
+msgstr ""
+"Zeskanuj ten kod w Google Authenticator, Authy lub 1Password, a następnie "
+"wpisz wyświetlony 6-cyfrowy kod."
+
+#: crm/users/templates/users/otp_setup.html:24
+msgid "Can't scan? Enter this code manually:"
+msgstr "Nie możesz zeskanować? Wpisz ten kod ręcznie:"
+
+#: crm/users/templates/users/otp_setup.html:35
+msgid "Code from the app"
+msgstr "Kod z aplikacji"
+
+#: crm/users/templates/users/otp_setup.html:43
+#: crm/zetom/templates/admin/zetom/requestmain/reason_form.html:16
+msgid "Confirm"
+msgstr "Potwierdź"
+
+#: crm/users/templates/users/otp_verify.html:7
+#: crm/users/templates/users/otp_verify.html:30
+msgid "Verify"
+msgstr "Zweryfikuj"
+
+#: crm/users/templates/users/otp_verify.html:8
+msgid "Enter your authentication code"
+msgstr "Wprowadź kod uwierzytelniający"
+
+#: crm/users/templates/users/otp_verify.html:15
+msgid ""
+"Open your authenticator app and enter the current 6-digit code. Lost your "
+"phone? Use one of your backup codes instead."
+msgstr ""
+"Otwórz aplikację uwierzytelniającą i wpisz aktualny 6-cyfrowy kod. Zgubiłeś(-"
+"aś) telefon? Użyj jednego z kodów zapasowych."
 
 #: crm/users/templates/users/user_confirm_delete.html:7
 msgid "Delete user"
@@ -1864,21 +1963,29 @@ msgstr "Brak użytkowników"
 msgid "My profile"
 msgstr "Mój profil"
 
-#: crm/users/views.py:34
+#: crm/users/views.py:46
 msgid "User created."
 msgstr "Użytkownik utworzony."
 
-#: crm/users/views.py:66
+#: crm/users/views.py:78
 msgid "User updated."
 msgstr "Użytkownik zaktualizowany."
 
-#: crm/users/views.py:82
+#: crm/users/views.py:94
 msgid "User deleted."
 msgstr "Użytkownik usunięty."
 
-#: crm/users/views.py:107
+#: crm/users/views.py:119
 msgid "Profile updated."
 msgstr "Profil zaktualizowany."
+
+#: crm/users/views.py:196
+msgid "Invalid code. Please try again."
+msgstr "Nieprawidłowy kod. Spróbuj ponownie."
+
+#: crm/users/views.py:215
+msgid "Invalid code."
+msgstr "Nieprawidłowy kod."
 
 #: crm/zetom/admin/base.py:25
 msgid "Reason"
@@ -2570,8 +2677,8 @@ msgstr "—"
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:42
 #, fuzzy
 #| msgid ""
-#| "This request is in the trash. Use Restore to bring it back, or Hard delete "
-#| "to remove it permanently."
+#| "This request is in the trash. Use Restore to bring it back, or Hard "
+#| "delete to remove it permanently."
 msgid ""
 "This lead is in the trash. Restore brings it back into the Validation "
 "Window, or Hard delete removes it permanently."
@@ -2647,8 +2754,8 @@ msgid ""
 "The selected document will be e-mailed to staff. Its status will flip from "
 "In progress → Waiting."
 msgstr ""
-"Wybrany dokument zostanie wysłany e-mailem do pracowników. Status zmieni się"
-" z W realizacji → Oczekujące."
+"Wybrany dokument zostanie wysłany e-mailem do pracowników. Status zmieni się "
+"z W realizacji → Oczekujące."
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:143
 msgid "Document type"
@@ -2696,7 +2803,8 @@ msgid ""
 "            "
 msgstr ""
 "\n"
-"              Wiadomość zostanie wysłana do klienta: <strong>%(email)s</strong>\n"
+"              Wiadomość zostanie wysłana do klienta: <strong>%(email)s</"
+"strong>\n"
 "            "
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:256
@@ -2714,8 +2822,7 @@ msgstr "Dokument: %(doc)s"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:316
 msgid ""
-"Notification will be sent in-app to the specialist who requested this "
-"review."
+"Notification will be sent in-app to the specialist who requested this review."
 msgstr ""
 "Powiadomienie zostanie wysłane w aplikacji do specjalisty, który poprosił o "
 "weryfikację."
@@ -2949,8 +3056,7 @@ msgstr "Nie wiąż nic"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:76
 msgid "and the request is saved unlinked — you can attach a client later."
-msgstr ""
-"a zgłoszenie zapisze się bez powiązania — klienta można dodać później."
+msgstr "a zgłoszenie zapisze się bez powiązania — klienta można dodać później."
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:84
 msgid "You can change these later."
@@ -3036,10 +3142,6 @@ msgstr ""
 #: crm/zetom/templates/admin/zetom/requestmain/change_form.html:69
 msgid "This request is soft-deleted. Restore it before editing."
 msgstr "To zlecenie jest oznaczone jako usunięte. Przywróć je przed edycją."
-
-#: crm/zetom/templates/admin/zetom/requestmain/reason_form.html:16
-msgid "Confirm"
-msgstr "Potwierdź"
 
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:37
 msgid "Save and continue editing"
@@ -3158,8 +3260,8 @@ msgstr "Te rekordy mają wspólne sygnały z tym zgłoszeniem."
 #| "Permanently delete THIS request as a duplicate? This is a hard delete and "
 #| "cannot be undone."
 msgid ""
-"Move all duplicates to trash / cancel them? This is a soft delete and can be"
-" undone."
+"Move all duplicates to trash / cancel them? This is a soft delete and can be "
+"undone."
 msgstr ""
 "Trwale usunąć TO zgłoszenie jako duplikat? To trwałe usunięcie, którego nie "
 "można cofnąć."
@@ -3392,202 +3494,3 @@ msgid ""
 "Your request was created, but we encountered an issue sending the "
 "notification. The staff will review your request manually."
 msgstr ""
-
-#~ msgid "Person / FOP"
-#~ msgstr "Osoba fizyczna / FOP"
-
-#~ msgid "Company / Firm"
-#~ msgstr "Firma / Spółka"
-
-#~ msgid "Client type"
-#~ msgstr "Typ klienta"
-
-#~ msgid "Client Detail"
-#~ msgstr "Szczegóły klienta"
-
-#~ msgid ""
-#~ "Inline-edit the client on the left; manage every linked request on the "
-#~ "right, grouped by type."
-#~ msgstr ""
-#~ "Edytuj klienta po lewej; zarządzaj powiązanymi zgłoszeniami po prawej, "
-#~ "pogrupowanymi według typu."
-
-#~ msgid "Back to list"
-#~ msgstr "Powrót do listy"
-
-#~ msgid "created"
-#~ msgstr "utworzono"
-
-#~ msgid "WIP"
-#~ msgstr "WIP"
-
-#~ msgid "Identity"
-#~ msgstr "Tożsamość"
-
-#~ msgid "Contact"
-#~ msgstr "Kontakt"
-
-#~ msgid "No notes."
-#~ msgstr "Brak uwag."
-
-#~ msgid "Linked requests"
-#~ msgstr "Powiązane zgłoszenia"
-
-#, python-format
-#~ msgid "%(n)s total"
-#~ msgid_plural "%(n)s total"
-#~ msgstr[0] "%(n)s łącznie"
-#~ msgstr[1] "%(n)s łącznie"
-#~ msgstr[2] "%(n)s łącznie"
-#~ msgstr[3] "%(n)s łącznie"
-
-#~ msgid "Date"
-#~ msgstr "Data"
-
-#~ msgid "Dept"
-#~ msgstr "Dział"
-
-#~ msgid "Detach this request from the client? The request itself is kept."
-#~ msgstr "Odłączyć to zgłoszenie od klienta? Samo zgłoszenie pozostaje."
-
-#~ msgid "Detach"
-#~ msgstr "Odłącz"
-
-#, python-format
-#~ msgid "No %(label)s linked"
-#~ msgstr "Brak powiązanych: %(label)s"
-
-#~ msgid ""
-#~ "Attach an existing one below, or create a new one pre-filled with this "
-#~ "client's details."
-#~ msgstr ""
-#~ "Dołącz istniejące poniżej lub utwórz nowe, wypełnione danymi tego klienta."
-
-#~ msgid "attach"
-#~ msgstr "dołącz"
-
-#, python-format
-#~ msgid "Search %(label)s by # or name to attach..."
-#~ msgstr "Szukaj %(label)s po numerze lub nazwie, aby dołączyć…"
-
-#~ msgid "No matches."
-#~ msgstr "Brak dopasowań."
-
-#~ msgid "Create new"
-#~ msgstr "Utwórz nowy"
-
-#~ msgid "Changelist"
-#~ msgstr "Lista"
-
-#~ msgid "Add client"
-#~ msgstr "Dodaj klienta"
-
-#~ msgid "Type"
-#~ msgstr "Typ"
-
-#~ msgid "Search name, NIP, phone, email..."
-#~ msgstr "Szukaj po nazwie, NIP, telefonie, e-mail…"
-
-#~ msgid "activity status"
-#~ msgstr "status aktywności"
-
-#~ msgid "RequestMain"
-#~ msgstr "RequestMain"
-
-#~ msgid "company"
-#~ msgstr "firma"
-
-#~ msgid "individual"
-#~ msgstr "osoba prywatna"
-
-#~ msgid "No clients found."
-#~ msgstr "Nie znaleziono klientów."
-
-#, python-format
-#~ msgid "Showing %(shown)s of %(total)s client"
-#~ msgid_plural "Showing %(shown)s of %(total)s clients"
-#~ msgstr[0] "Wyświetlono %(shown)s z %(total)s klienta"
-#~ msgstr[1] "Wyświetlono %(shown)s z %(total)s klientów"
-#~ msgstr[2] "Wyświetlono %(shown)s z %(total)s klientów"
-#~ msgstr[3] "Wyświetlono %(shown)s z %(total)s klientów"
-
-#~ msgid "Add Client"
-#~ msgstr "Dodaj klienta"
-
-#~ msgid "Choose type and fill in the details."
-#~ msgstr "Wybierz typ i uzupełnij dane."
-
-#~ msgid "Individual"
-#~ msgstr "Osoba fizyczna"
-
-#~ msgid "Business · NIP"
-#~ msgstr "Firma · NIP"
-
-#~ msgid "e.g. Jan"
-#~ msgstr "np. Jan"
-
-#~ msgid "e.g. Kowalski"
-#~ msgstr "np. Kowalski"
-
-#~ msgid "Anything worth remembering about this client…"
-#~ msgstr "Cokolwiek wartego zapamiętania o tym kliencie…"
-
-#~ msgid "e.g. Acme Sp. z o.o."
-#~ msgstr "np. Acme Sp. z o.o."
-
-#~ msgid "Link an existing request"
-#~ msgstr "Powiąż istniejące zgłoszenie"
-
-#~ msgid "Search Information / Offer / Order / Application by # or name…"
-#~ msgstr "Szukaj Informacje / Oferta / Zlecenie / Wniosek po # lub nazwie…"
-
-#~ msgid "Searching…"
-#~ msgstr "Szukanie…"
-
-#~ msgid "Suggested · matches contact"
-#~ msgstr "Sugerowane · pasują do kontaktu"
-
-#~ msgid "Recent"
-#~ msgstr "Ostatnie"
-
-#~ msgid "No requests yet."
-#~ msgstr "Brak zgłoszeń."
-
-#~ msgid "No matching requests."
-#~ msgstr "Brak pasujących zgłoszeń."
-
-#~ msgid "Showing"
-#~ msgstr "Pokazano"
-
-#~ msgid "of"
-#~ msgstr "z"
-
-#~ msgid "type a # or name to narrow."
-#~ msgstr "wpisz # lub nazwę, aby zawęzić."
-
-#~ msgid "Will be linked on creation"
-#~ msgstr "Zostanie powiązane przy utworzeniu"
-
-#~ msgid "Remove"
-#~ msgstr "Usuń"
-
-#~ msgid "Save client"
-#~ msgstr "Zapisz klienta"
-
-#~ msgid "Saving…"
-#~ msgstr "Zapisywanie…"
-
-#~ msgid "Discard unsaved data?"
-#~ msgstr "Odrzucić niezapisane dane?"
-
-#~ msgid "Request status"
-#~ msgstr "Status zlecenia"
-
-#~ msgid "You don't have permission to change status."
-#~ msgstr "Nie masz uprawnień do zmiany statusu."
-
-#~ msgid "Apply"
-#~ msgstr "Zastosuj"
-
-#~ msgid "Client saved."
-#~ msgstr "Klient zapisany."

@@ -61,7 +61,6 @@ class UserProfile(models.Model):
         blank=True,
         related_name="extra_users",
     )
-
     def __str__(self):
         return f"{self.user.username} - {self.role}"
 
