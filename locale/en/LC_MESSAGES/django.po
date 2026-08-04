@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-07-28 10:32+0200\n"
+"POT-Creation-Date: 2026-08-04 13:07+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: config/settings.py:197
+#: config/settings.py:202
 msgid "English"
 msgstr ""
 
-#: config/settings.py:198
+#: config/settings.py:203
 msgid "Polish"
 msgstr ""
 
@@ -47,18 +47,15 @@ msgstr ""
 msgid "Information"
 msgstr ""
 
-#: config/unfold_config.py:154 crm/clients/admin.py:187
-#: crm/zetom/models.py:166
+#: config/unfold_config.py:154 crm/clients/admin.py:187 crm/zetom/models.py:166
 msgid "Offers"
 msgstr ""
 
-#: config/unfold_config.py:162 crm/clients/admin.py:192
-#: crm/zetom/models.py:187
+#: config/unfold_config.py:162 crm/clients/admin.py:192 crm/zetom/models.py:187
 msgid "Orders"
 msgstr ""
 
-#: config/unfold_config.py:170 crm/clients/admin.py:197
-#: crm/zetom/models.py:207
+#: config/unfold_config.py:170 crm/clients/admin.py:197 crm/zetom/models.py:207
 msgid "Applications"
 msgstr ""
 
@@ -75,8 +72,7 @@ msgid "Trash"
 msgstr ""
 
 #: config/unfold_config.py:206 config/unfold_config.py:210
-#: crm/clients/admin.py:373 crm/clients/models.py:29
-#: crm/users/admin/user.py:45
+#: crm/clients/admin.py:373 crm/clients/models.py:29 crm/users/admin/user.py:45
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:127
 msgid "Clients"
 msgstr ""
@@ -221,7 +217,7 @@ msgstr ""
 msgid "Chat"
 msgstr ""
 
-#: crm/clients/models.py:59 crm/users/admin/user.py:202 crm/zetom/models.py:38
+#: crm/clients/models.py:59 crm/users/admin/user.py:203 crm/zetom/models.py:38
 msgid "Other"
 msgstr ""
 
@@ -573,12 +569,10 @@ msgid "Ta osoba nie jest jeszcze powiązana z żadną firmą."
 msgstr "This person is not linked to any company yet."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:147
-#| msgid "Nazwa, imię, NIP…"
 msgid "Nazwa lub NIP…"
 msgstr "Name or NIP…"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:157
-#| msgid "Nie znaleziono klientów."
 msgid "Nie znaleziono firm."
 msgstr "No companies found."
 
@@ -623,7 +617,6 @@ msgid "Błąd sieci — spróbuj ponownie."
 msgstr "Network error — please try again."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:332
-#| msgid "Nie udało się zapisać."
 msgid "Nie udało się przypisać."
 msgstr "Could not assign."
 
@@ -905,7 +898,8 @@ msgstr ""
 
 #: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:12
 #, python-format
-msgid "%(actor_name)s changed status from \"%(old_status)s\" to \"%(new_status)s\"."
+msgid ""
+"%(actor_name)s changed status from \"%(old_status)s\" to \"%(new_status)s\"."
 msgstr ""
 
 #: crm/notification/templates/notification/inapp/staff/review_requested.txt:9
@@ -1280,8 +1274,7 @@ msgstr ""
 msgid "Revoke head status for this department before removing."
 msgstr ""
 
-#: crm/users/admin/user.py:46 crm/users/admin/user.py:290
-#: crm/users/forms.py:34
+#: crm/users/admin/user.py:46 crm/users/admin/user.py:291 crm/users/forms.py:34
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:31
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:24
 #: crm/users/templates/users/user_detail.html:15 crm/zetom/admin/base.py:43
@@ -1297,22 +1290,35 @@ msgstr ""
 msgid "Logs"
 msgstr ""
 
-#: crm/users/admin/user.py:71
+#: crm/users/admin/user.py:72
 msgid "Personal info"
 msgstr ""
 
-#: crm/users/admin/user.py:74
+#: crm/users/admin/user.py:75
 msgid "Access"
 msgstr ""
 
-#: crm/users/admin/user.py:281 crm/users/forms.py:28 crm/users/forms.py:102
+#: crm/users/admin/user.py:282 crm/users/forms.py:28 crm/users/forms.py:102
 #: crm/users/templates/users/user_detail.html:14
 #: crm/users/templates/users/user_list.html:21
 msgid "Role"
 msgstr ""
 
-#: crm/users/admin/user.py:294 crm/users/forms.py:40 crm/users/forms.py:108
+#: crm/users/admin/user.py:295 crm/users/forms.py:40 crm/users/forms.py:108
 msgid "Job title"
+msgstr ""
+
+#: crm/users/admin/user.py:341
+msgid "Reset 2FA (delete OTP devices)"
+msgstr ""
+
+#: crm/users/admin/user.py:344
+msgid "No permission."
+msgstr ""
+
+#: crm/users/admin/user.py:353
+#, python-format
+msgid "2FA reset for %(n)s user(s). They will set it up again on next login."
 msgstr ""
 
 #: crm/users/forms.py:17
@@ -1352,6 +1358,7 @@ msgid "The two password fields didn’t match."
 msgstr ""
 
 #: crm/users/models.py:13 crm/users/models.py:24
+#: crm/users/templates/users/otp_verify.html:22
 msgid "Code"
 msgstr ""
 
@@ -1364,15 +1371,14 @@ msgstr ""
 msgid "Permissions"
 msgstr ""
 
-#: crm/users/models.py:87
+#: crm/users/models.py:86
 msgid ""
 "A department can be marked as main only if the user already belongs to it."
 msgstr ""
 
-#: crm/users/models.py:95
+#: crm/users/models.py:94
 msgid ""
-"A department can be marked as head-of only if the user already belongs to "
-"it."
+"A department can be marked as head-of only if the user already belongs to it."
 msgstr ""
 
 #: crm/users/signals.py:41
@@ -1706,8 +1712,8 @@ msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:107
 msgid ""
-"You can view permissions but not change them. The 'edit_roles' permission is"
-" required to assign roles and individual permissions."
+"You can view permissions but not change them. The 'edit_roles' permission is "
+"required to assign roles and individual permissions."
 msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:111
@@ -1745,12 +1751,92 @@ msgid ""
 "— it will be saved together with the rest of the user’s data."
 msgstr ""
 
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:21
+msgid "Two-factor authentication:"
+msgstr ""
+
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:23
+msgid "configured"
+msgstr ""
+
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:25
+msgid "not configured yet"
+msgstr ""
+
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:25
+msgid "required on next login."
+msgstr ""
+
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:27
+msgid "to reset a lost device, use the “Reset 2FA” action from the Users list."
+msgstr ""
+
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:7
 msgid "User profile sections"
 msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:12
 msgid "Profile"
+msgstr ""
+
+#: crm/users/templates/users/otp_backup_codes.html:7
+msgid "Last step"
+msgstr ""
+
+#: crm/users/templates/users/otp_backup_codes.html:8
+msgid "Save your backup codes"
+msgstr ""
+
+#: crm/users/templates/users/otp_backup_codes.html:14
+msgid ""
+"This is the only time these codes will be shown. Save them somewhere safe — "
+"each one works once, if you ever lose your phone."
+msgstr ""
+
+#: crm/users/templates/users/otp_backup_codes.html:26
+msgid "I've saved them — continue"
+msgstr ""
+
+#: crm/users/templates/users/otp_setup.html:7
+msgid "Set up"
+msgstr ""
+
+#: crm/users/templates/users/otp_setup.html:8
+msgid "Two-factor authentication"
+msgstr ""
+
+#: crm/users/templates/users/otp_setup.html:15
+msgid ""
+"Scan this code with Google Authenticator, Authy or 1Password, then enter the "
+"6-digit code it shows."
+msgstr ""
+
+#: crm/users/templates/users/otp_setup.html:24
+msgid "Can't scan? Enter this code manually:"
+msgstr ""
+
+#: crm/users/templates/users/otp_setup.html:35
+msgid "Code from the app"
+msgstr ""
+
+#: crm/users/templates/users/otp_setup.html:43
+#: crm/zetom/templates/admin/zetom/requestmain/reason_form.html:16
+msgid "Confirm"
+msgstr ""
+
+#: crm/users/templates/users/otp_verify.html:7
+#: crm/users/templates/users/otp_verify.html:30
+msgid "Verify"
+msgstr ""
+
+#: crm/users/templates/users/otp_verify.html:8
+msgid "Enter your authentication code"
+msgstr ""
+
+#: crm/users/templates/users/otp_verify.html:15
+msgid ""
+"Open your authenticator app and enter the current 6-digit code. Lost your "
+"phone? Use one of your backup codes instead."
 msgstr ""
 
 #: crm/users/templates/users/user_confirm_delete.html:7
@@ -1836,20 +1922,28 @@ msgstr ""
 msgid "My profile"
 msgstr ""
 
-#: crm/users/views.py:34
+#: crm/users/views.py:46
 msgid "User created."
 msgstr ""
 
-#: crm/users/views.py:66
+#: crm/users/views.py:78
 msgid "User updated."
 msgstr ""
 
-#: crm/users/views.py:82
+#: crm/users/views.py:94
 msgid "User deleted."
 msgstr ""
 
-#: crm/users/views.py:107
+#: crm/users/views.py:119
 msgid "Profile updated."
+msgstr ""
+
+#: crm/users/views.py:196
+msgid "Invalid code. Please try again."
+msgstr ""
+
+#: crm/users/views.py:215
+msgid "Invalid code."
 msgstr ""
 
 #: crm/zetom/admin/base.py:25
@@ -2633,8 +2727,7 @@ msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:316
 msgid ""
-"Notification will be sent in-app to the specialist who requested this "
-"review."
+"Notification will be sent in-app to the specialist who requested this review."
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:320
@@ -2940,10 +3033,6 @@ msgstr ""
 msgid "This request is soft-deleted. Restore it before editing."
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestmain/reason_form.html:16
-msgid "Confirm"
-msgstr ""
-
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:37
 msgid "Save and continue editing"
 msgstr ""
@@ -3055,8 +3144,8 @@ msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:201
 msgid ""
-"Move all duplicates to trash / cancel them? This is a soft delete and can be"
-" undone."
+"Move all duplicates to trash / cancel them? This is a soft delete and can be "
+"undone."
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:202
@@ -3268,14 +3357,3 @@ msgid ""
 "Your request was created, but we encountered an issue sending the "
 "notification. The staff will review your request manually."
 msgstr ""
-
-#, fuzzy
-#~ msgid "created"
-#~ msgstr "Created at"
-
-#, fuzzy
-#~ msgid "Create new"
-#~ msgstr "Created at"
-
-#~ msgid "Search Information / Offer / Order / Application by # or name…"
-#~ msgstr "Search Information / Offer / Order / Application by # or name…"
