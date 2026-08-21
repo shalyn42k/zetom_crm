@@ -84,6 +84,19 @@
             justify-content: space-between;
         }
 
+        .crm-dashboard__stat-link {
+            color: inherit;
+            text-decoration: none;
+            transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
+        }
+
+        .crm-dashboard__stat-link:hover {
+            border-color: rgba(34, 197, 94, 0.58);
+            background: rgba(34, 197, 94, 0.12);
+            color: inherit;
+            transform: translateY(-1px);
+        }
+
         .crm-dashboard__stat-value {
             font-size: 1.9rem;
             line-height: 1;
@@ -416,27 +429,29 @@
             </div>
 
             <div class="crm-dashboard__stats">
-                <article class="crm-dashboard__stat">
+                <a href="{% url 'notification:inbox' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
                     <span class="crm-dashboard__stat-label">{% translate "Inbox" %}</span>
                     <strong class="crm-dashboard__stat-value">{{ dashboard.inbox }}</strong>
                     <span class="crm-dashboard__stat-note">{% translate "Needs your attention" %}</span>
-                </article>
-                <article class="crm-dashboard__stat">
+                </a>
+                {% if can_view_requests %}
+                    <a href="{% url 'admin:zetom_requestnull_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
                     <span class="crm-dashboard__stat-label">{% translate "Validation" %}</span>
                     <strong class="crm-dashboard__stat-value">{{ dashboard.validation }}</strong>
                     <span class="crm-dashboard__stat-note">{% translate "New requests to check" %}</span>
-                </article>
-                <article class="crm-dashboard__stat">
+                    </a>
+                    <a href="{% url 'admin:zetom_requestmain_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
                     <span class="crm-dashboard__stat-label">{% translate "Active requests" %}</span>
                     <strong class="crm-dashboard__stat-value">{{ dashboard.active_requests }}</strong>
                     <span class="crm-dashboard__stat-note">{% translate "Requests in progress" %}</span>
-                </article>
+                    </a>
+                {% endif %}
                 {% if can_view_clients %}
-                    <article class="crm-dashboard__stat">
+                    <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
                         <span class="crm-dashboard__stat-label">{% translate "Clients" %}</span>
                         <strong class="crm-dashboard__stat-value">{{ dashboard.clients }}</strong>
                         <span class="crm-dashboard__stat-note">{% translate "Customer records" %}</span>
-                    </article>
+                    </a>
                 {% endif %}
             </div>
         </section>
