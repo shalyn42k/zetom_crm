@@ -1,0 +1,622 @@
+{% extends "admin/base.html" %}
+
+{% load static i18n log %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}">
+    <style>
+        .crm-dashboard {
+            max-width: 1320px;
+            margin: 0 auto;
+            display: grid;
+            gap: 20px;
+            padding-bottom: 20px;
+        }
+
+        .crm-dashboard__hero,
+        .crm-dashboard__panel,
+        .crm-dashboard__primary-card,
+        .crm-dashboard__workspace-card,
+        .crm-dashboard__activity-item,
+        .crm-dashboard__hint-item,
+        .crm-dashboard__stat {
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(15, 23, 42, 0.52);
+            border-radius: 18px;
+        }
+
+        .crm-dashboard__hero {
+            display: grid;
+            gap: 18px;
+            padding: 24px;
+            background:
+                radial-gradient(circle at top right, rgba(34, 197, 94, 0.16), transparent 42%),
+                linear-gradient(150deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.94));
+        }
+
+        .crm-dashboard__eyebrow,
+        .crm-dashboard__section-eyebrow,
+        .crm-dashboard__workspace-kicker,
+        .crm-dashboard__card-kicker,
+        .crm-dashboard__stat-label {
+            margin: 0;
+            color: #7ee49b;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+
+        .crm-dashboard__hero-title {
+            margin: 8px 0 0;
+            font-size: clamp(1.8rem, 3vw, 2.8rem);
+            line-height: 1.1;
+        }
+
+        .crm-dashboard__hero-text,
+        .crm-dashboard__section-copy,
+        .crm-dashboard__card-copy,
+        .crm-dashboard__workspace-copy,
+        .crm-dashboard__step p,
+        .crm-dashboard__hint-item p,
+        .crm-dashboard__stat-note,
+        .crm-dashboard__activity-time,
+        .crm-dashboard__empty-note {
+            margin: 0;
+            color: rgba(226, 232, 240, 0.86);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .crm-dashboard__stats {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .crm-dashboard__stat {
+            padding: 16px;
+            min-height: 106px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .crm-dashboard__stat-value {
+            font-size: 1.9rem;
+            line-height: 1;
+        }
+
+        .crm-dashboard__layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+            gap: 20px;
+            align-items: start;
+        }
+
+        .crm-dashboard__main,
+        .crm-dashboard__aside {
+            display: grid;
+            gap: 20px;
+        }
+
+        .crm-dashboard__panel {
+            padding: 22px;
+        }
+
+        .crm-dashboard__section-header,
+        .crm-dashboard__workspace-head,
+        .crm-dashboard__activity-top {
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .crm-dashboard__section-header {
+            align-items: end;
+            margin-bottom: 16px;
+        }
+
+        .crm-dashboard__section-title {
+            margin: 6px 0 0;
+            font-size: 1.7rem;
+            line-height: 1.15;
+        }
+
+        .crm-dashboard__section-title--small {
+            font-size: 1.25rem;
+        }
+
+        .crm-dashboard__top-panel {
+            padding: 18px 20px;
+        }
+
+        .crm-dashboard__top-grid {
+            margin-top: 14px;
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .crm-dashboard__top-action {
+            display: grid;
+            gap: 8px;
+            min-height: 110px;
+            padding: 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            background: rgba(2, 6, 23, 0.44);
+            color: #f8fafc;
+            text-decoration: none;
+            transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
+        }
+
+        .crm-dashboard__top-order {
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(34, 197, 94, 0.2);
+            color: #9df2b7;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__top-title {
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .crm-dashboard__top-copy {
+            color: rgba(226, 232, 240, 0.84);
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .crm-dashboard__top-action:hover {
+            border-color: rgba(34, 197, 94, 0.6);
+            background: rgba(34, 197, 94, 0.18);
+            transform: translateY(-1px);
+        }
+
+        .crm-dashboard__primary-grid,
+        .crm-dashboard__workspace-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .crm-dashboard__primary-grid {
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        }
+
+        .crm-dashboard__workspace-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .crm-dashboard__primary-card,
+        .crm-dashboard__workspace-card,
+        .crm-dashboard__activity-item,
+        .crm-dashboard__hint-item {
+            padding: 18px;
+        }
+
+        .crm-dashboard__icon-wrap {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(34, 197, 94, 0.14);
+            color: #9df2b7;
+        }
+
+        .crm-dashboard__icon-wrap .material-symbols-outlined {
+            font-size: 22px;
+        }
+
+        .crm-dashboard__card-title,
+        .crm-dashboard__workspace-title {
+            margin: 8px 0 0;
+            font-size: 1.45rem;
+            line-height: 1.2;
+        }
+
+        .crm-dashboard__card-actions,
+        .crm-dashboard__link-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .crm-dashboard__button,
+        .crm-dashboard__text-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 36px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(15, 23, 42, 0.36);
+            color: #e2e8f0;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            transition: background-color .16s ease, border-color .16s ease, transform .16s ease;
+        }
+
+        .crm-dashboard__button--primary {
+            border-color: rgba(34, 197, 94, 0.5);
+            background: rgba(34, 197, 94, 0.2);
+            color: #fff;
+        }
+
+        .crm-dashboard__button:hover,
+        .crm-dashboard__text-link:hover,
+        .crm-dashboard__activity-title a:hover {
+            border-color: rgba(34, 197, 94, 0.66);
+            background: rgba(34, 197, 94, 0.22);
+            transform: translateY(-1px);
+            color: #fff;
+        }
+
+        .crm-dashboard__workspace-badge {
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.34);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .crm-dashboard__steps,
+        .crm-dashboard__activity-list,
+        .crm-dashboard__hint-list {
+            margin: 14px 0 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 10px;
+        }
+
+        .crm-dashboard__step {
+            display: grid;
+            grid-template-columns: 26px minmax(0, 1fr);
+            gap: 10px;
+            align-items: start;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(2, 6, 23, 0.4);
+        }
+
+        .crm-dashboard__step-index {
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            background: rgba(34, 197, 94, 0.18);
+            color: #9df2b7;
+        }
+
+        .crm-dashboard__activity-item {
+            border: 1px solid rgba(148, 163, 184, 0.28);
+        }
+
+        .crm-dashboard__activity-type,
+        .crm-dashboard__activity-state {
+            font-size: 12px;
+            font-weight: 700;
+            color: rgba(226, 232, 240, 0.82);
+        }
+
+        .crm-dashboard__activity-title {
+            margin-top: 8px;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__activity-title a {
+            color: #f1f5f9;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.34);
+        }
+
+        .crm-dashboard__empty-state {
+            margin-top: 10px;
+        }
+
+        @media (max-width: 1200px) {
+            .crm-dashboard__layout {
+                grid-template-columns: 1fr;
+            }
+
+            .crm-dashboard__stats {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .crm-dashboard__top-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .crm-dashboard {
+                gap: 14px;
+            }
+
+            .crm-dashboard__hero,
+            .crm-dashboard__panel,
+            .crm-dashboard__primary-card,
+            .crm-dashboard__workspace-card,
+            .crm-dashboard__activity-item,
+            .crm-dashboard__hint-item {
+                border-radius: 14px;
+            }
+
+            .crm-dashboard__hero,
+            .crm-dashboard__panel {
+                padding: 16px;
+            }
+
+            .crm-dashboard__section-title {
+                font-size: 1.35rem;
+            }
+
+            .crm-dashboard__section-header,
+            .crm-dashboard__workspace-head,
+            .crm-dashboard__activity-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .crm-dashboard__top-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock extrahead %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_("Django site admin") }}{% endblock title %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock branding %}
+
+{% block content %}
+    {% has_crm_perm user "view_requests" as can_view_requests %}
+    {% has_crm_perm user "view_clients" as can_view_clients %}
+    {% has_crm_perm user "view_users" as can_view_users %}
+    {% has_crm_perm user "view_roles" as can_view_roles %}
+    {% has_crm_perm user "view_logs" as can_view_logs %}
+    {% has_crm_perm user "view_notification_log" as can_view_notification_log %}
+    {% has_crm_perm user "view_email_log" as can_view_email_log %}
+    {% unread_inapp_count user as inbox_count %}
+    {% get_admin_log 6 as admin_log for_user user %}
+
+    <div class="crm-dashboard">
+        <section class="crm-dashboard__hero">
+            <div>
+                <p class="crm-dashboard__eyebrow">{% translate "Workspace overview" %}</p>
+                <h1 class="crm-dashboard__hero-title">{% translate "Start with what matters today" %}</h1>
+                <p class="crm-dashboard__hero-text">
+                    {% translate "Open inbox first, then process requests, then check client context. Everything else stays below as secondary navigation." %}
+                </p>
+            </div>
+
+            <div class="crm-dashboard__stats">
+                <article class="crm-dashboard__stat">
+                    <span class="crm-dashboard__stat-label">{% translate "Inbox" %}</span>
+                    <strong class="crm-dashboard__stat-value">{{ inbox_count }}</strong>
+                    <span class="crm-dashboard__stat-note">{% translate "Unread notifications" %}</span>
+                </article>
+                <article class="crm-dashboard__stat">
+                    <span class="crm-dashboard__stat-label">{% translate "Sections" %}</span>
+                    <strong class="crm-dashboard__stat-value">{{ app_list|length }}</strong>
+                    <span class="crm-dashboard__stat-note">{% translate "Available work areas" %}</span>
+                </article>
+                <article class="crm-dashboard__stat">
+                    <span class="crm-dashboard__stat-label">{% translate "Activity" %}</span>
+                    <strong class="crm-dashboard__stat-value">{{ admin_log|length }}</strong>
+                    <span class="crm-dashboard__stat-note">{% translate "Recent admin actions shown" %}</span>
+                </article>
+            </div>
+        </section>
+
+        <section class="crm-dashboard__panel crm-dashboard__top-panel">
+            <p class="crm-dashboard__section-eyebrow">{% translate "Main actions" %}</p>
+            <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Follow this order" %}</h2>
+            <div class="crm-dashboard__top-grid">
+                <a href="{% url 'notification:inbox' %}" class="crm-dashboard__top-action">
+                    <span class="crm-dashboard__top-order">1</span>
+                    <strong class="crm-dashboard__top-title">{% translate "Inbox" %}</strong>
+                    <span class="crm-dashboard__top-copy">{% translate "Start here and clear unread reminders." %}</span>
+                </a>
+
+                {% if can_view_requests %}
+                    <a href="{% url 'admin:zetom_requestnull_changelist' %}" class="crm-dashboard__top-action">
+                        <span class="crm-dashboard__top-order">2</span>
+                        <strong class="crm-dashboard__top-title">{% translate "Requests" %}</strong>
+                        <span class="crm-dashboard__top-copy">{% translate "Move new requests into active processing." %}</span>
+                    </a>
+                {% endif %}
+
+                {% if can_view_clients %}
+                    <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__top-action">
+                        <span class="crm-dashboard__top-order">3</span>
+                        <strong class="crm-dashboard__top-title">{% translate "Clients" %}</strong>
+                        <span class="crm-dashboard__top-copy">{% translate "Confirm company and contact context." %}</span>
+                    </a>
+                {% endif %}
+            </div>
+        </section>
+
+        <div class="crm-dashboard__layout">
+            <main class="crm-dashboard__main">
+                <section class="crm-dashboard__panel">
+                    <div class="crm-dashboard__section-header">
+                        <div>
+                            <p class="crm-dashboard__section-eyebrow">{% translate "Workspaces" %}</p>
+                            <h2 class="crm-dashboard__section-title">{% translate "Other sections" %}</h2>
+                        </div>
+                        <p class="crm-dashboard__section-copy">
+                            {% translate "Use these when the top actions are done." %}
+                        </p>
+                    </div>
+
+                    <div class="crm-dashboard__workspace-grid">
+                        {% if can_view_requests %}
+                            <article class="crm-dashboard__workspace-card">
+                                <div class="crm-dashboard__workspace-head">
+                                    <div>
+                                        <p class="crm-dashboard__workspace-kicker">{% translate "Requests" %}</p>
+                                        <h3 class="crm-dashboard__workspace-title">{% translate "Request flow" %}</h3>
+                                    </div>
+                                </div>
+                                <div class="crm-dashboard__link-row">
+                                    <a href="{% url 'admin:zetom_requestnull_changelist' %}" class="crm-dashboard__text-link">{% translate "Validation" %}</a>
+                                    <a href="{% url 'admin:zetom_requestmain_changelist' %}" class="crm-dashboard__text-link">{% translate "Information" %}</a>
+                                    <a href="{% url 'admin:zetom_zlecenie_changelist' %}" class="crm-dashboard__text-link">{% translate "Orders" %}</a>
+                                    <a href="{% url 'admin:zetom_wniosek_changelist' %}" class="crm-dashboard__text-link">{% translate "Applications" %}</a>
+                                </div>
+                            </article>
+                        {% endif %}
+
+                        {% if can_view_clients %}
+                            <article class="crm-dashboard__workspace-card">
+                                <div class="crm-dashboard__workspace-head">
+                                    <div>
+                                        <p class="crm-dashboard__workspace-kicker">{% translate "Clients" %}</p>
+                                        <h3 class="crm-dashboard__workspace-title">{% translate "Client base" %}</h3>
+                                    </div>
+                                </div>
+                                <div class="crm-dashboard__link-row">
+                                    <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__text-link">{% translate "Clients" %}</a>
+                                    <a href="{% url 'admin:clients_company_changelist' %}" class="crm-dashboard__text-link">{% translate "Companies" %}</a>
+                                    <a href="{% url 'admin:clients_clientinteraction_changelist' %}" class="crm-dashboard__text-link">{% translate "Interactions" %}</a>
+                                </div>
+                            </article>
+                        {% endif %}
+
+                        {% if can_view_logs or can_view_notification_log or can_view_email_log %}
+                            <article class="crm-dashboard__workspace-card">
+                                <div class="crm-dashboard__workspace-head">
+                                    <div>
+                                        <p class="crm-dashboard__workspace-kicker">{% translate "System" %}</p>
+                                        <h3 class="crm-dashboard__workspace-title">{% translate "Logs" %}</h3>
+                                    </div>
+                                </div>
+                                <div class="crm-dashboard__link-row">
+                                    {% if can_view_logs %}
+                                        <a href="{% url 'admin:admin_logentry_changelist' %}" class="crm-dashboard__text-link">{% translate "Activity log" %}</a>
+                                    {% endif %}
+                                    {% if can_view_notification_log %}
+                                        <a href="{% url 'admin:notification_notification_changelist' %}" class="crm-dashboard__text-link">{% translate "Notification log" %}</a>
+                                    {% endif %}
+                                    {% if can_view_email_log %}
+                                        <a href="{% url 'admin:notification_emailnotification_changelist' %}" class="crm-dashboard__text-link">{% translate "Email log" %}</a>
+                                    {% endif %}
+                                </div>
+                            </article>
+                        {% endif %}
+                    </div>
+
+                    {% if not can_view_requests and not can_view_clients and not can_view_logs and not can_view_notification_log and not can_view_email_log %}
+                        {% trans "You don’t have permission to view or edit anything." as error_message %}
+                        <div class="crm-dashboard__empty-state">
+                            {% include "unfold/helpers/messages/error.html" with error=error_message %}
+                        </div>
+                    {% endif %}
+                </section>
+            </main>
+
+            <aside class="crm-dashboard__aside">
+                <section class="crm-dashboard__panel crm-dashboard__panel--aside">
+                    <p class="crm-dashboard__section-eyebrow">{% translate "How to use it" %}</p>
+                    <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Simple work order" %}</h2>
+                    <ol class="crm-dashboard__steps">
+                        <li class="crm-dashboard__step">
+                            <span class="crm-dashboard__step-index">1</span>
+                            <div>
+                                <strong>{% translate "Inbox" %}</strong>
+                                <p>{% translate "See what needs attention right now." %}</p>
+                            </div>
+                        </li>
+                        <li class="crm-dashboard__step">
+                            <span class="crm-dashboard__step-index">2</span>
+                            <div>
+                                <strong>{% translate "Requests" %}</strong>
+                                <p>{% translate "Take new work into the active request flow." %}</p>
+                            </div>
+                        </li>
+                        <li class="crm-dashboard__step">
+                            <span class="crm-dashboard__step-index">3</span>
+                            <div>
+                                <strong>{% translate "Clients" %}</strong>
+                                <p>{% translate "Confirm company and contact context." %}</p>
+                            </div>
+                        </li>
+                        <li class="crm-dashboard__step">
+                            <span class="crm-dashboard__step-index">4</span>
+                            <div>
+                                <strong>{% translate "System" %}</strong>
+                                <p>{% translate "Use logs and permissions only when needed." %}</p>
+                            </div>
+                        </li>
+                    </ol>
+                </section>
+
+                <section class="crm-dashboard__panel crm-dashboard__panel--aside">
+                    <p class="crm-dashboard__section-eyebrow">{% translate "Recent activity" %}</p>
+                    <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Latest changes" %}</h2>
+
+                    {% if admin_log %}
+                        <div class="crm-dashboard__activity-list">
+                            {% for entry in admin_log %}
+                                <article class="crm-dashboard__activity-item">
+                                    <div class="crm-dashboard__activity-top">
+                                        <span class="crm-dashboard__activity-type">
+                                            {% if entry.content_type %}
+                                                {% filter capfirst %}{{ entry.content_type.name }}{% endfilter %}
+                                            {% else %}
+                                                {% translate "Unknown content" %}
+                                            {% endif %}
+                                        </span>
+                                        <span class="crm-dashboard__activity-state">
+                                            {% if entry.is_addition %}
+                                                {% translate "Created" %}
+                                            {% elif entry.is_change %}
+                                                {% translate "Updated" %}
+                                            {% elif entry.is_deletion %}
+                                                {% translate "Deleted" %}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="crm-dashboard__activity-title">
+                                        {% if entry.is_deletion or not entry.get_admin_url %}
+                                            {{ entry.object_repr }}
+                                        {% else %}
+                                            <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+                                        {% endif %}
+                                    </div>
+                                    <p class="crm-dashboard__activity-time">{{ entry.action_time }}</p>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="crm-dashboard__empty-note">{% translate "No recent actions yet." %}</p>
+                    {% endif %}
+                </section>
+
+            </aside>
+        </div>
+    </div>
+{% endblock content %}
