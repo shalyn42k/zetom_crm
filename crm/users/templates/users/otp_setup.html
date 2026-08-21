@@ -2,6 +2,8 @@
 {% load i18n unfold %}
 
 {% block content %}
+    {% include "users/_partials/lang_switch.html" %}
+
     <div class="border-b border-base-200 mb-8 pb-6 dark:border-base-800">
         <h1 class="font-semibold">
             <span class="block text-font-important-light dark:text-font-important-dark">{% trans "Set up" %}</span>
@@ -43,4 +45,4 @@
             {% trans "Confirm" %}
         {% endcomponent %}
     </form>
-{% endblock %}
+{% endblock content %}

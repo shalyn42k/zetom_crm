@@ -110,6 +110,15 @@ class CustomUserChangeForm(forms.ModelForm):
         widget=forms.TextInput(attrs={"class": INPUT_CLASS})
     )
 
+    # claude — 2FA обязателен всем (crm.users.middleware.Enforce2FAMiddleware);
+    # это единственная ручка, которой админ может отключить требование
+    # конкретному юзеру (профиль.otp_exempt).
+    otp_exempt = forms.BooleanField(
+        label=_("2FA exempt"),
+        required=False,
+        help_text=_("If enabled, this user is not required to use two-factor authentication."),
+    )
+
     # claude — поля смены пароля прямо в основной форме User'а, чтобы
     # Save во вкладке Security сабмитился вместе со всем остальным.
     new_password1 = forms.CharField(
@@ -149,6 +158,7 @@ class CustomUserChangeForm(forms.ModelForm):
                 self.fields["role"].initial = profile.role
             if profile.job_title:
                 self.fields["job_title"].initial = profile.job_title
+            self.fields["otp_exempt"].initial = profile.otp_exempt
 
     def clean_email(self):
         email = self.cleaned_data["email"]
@@ -195,6 +205,8 @@ class CustomUserChangeForm(forms.ModelForm):
             profile.job_title = job_title
         elif job_title == "":
             profile.job_title = None
+
+        profile.otp_exempt = self.cleaned_data.get("otp_exempt", False)
 
         profile.save()
         return user

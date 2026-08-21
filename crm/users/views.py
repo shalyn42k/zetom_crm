@@ -16,6 +16,7 @@ from django_otp import login as otp_login
 from django_otp.plugins.otp_static.models import StaticDevice, StaticToken
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
+from crm.users import otp_trust
 from crm.users.models import UserProfile
 
 from .forms import (
@@ -192,7 +193,9 @@ def otp_gate(request):
                 codes = _generate_backup_codes(user)
                 otp_login(request, device)
                 request.session["otp_setup_codes"] = codes  # покажем один раз
-                return redirect("otp_backup_codes")
+                response = redirect("otp_backup_codes")
+                otp_trust.remember(request, response, user)
+                return response
             messages.error(request, _("Invalid code. Please try again."))
 
         secret_b32 = base64.b32encode(device.bin_key).decode()
@@ -211,7 +214,9 @@ def otp_gate(request):
                 matched = static
         if matched:
             otp_login(request, matched)
-            return redirect(_safe_next(request))
+            response = redirect(_safe_next(request))
+            otp_trust.remember(request, response, user)
+            return response
         messages.error(request, _("Invalid code."))
     return render(request, "users/otp_verify.html")
 
@@ -220,6 +225,10 @@ def otp_gate(request):
 def otp_backup_codes(request):
     codes = request.session.pop("otp_setup_codes", None)
     if not codes:
-        return redirect("admin:index")  # повторно открыть страницу нельзя — коды одноразово показаны
+        # claude — повторно открыть страницу нельзя (коды одноразовые), но
+        # редиректить прямиком на admin:index незачем — если юзер ещё не
+        # verified, Enforce2FAMiddleware всё равно завернёт его обратно
+        # следующим запросом; отправляем на otp_gate явно, а не намёком.
+        return redirect("otp_gate")
     return render(request, "users/otp_backup_codes.html", {"codes": codes})
 

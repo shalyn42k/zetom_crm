@@ -61,6 +61,14 @@ class UserProfile(models.Model):
         blank=True,
         related_name="extra_users",
     )
+    # claude — 2FA обязателен всем (crm.users.middleware) КРОМЕ юзеров с этим
+    # флагом. Единственная ручка для админа отключить 2FA конкретному человеку.
+    otp_exempt = models.BooleanField(
+        default=False,
+        verbose_name=_("2FA exempt"),
+        help_text=_("If enabled, this user is not required to use two-factor authentication."),
+    )
+
     def __str__(self):
         return f"{self.user.username} - {self.role}"
 
@@ -118,3 +126,25 @@ class UserProfile(models.Model):
         if extra > 0:
             text = f"{text}, +{extra}"
         return text
+
+
+# claude — "remember this browser" для 2FA: crm.users.otp_trust.remember()
+# выдаёт подписанную cookie после реальной проверки кода, чтобы тот же
+# браузер не спрашивал код заново TRUST_DAYS дней. В базе хранится только
+# хэш токена (как со сбросом пароля) — сама cookie никогда не пишется в БД.
+class TrustedDevice(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="trusted_devices",
+    )
+    token_hash = models.CharField(max_length=64, unique=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        verbose_name = _("Trusted device")
+        verbose_name_plural = _("Trusted devices")
+
+    def __str__(self):
+        return f"{self.user.username} · {self.user_agent[:40] or '—'}"

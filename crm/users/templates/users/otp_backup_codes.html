@@ -2,6 +2,8 @@
 {% load i18n unfold %}
 
 {% block content %}
+    {% include "users/_partials/lang_switch.html" %}
+
     <div class="border-b border-base-200 mb-8 pb-6 dark:border-base-800">
         <h1 class="font-semibold">
             <span class="block text-font-important-light dark:text-font-important-dark">{% trans "Last step" %}</span>
@@ -9,7 +11,7 @@
         </h1>
     </div>
 
-    <div class="bg-red-50 border border-red-200 mb-6 p-4 rounded-default dark:bg-red-950 dark:border-red-900">
+    <div class="bg-red-50 border border-red-200 mb-6 p-4 rounded-default dark:bg-red-950 dark:border-red-500">
         <p class="font-semibold text-red-700 text-sm dark:text-red-400">
             {% trans "This is the only time these codes will be shown. Save them somewhere safe — each one works once, if you ever lose your phone." %}
         </p>
@@ -25,4 +27,4 @@
     {% component "unfold/components/button.html" with href=admin_index_url variant="primary" class="w-full" %}
         {% trans "I've saved them — continue" %}
     {% endcomponent %}
-{% endblock %}
+{% endblock content %}

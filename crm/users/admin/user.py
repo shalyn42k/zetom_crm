@@ -338,6 +338,8 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
 
     # claude — bulk action: сброс 2FA (на случай утери телефона + backup-кодов).
     # Юзер снова встретит /users/2fa/ (регистрация) на следующем логине.
+    # Заодно отзываем доверенные браузеры (TrustedDevice) — иначе старый
+    # браузер продолжил бы пускать без кода уже после сброса устройства.
     @admin.action(description=_("Reset 2FA (delete OTP devices)"))
     def reset_2fa(self, request, queryset):
         if not user_has_perm(request.user, "edit_users"):
@@ -345,9 +347,12 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
             return
         from django_otp.plugins.otp_static.models import StaticDevice
         from django_otp.plugins.otp_totp.models import TOTPDevice
+
+        from crm.users.models import TrustedDevice
         for u in queryset:
             TOTPDevice.objects.filter(user=u).delete()
             StaticDevice.objects.filter(user=u).delete()
+            TrustedDevice.objects.filter(user=u).delete()
         self.message_user(
             request,
             _("2FA reset for %(n)s user(s). They will set it up again on next login.") % {"n": queryset.count()},

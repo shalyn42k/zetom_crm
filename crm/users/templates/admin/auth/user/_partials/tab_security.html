@@ -12,19 +12,29 @@
   </p>
 
   {% comment %}
-    2FA обязателен для всех без исключений (crm.users.middleware
-    Enforce2FAMiddleware) — переключателя тут больше нет. Статус read-only;
-    сброс (при утере телефона) — bulk-action "Reset 2FA" в списке Users.
+    2FA обязателен всем, кроме юзеров с otp_exempt. Статус устройства —
+    read-only; сброс (при утере телефона) — bulk-action "Reset 2FA" в
+    списке Users, он же отзывает доверенные браузеры.
   {% endcomment %}
   <p class="up-callout" style="margin-top:1rem;">
     {% trans "Two-factor authentication:" %}
     {% if original.totpdevice_set.exists %}
       <strong>{% trans "configured" %}</strong>
     {% else %}
-      <strong>{% trans "not configured yet" %}</strong> — {% trans "required on next login." %}
+      <strong>{% trans "not configured yet" %}</strong>
     {% endif %}
     — {% trans "to reset a lost device, use the “Reset 2FA” action from the Users list." %}
   </p>
+
+  <div class="up-form-stack" style="margin-top:.5rem;">
+    <label class="up-field" style="flex-direction:row;align-items:center;gap:8px;">
+      {{ adminform.form.otp_exempt }}
+      <span class="up-field__label" style="margin:0;">{{ adminform.form.otp_exempt.label }}</span>
+    </label>
+    {% if adminform.form.otp_exempt.help_text %}
+      <span class="up-field__help">{{ adminform.form.otp_exempt.help_text }}</span>
+    {% endif %}
+  </div>
 
   <div class="up-form-stack">
     {% with f1=adminform.form.new_password1 %}
