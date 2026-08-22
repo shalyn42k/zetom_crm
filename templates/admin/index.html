@@ -10,8 +10,8 @@
             max-width: 1320px;
             margin: 0 auto;
             display: grid;
-            gap: 20px;
-            padding-bottom: 20px;
+                gap: 12px;
+                padding-bottom: 8px;
         }
 
         .crm-dashboard__hero,
@@ -28,8 +28,8 @@
 
         .crm-dashboard__hero {
             display: grid;
-            gap: 18px;
-            padding: 24px;
+            gap: 12px;
+            padding: 18px;
             background:
                 radial-gradient(circle at top right, rgba(34, 197, 94, 0.16), transparent 42%),
                 linear-gradient(150deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.94));
@@ -72,15 +72,29 @@
         .crm-dashboard__stats {
             display: grid;
             gap: 10px;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
         }
 
         .crm-dashboard__stat {
-            padding: 16px;
-            min-height: 106px;
             display: flex;
+            padding: 16px;
+            min-height: 82px;
+            padding: 12px;
             flex-direction: column;
             justify-content: space-between;
+        }
+
+        .crm-dashboard__stat-link {
+            color: inherit;
+            text-decoration: none;
+            transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
+        }
+
+        .crm-dashboard__stat-link:hover {
+            border-color: rgba(34, 197, 94, 0.58);
+            background: rgba(34, 197, 94, 0.12);
+            color: inherit;
+            transform: translateY(-1px);
         }
 
         .crm-dashboard__stat-value {
@@ -91,18 +105,18 @@
         .crm-dashboard__layout {
             display: grid;
             grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
-            gap: 20px;
+            gap: 12px;
             align-items: start;
         }
 
         .crm-dashboard__main,
         .crm-dashboard__aside {
             display: grid;
-            gap: 20px;
+            gap: 12px;
         }
 
         .crm-dashboard__panel {
-            padding: 22px;
+            padding: 18px;
         }
 
         .crm-dashboard__section-header,
@@ -142,8 +156,8 @@
         .crm-dashboard__top-action {
             display: grid;
             gap: 8px;
-            min-height: 110px;
-            padding: 14px;
+            min-height: 82px;
+            padding: 12px;
             border-radius: 14px;
             border: 1px solid rgba(148, 163, 184, 0.28);
             background: rgba(2, 6, 23, 0.44);
@@ -181,6 +195,86 @@
             border-color: rgba(34, 197, 94, 0.6);
             background: rgba(34, 197, 94, 0.18);
             transform: translateY(-1px);
+        }
+
+        /* Keep the homepage focused on actions and live CRM numbers. */
+        .crm-dashboard__hero-text,
+        .crm-dashboard__section-copy,
+        .crm-dashboard__workspace-copy,
+        .crm-dashboard__top-copy,
+        .crm-dashboard__card-copy,
+        .crm-dashboard__workspace-kicker {
+            display: none;
+        }
+
+        .crm-dashboard__aside {
+            display: grid;
+            gap: 12px;
+        }
+
+        .crm-dashboard__panel--aside {
+            padding: 14px;
+        }
+
+        .crm-dashboard__panel--aside .crm-dashboard__section-title {
+            font-size: 1.05rem;
+        }
+
+        .crm-dashboard__panel--aside .crm-dashboard__activity-list {
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .crm-dashboard__panel--aside .crm-dashboard__activity-item {
+            padding: 9px 11px;
+            border-radius: 10px;
+        }
+
+        .crm-dashboard__panel--aside .crm-dashboard__activity-title {
+            margin-top: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .crm-dashboard__panel--aside .crm-dashboard__activity-time {
+            margin-top: 3px;
+            font-size: 11px;
+        }
+
+        .crm-dashboard__panel--aside .crm-dashboard__card-actions {
+            margin-top: 10px;
+        }
+
+        .crm-dashboard__hero-title {
+            max-width: none;
+            font-size: 2rem;
+        }
+
+        .crm-dashboard__hero {
+            gap: 12px;
+            padding: 18px;
+        }
+
+        .crm-dashboard__top-action {
+            min-height: 78px;
+        }
+
+        .crm-dashboard__workspace-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .crm-dashboard__workspace-title {
+            margin-top: 0;
+            font-size: 1.15rem;
+        }
+
+        .crm-dashboard__workspace-card {
+            padding: 14px;
+        }
+
+        .crm-dashboard__link-row {
+            margin-top: 10px;
         }
 
         .crm-dashboard__primary-grid,
@@ -309,6 +403,7 @@
         }
 
         .crm-dashboard__activity-item {
+            padding: 10px 12px;
             border: 1px solid rgba(148, 163, 184, 0.28);
         }
 
@@ -340,7 +435,7 @@
             }
 
             .crm-dashboard__stats {
-                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
             .crm-dashboard__top-grid {
@@ -400,60 +495,42 @@
     {% has_crm_perm user "view_notification_log" as can_view_notification_log %}
     {% has_crm_perm user "view_email_log" as can_view_email_log %}
     {% unread_inapp_count user as inbox_count %}
-    {% get_admin_log 6 as admin_log for_user user %}
+    {% dashboard_summary user as dashboard %}
+    {% get_admin_log 3 as admin_log for_user user %}
 
     <div class="crm-dashboard">
         <section class="crm-dashboard__hero">
             <div>
                 <p class="crm-dashboard__eyebrow">{% translate "Workspace overview" %}</p>
-                <h1 class="crm-dashboard__hero-title">{% translate "Start with what matters today" %}</h1>
+                <h1 class="crm-dashboard__hero-title">{% translate "Today's work at a glance" %}</h1>
                 <p class="crm-dashboard__hero-text">
-                    {% translate "Open inbox first, then process requests, then check client context. Everything else stays below as secondary navigation." %}
+                    {% translate "See what needs attention, open the right workspace and keep the customer work moving." %}
                 </p>
             </div>
 
             <div class="crm-dashboard__stats">
-                <article class="crm-dashboard__stat">
+                <a href="{% url 'notification:inbox' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
                     <span class="crm-dashboard__stat-label">{% translate "Inbox" %}</span>
-                    <strong class="crm-dashboard__stat-value">{{ inbox_count }}</strong>
-                    <span class="crm-dashboard__stat-note">{% translate "Unread notifications" %}</span>
-                </article>
-                <article class="crm-dashboard__stat">
-                    <span class="crm-dashboard__stat-label">{% translate "Sections" %}</span>
-                    <strong class="crm-dashboard__stat-value">{{ app_list|length }}</strong>
-                    <span class="crm-dashboard__stat-note">{% translate "Available work areas" %}</span>
-                </article>
-                <article class="crm-dashboard__stat">
-                    <span class="crm-dashboard__stat-label">{% translate "Activity" %}</span>
-                    <strong class="crm-dashboard__stat-value">{{ admin_log|length }}</strong>
-                    <span class="crm-dashboard__stat-note">{% translate "Recent admin actions shown" %}</span>
-                </article>
-            </div>
-        </section>
-
-        <section class="crm-dashboard__panel crm-dashboard__top-panel">
-            <p class="crm-dashboard__section-eyebrow">{% translate "Main actions" %}</p>
-            <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Follow this order" %}</h2>
-            <div class="crm-dashboard__top-grid">
-                <a href="{% url 'notification:inbox' %}" class="crm-dashboard__top-action">
-                    <span class="crm-dashboard__top-order">1</span>
-                    <strong class="crm-dashboard__top-title">{% translate "Inbox" %}</strong>
-                    <span class="crm-dashboard__top-copy">{% translate "Start here and clear unread reminders." %}</span>
+                    <strong class="crm-dashboard__stat-value">{{ dashboard.inbox }}</strong>
+                    <span class="crm-dashboard__stat-note">{% translate "Needs your attention" %}</span>
                 </a>
-
                 {% if can_view_requests %}
-                    <a href="{% url 'admin:zetom_requestnull_changelist' %}" class="crm-dashboard__top-action">
-                        <span class="crm-dashboard__top-order">2</span>
-                        <strong class="crm-dashboard__top-title">{% translate "Requests" %}</strong>
-                        <span class="crm-dashboard__top-copy">{% translate "Move new requests into active processing." %}</span>
+                    <a href="{% url 'admin:zetom_requestnull_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
+                    <span class="crm-dashboard__stat-label">{% translate "Validation" %}</span>
+                    <strong class="crm-dashboard__stat-value">{{ dashboard.validation }}</strong>
+                    <span class="crm-dashboard__stat-note">{% translate "New requests to check" %}</span>
+                    </a>
+                    <a href="{% url 'admin:zetom_requestmain_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
+                    <span class="crm-dashboard__stat-label">{% translate "Active requests" %}</span>
+                    <strong class="crm-dashboard__stat-value">{{ dashboard.active_requests }}</strong>
+                    <span class="crm-dashboard__stat-note">{% translate "Requests in progress" %}</span>
                     </a>
                 {% endif %}
-
                 {% if can_view_clients %}
-                    <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__top-action">
-                        <span class="crm-dashboard__top-order">3</span>
-                        <strong class="crm-dashboard__top-title">{% translate "Clients" %}</strong>
-                        <span class="crm-dashboard__top-copy">{% translate "Confirm company and contact context." %}</span>
+                    <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
+                        <span class="crm-dashboard__stat-label">{% translate "Clients" %}</span>
+                        <strong class="crm-dashboard__stat-value">{{ dashboard.clients }}</strong>
+                        <span class="crm-dashboard__stat-note">{% translate "Customer records" %}</span>
                     </a>
                 {% endif %}
             </div>
@@ -540,41 +617,6 @@
 
             <aside class="crm-dashboard__aside">
                 <section class="crm-dashboard__panel crm-dashboard__panel--aside">
-                    <p class="crm-dashboard__section-eyebrow">{% translate "How to use it" %}</p>
-                    <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Simple work order" %}</h2>
-                    <ol class="crm-dashboard__steps">
-                        <li class="crm-dashboard__step">
-                            <span class="crm-dashboard__step-index">1</span>
-                            <div>
-                                <strong>{% translate "Inbox" %}</strong>
-                                <p>{% translate "See what needs attention right now." %}</p>
-                            </div>
-                        </li>
-                        <li class="crm-dashboard__step">
-                            <span class="crm-dashboard__step-index">2</span>
-                            <div>
-                                <strong>{% translate "Requests" %}</strong>
-                                <p>{% translate "Take new work into the active request flow." %}</p>
-                            </div>
-                        </li>
-                        <li class="crm-dashboard__step">
-                            <span class="crm-dashboard__step-index">3</span>
-                            <div>
-                                <strong>{% translate "Clients" %}</strong>
-                                <p>{% translate "Confirm company and contact context." %}</p>
-                            </div>
-                        </li>
-                        <li class="crm-dashboard__step">
-                            <span class="crm-dashboard__step-index">4</span>
-                            <div>
-                                <strong>{% translate "System" %}</strong>
-                                <p>{% translate "Use logs and permissions only when needed." %}</p>
-                            </div>
-                        </li>
-                    </ol>
-                </section>
-
-                <section class="crm-dashboard__panel crm-dashboard__panel--aside">
                     <p class="crm-dashboard__section-eyebrow">{% translate "Recent activity" %}</p>
                     <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Latest changes" %}</h2>
 
@@ -613,6 +655,11 @@
                         </div>
                     {% else %}
                         <p class="crm-dashboard__empty-note">{% translate "No recent actions yet." %}</p>
+                    {% endif %}
+                    {% if can_view_logs %}
+                        <div class="crm-dashboard__card-actions">
+                            <a href="{% url 'admin:admin_logentry_changelist' %}" class="crm-dashboard__text-link">{% translate "Open full activity log" %}</a>
+                        </div>
                     {% endif %}
                 </section>
 
