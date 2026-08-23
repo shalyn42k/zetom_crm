@@ -1,0 +1,75 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list unfold_list %}
+{% comment %}
+  claude — переопределение admin/change_list.html (общий каркас списков
+  Unfold). Единственное отличие от оригинала: строка с search_form +
+  кнопкой "Filters" помечена классом zt-toolbar, чтобы в custom_admin.css
+  можно было подтянуть её тень/скругления под .zt-list-panel (стиль
+  Klienci), не трогая логику/права/фильтры/поиск.
+{% endcomment %}
+
+{% block content %}
+    <div id="content-main" x-data="{ filterOpen: false }">
+        {% if cl.formset and cl.formset.errors %}
+            {% include "unfold/helpers/messages/errornote.html" with errors=cl.formset.errors %}
+
+            {{ cl.formset.non_form_errors }}
+        {% endif %}
+
+        <div class="flex -mx-4 module{% if cl.has_filters %} filtered{% endif %}" id="changelist" x-data="{ changeListWidth: 0 }">
+            <div class="result-list-wrapper changelist-form-container flex flex-row grow gap-4 min-w-0 px-4">
+                <div class="grow min-w-0" x-resize="changeListWidth = $width">
+                    {% block date_hierarchy %}
+                        {% if cl.date_hierarchy %}
+                            {% date_hierarchy cl %}
+                        {% endif %}
+                    {% endblock %}
+
+                    {% if cl.model_admin.list_before_template and not is_popup %}
+                        {% include cl.model_admin.list_before_template %}
+                    {% endif %}
+
+                    {% spaceless %}
+                        <div class="zt-toolbar flex flex-col gap-4 mb-4 sm:flex-row empty:hidden">
+                            {% block search %}
+                                {% search_form cl %}
+                            {% endblock %}
+
+                            {% block filters %}
+                                {% if cl.has_filters %}
+                                    <a class="zt-filter-btn {% if cl.has_active_filters %}bg-primary-600 border-primary-600 text-white{% else %}bg-white border-base-200 hover:text-primary-600 dark:bg-base-900 dark:border-base-700 dark:hover:text-primary-500{% endif %} border cursor-pointer flex font-medium gap-2 group items-center px-4 py-2.5 rounded-[12px] shadow-xs text-sm lg:ml-auto md:mt-0 {% if not cl.model_admin.list_filter_sheet %}2xl:hidden{% endif %}" x-on:click="filterOpen = true" x-on:keydown.escape.window="filterOpen = false">
+                                        {% trans "Filters" %}
+
+                                        <span class="material-symbols-outlined md-18 ml-auto">filter_list</span>
+                                    </a>
+                                {% endif %}
+                            {% endblock %}
+                        </div>
+                    {% endspaceless %}
+
+                    <form id="changelist-form" class="group" method="post"{% if cl.formset and cl.formset.is_multipart %} enctype="multipart/form-data"{% endif %} novalidate>
+                        {% csrf_token %}
+
+                        {% if cl.formset %}
+                            {{ cl.formset.management_form }}
+                        {% endif %}
+
+                        {% block result_list %}
+                            {% include "unfold/helpers/change_list_actions.html" %}
+
+                            {% unfold_result_list cl %}
+                        {% endblock %}
+                    </form>
+
+                    {% if cl.model_admin.list_after_template and not is_popup %}
+                        {% include cl.model_admin.list_after_template %}
+                    {% endif %}
+                </div>
+
+                {% if cl.has_filters %}
+                    {% include "unfold/helpers/change_list_filter.html" %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
