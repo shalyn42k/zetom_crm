@@ -6,23 +6,23 @@ the Departments-tab work are marked with `# claude`; the rest is the
 team's own code.
 """
 from django.contrib import admin
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.contrib.auth.models import User
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseForbidden, HttpResponseRedirect
+from django.shortcuts import get_object_or_404
+from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
+from crm.notification.models import Notification
 from crm.users.forms import CustomUserChangeForm, CustomUserCreateForm
 from crm.users.models import Permission, Role, UserProfile
-from crm.users.utils import user_has_perm
+from crm.users.services.deactivation import deactivate_user, reactivate_user
+from crm.users.utils import PRIVILEGED_ROLE_CODES, user_has_perm
 from crm.zetom.models import DepartmentsVariants
 
 from ._dept_actions import DepartmentActionsMixin
-
-# claude — роли, которые non-superuser НЕ может присвоить никому: дают
-# глобальные права уровня админа, поэтому только сам superuser вправе
-# повышать до них (защита от RBAC-эскалации).
-PRIVILEGED_ROLE_CODES = frozenset({"admin", "all_seeing"})
 
 # claude — группировка прав по областям для вкладки Permissions.
 # Порядок групп = порядок отрисовки. Порядок кодов внутри группы =
@@ -66,7 +66,7 @@ STUB_PERMISSIONS = frozenset()
 class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin):
     add_form = CustomUserCreateForm
     form = CustomUserChangeForm
-    actions = ["reset_2fa"]
+    actions = ["reset_2fa", "deactivate_users", "reactivate_users"]
 
     fieldsets = (
         (_("Personal info"), {
@@ -102,7 +102,7 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
         "get_role",
         "get_departments",
         "get_job_title",
-        "is_staff",
+        "get_status",
     )
     list_select_related = ("profile",)
 
@@ -120,6 +120,15 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
         form = super().get_form(request, obj, **kwargs)
         if "is_staff" in form.base_fields:
             form.base_fields["is_staff"].disabled = True
+
+        # claude — снять `is_active` с самого себя = выйти из системы без
+        # возможности вернуться. Дублирующий guard в `save_model`.
+        if (
+            obj is not None
+            and obj.pk == request.user.pk
+            and "is_active" in form.base_fields
+        ):
+            form.base_fields["is_active"].disabled = True
 
         can_edit_roles = user_has_perm(request.user, "edit_roles")
 
@@ -218,6 +227,22 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
     def save_model(self, request, obj, form, change):
         obj.is_staff = True  # staff всегда включён
 
+        # claude — галочка `is_active` на вкладке Permissions обязана ходить
+        # через сервис деактивации (отзыв сессий + доверенных браузеров +
+        # запись в Activity Log), иначе «выключенный» юзер продолжал бы
+        # работать в уже открытой вкладке. Сервис идемпотентен, поэтому
+        # флаг тут откатывается к значению из БД, а реальный переход
+        # выполняется после super() — уже с побочными эффектами.
+        wants_active = obj.is_active
+        was_active = obj.is_active
+        if change:
+            was_active = type(obj).objects.only("is_active").get(pk=obj.pk).is_active
+            # Себя деактивировать нельзя (в UI поле disabled, тут — от
+            # подделанного POST).
+            if obj.pk == request.user.pk:
+                wants_active = was_active
+            obj.is_active = was_active
+
         # claude — defence-in-depth: даже если non-superuser обошёл UI и
         # послал POST вручную, не даём ему повысить кого-либо до superuser
         # и не даём редактировать собственную role / собственный is_superuser.
@@ -237,6 +262,16 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
                 )
 
         super().save_model(request, obj, form, change)
+
+        # claude — сам переход. Non-superuser не может выключить суперюзера —
+        # то же правило, что в bulk-действиях и в has_delete_permission.
+        if wants_active != was_active and not (
+            obj.is_superuser and not request.user.is_superuser
+        ):
+            if wants_active:
+                reactivate_user(obj, actor=request.user)
+            else:
+                deactivate_user(obj, actor=request.user)
 
         profile, _ = UserProfile.objects.get_or_create(user=obj)
 
@@ -295,6 +330,13 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
     get_job_title.short_description = _("Job title")
     get_job_title.admin_order_field = "profile__job_title"
 
+    # claude — вместо колонки is_staff, которая всегда одинаковая
+    # (save_model форсит её в True каждому). Реальный статус аккаунта
+    # теперь несёт смысл: деактивация — основной способ убрать человека.
+    @admin.display(description=_("Active"), boolean=True, ordering="is_active")
+    def get_status(self, obj):
+        return obj.is_active
+
     # claude — Раньше тут было `return True` безусловно: любой is_staff
     # юзер мог зайти в /admin/auth/user/<id>/ и сменить чужую роль /
     # is_superuser. Теперь гейтим через RBAC. Дополнительные safeguards
@@ -311,14 +353,38 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
     def has_change_permission(self, request, obj=None):
         return user_has_perm(request.user, "edit_users")
 
+    # claude — hard-delete переведён в разряд аварийного выхода и оставлен
+    # только суперюзеру: обычный способ убрать человека из системы — это
+    # деактивация (bulk-action «Deactivate» / галочка Active), см.
+    # crm/users/services/deactivation.py. Причина в том, что удаление юзера
+    # каскадом уносит его Activity Log — `LogEntry.user` это CASCADE в
+    # модели самого Django, FK не поменять.
+    # Себя не может удалить никто, включая суперюзера.
     def has_delete_permission(self, request, obj=None):
-        # claude — non-superuser не может удалить ни себя, ни superuser'а.
-        if obj is not None and not request.user.is_superuser:
-            if obj.pk == request.user.pk:
-                return False
-            if obj.is_superuser:
-                return False
-        return user_has_perm(request.user, "edit_users")
+        if obj is not None and obj.pk == request.user.pk:
+            return False
+        return request.user.is_superuser
+
+    # claude — почему это вообще понадобилось: страница удаления собирает
+    # каскад и для каждой попавшей в него модели, зарегистрированной в
+    # админке, дёргает её has_delete_permission. У NotificationAdmin и
+    # LogEntryAdmin он жёстко False (append-only аудит), поэтому Django
+    # прятал кнопку подтверждения даже у суперюзера. Обе админки остаются
+    # read-only для прямого удаления — снимаем их только из каскада.
+    # Цена зафиксирована в шаблоне подтверждения: инбокс и аудит
+    # удаляемого юзера исчезают вместе с ним.
+    # Сравниваем через str(): в perms_needed лежат lazy verbose_name,
+    # прямое сравнение объектов зависело бы от активной локали.
+    def get_deleted_objects(self, objs, request):
+        deletable, model_count, perms_needed, protected = super().get_deleted_objects(
+            objs, request
+        )
+        cascade_only = {
+            str(Notification._meta.verbose_name),
+            str(LogEntry._meta.verbose_name),
+        }
+        perms_needed = {p for p in perms_needed if str(p) not in cascade_only}
+        return deletable, model_count, perms_needed, protected
 
     # Сохраняем вкладку при обновлении
     def response_post_save_change(self, request, obj):
@@ -334,7 +400,66 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
         obj = context.get("original")
         if obj is not None:
             context.update(self._build_dept_context(request, obj))
+            context["can_toggle_active"] = self._can_toggle_active(request, obj)
         return super().render_change_form(request, context, *args, **kwargs)
+
+    # claude — кнопка Deactivate/Reactivate на карточке юзера.
+    # Гейт один и тот же и для отрисовки кнопки, и для самого эндпоинта:
+    # `edit_users` + два правила из bulk-действий (себя нельзя, чужого
+    # суперюзера нельзя, если сам не суперюзер).
+    @staticmethod
+    def _can_toggle_active(request, obj):
+        if not user_has_perm(request.user, "edit_users"):
+            return False
+        if obj.pk == request.user.pk:
+            return False
+        if obj.is_superuser and not request.user.is_superuser:
+            return False
+        return True
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = [
+            path(
+                "<int:object_id>/toggle-active/",
+                self.admin_site.admin_view(self.toggle_active_action),
+                name="auth_user_toggle_active",
+            ),
+        ]
+        return custom + urls
+
+    # claude — кнопка живёт внутри основной формы change-view и жмётся через
+    # formaction (вложенный <form> был бы невалидным HTML). Поэтому сюда
+    # прилетает весь payload формы юзера — он намеренно игнорируется:
+    # действие меняет только is_active, несохранённые правки полей теряются.
+    def toggle_active_action(self, request, object_id):
+        if request.method != "POST":
+            return HttpResponseRedirect(
+                reverse("admin:auth_user_change", args=[object_id])
+            )
+
+        obj = get_object_or_404(User, pk=object_id)
+
+        if not self._can_toggle_active(request, obj):
+            return HttpResponseForbidden("Permission denied")
+
+        if obj.is_active:
+            deactivate_user(obj, actor=request.user)
+            self.message_user(
+                request,
+                _("%(name)s was deactivated and signed out.") % {"name": obj},
+            )
+        else:
+            reactivate_user(obj, actor=request.user)
+            self.message_user(
+                request, _("%(name)s can log in again.") % {"name": obj},
+            )
+
+        url = reverse("admin:auth_user_change", args=[object_id])
+        tab = request.GET.get("tab")
+        if tab:
+            url += f"?tab={tab}"
+        return HttpResponseRedirect(url)
 
     # claude — bulk action: сброс 2FA (на случай утери телефона + backup-кодов).
     # Юзер снова встретит /users/2fa/ (регистрация) на следующем логине.
@@ -357,6 +482,53 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
             request,
             _("2FA reset for %(n)s user(s). They will set it up again on next login.") % {"n": queryset.count()},
         )
+
+    # claude — bulk soft-delete: основной способ убрать человека из системы.
+    # Роль, отделы и ассайны на Req'ах сохраняются, поэтому реактивация
+    # возвращает юзера в строй одним кликом.
+    @admin.action(description=_("Deactivate selected users"))
+    def deactivate_users(self, request, queryset):
+        self._apply_activation(request, queryset, activate=False)
+
+    @admin.action(description=_("Reactivate selected users"))
+    def reactivate_users(self, request, queryset):
+        self._apply_activation(request, queryset, activate=True)
+
+    # claude — общий гейт обоих действий. Два правила те же, что стояли
+    # в прежнем has_delete_permission: себя не трогаем (иначе админ
+    # выключает сам себя), и non-superuser не трогает суперюзеров.
+    def _apply_activation(self, request, queryset, *, activate):
+        if not user_has_perm(request.user, "edit_users"):
+            self.message_user(request, _("No permission."), level="error")
+            return
+
+        apply_to = reactivate_user if activate else deactivate_user
+        changed = 0
+        skipped = 0
+        for target in queryset:
+            if target.pk == request.user.pk:
+                skipped += 1
+                continue
+            if target.is_superuser and not request.user.is_superuser:
+                skipped += 1
+                continue
+            if apply_to(target, actor=request.user):
+                changed += 1
+
+        if activate:
+            message = str(_("Reactivated %(n)s user(s).") % {"n": changed})
+        else:
+            message = str(
+                _(
+                    "Deactivated %(n)s user(s). Their sessions and trusted "
+                    "browsers were revoked."
+                ) % {"n": changed}
+            )
+        if skipped:
+            message += " " + str(
+                _("Skipped %(n)s (yourself or a superuser).") % {"n": skipped}
+            )
+        self.message_user(request, message)
 
 
 #  Регистрация

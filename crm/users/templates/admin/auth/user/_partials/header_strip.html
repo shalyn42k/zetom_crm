@@ -16,6 +16,15 @@
         <span class="up-sep" aria-hidden="true">·</span>
         <span>{{ original.email }}</span>
       {% endif %}
+      {% comment %}
+        claude — деактивированный аккаунт должен читаться с первого взгляда:
+        логин заблокирован, из пикеров ассайни/owner'ов юзер выпал, но
+        карточка выглядит как обычная.
+      {% endcomment %}
+      {% if not original.is_active %}
+        <span class="up-sep" aria-hidden="true">·</span>
+        <span class="up-badge up-badge--inactive">{% trans "Inactive" %}</span>
+      {% endif %}
       {% if original.profile.role %}
         <span class="up-sep" aria-hidden="true">·</span>
         <span class="up-badge up-badge--role-{{ original.profile.role.code|lower }}">{% trans original.profile.role.name %}</span>

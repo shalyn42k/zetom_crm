@@ -8,6 +8,18 @@
   <h2 id="up-sec-heading" class="up-card__title">{% trans "Security" %}</h2>
 
   {% comment %}
+    claude — статус доступа. Сама кнопка Deactivate/Reactivate живёт в
+    нижней панели рядом с «Delete user» (admin/auth/user/submit_line.html):
+    там её ищут, и там она вне основной формы, поэтому не утаскивает с
+    собой несохранённый payload. Здесь только состояние словами.
+  {% endcomment %}
+  {% if not original.is_active %}
+    <p class="up-callout">
+      {% trans "This account is deactivated: the user cannot log in. Use “Reactivate user” at the bottom of the page to restore access — role and departments are still in place, only 2FA has to be set up again." %}
+    </p>
+  {% endif %}
+
+  {% comment %}
     2FA обязателен всем, кроме юзеров с otp_exempt. Статус устройства —
     read-only; сброс (при утере телефона) — bulk-action "Reset 2FA" в
     списке Users, он же отзывает доверенные браузеры. claude — тумблер

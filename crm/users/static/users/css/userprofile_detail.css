@@ -193,6 +193,12 @@ html.dark,
 .up-badge--perm-allowed { color: var(--up-perm-allowed); background: color-mix(in oklab, var(--up-perm-allowed) 14%, transparent); }
 .up-badge--perm-limited { color: var(--up-perm-limited); background: color-mix(in oklab, var(--up-perm-limited) 14%, transparent); }
 .up-badge--perm-denied  { color: var(--up-perm-denied);  background: color-mix(in oklab, var(--up-perm-denied)  14%, transparent); }
+/* claude — деактивированный аккаунт. Тот же красный, что у perm-denied:
+   в системе это единственный «отзыв доступа», читается одинаково. */
+.up-badge--inactive {
+  color: var(--up-perm-denied);
+  background: color-mix(in oklab, var(--up-perm-denied) 14%, transparent);
+}
 
 /* ---------- Permission rows ---------- */
 .up-roles { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
