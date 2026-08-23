@@ -145,11 +145,17 @@ class CustomUserChangeForm(forms.ModelForm):
             "is_active", "is_staff", "is_superuser",
         ]
 
+        # claude — autocomplete-подсказки: та же история, что и в
+        # UserProfileEditForm — Chrome сам, в обход JS, подставлял имя
+        # выбранного файла аватарки в ближайшее текстовое поле (тут это
+        # оказался username). Явные autocomplete снижают риск, но
+        # надёжная защита — guard-скрипт в tab_profile.html (отслеживает
+        # последнее реально введённое значение по input-событию).
         widgets = {
-            "username": forms.TextInput(attrs={"class": INPUT_CLASS}),
-            "email": forms.EmailInput(attrs={"class": INPUT_CLASS}),
-            "first_name": forms.TextInput(attrs={"class": INPUT_CLASS}),
-            "last_name": forms.TextInput(attrs={"class": INPUT_CLASS}),
+            "username": forms.TextInput(attrs={"class": INPUT_CLASS, "autocomplete": "username"}),
+            "email": forms.EmailInput(attrs={"class": INPUT_CLASS, "autocomplete": "email"}),
+            "first_name": forms.TextInput(attrs={"class": INPUT_CLASS, "autocomplete": "given-name"}),
+            "last_name": forms.TextInput(attrs={"class": INPUT_CLASS, "autocomplete": "family-name"}),
         }
 
     def __init__(self, *args, **kwargs):
