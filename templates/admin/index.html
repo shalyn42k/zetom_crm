@@ -7,14 +7,17 @@
     <link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}">
     <style>
         .crm-dashboard {
-            max-width: 1320px;
+            max-width: 1600px;
             margin: 0 auto;
-            display: grid;
-                gap: 12px;
-                padding-bottom: 8px;
+            height: calc(100vh - 110px);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-bottom: 8px;
+            overflow: hidden;
         }
 
-        .crm-dashboard__hero,
+        .crm-dashboard__topbar,
         .crm-dashboard__panel,
         .crm-dashboard__primary-card,
         .crm-dashboard__workspace-card,
@@ -26,13 +29,32 @@
             border-radius: 18px;
         }
 
-        .crm-dashboard__hero {
-            display: grid;
-            gap: 12px;
-            padding: 18px;
+        .crm-dashboard__topbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
             background:
                 radial-gradient(circle at top right, rgba(34, 197, 94, 0.16), transparent 42%),
                 linear-gradient(150deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.94));
+        }
+
+        .crm-dashboard__topbar-label {
+            color: #7ee49b;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+
+        .crm-dashboard__topbar-name {
+            color: #f8fafc;
+            font-size: 14px;
+        }
+
+        .crm-dashboard__topbar-meta {
+            color: rgba(226, 232, 240, 0.72);
+            font-size: 12px;
         }
 
         .crm-dashboard__eyebrow,
@@ -69,17 +91,17 @@
             font-size: 14px;
         }
 
-        .crm-dashboard__stats {
+        .crm-dashboard__kpi-square {
             display: grid;
-            gap: 10px;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-rows: repeat(2, minmax(0, 1fr));
+            gap: 8px;
         }
 
         .crm-dashboard__stat {
             display: flex;
-            padding: 16px;
-            min-height: 82px;
-            padding: 12px;
+            padding: 10px;
+            min-height: 64px;
             flex-direction: column;
             justify-content: space-between;
         }
@@ -98,21 +120,76 @@
         }
 
         .crm-dashboard__stat-value {
-            font-size: 1.9rem;
+            font-size: 1.5rem;
             line-height: 1;
         }
 
         .crm-dashboard__layout {
             display: grid;
-            grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+            grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.1fr) minmax(260px, 0.85fr);
             gap: 12px;
-            align-items: start;
+            align-items: stretch;
+            flex: 1 1 auto;
+            min-height: 0;
         }
 
         .crm-dashboard__main,
         .crm-dashboard__aside {
             display: grid;
             gap: 12px;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .crm-dashboard__main {
+            align-content: start;
+        }
+
+        .crm-dashboard__request-flow .crm-dashboard__link-row {
+            flex-direction: column;
+        }
+
+        .crm-dashboard__flow-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            border-color: rgba(217, 119, 6, 0.4);
+            background: rgba(120, 53, 15, 0.28);
+            color: #fde68a;
+        }
+
+        .crm-dashboard__flow-link:hover {
+            border-color: rgba(217, 119, 6, 0.7);
+            background: rgba(180, 83, 9, 0.32);
+            color: #fff7ed;
+        }
+
+        .crm-dashboard__flow-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: rgba(217, 119, 6, 0.35);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__client-workspace {
+            display: grid;
+            gap: 10px;
+            align-content: start;
+            align-items: start;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .crm-dashboard__client-actions {
+            display: grid;
+            gap: 8px;
         }
 
         .crm-dashboard__panel {
@@ -213,6 +290,10 @@
         }
 
         .crm-dashboard__panel--aside {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            height: 100%;
             padding: 14px;
         }
 
@@ -223,6 +304,8 @@
         .crm-dashboard__panel--aside .crm-dashboard__activity-list {
             gap: 6px;
             margin-top: 10px;
+            flex: 1;
+            overflow-y: auto;
         }
 
         .crm-dashboard__panel--aside .crm-dashboard__activity-item {
@@ -249,11 +332,6 @@
         .crm-dashboard__hero-title {
             max-width: none;
             font-size: 2rem;
-        }
-
-        .crm-dashboard__hero {
-            gap: 12px;
-            padding: 18px;
         }
 
         .crm-dashboard__top-action {
@@ -430,12 +508,25 @@
         }
 
         @media (max-width: 1200px) {
+            .crm-dashboard {
+                height: auto;
+                overflow: visible;
+            }
+
             .crm-dashboard__layout {
                 grid-template-columns: 1fr;
             }
 
-            .crm-dashboard__stats {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+            .crm-dashboard__main,
+            .crm-dashboard__aside,
+            .crm-dashboard__client-workspace,
+            .crm-dashboard__panel--aside {
+                overflow: visible;
+                height: auto;
+            }
+
+            .crm-dashboard__kpi-square {
+                max-width: none;
             }
 
             .crm-dashboard__top-grid {
@@ -448,7 +539,7 @@
                 gap: 14px;
             }
 
-            .crm-dashboard__hero,
+            .crm-dashboard__topbar,
             .crm-dashboard__panel,
             .crm-dashboard__primary-card,
             .crm-dashboard__workspace-card,
@@ -457,7 +548,7 @@
                 border-radius: 14px;
             }
 
-            .crm-dashboard__hero,
+            .crm-dashboard__topbar,
             .crm-dashboard__panel {
                 padding: 16px;
             }
@@ -499,121 +590,78 @@
     {% get_admin_log 3 as admin_log for_user user %}
 
     <div class="crm-dashboard">
-        <section class="crm-dashboard__hero">
-            <div>
-                <p class="crm-dashboard__eyebrow">{% translate "Workspace overview" %}</p>
-                <h1 class="crm-dashboard__hero-title">{% translate "Today's work at a glance" %}</h1>
-                <p class="crm-dashboard__hero-text">
-                    {% translate "See what needs attention, open the right workspace and keep the customer work moving." %}
-                </p>
-            </div>
-
-            <div class="crm-dashboard__stats">
-                <a href="{% url 'notification:inbox' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
-                    <span class="crm-dashboard__stat-label">{% translate "Inbox" %}</span>
-                    <strong class="crm-dashboard__stat-value">{{ dashboard.inbox }}</strong>
-                    <span class="crm-dashboard__stat-note">{% translate "Needs your attention" %}</span>
-                </a>
-                {% if can_view_requests %}
-                    <a href="{% url 'admin:zetom_requestnull_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
-                    <span class="crm-dashboard__stat-label">{% translate "Validation" %}</span>
-                    <strong class="crm-dashboard__stat-value">{{ dashboard.validation }}</strong>
-                    <span class="crm-dashboard__stat-note">{% translate "New requests to check" %}</span>
-                    </a>
-                    <a href="{% url 'admin:zetom_requestmain_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
-                    <span class="crm-dashboard__stat-label">{% translate "Active requests" %}</span>
-                    <strong class="crm-dashboard__stat-value">{{ dashboard.active_requests }}</strong>
-                    <span class="crm-dashboard__stat-note">{% translate "Requests in progress" %}</span>
-                    </a>
-                {% endif %}
-                {% if can_view_clients %}
-                    <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
-                        <span class="crm-dashboard__stat-label">{% translate "Clients" %}</span>
-                        <strong class="crm-dashboard__stat-value">{{ dashboard.clients }}</strong>
-                        <span class="crm-dashboard__stat-note">{% translate "Customer records" %}</span>
-                    </a>
-                {% endif %}
-            </div>
+        <section class="crm-dashboard__topbar">
+            <span class="crm-dashboard__topbar-label">{% translate "Signed in as" %}</span>
+            <strong class="crm-dashboard__topbar-name">{{ user.get_full_name|default:user.username }}</strong>
+            <span class="crm-dashboard__topbar-meta">
+                {% if user.userprofile.job_title %}{{ user.userprofile.job_title }} · {% endif %}{{ user.userprofile.departments_summary|default:_("No department") }}
+            </span>
         </section>
 
         <div class="crm-dashboard__layout">
             <main class="crm-dashboard__main">
-                <section class="crm-dashboard__panel">
-                    <div class="crm-dashboard__section-header">
-                        <div>
-                            <p class="crm-dashboard__section-eyebrow">{% translate "Workspaces" %}</p>
-                            <h2 class="crm-dashboard__section-title">{% translate "Other sections" %}</h2>
-                        </div>
-                        <p class="crm-dashboard__section-copy">
-                            {% translate "Use these when the top actions are done." %}
-                        </p>
-                    </div>
-
-                    <div class="crm-dashboard__workspace-grid">
-                        {% if can_view_requests %}
-                            <article class="crm-dashboard__workspace-card">
-                                <div class="crm-dashboard__workspace-head">
-                                    <div>
-                                        <p class="crm-dashboard__workspace-kicker">{% translate "Requests" %}</p>
-                                        <h3 class="crm-dashboard__workspace-title">{% translate "Request flow" %}</h3>
-                                    </div>
-                                </div>
-                                <div class="crm-dashboard__link-row">
-                                    <a href="{% url 'admin:zetom_requestnull_changelist' %}" class="crm-dashboard__text-link">{% translate "Validation" %}</a>
-                                    <a href="{% url 'admin:zetom_requestmain_changelist' %}" class="crm-dashboard__text-link">{% translate "Information" %}</a>
-                                    <a href="{% url 'admin:zetom_zlecenie_changelist' %}" class="crm-dashboard__text-link">{% translate "Orders" %}</a>
-                                    <a href="{% url 'admin:zetom_wniosek_changelist' %}" class="crm-dashboard__text-link">{% translate "Applications" %}</a>
-                                </div>
-                            </article>
-                        {% endif %}
-
-                        {% if can_view_clients %}
-                            <article class="crm-dashboard__workspace-card">
-                                <div class="crm-dashboard__workspace-head">
-                                    <div>
-                                        <p class="crm-dashboard__workspace-kicker">{% translate "Clients" %}</p>
-                                        <h3 class="crm-dashboard__workspace-title">{% translate "Client base" %}</h3>
-                                    </div>
-                                </div>
-                                <div class="crm-dashboard__link-row">
-                                    <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__text-link">{% translate "Clients" %}</a>
-                                    <a href="{% url 'admin:clients_company_changelist' %}" class="crm-dashboard__text-link">{% translate "Companies" %}</a>
-                                    <a href="{% url 'admin:clients_clientinteraction_changelist' %}" class="crm-dashboard__text-link">{% translate "Interactions" %}</a>
-                                </div>
-                            </article>
-                        {% endif %}
-
-                        {% if can_view_logs or can_view_notification_log or can_view_email_log %}
-                            <article class="crm-dashboard__workspace-card">
-                                <div class="crm-dashboard__workspace-head">
-                                    <div>
-                                        <p class="crm-dashboard__workspace-kicker">{% translate "System" %}</p>
-                                        <h3 class="crm-dashboard__workspace-title">{% translate "Logs" %}</h3>
-                                    </div>
-                                </div>
-                                <div class="crm-dashboard__link-row">
-                                    {% if can_view_logs %}
-                                        <a href="{% url 'admin:admin_logentry_changelist' %}" class="crm-dashboard__text-link">{% translate "Activity log" %}</a>
-                                    {% endif %}
-                                    {% if can_view_notification_log %}
-                                        <a href="{% url 'admin:notification_notification_changelist' %}" class="crm-dashboard__text-link">{% translate "Notification log" %}</a>
-                                    {% endif %}
-                                    {% if can_view_email_log %}
-                                        <a href="{% url 'admin:notification_emailnotification_changelist' %}" class="crm-dashboard__text-link">{% translate "Email log" %}</a>
-                                    {% endif %}
-                                </div>
-                            </article>
-                        {% endif %}
-                    </div>
-
-                    {% if not can_view_requests and not can_view_clients and not can_view_logs and not can_view_notification_log and not can_view_email_log %}
-                        {% trans "You don’t have permission to view or edit anything." as error_message %}
-                        <div class="crm-dashboard__empty-state">
-                            {% include "unfold/helpers/messages/error.html" with error=error_message %}
-                        </div>
+                <section class="crm-dashboard__panel crm-dashboard__kpi-square">
+                    <a href="{% url 'notification:inbox' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
+                        <span class="crm-dashboard__stat-label">{% translate "Inbox" %}</span>
+                        <strong class="crm-dashboard__stat-value">{{ dashboard.inbox }}</strong>
+                        <span class="crm-dashboard__stat-note">{% translate "Needs your attention" %}</span>
+                    </a>
+                    {% if can_view_requests %}
+                        <a href="{% url 'admin:zetom_requestnull_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
+                            <span class="crm-dashboard__stat-label">{% translate "Validation" %}</span>
+                            <strong class="crm-dashboard__stat-value">{{ dashboard.validation }}</strong>
+                            <span class="crm-dashboard__stat-note">{% translate "New requests to check" %}</span>
+                        </a>
+                        <a href="{% url 'admin:zetom_requestmain_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
+                            <span class="crm-dashboard__stat-label">{% translate "Active requests" %}</span>
+                            <strong class="crm-dashboard__stat-value">{{ dashboard.active_requests }}</strong>
+                            <span class="crm-dashboard__stat-note">{% translate "Requests in progress" %}</span>
+                        </a>
+                    {% endif %}
+                    {% if can_view_clients %}
+                        <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
+                            <span class="crm-dashboard__stat-label">{% translate "Clients" %}</span>
+                            <strong class="crm-dashboard__stat-value">{{ dashboard.clients }}</strong>
+                            <span class="crm-dashboard__stat-note">{% translate "Customer records" %}</span>
+                        </a>
                     {% endif %}
                 </section>
+
+                {% if can_view_requests %}
+                    <section class="crm-dashboard__panel crm-dashboard__request-flow">
+                        <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Request flow" %}</h2>
+                        <div class="crm-dashboard__link-row">
+                            <a href="{% url 'admin:zetom_requestnull_changelist' %}" class="crm-dashboard__flow-link">{% translate "Validation" %} <span class="crm-dashboard__flow-count">{{ dashboard.validation }}</span></a>
+                            <a href="{% url 'admin:zetom_requestmain_changelist' %}" class="crm-dashboard__flow-link">{% translate "Information" %} <span class="crm-dashboard__flow-count">{{ dashboard.active_requests }}</span></a>
+                            <a href="{% url 'admin:zetom_zlecenie_changelist' %}" class="crm-dashboard__flow-link">{% translate "Orders" %} <span class="crm-dashboard__flow-count">{{ dashboard.orders }}</span></a>
+                            <a href="{% url 'admin:zetom_wniosek_changelist' %}" class="crm-dashboard__flow-link">{% translate "Applications" %} <span class="crm-dashboard__flow-count">{{ dashboard.applications }}</span></a>
+                        </div>
+                    </section>
+                {% endif %}
+
+                {% if not can_view_requests and not can_view_clients %}
+                    {% trans "You don’t have permission to view or edit anything." as error_message %}
+                    <section class="crm-dashboard__panel crm-dashboard__empty-state">
+                        {% include "unfold/helpers/messages/error.html" with error=error_message %}
+                    </section>
+                {% endif %}
             </main>
+
+            {% if can_view_clients %}
+                <section class="crm-dashboard__panel crm-dashboard__client-workspace">
+                    <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Client workspace" %}</h2>
+                    <div class="crm-dashboard__link-row">
+                        <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__text-link">{% translate "Clients" %}</a>
+                        <a href="{% url 'admin:clients_company_changelist' %}" class="crm-dashboard__text-link">{% translate "Companies" %}</a>
+                        <a href="{% url 'admin:clients_clientinteraction_changelist' %}" class="crm-dashboard__text-link">{% translate "Interactions" %}</a>
+                    </div>
+                    <div class="crm-dashboard__client-actions">
+                        {% if can_view_requests %}
+                            <a href="{% url 'admin:zetom_requestmain_add' %}" class="crm-dashboard__button crm-dashboard__button--primary">{% translate "Create request" %}</a>
+                        {% endif %}
+                    </div>
+                </section>
+            {% endif %}
 
             <aside class="crm-dashboard__aside">
                 <section class="crm-dashboard__panel crm-dashboard__panel--aside">
@@ -662,7 +710,6 @@
                         </div>
                     {% endif %}
                 </section>
-
             </aside>
         </div>
     </div>
