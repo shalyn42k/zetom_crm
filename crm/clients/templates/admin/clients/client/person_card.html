@@ -31,6 +31,7 @@ company_card.css.
   <symbol id="cc-i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
   <symbol id="cc-i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
   <symbol id="cc-i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="cc-i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
 </svg>
 
 <div class="cc-stage">
@@ -102,14 +103,14 @@ company_card.css.
       </div>
 
       {# Firmy — sourced from client.company_links, never Client.company_* #}
-      <div class="panel" x-data="firmaPicker({{ can_edit|yesno:'true,false' }})">
+      <div class="panel" x-data="firmyPanel({{ can_edit|yesno:'true,false' }})">
         <div class="panel-h">
           <h2><svg class="i hico"><use href="#cc-i-briefcase"/></svg> {% trans "Firmy" %}{% if firmy %} <span class="count">{{ firmy|length }}</span>{% endif %}</h2>
           {% if can_edit %}<button type="button" class="btn sm" @click="open()"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Przypisz do firmy" %}</button>{% endif %}
         </div>
         {% if firmy %}
         <table class="inner">
-          <thead><tr><th>{% trans "Firma" %}</th><th>{% trans "Stanowisko" %}</th><th class="act"></th></tr></thead>
+          <thead><tr><th>{% trans "Firma" %}</th><th>{% trans "Stanowisko" %}</th><th class="act">{% if can_edit %}{% trans "Operacje" %}{% endif %}</th></tr></thead>
           <tbody>
             {% for f in firmy %}
             <tr class="rowlink" onclick="window.location='{{ f.url }}'">
@@ -120,7 +121,26 @@ company_card.css.
                 </span>
               </td>
               <td class="stan">{{ f.stanowisko|default:"—" }}</td>
-              <td><div class="ops"><a class="opbtn" href="{{ f.url }}" title="{% trans 'Otwórz firmę' %}"><svg class="i i-sm"><use href="#cc-i-chev-r"/></svg></a></div></td>
+              {% comment %}
+              @click.stop on every control: the whole <tr> carries an onclick
+              that navigates to the company, so without it editing or detaching
+              would immediately leave the page.
+              {% endcomment %}
+              <td>
+                <div class="ops">
+                  {% if can_edit %}
+                  <button type="button" class="opbtn" title="{% trans 'Edytuj powiązanie' %}"
+                          @click.stop="openEdit({{ f.link_pk }}, '{{ f.stanowisko|escapejs }}', {{ f.is_primary|yesno:'true,false' }})">
+                    <svg class="i i-sm"><use href="#cc-i-edit"/></svg>
+                  </button>
+                  <button type="button" class="opbtn del" title="{% trans 'Odłącz od firmy' %}"
+                          @click.stop="detach({{ f.link_pk }})">
+                    <svg class="i i-sm"><use href="#cc-i-trash"/></svg>
+                  </button>
+                  {% endif %}
+                  <a class="opbtn" href="{{ f.url }}" title="{% trans 'Otwórz firmę' %}"><svg class="i i-sm"><use href="#cc-i-chev-r"/></svg></a>
+                </div>
+              </td>
             </tr>
             {% endfor %}
           </tbody>
@@ -156,6 +176,29 @@ company_card.css.
                 <p class="picker-empty" x-show="!results.length" x-text="q ? '{% trans "Nie znaleziono firm." %}' : '{% trans "Wpisz nazwę lub NIP firmy." %}'"></p>
               </div>
               <p class="picker-err" x-show="error" x-text="error"></p>
+            </div>
+          </div>
+        </div>
+
+        {# mPowiazanie — stanowisko / główny kontakt na istniejącym powiązaniu #}
+        <div class="overlay" x-show="editOpen" x-cloak @click.self="closeEdit()" @keydown.escape.window="closeEdit()">
+          <div class="modal">
+            <div class="modal-h">
+              <h3>{% trans "Edytuj powiązanie z firmą" %}</h3>
+              <p>{% trans "Rola tej osoby w wybranej firmie." %}</p>
+              <button type="button" class="modal-x" @click="closeEdit()"><svg class="i"><use href="#cc-i-x"/></svg></button>
+            </div>
+            <form class="modal-b" @submit.prevent="saveEdit()">
+              <template x-if="errors.length"><div class="form-errors"><template x-for="e in errors" :key="e"><div x-text="e"></div></template></div></template>
+              <div class="field"><label>{% trans "Stanowisko" %}</label><input type="text" x-model="editForm.position" placeholder="{% trans 'np. Dyrektor techniczny' %}"></div>
+              <label class="check">
+                <input type="checkbox" x-model="editForm.is_primary">
+                <span><span class="ct">{% trans "Główny kontakt" %}</span><span class="cd" style="display:block">{% trans "Główna osoba do kontaktu w tej firmie." %}</span></span>
+              </label>
+            </form>
+            <div class="modal-f">
+              <button type="button" class="btn" @click="closeEdit()">{% trans "Anuluj" %}</button>
+              <button type="button" class="btn primary" :disabled="saving" @click="saveEdit()">{% trans "Zapisz" %}</button>
             </div>
           </div>
         </div>
@@ -280,17 +323,30 @@ function osoboweModal(initial, canEdit) {
   };
 }
 
-// claude — Phase 3c: attach this person to another Company. Searches
+// claude — Firmy panel: attach / edit / detach. Attach searches
 // clients_client_company_search (excludes already-linked firms) and posts to
-// clients_client_attach_company, then reloads to redraw the Firmy panel.
-function firmaPicker(canEdit) {
+// clients_client_attach_company; edit and detach act on an existing
+// CompanyPersonLink (clients_client_company_link_save / _detach) and never
+// touch the Company or the person. Every write reloads the page — the panel is
+// server-rendered, so re-sorting and re-numbering it here would duplicate
+// _build_person_context.
+function firmyPanel(canEdit) {
   const searchUrl = "{% url 'admin:clients_client_company_search' client.pk %}";
   const attachUrl = "{% url 'admin:clients_client_attach_company' client.pk %}";
+  const linkBase = "{% url 'admin:clients_client_company_link_save' client.pk 0 %}";
   const csrfToken = '{{ csrf_token }}';
+  const confirmMsg = "{% trans 'Czy na pewno chcesz odłączyć tę osobę od firmy?' %}";
+  // claude — the reverse above is built with link_pk=0 as a placeholder, so
+  // both link URLs are derived from it rather than string-built by hand.
+  const linkUrl = (linkPk, action) => linkBase.replace(/0\/save\/$/, linkPk + '/' + action + '/');
 
   return {
     canEdit: canEdit,
     modalOpen: false,
+    editOpen: false,
+    saving: false,
+    errors: [],
+    editForm: { link_pk: null, position: '', is_primary: false },
     q: '',
     results: [],
     error: '',
@@ -303,6 +359,52 @@ function firmaPicker(canEdit) {
       this.search();
     },
     close() { this.modalOpen = false; },
+
+    openEdit(linkPk, position, isPrimary) {
+      this.editForm = { link_pk: linkPk, position: position, is_primary: isPrimary };
+      this.errors = [];
+      this.editOpen = true;
+    },
+    closeEdit() { this.editOpen = false; },
+
+    async saveEdit() {
+      this.saving = true;
+      this.errors = [];
+      const body = new FormData();
+      body.set('position', this.editForm.position);
+      if (this.editForm.is_primary) body.set('is_primary', '1');
+      try {
+        const r = await fetch(linkUrl(this.editForm.link_pk, 'save'), {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken },
+          body,
+        });
+        const j = await r.json();
+        if (!j.ok) {
+          this.errors = [j.error || "{% trans 'Nie udało się zapisać.' %}"];
+          return;
+        }
+        window.location.reload();
+      } catch (e) {
+        this.errors = ["{% trans 'Błąd sieci — spróbuj ponownie.' %}"];
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    async detach(linkPk) {
+      if (!window.confirm(confirmMsg)) return;
+      try {
+        const r = await fetch(linkUrl(linkPk, 'detach'), {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken },
+        });
+        const j = await r.json();
+        if (j.ok) window.location.reload();
+      } catch (e) {
+        this.error = "{% trans 'Błąd sieci — spróbuj ponownie.' %}";
+      }
+    },
 
     async search() {
       try {

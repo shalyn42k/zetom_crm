@@ -47,6 +47,17 @@ class ClientAutofillTests(TestCase):
         self.assertEqual(data["company_name"], "Sigma Company")
         self.assertEqual(data["company_nip"], "5262706346")
 
+    # claude — client_search.js prefills a request form from the picked row, so
+    # the person fields have to be in the payload; it used to read keys the
+    # endpoint never sent (and `nip`, which was really `company_nip`).
+    def test_search_row_carries_person_and_company_fields(self):
+        request = self.factory.get("/clients/search/", {"q": "Sigma Company"})
+        request.user = self.user
+        row = json.loads(ClientSearchView.as_view()(request).content.decode())["results"][0]
+        self.assertEqual(row["first_name"], "Sigma")
+        self.assertEqual(row["last_name"], "Balls")
+        self.assertEqual(row["company_name"], "Sigma Company")
+
     def test_autofill_unknown_nip(self):
         request = self.factory.get("/clients/autofill/", {"nip": "0000000000"})
         request.user = self.user

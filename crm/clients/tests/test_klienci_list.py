@@ -25,12 +25,50 @@ class KlienciListTest(TestCase):
         self.assertContains(resp, "Jan Prywatny")     # private person
         self.assertContains(resp, "Private person")  # EN locale (LANGUAGE_CODE=en)
 
+    # claude — assert on the built rows, not on raw HTML: the Add Client modal
+    # ships example placeholders ("np. Zetom Sp. z o.o.") that collide with
+    # company names in an assertNotContains over the whole page.
     def test_filter_firmy_only(self):
-        resp = self._get(rodzaj="firmy")
-        self.assertContains(resp, "Zetom Sp.")
-        self.assertNotContains(resp, "Jan Prywatny")
+        rows = self._get(rodzaj="firmy").context["rows"]
+        self.assertEqual([r["nazwa"] for r in rows], ["Zetom Sp."])
 
     def test_filter_osoby_only(self):
-        resp = self._get(rodzaj="osoby")
-        self.assertContains(resp, "Jan Prywatny")
-        self.assertNotContains(resp, "Zetom Sp.")
+        rows = self._get(rodzaj="osoby").context["rows"]
+        self.assertEqual([r["nazwa"] for r in rows], ["Jan Prywatny"])
+
+
+# claude — the merged list used to be "all companies sorted, then all persons
+# sorted", so with more companies than fit on a page no private person was
+# reachable until the last pages. Rows are now globally ordered by name.
+class KlienciListOrderingTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser("staff", "s@s.pl", "pass12345")
+        self.client.force_login(self.user)
+        Company.objects.create(name="Beta Sp.")
+        Company.objects.create(name="Delta Sp.")
+        Client.objects.create(first_name="Alfa", last_name="Osoba")
+        Client.objects.create(first_name="Cezary", last_name="Osoba")
+
+    def test_rows_are_interleaved_alphabetically(self):
+        resp = self.client.get(
+            reverse("admin:clients_client_changelist"), HTTP_HOST="127.0.0.1",
+        )
+        names = [row["nazwa"] for row in resp.context["rows"]]
+        self.assertEqual(names, ["Alfa Osoba", "Beta Sp.", "Cezary Osoba", "Delta Sp."])
+
+    def test_counts_cover_both_kinds(self):
+        resp = self.client.get(
+            reverse("admin:clients_client_changelist"), HTTP_HOST="127.0.0.1",
+        )
+        self.assertEqual(resp.context["counts"], {"all": 4, "firmy": 2, "osoby": 2})
+
+    # claude — only the current page's objects get fetched and shaped now; the
+    # merge itself runs on (pk, name) tuples.
+    def test_page_builds_only_its_own_rows(self):
+        for i in range(30):
+            Company.objects.create(name=f"Firma {i:02d}")
+        resp = self.client.get(
+            reverse("admin:clients_client_changelist"), HTTP_HOST="127.0.0.1",
+        )
+        self.assertEqual(len(resp.context["rows"]), 25)
+        self.assertEqual(resp.context["paginator"].count, 34)
