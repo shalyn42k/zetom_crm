@@ -282,3 +282,50 @@ html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,
 .cc-stage .picker-row .i { color: var(--green-bright); flex-shrink: 0; }
 .cc-stage .picker-empty { padding: 20px 4px; text-align: center; color: var(--text-3); font-size: 14.5px; }
 .cc-stage .picker-err { margin-top: 10px; color: var(--red); font-size: 14px; font-weight: 600; }
+
+/* ─── Add Client modal (design_handoff_add_client) ─────────────────────────
+   claude — new pieces only; the overlay/modal/field/picker chrome above is
+   reused as-is. All colours come from the same token set, so html.dark keeps
+   working without a second rule set. */
+
+/* claude — selects were never styled: the Company card's Typ dostawcy modal
+   and this one both drop a <select> into .field. Matches .field input. */
+.cc-stage .field select { width: 100%; padding: 13px 15px; border: 1px solid var(--border-2); border-radius: 11px; background: var(--input-bg); color: var(--text); font-size: 16px; font-family: inherit; outline: none; }
+.cc-stage .field select:focus { border-color: var(--green-bright); box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 22%, transparent); }
+
+.cc-stage .btn.lg { padding: 13px 24px; font-size: 15.5px; }
+
+/* claude — the add modal is the tallest one (a firm has 12 fields), so its
+   body scrolls while header and footer stay pinned. */
+.cc-stage .modal.add-client { max-height: calc(100vh - 120px); }
+.cc-stage .modal.add-client .modal-b { overflow-y: auto; }
+
+/* Krok 1 — rodzaj klienta */
+.cc-stage .type-opt { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cc-stage .type-opt button { display: flex; align-items: center; gap: 12px; padding: 14px 15px; border-radius: 12px; border: 1px solid var(--border-2); background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.cc-stage .type-opt button:hover { background: var(--bg-3); }
+.cc-stage .type-opt button .i { color: var(--text-3); flex-shrink: 0; }
+.cc-stage .type-opt button b { display: block; font-size: 15px; font-weight: 700; }
+.cc-stage .type-opt button span { font-size: 13px; color: var(--text-3); }
+.cc-stage .type-opt button.active.person { border-color: var(--blue); background: var(--blue-bg); }
+.cc-stage .type-opt button.active.person .i { color: var(--blue); }
+.cc-stage .type-opt button.active.company { border-color: var(--purple); background: var(--purple-bg); }
+.cc-stage .type-opt button.active.company .i { color: var(--purple); }
+
+/* Krok 3 — powiąż zgłoszenie */
+.cc-stage .link-panel { border: 1px solid var(--border); border-radius: 12px; background: var(--bg-2); overflow: hidden; }
+.cc-stage .link-head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 15px; border: none; background: transparent; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; }
+.cc-stage .link-head:hover { background: var(--bg-3); }
+.cc-stage .link-head em { margin-left: auto; font-style: normal; font-size: 13px; font-weight: 500; color: var(--text-3); }
+.cc-stage .link-head .chev { color: var(--text-3); transition: transform .14s; }
+.cc-stage .link-panel.open .link-head .chev { transform: rotate(180deg); }
+.cc-stage .link-body { padding: 0 15px 15px; display: flex; flex-direction: column; gap: 10px; }
+.cc-stage .link-group { margin: 6px 0 2px; font-size: 12.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); }
+.cc-stage .link-body .picker-row { background: var(--surface); }
+
+.cc-stage .picked-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
+.cc-stage .req-chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px; border-radius: 20px; background: color-mix(in srgb, var(--green) 12%, transparent); border: 1px solid color-mix(in srgb, var(--green) 32%, transparent); color: var(--text); font-size: 13.5px; }
+.cc-stage .req-chip b { font-weight: 800; color: var(--green-bright); }
+.cc-stage .req-chip button { border: none; background: transparent; color: var(--text-3); display: inline-flex; cursor: pointer; padding: 0; }
+.cc-stage .req-chip button:hover { color: var(--red); }
+.cc-stage .req-chip.sm { padding: 3px 9px; font-size: 12.5px; flex-shrink: 0; }

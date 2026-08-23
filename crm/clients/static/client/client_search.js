@@ -33,25 +33,36 @@ document.addEventListener("DOMContentLoaded", function () {
                         return;
                     }
 
+                    // claude — the endpoint sends company_nip/company_name;
+                    // reading `client.nip` here put the literal "undefined"
+                    // into the NIP field and rendered "(undefined)" in the
+                    // dropdown label.
+                    const setField = (selector, value) => {
+                        const field = document.querySelector(selector);
+                        if (field) field.value = value || "";
+                    };
+
                     data.results.forEach(client => {
                         const item = document.createElement("div");
                         item.className = "autocomplete-item";
                         item.style.padding = "6px 10px";
                         item.style.cursor = "pointer";
                         item.style.borderBottom = "1px solid #333";
-                        item.innerText = `${client.label} (${client.nip})`;
+                        item.innerText = client.company_nip
+                            ? `${client.label} (${client.company_nip})`
+                            : client.label;
 
                         item.addEventListener("click", () => {
                             dropdown.style.display = "none";
 
                             // автозаполнение
-                            document.querySelector("#id_company_name").value = client.label;
-                            document.querySelector("#id_company_nip").value = client.nip;
-                            document.querySelector("#id_first_name").value = client.first_name || "";
-                            document.querySelector("#id_last_name").value = client.last_name || "";
-                            document.querySelector("#id_email").value = client.email || "";
-                            document.querySelector("#id_phone").value = client.phone || "";
-                            document.querySelector("#id_address").value = client.address || "";
+                            setField("#id_company_name", client.company_name || client.label);
+                            setField("#id_company_nip", client.company_nip);
+                            setField("#id_first_name", client.first_name);
+                            setField("#id_last_name", client.last_name);
+                            setField("#id_email", client.email);
+                            setField("#id_phone", client.phone);
+                            setField("#id_address", client.address);
                         });
 
                         dropdown.appendChild(item);

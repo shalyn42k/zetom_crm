@@ -15,7 +15,9 @@ from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
 from crm.users.utils import user_has_perm
-from crm.zetom.models import DepartmentsVariants, Oferta, RequestMain, StepNote, Wniosek, Zlecenie
+from crm.zetom.models import (
+    DepartmentsVariants, Oferta, RequestMain, StepNote, Wniosek, Zlecenie,
+)
 from crm.zetom.services.visibility import visible_requests_for
 
 
@@ -227,10 +229,15 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
         context.update(self._build_step_notes_context(obj))
         return super().render_change_form(request, context, *args, **kwargs)
 
-    # claude — "Create new" from the Client Detail tabs lands here with
-    # ?client=<pk>. The clients M2M uses a through-model so it can't be a form
-    # field; instead we pre-fill the request's own contact snapshot from the
-    # client, which is what the validator would copy anyway.
+    # claude — prefills the request's contact snapshot from ?client=<pk>. The
+    # clients M2M uses a through-model so it can't be a form field; the snapshot
+    # is what the validator would copy anyway.
+    #
+    # Currently nothing in the UI links here: the entry point was "Create new"
+    # on the old Client Detail request tabs, which the Person card replaced.
+    # Kept rather than deleted because it is the whole backend for "start a
+    # request from this client" — the pending Requests redesign only needs to
+    # point a button at `?client=<pk>` to have the feature back.
     def get_changeform_initial_data(self, request):
         initial = super().get_changeform_initial_data(request)
         client_id = request.GET.get("client")

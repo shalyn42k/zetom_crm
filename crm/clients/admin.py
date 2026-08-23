@@ -166,7 +166,12 @@ class ClientAdmin(admin.ModelAdmin):
     # replacing the old client_type-segmented view. The old change_list.html /
     # change_form.html templates were removed once these took over.
     change_list_template = "admin/clients/client/klienci_list.html"
-    change_form_template = "admin/clients/client/person_card.html"
+    # claude — the Person card is NOT change_form_template: Django renders that
+    # same template from add_view too, and the card needs an existing object
+    # (its {% url %} tags take client.pk), so setting it there made
+    # /admin/clients/client/add/ die with NoReverseMatch. change_view below
+    # renders this template explicitly; add stays on the stock admin form.
+    person_card_template = "admin/clients/client/person_card.html"
 
     # claude
     def get_queryset(self, request):
@@ -223,22 +228,15 @@ class ClientAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         view = self.admin_site.admin_view
         custom = [
-            path(
-                "<int:pk>/attach/<str:type>/",
-                view(views.client_attach),
-                name="clients_client_attach",
-            ),
-            path(
-                "<int:pk>/detach/<str:type>/<int:req_pk>/",
-                view(views.client_detach),
-                name="clients_client_detach",
-            ),
-            path(
-                "<int:pk>/attach-search/<str:type>/",
-                view(views.client_attach_search),
-                name="clients_client_attachsearch",
-            ),
             # claude — Add Client modal endpoints (see design_handoff_add_client).
+            # create writes either a Company or a Client depending on `kind`;
+            # suggest/search feed the optional "Powiąż zgłoszenie" picker and
+            # narrow themselves to RequestMain when kind=firma.
+            path(
+                "create/",
+                view(views.client_create),
+                name="clients_client_create",
+            ),
             path(
                 "request-suggest/",
                 view(views.request_suggest),
@@ -257,9 +255,10 @@ class ClientAdmin(admin.ModelAdmin):
                 view(views.person_save),
                 name="clients_client_person_save",
             ),
-            # claude — Phase 3c: attach existing person to another Company
-            # (Firmy panel picker on the Person card). view_clients to search,
-            # edit_clients to attach — re-checked inside each view.
+            # claude — Firmy panel on the Person card: search + attach an
+            # existing Company, then edit (stanowisko/główny) or detach the
+            # link. view_clients to search, edit_clients to write — re-checked
+            # inside each view.
             path(
                 "<int:pk>/company-search/",
                 view(views.company_search),
@@ -269,6 +268,16 @@ class ClientAdmin(admin.ModelAdmin):
                 "<int:pk>/attach-company/",
                 view(views.attach_company),
                 name="clients_client_attach_company",
+            ),
+            path(
+                "<int:pk>/company-link/<int:link_pk>/save/",
+                view(views.company_link_save),
+                name="clients_client_company_link_save",
+            ),
+            path(
+                "<int:pk>/company-link/<int:link_pk>/detach/",
+                view(views.detach_company),
+                name="clients_client_company_link_detach",
             ),
         ]
         return custom + urls
@@ -302,7 +311,13 @@ class ClientAdmin(admin.ModelAdmin):
             "typ_label": _("Osoba prywatna"),
             "telefon": client.phone,
             "email": client.email,
-            "zgloszenia_count": client._zgloszenia_count,
+            # claude — the Person card counts all four document types
+            # (get_client_request_summary), so the list column has to as well
+            # or the same person shows two different numbers. Company rows stay
+            # RequestMain-only because only RequestMain has a Company FK.
+            "zgloszenia_count": (
+                client._c_main + client._c_oferta + client._c_zlecenie + client._c_wniosek
+            ),
             "url": reverse("admin:clients_client_change", args=[client.pk]),
         }
 
@@ -326,26 +341,31 @@ class ClientAdmin(admin.ModelAdmin):
         excluded_statuses = [RequestStatus.cancelled, RequestStatus.deleted]
 
         # claude — annotate() (not a per-row query) keeps this N+1-free: one
-        # extra join per queryset, not one query per row.
+        # extra join per queryset, not one query per row. Four separate
+        # distinct counts rather than one summed expression — joining four M2Ms
+        # in a single aggregate multiplies rows and inflates every count.
         companies = Company.objects.annotate(
             _zgloszenia_count=Count(
                 "requests",
                 filter=~Q(requests__status__in=excluded_statuses),
                 distinct=True,
             ),
-        ).order_by("name")
+        )
         if typ_active:
             companies = companies.filter(type_supplier=typ)
         if q:
             companies = companies.filter(Q(name__icontains=q) | Q(nip__icontains=q))
 
         persons = Client.objects.filter(company_links__isnull=True).annotate(
-            _zgloszenia_count=Count(
+            _c_main=Count(
                 "requests",
                 filter=~Q(requests__status__in=excluded_statuses),
                 distinct=True,
             ),
-        ).order_by("first_name", "last_name")
+            _c_oferta=Count("ofertas", distinct=True),
+            _c_zlecenie=Count("zlecenia", distinct=True),
+            _c_wniosek=Count("wnioski", distinct=True),
+        )
         if typ_active:
             # claude — Typ dostawcy only exists on Company; a person can
             # never match a supplier type, so selecting one zeroes this side.
@@ -353,31 +373,62 @@ class ClientAdmin(admin.ModelAdmin):
         if q:
             persons = persons.filter(Q(first_name__icontains=q) | Q(last_name__icontains=q))
 
+        # claude — sort/paginate on identity tuples, not on built rows. Two
+        # models can't share a QuerySet, so the merge has to happen in Python;
+        # pulling just (pk, name) keeps that to a couple of scalar columns
+        # instead of materializing every Company and Client on every page view.
+        company_keys = list(companies.values_list("pk", "name"))
+        person_keys = list(persons.values_list("pk", "first_name", "last_name"))
+
         counts = {
-            "all": companies.count() + persons.count(),
-            "firmy": companies.count(),
-            "osoby": persons.count(),
+            "all": len(company_keys) + len(person_keys),
+            "firmy": len(company_keys),
+            "osoby": len(person_keys),
         }
 
-        rows = []
+        # claude — one global alphabetical order across both kinds. Sorting
+        # each side separately and concatenating buried every private person
+        # behind every company, so on a 200-company base page 1 was all firms.
+        keys = []
         if rodzaj != "osoby":
-            rows += [self._company_row(c) for c in companies]
+            keys += [((name or "").lower(), "company", pk) for pk, name in company_keys]
         if rodzaj != "firmy":
-            rows += [self._person_row(p) for p in persons]
+            keys += [
+                (" ".join(filter(None, (first, last))).lower(), "person", pk)
+                for pk, first, last in person_keys
+            ]
+        keys.sort()
 
-        paginator = Paginator(rows, self.list_per_page)
+        paginator = Paginator(keys, self.list_per_page)
         page_obj = paginator.get_page(request.GET.get("page"))
+
+        # claude — only now, for the ≤list_per_page keys on this page, fetch the
+        # objects (with their count annotations) and build display rows.
+        page_keys = list(page_obj)
+        company_pks = [pk for _k, kind, pk in page_keys if kind == "company"]
+        person_pks = [pk for _k, kind, pk in page_keys if kind == "person"]
+        companies_by_pk = {c.pk: c for c in companies.filter(pk__in=company_pks)}
+        persons_by_pk = {p.pk: p for p in persons.filter(pk__in=person_pks)}
+        rows = [
+            self._company_row(companies_by_pk[pk]) if kind == "company"
+            else self._person_row(persons_by_pk[pk])
+            for _k, kind, pk in page_keys
+        ]
 
         context = {
             **self.admin_site.each_context(request),
             "title": _("Clients"),
-            "opts": self.model._meta,
+            # claude — deliberately NOT passing `opts`: Unfold's header_title
+            # builds the "Clients › Companies › …" chain from it, and those
+            # links point at the stock changelists these designed pages
+            # replaced. Each page carries its own header and "Wróć".
             "has_add_permission": self.has_add_permission(request),
             "counts": counts,
             "current_rodzaj": rodzaj,
             "current_typ": typ,
             "current_q": q,
             "supplier_types": SupplierType.choices,
+            "rows": rows,
             "page_obj": page_obj,
             "paginator": paginator,
             "page_range": list(paginator.get_elided_page_range(page_obj.number)),
@@ -406,7 +457,10 @@ class ClientAdmin(admin.ModelAdmin):
         return {
             **self.admin_site.each_context(request),
             "title": _("Person Detail"),
-            "opts": self.model._meta,
+            # claude — deliberately NOT passing `opts`: Unfold's header_title
+            # builds the "Clients › Companies › …" chain from it, and those
+            # links point at the stock changelists these designed pages
+            # replaced. Each page carries its own header and "Wróć".
             "client": client,
             "can_edit": can_edit,
             "has_view_permission": True,
@@ -425,6 +479,10 @@ class ClientAdmin(admin.ModelAdmin):
             },
             "firmy": [
                 {
+                    # claude — link_pk drives the panel's edit/detach buttons
+                    # (clients_client_company_link_save / _detach); those act on
+                    # the CompanyPersonLink, never on the Company itself.
+                    "link_pk": link.pk,
                     "nazwa": link.company.name,
                     "stanowisko": link.position,
                     "is_primary": link.is_primary,
@@ -463,8 +521,12 @@ class ClientAdmin(admin.ModelAdmin):
     # claude — fully custom Detail (change_form). Renders the Person (Osoba)
     # card (Dane osobowe + Firmy + Powiązane zgłoszenia + Historia kontaktów).
     # Bypasses the default change_view rendering but keeps the permission gate.
+    # claude — gate is view_clients, not edit_clients: the card is a read
+    # surface (every write control is behind its own can_edit check), and
+    # requiring edit here locked read-only users out of it while the Company
+    # card next door let them in.
     def change_view(self, request, object_id, form_url="", extra_context=None):
-        if not self.has_change_permission(request):
+        if not self.has_view_permission(request):
             raise PermissionDenied
 
         client = get_object_or_404(
@@ -475,7 +537,7 @@ class ClientAdmin(admin.ModelAdmin):
             **self._build_person_context(request, client),
             **(extra_context or {}),
         }
-        return render(request, self.change_form_template, context)
+        return render(request, self.person_card_template, context)
 
 
 # claude — контактные лица фирмы прямо в карточке Company (Osoby kontaktowe).
@@ -497,15 +559,29 @@ class CompanyAdmin(admin.ModelAdmin):
     inlines = [CompanyPersonLinkInline]
 
     # claude — Фаза 3a: кастомная карточка фирмы (см. design_handoff_clients_unified §2).
-    change_form_template = "admin/clients/company/change_form.html"
+    # claude — same trap as ClientAdmin.person_card_template, plus one more:
+    # even with change_form_template unset, Django's add_view falls back to
+    # "admin/<app>/<model>/change_form.html" by convention — which is exactly
+    # where this card used to live, so add_view kept picking it up and dying on
+    # {% url ... company.pk %}. Hence the deliberately off-convention filename.
+    company_card_template = "admin/clients/company/company_card.html"
 
-    # claude — Osoby kontaktowe add/edit/delete JSON endpoints (Task 2).
-    # Same admin_view + RBAC pattern as ClientAdmin.get_urls above; the view
-    # functions live in views.py alongside the other client-admin endpoints.
+    # claude — Osoby kontaktowe add/edit/delete + Dane podstawowe/szczegółowe
+    # save JSON endpoints. Same admin_view + RBAC pattern as ClientAdmin.
+    # get_urls above; the view functions live in views.py alongside the other
+    # client-admin endpoints.
     def get_urls(self):
         urls = super().get_urls()
         view = self.admin_site.admin_view
         custom = [
+            # claude — the only write path for the Company's own fields:
+            # change_view renders a custom template and never builds a
+            # ModelForm, so the card's "Edytuj" buttons post here.
+            path(
+                "<int:pk>/save/",
+                view(views.company_save),
+                name="clients_company_save",
+            ),
             path(
                 "<int:pk>/person/add/",
                 view(views.company_person_add),
@@ -547,7 +623,10 @@ class CompanyAdmin(admin.ModelAdmin):
         return {
             **self.admin_site.each_context(request),
             "title": _("Company Detail"),
-            "opts": self.model._meta,
+            # claude — deliberately NOT passing `opts`: Unfold's header_title
+            # builds the "Clients › Companies › …" chain from it, and those
+            # links point at the stock changelists these designed pages
+            # replaced. Each page carries its own header and "Wróć".
             "company": company,
             "can_edit": can_edit,
             "has_view_permission": True,
@@ -566,6 +645,26 @@ class CompanyAdmin(admin.ModelAdmin):
                 "email": company.email,
                 "telefon": company.phone,
             },
+            # claude — seeds for the two "Edytuj" modals. Keys are the model
+            # field names on purpose: the modal posts them straight through and
+            # views._COMPANY_SECTIONS reads them by the same names, so there is
+            # no PL↔model translation layer to keep in sync.
+            "dane_podstawowe_form": {
+                "name": company.name,
+                "nip": company.nip or "",
+                "regon": company.regon,
+                "type_supplier": company.type_supplier,
+            },
+            "dane_szczegolowe_form": {
+                "country": company.country,
+                "city": company.city,
+                "voivodeship": company.voivodeship,
+                "post_code": company.post_code,
+                "street": company.street,
+                "email": company.email,
+                "phone": company.phone.as_international if company.phone else "",
+            },
+            "supplier_types": SupplierType.choices,
             # claude — Osoby kontaktowe panel (Task 2). The table itself is
             # rendered client-side by Alpine (see the template's personPanel()),
             # so we hand it the same row shape the add/edit endpoints return
@@ -630,7 +729,7 @@ class CompanyAdmin(admin.ModelAdmin):
             **self._build_company_context(request, company),
             **(extra_context or {}),
         }
-        return render(request, self.change_form_template, context)
+        return render(request, self.company_card_template, context)
 
 
 # БАГ-9 + БАГ-10: отдельный раздел для просмотра всех контактов
@@ -638,7 +737,14 @@ class CompanyAdmin(admin.ModelAdmin):
 class ClientInteractionAdmin(admin.ModelAdmin):
     list_display = ("contacted_at", "client", "channel", "contact_person", "contacted_by", "request")
     list_filter = ("channel",)
-    search_fields = ("client__first_name", "client__last_name", "client__company_name", "summary", "contact_person")
+    # claude — client__company_name died with migration 0009 (company data moved
+    # to Company), so any search here raised FieldError. Company name is now
+    # reached through the CompanyPersonLink M2M; Django adds the needed
+    # distinct() itself when a search path spans a to-many relation.
+    search_fields = (
+        "client__first_name", "client__last_name",
+        "client__company_links__company__name", "summary", "contact_person",
+    )
     autocomplete_fields = ("client", "request")
     readonly_fields = ("created_at",)
     date_hierarchy = "contacted_at"

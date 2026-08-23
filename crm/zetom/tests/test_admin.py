@@ -25,7 +25,9 @@ from django.urls import reverse
 
 from crm.status_manager.services.statuses import RequestStatus, Status
 from crm.users.models import Role
-from crm.zetom.models import Oferta, RequestMain, RequestNull, Wniosek, Zlecenie
+from crm.zetom.models import (
+    DepartmentsVariants, Oferta, RequestMain, RequestNull, Wniosek, Zlecenie,
+)
 
 BASE_DATA = {
     "phone": "+48501600300",
@@ -49,12 +51,20 @@ _SIMPLE_STATIC = {
 @override_settings(STORAGES=_SIMPLE_STATIC)
 @patch("crm.zetom.admin.base.user_has_perm", side_effect=always_true)
 class ApproveNullAdminActionTests(TestCase):
-    """Тест кнопки «Approve» на странице RequestNull в admins.
+    """Approve в валидационном окне RequestNull.
 
-    Кнопка вызывает approve_action, который:
+    POST в окно:
     1. Создаёт RequestMain из данных RequestNull
     2. Отправляет уведомление
     3. Редиректит на страницу нового RequestMain
+
+    # claude — тест адресовался в `zetom_requestnull_approve_action` и патчил
+    # `crm.zetom.admin.requestnull.send_notification_approve_null`. Обоих нет:
+    # отдельная кнопка Approve и её URL исчезли вместе с a72f792
+    # («validation window for RequestNull»), approve переехал в
+    # requestnull_validate.validation_window_view. Патч падал с AttributeError
+    # раньше, чем reverse() успевал упасть с NoReverseMatch. Проверяемое
+    # поведение осталось тем же — переадресован на живой флоу.
     """
 
     @classmethod
@@ -67,7 +77,7 @@ class ApproveNullAdminActionTests(TestCase):
     def setUp(self):
         self.client.force_login(self.user)
 
-    @patch("crm.zetom.admin.requestnull.send_notification_approve_null")
+    @patch("crm.zetom.admin.requestnull_validate.send_notification_approve_null")
     def test_approve_creates_main_sends_notification_and_redirects(
         self, send_mock, _perm_mock
     ):
@@ -75,14 +85,23 @@ class ApproveNullAdminActionTests(TestCase):
         # @patch на методе (send_mock) → первый аргумент после self.
         # @patch на классе (_perm_mock) → второй аргумент.
         null = RequestNull.objects.create(**BASE_DATA)
-        url = reverse("admin:zetom_requestnull_approve_action", args=[null.pk])
+        url = reverse("admin:zetom_requestnull_validate", args=[null.pk])
 
-        response = self.client.post(url)
+        # departments/owners — единственные required-поля ValidationWindowForm;
+        # create_new не ставим, клиента здесь не заводим.
+        response = self.client.post(url, {
+            "departments": [DepartmentsVariants.choices[0][0]],
+            "owners": [self.user.pk],
+        })
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(RequestMain.objects.count(), 1)
         main = RequestMain.objects.first()
         self.assertEqual(main.email, null.email)
+        self.assertEqual(
+            response["Location"],
+            reverse("admin:zetom_requestmain_change", args=[main.pk]),
+        )
         send_mock.assert_called_once_with(main)
 
 

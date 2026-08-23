@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 
 from crm.clients.models import Client, Company, CompanyPersonLink
-from crm.clients.validators import normalize_nip
+from crm.clients.validators import normalize_nip, validate_nip
 from crm.status_manager.services.statuses import RequestStatus
 from crm.zetom.models import DepartmentsVariants
 
@@ -100,10 +100,19 @@ def create_person_with_company(
         email=email or None,
     )
 
+    # claude — the checksum is verified here, not just the shape. Company is the
+    # reference book everything else dedupes and searches against, so a NIP with
+    # a typo must not enter it: it would create a firm no later lookup can ever
+    # match, and the card refuses to re-save it (views._clean_nip).
+    #
+    # Nothing is lost by dropping it — company_nip is a field on the request
+    # itself, so the value the operator typed stays visible there. Here it just
+    # means "dedupe this firm by name instead".
     nip = None
     if company_nip:
         try:
             nip = normalize_nip(company_nip)
+            validate_nip(nip)
         except ValidationError:
             nip = None
 

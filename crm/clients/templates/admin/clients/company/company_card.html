@@ -33,7 +33,9 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
 <div class="cc-stage">
 
   <div class="backrow">
-    <a class="btn-back" href="{% url 'admin:clients_company_changelist' %}"><svg class="i"><use href="#cc-i-arrow-l"/></svg> {% trans "Wróć" %}</a>
+    {# claude — back to the Klienci list filtered to firms, not the stock
+       Company changelist (which now redirects here anyway). #}
+    <a class="btn-back" href="{% url 'admin:clients_client_changelist' %}?rodzaj=firmy"><svg class="i"><use href="#cc-i-arrow-l"/></svg> {% trans "Wróć" %}</a>
     <span class="podglad-tag"><b>{% trans "Klient / Firma" %}</b> · podgląd</span>
   </div>
 
@@ -51,13 +53,22 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
     </div>
   </div>
 
+  {% comment %}
+  Seeds for the two "Edytuj" modals. Keys are the Company model field names —
+  daneModal() posts the form object straight through and views.company_save
+  reads it by the same names. json_script keeps the seed XSS-safe, same as the
+  Osoby kontaktowe panel below.
+  {% endcomment %}
+  {{ dane_podstawowe_form|json_script:"dane-podstawowe-data" }}
+  {{ dane_szczegolowe_form|json_script:"dane-szczegolowe-data" }}
+
   <div class="stack">
     <div class="grid2">
       {# Dane podstawowe #}
-      <div class="panel">
+      <div class="panel" x-data="daneModal('podstawowe', JSON.parse(document.getElementById('dane-podstawowe-data').textContent))">
         <div class="panel-h">
           <h2><svg class="i hico"><use href="#cc-i-info"/></svg> {% trans "Dane podstawowe" %}</h2>
-          {% if can_edit %}<button type="button" class="edit-btn" title="{% trans 'Edytuj' %}"><svg class="i"><use href="#cc-i-edit"/></svg></button>{% endif %}
+          {% if can_edit %}<button type="button" class="edit-btn" @click="open()" title="{% trans 'Edytuj' %}"><svg class="i"><use href="#cc-i-edit"/></svg></button>{% endif %}
         </div>
         <div class="fields">
           <div class="frow"><span class="fk">{% trans "Nazwa" %}</span><span class="fv{% if not dane_podstawowe.nazwa %} none{% endif %}">{{ dane_podstawowe.nazwa|default:"—" }}</span></div>
@@ -65,13 +76,45 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
           <div class="frow"><span class="fk">{% trans "REGON" %}</span><span class="fv{% if not dane_podstawowe.regon %} none{% endif %}">{{ dane_podstawowe.regon|default:"—" }}</span></div>
           <div class="frow"><span class="fk">{% trans "Typ dostawcy" %}</span><span class="fv">{% if company.type_supplier %}<span class="chip {{ company.type_supplier }}">{{ dane_podstawowe.typ_label }}</span>{% else %}<span class="fv none">—</span>{% endif %}</span></div>
         </div>
+
+        {% if can_edit %}
+        {# mDanePodstawowe — edycja nazwy / NIP / REGON / typu dostawcy #}
+        <div class="overlay" x-show="modalOpen" x-cloak @click.self="close()" @keydown.escape.window="close()">
+          <div class="modal">
+            <div class="modal-h">
+              <h3>{% trans "Edytuj dane podstawowe" %}</h3>
+              <p>{% trans "Dane identyfikacyjne firmy." %}</p>
+              <button type="button" class="modal-x" @click="close()"><svg class="i"><use href="#cc-i-x"/></svg></button>
+            </div>
+            <form class="modal-b" @submit.prevent="submit()">
+              <template x-if="errors.length"><div class="form-errors"><template x-for="e in errors" :key="e"><div x-text="e"></div></template></div></template>
+              <div class="field"><label>{% trans "Nazwa" %}</label><input type="text" x-model="form.name" placeholder="{% trans 'np. Zetom Sp. z o.o.' %}"></div>
+              <div class="field-row">
+                <div class="field"><label>{% trans "NIP" %}</label><input type="text" x-model="form.nip" placeholder="123-456-32-18"></div>
+                <div class="field"><label>{% trans "REGON" %}</label><input type="text" x-model="form.regon" placeholder="000000000"></div>
+              </div>
+              <div class="field">
+                <label>{% trans "Typ dostawcy" %}</label>
+                <select x-model="form.type_supplier">
+                  <option value="">{% trans "— brak —" %}</option>
+                  {% for value, label in supplier_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                </select>
+              </div>
+            </form>
+            <div class="modal-f">
+              <button type="button" class="btn" @click="close()">{% trans "Anuluj" %}</button>
+              <button type="button" class="btn primary" :disabled="saving" @click="submit()">{% trans "Zapisz" %}</button>
+            </div>
+          </div>
+        </div>
+        {% endif %}
       </div>
 
       {# Dane szczegółowe #}
-      <div class="panel">
+      <div class="panel" x-data="daneModal('szczegolowe', JSON.parse(document.getElementById('dane-szczegolowe-data').textContent))">
         <div class="panel-h">
           <h2><svg class="i hico"><use href="#cc-i-map"/></svg> {% trans "Dane szczegółowe" %}</h2>
-          {% if can_edit %}<button type="button" class="edit-btn" title="{% trans 'Edytuj' %}"><svg class="i"><use href="#cc-i-edit"/></svg></button>{% endif %}
+          {% if can_edit %}<button type="button" class="edit-btn" @click="open()" title="{% trans 'Edytuj' %}"><svg class="i"><use href="#cc-i-edit"/></svg></button>{% endif %}
         </div>
         <div class="fields">
           <div class="frow"><span class="fk">{% trans "Kraj" %}</span><span class="fv{% if not dane_szczegolowe.kraj %} none{% endif %}">{{ dane_szczegolowe.kraj|default:"—" }}</span></div>
@@ -82,6 +125,39 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
           <div class="frow"><span class="fk">{% trans "E-mail" %}</span><span class="fv{% if not dane_szczegolowe.email %} none{% endif %}">{{ dane_szczegolowe.email|default:"—" }}</span></div>
           <div class="frow"><span class="fk">{% trans "Telefon" %}</span><span class="fv{% if not dane_szczegolowe.telefon %} none{% endif %}">{{ dane_szczegolowe.telefon|default:"—" }}</span></div>
         </div>
+
+        {% if can_edit %}
+        {# mDaneSzczegolowe — adres + dane kontaktowe firmy #}
+        <div class="overlay" x-show="modalOpen" x-cloak @click.self="close()" @keydown.escape.window="close()">
+          <div class="modal">
+            <div class="modal-h">
+              <h3>{% trans "Edytuj dane szczegółowe" %}</h3>
+              <p>{% trans "Adres i dane kontaktowe firmy." %}</p>
+              <button type="button" class="modal-x" @click="close()"><svg class="i"><use href="#cc-i-x"/></svg></button>
+            </div>
+            <form class="modal-b" @submit.prevent="submit()">
+              <template x-if="errors.length"><div class="form-errors"><template x-for="e in errors" :key="e"><div x-text="e"></div></template></div></template>
+              <div class="field-row">
+                <div class="field"><label>{% trans "Kraj" %}</label><input type="text" x-model="form.country" placeholder="{% trans 'np. Polska' %}"></div>
+                <div class="field"><label>{% trans "Województwo" %}</label><input type="text" x-model="form.voivodeship" placeholder="{% trans 'np. mazowieckie' %}"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>{% trans "Kod pocztowy" %}</label><input type="text" x-model="form.post_code" placeholder="00-000"></div>
+                <div class="field"><label>{% trans "Miasto" %}</label><input type="text" x-model="form.city" placeholder="{% trans 'np. Warszawa' %}"></div>
+              </div>
+              <div class="field"><label>{% trans "Ulica" %}</label><input type="text" x-model="form.street" placeholder="{% trans 'np. Przemysłowa 12' %}"></div>
+              <div class="field-row">
+                <div class="field"><label>{% trans "Telefon" %}</label><input type="text" x-model="form.phone" placeholder="+48 …"></div>
+                <div class="field"><label>{% trans "E-mail" %}</label><input type="email" x-model="form.email" placeholder="biuro@firma.pl"></div>
+              </div>
+            </form>
+            <div class="modal-f">
+              <button type="button" class="btn" @click="close()">{% trans "Anuluj" %}</button>
+              <button type="button" class="btn primary" :disabled="saving" @click="submit()">{% trans "Zapisz" %}</button>
+            </div>
+          </div>
+        </div>
+        {% endif %}
       </div>
     </div>
 
@@ -229,6 +305,55 @@ on the Osoby kontaktowe panel evaluates for every viewer (view-only users just
 never get the add/edit/delete controls rendered, per can_edit checks above).
 {% endcomment %}
 <script>
+// claude — Dane podstawowe / Dane szczegółowe edit modals. One factory drives
+// both panels; `section` decides which field set views.company_save reads, so
+// saving one panel can never blank the other. On success the page reloads
+// rather than patching the DOM — the id-hero (name, NIP, typ chip) mirrors
+// these fields too, and re-rendering it here would duplicate server logic.
+function daneModal(section, initial) {
+  const saveUrl = "{% url 'admin:clients_company_save' company.pk %}";
+  const csrfToken = '{{ csrf_token }}';
+
+  return {
+    modalOpen: false,
+    saving: false,
+    errors: [],
+    form: { ...initial },
+
+    open() {
+      this.form = { ...initial };
+      this.errors = [];
+      this.modalOpen = true;
+    },
+    close() { this.modalOpen = false; },
+
+    async submit() {
+      this.saving = true;
+      this.errors = [];
+      const body = new FormData();
+      body.set('section', section);
+      Object.entries(this.form).forEach(([key, value]) => body.set(key, value ?? ''));
+      try {
+        const r = await fetch(saveUrl, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken },
+          body,
+        });
+        const j = await r.json();
+        if (!j.ok) {
+          this.errors = [j.error || "{% trans 'Nie udało się zapisać.' %}"];
+          return;
+        }
+        window.location.reload();
+      } catch (e) {
+        this.errors = ["{% trans 'Błąd sieci — spróbuj ponownie.' %}"];
+      } finally {
+        this.saving = false;
+      }
+    },
+  };
+}
+
 // claude — Osoby kontaktowe panel (Phase 3a Task 2). Alpine component that
 // drives the mPerson modal and redraws the table from the add/edit/delete
 // JSON endpoints (CompanyAdmin.get_urls: clients_company_person_add/edit/

@@ -1,14 +1,12 @@
 from django import template
-
 from django.contrib.auth import get_user_model
 
+from crm.clients.models import Client, Company
 from crm.notification.utils import unread_count
-from crm.clients.models import Client
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
 from crm.zetom.models import RequestMain, RequestNull, Wniosek, Zlecenie
 from crm.zetom.services.visibility import visible_requests_for
-
 
 register = template.Library()
 
@@ -53,7 +51,14 @@ def dashboard_summary(user):
         summary["applications"] = Wniosek.objects.count()
 
     if user_has_perm(user, "view_clients"):
-        summary["clients"] = Client.objects.count()
+        # claude — the tile links to the Klienci list, so it has to count what
+        # that list shows: firms plus private persons. Client.objects.count()
+        # counted every person row, contacts of a firm included, so a base with
+        # one firm and fifty contacts showed "50" on a link leading to one row.
+        summary["clients"] = (
+            Company.objects.count()
+            + Client.objects.filter(company_links__isnull=True).count()
+        )
 
     if user_has_perm(user, "view_users"):
         summary["active_users"] = get_user_model().objects.filter(is_active=True).count()

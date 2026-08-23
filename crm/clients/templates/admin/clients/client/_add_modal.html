@@ -1,0 +1,171 @@
+{% load i18n %}
+
+{% comment %}
+Add Client modal — reproduces design_handoff_add_client. Included from
+klienci_list.html, which owns the <div x-data="addClientModal()"> wrapper and
+the SVG sprite; this file is markup only, the Alpine component lives in the
+list template's <script> block.
+
+Three steps in one card: Rodzaj (osoba | firma) → per-kind fields → the
+optional "Powiąż zgłoszenie" picker. One POST to clients_client_create; the
+server re-validates everything and answers with the new card's URL.
+{% endcomment %}
+
+<div class="overlay" x-show="open" x-cloak @click.self="tryClose()" @keydown.escape.window="tryClose()">
+  <div class="modal add-client">
+    <div class="modal-h">
+      <h3>{% trans "Dodaj klienta" %}</h3>
+      <p>{% trans "Wybierz rodzaj i uzupełnij dane." %}</p>
+      <button type="button" class="modal-x" @click="tryClose()"><svg class="i"><use href="#cc-i-x"/></svg></button>
+    </div>
+
+    <form class="modal-b" @submit.prevent="submit()">
+      <template x-if="errors.length">
+        <div class="form-errors">
+          <template x-for="e in errors" :key="e"><div x-text="e"></div></template>
+        </div>
+      </template>
+
+      {# Krok 1 — rodzaj klienta #}
+      <div class="field">
+        <label>{% trans "Rodzaj klienta" %}</label>
+        <div class="type-opt">
+          <button type="button" :class="kind === 'osoba' ? 'active person' : ''" @click="setKind('osoba')">
+            <svg class="i"><use href="#cc-i-user"/></svg>
+            <span><b>{% trans "Osoba prywatna" %}</b>{% trans "Klient bez firmy" %}</span>
+          </button>
+          <button type="button" :class="kind === 'firma' ? 'active company' : ''" @click="setKind('firma')">
+            <svg class="i"><use href="#cc-i-building"/></svg>
+            <span><b>{% trans "Firma" %}</b>{% trans "Klient instytucjonalny" %}</span>
+          </button>
+        </div>
+      </div>
+
+      {# Krok 2a — osoba prywatna #}
+      <template x-if="kind === 'osoba'">
+        <div>
+          <div class="field-row">
+            <div class="field"><label>{% trans "Imię" %}</label><input type="text" x-model="form.first_name" placeholder="{% trans 'np. Jan' %}"></div>
+            <div class="field"><label>{% trans "Nazwisko" %}</label><input type="text" x-model="form.last_name" placeholder="{% trans 'np. Kowalski' %}"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>{% trans "Telefon" %}</label><input type="text" x-model="form.phone" placeholder="+48 …"></div>
+            <div class="field"><label>{% trans "E-mail" %}</label><input type="email" x-model="form.email" placeholder="nazwa@poczta.pl"></div>
+          </div>
+        </div>
+      </template>
+
+      {# Krok 2b — firma #}
+      <template x-if="kind === 'firma'">
+        <div>
+          <div class="field"><label>{% trans "Nazwa" %}</label><input type="text" x-model="form.name" placeholder="{% trans 'np. Zetom Sp. z o.o.' %}"></div>
+          <div class="field-row">
+            <div class="field"><label>{% trans "NIP" %}</label><input type="text" x-model="form.nip" placeholder="123-456-32-18"></div>
+            <div class="field"><label>{% trans "REGON" %}</label><input type="text" x-model="form.regon" placeholder="000000000"></div>
+          </div>
+          <div class="field">
+            <label>{% trans "Typ dostawcy" %}</label>
+            <select x-model="form.type_supplier">
+              <option value="">{% trans "— brak —" %}</option>
+              {% for value, label in supplier_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>{% trans "Kraj" %}</label><input type="text" x-model="form.country" placeholder="{% trans 'np. Polska' %}"></div>
+            <div class="field"><label>{% trans "Województwo" %}</label><input type="text" x-model="form.voivodeship" placeholder="{% trans 'np. mazowieckie' %}"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>{% trans "Kod pocztowy" %}</label><input type="text" x-model="form.post_code" placeholder="00-000"></div>
+            <div class="field"><label>{% trans "Miasto" %}</label><input type="text" x-model="form.city" placeholder="{% trans 'np. Warszawa' %}"></div>
+          </div>
+          <div class="field"><label>{% trans "Ulica" %}</label><input type="text" x-model="form.street" placeholder="{% trans 'np. Przemysłowa 12' %}"></div>
+          <div class="field-row">
+            <div class="field"><label>{% trans "Telefon" %}</label><input type="text" x-model="form.phone" placeholder="+48 …"></div>
+            <div class="field"><label>{% trans "E-mail" %}</label><input type="email" x-model="form.email" placeholder="biuro@firma.pl"></div>
+          </div>
+        </div>
+      </template>
+
+      {% comment %}
+      Krok 3 — opcjonalne powiązanie zgłoszenia. Dla firmy lista zawiera tylko
+      Zgłoszenia: FK `company` istnieje wyłącznie na RequestMain (serwer
+      sprawdza to ponownie, patrz views._resolve_request_pick).
+      {% endcomment %}
+      <div class="link-panel" :class="linkOpen ? 'open' : ''">
+        <button type="button" class="link-head" @click="toggleLink()">
+          <svg class="i i-sm"><use href="#cc-i-plus"/></svg>
+          <span>{% trans "Powiąż istniejące zgłoszenie" %}</span>
+          <em>{% trans "opcjonalne" %}</em>
+          <svg class="i i-sm chev"><use href="#cc-i-chev-d"/></svg>
+        </button>
+
+        <div class="link-body" x-show="linkOpen" x-cloak>
+          <div class="search">
+            <svg class="i i-sm"><use href="#cc-i-search"/></svg>
+            <input type="text" x-model="q" @input.debounce.250ms="search()"
+                   placeholder="{% trans 'Numer lub nazwa…' %}">
+          </div>
+
+          <template x-if="picked">
+            <div class="picked-row">
+              <span class="muted">{% trans "Zostanie powiązane:" %}</span>
+              <span class="req-chip">
+                <b x-text="picked.badge"></b><span x-text="'#' + picked.pk"></span>
+                <span x-text="picked.label"></span>
+                <button type="button" @click="picked = null" title="{% trans 'Usuń' %}">
+                  <svg class="i i-sm"><use href="#cc-i-x"/></svg>
+                </button>
+              </span>
+            </div>
+          </template>
+
+          <template x-if="!picked && suggested.length">
+            <div>
+              <p class="link-group">{% trans "Sugerowane · pasuje do kontaktu" %} <span x-text="'(' + suggested.length + ')'"></span></p>
+              <template x-for="r in suggested" :key="r.type + r.pk">
+                <button type="button" class="picker-row" @click="pick(r)">
+                  <span class="req-chip sm"><b x-text="r.badge"></b><span x-text="'#' + r.pk"></span></span>
+                  <span class="pr-nm" x-text="r.label"></span>
+                  <span class="pr-nip" x-text="r.match"></span>
+                </button>
+              </template>
+            </div>
+          </template>
+
+          <template x-if="!picked && recent.length">
+            <div>
+              <p class="link-group">{% trans "Ostatnie" %}</p>
+              <template x-for="r in recent" :key="r.type + r.pk">
+                <button type="button" class="picker-row" @click="pick(r)">
+                  <span class="req-chip sm"><b x-text="r.badge"></b><span x-text="'#' + r.pk"></span></span>
+                  <span class="pr-nm" x-text="r.label"></span>
+                </button>
+              </template>
+            </div>
+          </template>
+
+          <p class="picker-empty" x-show="!picked && !suggested.length && !recent.length" x-cloak>
+            {% trans "Brak zgłoszeń do powiązania." %}
+          </p>
+          {% comment %}
+          Counts are concatenated in the markup rather than through a
+          gettext format string: makemessages escapes a bare % inside
+          {% templatetag openblock %} trans {% templatetag closeblock %} as
+          %%, which would leak into the rendered text.
+          {% endcomment %}
+          <p class="picker-empty" x-show="!picked && total > shown" x-cloak>
+            <span x-text="shown + ' / ' + total"></span>
+            &mdash; {% trans "wpisz numer lub nazwę, aby zawęzić" %}
+          </p>
+        </div>
+      </div>
+    </form>
+
+    <div class="modal-f">
+      <button type="button" class="btn" @click="tryClose()">{% trans "Anuluj" %}</button>
+      <button type="button" class="btn primary" :disabled="saving" @click="submit()">
+        {% trans "Zapisz klienta" %}
+      </button>
+    </div>
+  </div>
+</div>
