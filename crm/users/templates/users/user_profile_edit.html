@@ -4,28 +4,166 @@
 {% block content %}
 <div class="p-6 max-w-2xl mx-auto">
 
-    <h1 class="text-2xl font-bold mb-6">{% trans "My profile" %}</h1>
+    {% comment %}
+      claude — обычной "стрелки назад" из header_back_button.html тут нет:
+      она завязана на object/opts/adminform (обычная смена в админке), а
+      сюда попадают с аватарки в шапке (userlinks.html), у которой нет
+      "родительского" changelist. Раньше был history.back() — сломан
+      после Save: форма шлёт POST на этот же /users/me/, сервер отвечает
+      redirect на тот же урл, и в истории браузера подряд оказываются ДВА
+      входа на /users/me/ (до и после сохранения) — один history.back()
+      просто перескакивал на другой /users/me/, а не уходил со страницы,
+      поэтому требовалось нажать "назад" дважды. Вместо этого запоминаем
+      настоящий referrer в sessionStorage при первом (не пост-сейв) заходе
+      и всегда переходим на него напрямую — Save-редирект на тот же урл
+      referrer'ом даёт сам /users/me/, поэтому не перезаписывает уже
+      сохранённое значение.
+    {% endcomment %}
+    <a href="{% url 'admin:index' %}" id="zt-profile-back"
+       class="mb-4 inline-flex items-center gap-1 text-sm font-medium text-font-subtle-light hover:text-font-important-light dark:text-font-subtle-dark dark:hover:text-font-important-dark">
+        <span class="material-symbols-outlined md-18">arrow_back</span>
+        {% trans "Back" %}
+    </a>
+    <script>
+        (function () {
+            var key = "zt_profile_back_url";
+            var here = window.location.href.split("#")[0];
+            var ref = document.referrer;
 
-    <form method="post" class="space-y-4">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
+            if (ref && ref.indexOf(window.location.origin) === 0 && ref.split("#")[0] !== here) {
+                sessionStorage.setItem(key, ref);
+            }
 
-        {% for field in form %}
-        <div>
-            <label class="block mb-1 font-semibold">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}
-                <p class="text-red-400 text-sm">{{ field.errors.0 }}</p>
-            {% endif %}
-        </div>
-        {% endfor %}
+            document.getElementById("zt-profile-back").addEventListener("click", function (e) {
+                var stored = sessionStorage.getItem(key);
+                if (stored) {
+                    e.preventDefault();
+                    sessionStorage.removeItem(key);
+                    window.location.href = stored;
+                }
+            });
+        })();
+    </script>
 
-        <div class="flex justify-end">
-            <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded">
-                {% trans "Save" %}
-            </button>
-        </div>
-    </form>
+    <h1 class="text-2xl font-bold mb-6 text-font-important-light dark:text-font-important-dark">{% trans "My profile" %}</h1>
+
+    <div class="zt-list-panel p-6">
+        <form method="post" enctype="multipart/form-data" class="space-y-4" x-data="{ preview: null, fileName: '' }">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="form-row">
+                <label class="block mb-1 font-semibold text-font-important-light dark:text-font-important-dark">{{ form.avatar.label }}</label>
+
+                <div class="flex items-center gap-4">
+                    <label for="{{ form.avatar.id_for_label }}" class="group relative block cursor-pointer shrink-0">
+                        <img x-cloak x-show="preview" :src="preview" alt=""
+                             class="h-16 w-16 rounded-full object-cover border border-base-200 dark:border-base-700">
+
+                        <span x-show="!preview" class="block h-16 w-16 rounded-full overflow-hidden border border-base-200 dark:border-base-700">
+                            {% if request.user.avatar_url %}
+                                <img src="{{ request.user.avatar_url }}" alt="" class="h-full w-full object-cover">
+                            {% else %}
+                                <span class="flex h-full w-full items-center justify-center bg-base-200 dark:bg-base-700 text-lg font-semibold text-font-important-light dark:text-font-important-dark">
+                                    {{ request.user.get_full_name.0|default:request.user.get_username.0|upper }}
+                                </span>
+                            {% endif %}
+                        </span>
+
+                        <span class="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                            <span class="material-symbols-outlined text-white md-18">photo_camera</span>
+                        </span>
+                    </label>
+
+                    <div>
+                        <label for="{{ form.avatar.id_for_label }}"
+                               class="inline-flex cursor-pointer items-center rounded-default border border-base-200 bg-white px-3 py-2 text-sm font-medium shadow-xs hover:bg-base-50 dark:border-base-700 dark:bg-base-900 dark:hover:bg-base-800">
+                            {% trans "Choose photo" %}
+                        </label>
+                        <p class="mt-1 text-xs text-font-subtle-light dark:text-font-subtle-dark" x-text="fileName || '{% trans "No file chosen" %}'"></p>
+                    </div>
+                </div>
+
+                {% if form.avatar.errors %}
+                    <p class="text-red-400 text-sm">{{ form.avatar.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            {% for field in form %}
+                {% if field.name != "avatar" %}
+                <div class="form-row">
+                    <label class="block mb-1 font-semibold text-font-important-light dark:text-font-important-dark">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <p class="text-red-400 text-sm">{{ field.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endfor %}
+
+            {% comment %}
+              claude — реальный <input type=file> для avatar намеренно
+              вынесен сюда, подальше от first_name/last_name/email в DOM.
+              Chrome (подтверждено: правит value напрямую мимо JS, ни один
+              input/change листенер не срабатывает — это нативный автофилл,
+              не наш код) при выборе файла иногда подставляет имя файла в
+              ближайшее пустое текстовое поле формы. Раздвинули их — сам
+              input скрыт (.hidden), на месте в разметке выше остаётся
+              только превью/кнопка/label, кликающие через
+              <label for="{{ form.avatar.id_for_label }}">, так что
+              визуально ничего не меняется.
+            {% endcomment %}
+            {{ form.avatar }}
+
+            <div class="flex justify-end">
+                <button class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-default font-medium cursor-pointer">
+                    {% trans "Save" %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {% comment %}
+      claude — защита от автозаполнения Chrome: подтверждено экспериментом
+      (перехват сеттера .value + input/change/focus листенеров на
+      first_name — НИЧЕГО не сработало, значение всё равно подменилось),
+      что при выборе файла в avatar Chrome иногда сам, в обход JS и без
+      единого DOM-события, подставляет имя файла в first_name/last_name.
+      Раз обычные события не ловят подмену, отслеживаем "последнее
+      настоящее" значение по input-событию (которое при живом наборе
+      текста срабатывает всегда) и откатываем, если после выбора файла
+      значение разошлось с ним — единственный надёжный сигнал отличить
+      подмену браузером от реальной правки пользователем.
+    {% endcomment %}
+    <script>
+        (function () {
+            function guard(input) {
+                if (!input) return;
+                input.dataset.ztLastGood = input.value;
+                input.addEventListener("input", function () {
+                    input.dataset.ztLastGood = input.value;
+                });
+            }
+
+            var firstName = document.getElementById("id_first_name");
+            var lastName = document.getElementById("id_last_name");
+            guard(firstName);
+            guard(lastName);
+
+            var avatarInput = document.getElementById("id_avatar");
+            if (avatarInput) {
+                avatarInput.addEventListener("change", function () {
+                    setTimeout(function () {
+                        [firstName, lastName].forEach(function (el) {
+                            if (el && el.value !== el.dataset.ztLastGood) {
+                                el.value = el.dataset.ztLastGood;
+                            }
+                        });
+                    }, 150);
+                });
+            }
+        })();
+    </script>
 
 </div>
 {% endblock content %}

@@ -58,6 +58,127 @@ html.dark {
     box-shadow: 0 0 0 2px var(--custom-input-focus-shadow) !important;
 }
 
+/* claude — визуальная подгонка стандартных changelist'ов (Users, Requests,
+   Oferty, Zlecenia, Wnioski, Logi, Notifications и т.д.) под стиль страницы
+   Klienci (/admin/clients/client/): просторнее строки, мягче углы,
+   подсветка при наведении. Значения (радиус 13px, паддинг 14/22px, тени)
+   взяты из company_card.css (--r-lg, --shadow-md, .tbl td/.search).
+   Только внешний вид поверх стандартного рендера Django/Unfold — верстка,
+   фильтры, bulk-actions и права не тронуты. Ограничено lg-breakpoint'ом
+   (min-width: 1024px), т.к. на мобильном у Unfold уже отдельная
+   карточная раскладка со своими отступами. */
+@media (min-width: 1024px) {
+    /* claude — светлая/тёмная "поверхность карточки" — те же hex, что
+       --surface/--bg/--border в company_card.css (Klienci), а не
+       полупрозрачная заливка поверх фона: у Unfold фон страницы и фон
+       панели раньше были одного цвета, поэтому скругления/тень были
+       не видны. Теперь у панелей свой, заметно более светлый (в тёмной
+       теме) или чуть более светлый (в светлой) фон — как в Klienci. */
+    .zt-list-panel,
+    .zt-pagination-bar {
+        background: #fafaf9 !important;
+        border: 1px solid #e5e4e2 !important;
+    }
+
+    html.dark .zt-list-panel,
+    html.dark .zt-pagination-bar {
+        background: #1a2028 !important;
+        border: 1px solid #2c3644 !important;
+    }
+
+    /* claude — строка поиска (zt-search-box, search_form.html) и кнопка
+       "Filters" (zt-filter-btn, change_list.html) — каждая своя скруглённая
+       "чип"-карточка, а не единая рамка вокруг обеих (zt-toolbar сам по
+       себе больше не рисует рамку/фон — только flex-раскладка), в точности
+       как .search/.seg2 на Klienci: каждый контрол — отдельная карточка
+       на прозрачном .toolbar. */
+    .zt-search-box {
+        background: #fafaf9 !important;
+        border-color: #e5e4e2 !important;
+        border-radius: 12px !important;
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    html.dark .zt-search-box {
+        background: #1a2028 !important;
+        border-color: #2c3644 !important;
+    }
+
+    /* claude — у правила #content-main input:not(...)х7 выше в файле
+       специфичность (1 id, 7 псевдо-класс/атрибут, 1 элемент) выше, чем у
+       простого .zt-search-box input (1 id, 1 класс, 1 элемент) — оно
+       перебивало фон инпута несмотря на !important. Двойной #id здесь
+       (id+id > id+7 классов по правилам сравнения specificity) гарантированно
+       перевешивает. */
+    #content-main .zt-search-box input,
+    #content-main #searchbar {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 6px 2px !important;
+    }
+
+    .zt-filter-btn:not(.bg-primary-600) {
+        background: #fafaf9 !important;
+        border-color: #e5e4e2 !important;
+    }
+
+    html.dark .zt-filter-btn:not(.bg-primary-600) {
+        background: #1a2028 !important;
+        border-color: #2c3644 !important;
+    }
+
+    .zt-list-panel {
+        border-radius: 13px !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    html.dark .zt-list-panel {
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    #result_list td,
+    #result_list th {
+        height: auto !important;
+        padding-top: 14px !important;
+        padding-bottom: 14px !important;
+        padding-left: 18px !important;
+        padding-right: 18px !important;
+    }
+
+    #result_list thead th {
+        background: rgba(136, 152, 170, 0.09);
+    }
+
+    html.dark #result_list thead th {
+        background: rgba(255, 255, 255, 0.045);
+    }
+
+    #result_list tbody:hover {
+        background: rgba(136, 152, 170, 0.1);
+    }
+
+    html.dark #result_list tbody:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Футер пагинации (zt-pagination-bar, unfold/helpers/pagination.html) —
+       скруглённый нижний край и мягкая тень вместо плоской sticky-полосы,
+       под стиль .tbl-foot на Klienci. */
+    .zt-pagination-bar {
+        border-radius: 0 0 13px 13px !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07) !important;
+        margin-top: -1px;
+        backdrop-filter: none !important;
+    }
+
+    html.dark .zt-pagination-bar {
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+    }
+}
+
 .crm-dashboard a {
     text-decoration: none;
 }

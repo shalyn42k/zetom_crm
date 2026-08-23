@@ -1,8 +1,11 @@
 {% load i18n %}
 {# Шапка-strip: аватар-инициалы, имя, бейдж роли, мета. #}
 <header class="up-strip">
-  <div class="up-avatar" aria-hidden="true">
-    {% if original.first_name %}{{ original.first_name|slice:":1"|upper }}{% else %}{{ original.username|slice:":1"|upper }}{% endif %}
+  <div class="up-avatar" aria-hidden="true"
+       {% if original.avatar_url %}style="background-image:url('{{ original.avatar_url }}');background-size:cover;background-position:center;"{% endif %}>
+    {% if not original.avatar_url %}
+      {% if original.first_name %}{{ original.first_name|slice:":1"|upper }}{% else %}{{ original.username|slice:":1"|upper }}{% endif %}
+    {% endif %}
   </div>
 
   <div class="up-strip__meta">

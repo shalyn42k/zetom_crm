@@ -7,41 +7,57 @@
 <div class="up-card up-card--narrow" id="sec-tab" aria-labelledby="up-sec-heading">
   <h2 id="up-sec-heading" class="up-card__title">{% trans "Security" %}</h2>
 
-  <p class="up-callout">
-    {% trans "Leave fields empty to keep the current password. Fill both to set a new one — it will be saved together with the rest of the user’s data." %}
-  </p>
-
   {% comment %}
     2FA обязателен всем, кроме юзеров с otp_exempt. Статус устройства —
     read-only; сброс (при утере телефона) — bulk-action "Reset 2FA" в
-    списке Users, он же отзывает доверенные браузеры.
+    списке Users, он же отзывает доверенные браузеры. claude — тумблер
+    вместо чекбокса (.up-toggle, чистый CSS) + одна строка вместо
+    заголовка + подписи + отдельного help_text, дублировавших друг друга.
   {% endcomment %}
-  <p class="up-callout" style="margin-top:1rem;">
-    {% trans "Two-factor authentication:" %}
-    {% if original.totpdevice_set.exists %}
-      <strong>{% trans "configured" %}</strong>
-    {% else %}
-      <strong>{% trans "not configured yet" %}</strong>
-    {% endif %}
-    — {% trans "to reset a lost device, use the “Reset 2FA” action from the Users list." %}
-  </p>
+  {% comment %}
+    claude — вся карточка целиком один <label> (не только внутренняя
+    строка) — клик в любом месте рамки, включая статус-текст, переключает
+    otp_exempt. Внутри ровно один <label>, вложенных нет (невалидный HTML,
+    риск двойного срабатывания клика).
+  {% endcomment %}
+  <label class="up-card up-card--glass up-card--toggle-btn">
+    <p class="up-callout" style="background:transparent;border:none;padding:0;">
+      {% trans "Two-factor authentication:" %}
+      {% if original.totpdevice_set.exists %}
+        <strong>{% trans "configured" %}</strong>
+      {% else %}
+        <strong>{% trans "not configured yet" %}</strong>
+      {% endif %}
+      — {% trans "lost device? use “Reset 2FA” in the Users list." %}
+    </p>
 
-  <div class="up-form-stack" style="margin-top:.5rem;">
-    <label class="up-field" style="flex-direction:row;align-items:center;gap:8px;">
-      {{ adminform.form.otp_exempt }}
-      <span class="up-field__label" style="margin:0;">{{ adminform.form.otp_exempt.label }}</span>
-    </label>
-    {% if adminform.form.otp_exempt.help_text %}
-      <span class="up-field__help">{{ adminform.form.otp_exempt.help_text }}</span>
-    {% endif %}
-  </div>
+    <span class="up-toggle-row">
+      <span class="up-toggle-row__meta">
+        <span class="up-toggle-row__title">{{ adminform.form.otp_exempt.label }}</span>
+        <span class="up-toggle-row__sub">{% trans "Skips the 2FA requirement for this user only." %}</span>
+      </span>
+      <span class="up-toggle">
+        {{ adminform.form.otp_exempt }}
+        <span class="up-toggle__track"></span>
+      </span>
+    </span>
+  </label>
 
-  <div class="up-form-stack">
+  {% comment %}
+    claude — статичный список правил пароля убран (висел целиком даже без
+    единого введённого символа). Показываем только реальную ошибку —
+    Django-валидатор пишет её в f1.errors ("This password is too common."
+    и т.п.) лишь когда пароль правда не проходит проверку.
+  {% endcomment %}
+  <div class="up-card up-card--glass">
+    <p class="up-toggle-row__sub" style="margin:0;">
+      {% trans "Leave empty to keep the current password." %}
+    </p>
+
     {% with f1=adminform.form.new_password1 %}
       <label class="up-field">
         <span class="up-field__label">{{ f1.label }}</span>
         {{ f1 }}
-        {% if f1.help_text %}<span class="up-field__help">{{ f1.help_text|safe }}</span>{% endif %}
         {% if f1.errors %}
           <ul class="up-field__errors">
             {% for e in f1.errors %}<li>{{ e }}</li>{% endfor %}
@@ -54,7 +70,6 @@
       <label class="up-field">
         <span class="up-field__label">{{ f2.label }}</span>
         {{ f2 }}
-        {% if f2.help_text %}<span class="up-field__help">{{ f2.help_text }}</span>{% endif %}
         {% if f2.errors %}
           <ul class="up-field__errors">
             {% for e in f2.errors %}<li>{{ e }}</li>{% endfor %}

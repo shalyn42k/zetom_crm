@@ -111,6 +111,74 @@ html.dark,
   text-transform: uppercase; letter-spacing: 0.04em;
 }
 
+/* claude — стеклянная карточка: полупрозрачный фон + blur, поверх обычного
+   фона страницы (не поверх .up-card-bg — тот непрозрачный). Используется
+   для блоков 2FA / смены пароля на вкладке Security. */
+.up-card--glass {
+  background: color-mix(in oklab, var(--up-card-bg) 65%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid color-mix(in oklab, var(--up-card-border) 70%, transparent);
+  border-radius: var(--up-card-radius);
+  padding: 16px;
+  display: grid; gap: 12px;
+}
+
+/* claude — настоящий ползунок вместо нативного чекбокса. Чистый CSS
+   (:checked + сосед), JS не нужен. up-toggle-row сам — <label>, клик
+   в любом месте строки (не только по ползунку) переключает состояние.
+   Пример использования — otp_exempt на вкладке Security. */
+/* claude — .up-card--toggle-btn идёт НА САМУ up-card--glass (вся рамка
+   карточки — кнопка, не только внутренняя строка): курсор, hover, и явная
+   подсветка рамки/фона зелёным, когда чекбокс внутри включён. */
+.up-card--toggle-btn { cursor: pointer; transition: background .12s ease, border-color .12s ease; }
+.up-card--toggle-btn:hover {
+  border-color: color-mix(in oklab, #22c55e 40%, var(--up-card-border));
+  background: color-mix(in oklab, var(--up-card-bg) 55%, transparent);
+}
+.up-card--toggle-btn:has(input:checked) {
+  border-color: color-mix(in oklab, #22c55e 55%, var(--up-card-border));
+  background: color-mix(in oklab, #22c55e 10%, color-mix(in oklab, var(--up-card-bg) 55%, transparent));
+}
+
+.up-toggle-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.up-toggle-row__meta { display: grid; gap: 2px; }
+.up-toggle-row__title { font-size: 13px; font-weight: 600; color: var(--up-text); }
+.up-toggle-row__sub { font-size: 12px; color: var(--up-text-muted); }
+.up-toggle { flex-shrink: 0; display: inline-block; }
+.up-toggle input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.up-toggle__track {
+  display: block; width: 44px; height: 24px; border-radius: 999px;
+  background: var(--up-card-border);
+  position: relative; transition: background .15s ease, box-shadow .15s ease;
+}
+.up-toggle__track::after {
+  content: ""; position: absolute; top: 2px; left: 2px; z-index: 0;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; transition: transform .15s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,.35);
+}
+/* claude — зелёная (не акцент-по-умолчанию, фиксированный "успешный"
+   зелёный — просили сделать заметнее) галочка на полупрозрачной стеклянной
+   подложке бегунка. z-index выше ::after, иначе бегунок красится поверх. */
+.up-toggle__track::before {
+  content: "✓"; position: absolute; top: 2px; left: 22px; z-index: 1;
+  width: 20px; height: 20px; text-align: center; line-height: 20px;
+  font-size: 13px; font-weight: 800; color: #15803d;
+  opacity: 0; transition: opacity .15s ease;
+}
+.up-toggle input:checked + .up-toggle__track {
+  background: color-mix(in oklab, #22c55e 80%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  box-shadow: 0 0 0 1px color-mix(in oklab, #22c55e 50%, transparent);
+}
+.up-toggle input:checked + .up-toggle__track::after { transform: translateX(20px); }
+.up-toggle input:checked + .up-toggle__track::before { opacity: 1; }
+.up-toggle input:focus-visible + .up-toggle__track { outline: 2px solid color-mix(in oklab, #22c55e 50%, transparent); outline-offset: 2px; }
+
 /* ---------- Badges ---------- */
 .up-badge {
   display: inline-flex; align-items: center;

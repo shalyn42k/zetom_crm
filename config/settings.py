@@ -258,8 +258,19 @@ STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
+    # claude — Manifest-хранилище раздаёт файлы по хэшу содержимого, а хэш
+    # обновляется только через `collectstatic`. В деве это означало, что
+    # любая правка CSS/JS не показывалась в браузере, пока кто-нибудь не
+    # вспоминал вручную прогнать collectstatic (сам манифест до этого не
+    # существовал вовсе — collectstatic ни разу не запускался). В DEBUG
+    # используем обычное хранилище — правки видно сразу; хэш и сжатие
+    # (нужны для кэш-бастинга на реальном домене) остаются только в проде.
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": (
+            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            if not DEBUG else
+            "django.contrib.staticfiles.storage.StaticFilesStorage"
+        ),
     },
 }
 
