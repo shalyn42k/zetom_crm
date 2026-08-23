@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-23 18:42+0200\n"
+"POT-Creation-Date: 2026-08-23 22:51+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -49,18 +49,17 @@ msgstr ""
 msgid "Information"
 msgstr ""
 
-#: config/unfold_config.py:154 crm/clients/admin.py:192
-#: crm/zetom/models.py:166
+#: config/unfold_config.py:154 crm/clients/admin.py:192 crm/zetom/models.py:166
 msgid "Offers"
 msgstr ""
 
-#: config/unfold_config.py:162 crm/clients/admin.py:197
-#: crm/zetom/models.py:187 templates/admin/index.html:636
+#: config/unfold_config.py:162 crm/clients/admin.py:197 crm/zetom/models.py:187
+#: templates/admin/index.html:636
 msgid "Orders"
 msgstr ""
 
-#: config/unfold_config.py:170 crm/clients/admin.py:202
-#: crm/zetom/models.py:207 templates/admin/index.html:637
+#: config/unfold_config.py:170 crm/clients/admin.py:202 crm/zetom/models.py:207
+#: templates/admin/index.html:637
 msgid "Applications"
 msgstr ""
 
@@ -77,8 +76,7 @@ msgid "Trash"
 msgstr ""
 
 #: config/unfold_config.py:206 config/unfold_config.py:210
-#: crm/clients/admin.py:420 crm/clients/models.py:29
-#: crm/users/admin/user.py:45
+#: crm/clients/admin.py:420 crm/clients/models.py:29 crm/users/admin/user.py:45
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:127
 #: templates/admin/index.html:623 templates/admin/index.html:654
 msgid "Clients"
@@ -157,11 +155,11 @@ msgstr "Klient #%(pk)s"
 msgid "Osoba prywatna"
 msgstr "Private person"
 
-#: crm/clients/admin.py:456
+#: crm/clients/admin.py:459
 msgid "Person Detail"
 msgstr "Person Detail"
 
-#: crm/clients/admin.py:619
+#: crm/clients/admin.py:625
 msgid "Company Detail"
 msgstr "Company Detail"
 
@@ -230,11 +228,11 @@ msgstr ""
 msgid "Chat"
 msgstr ""
 
-#: crm/clients/models.py:59 crm/users/admin/user.py:203 crm/zetom/models.py:38
+#: crm/clients/models.py:59 crm/users/admin/user.py:212 crm/zetom/models.py:38
 msgid "Other"
 msgstr ""
 
-#: crm/clients/models.py:74 crm/zetom/admin/base.py:161
+#: crm/clients/models.py:74 crm/zetom/admin/base.py:163
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:42
 #: crm/zetom/templates/admin/zetom/requestmain/change_form.html:43
 msgid "Request"
@@ -297,9 +295,9 @@ msgstr "Full name"
 #: crm/clients/models.py:126
 #: crm/clients/templates/admin/clients/client/_add_modal.html:63
 #: crm/clients/templates/admin/clients/client/klienci_list.html:100
-#: crm/clients/templates/admin/clients/company/company_card.html:49
-#: crm/clients/templates/admin/clients/company/company_card.html:74
-#: crm/clients/templates/admin/clients/company/company_card.html:92
+#: crm/clients/templates/admin/clients/company/company_card.html:51
+#: crm/clients/templates/admin/clients/company/company_card.html:76
+#: crm/clients/templates/admin/clients/company/company_card.html:94
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:73
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:75
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:84
@@ -309,8 +307,8 @@ msgstr ""
 
 #: crm/clients/models.py:129
 #: crm/clients/templates/admin/clients/client/_add_modal.html:64
-#: crm/clients/templates/admin/clients/company/company_card.html:75
-#: crm/clients/templates/admin/clients/company/company_card.html:93
+#: crm/clients/templates/admin/clients/company/company_card.html:77
+#: crm/clients/templates/admin/clients/company/company_card.html:95
 msgid "REGON"
 msgstr "REGON"
 
@@ -359,7 +357,7 @@ msgstr "Comments"
 msgid "Company"
 msgstr ""
 
-#: crm/clients/models.py:148 templates/admin/index.html:655
+#: crm/clients/models.py:148 templates/admin/index.html:656
 msgid "Companies"
 msgstr "Companies"
 
@@ -407,7 +405,7 @@ msgstr "Client without a company"
 #: crm/clients/templates/admin/clients/client/_add_modal.html:39
 #: crm/clients/templates/admin/clients/client/klienci_list.html:130
 #: crm/clients/templates/admin/clients/client/person_card.html:114
-#: crm/clients/templates/admin/clients/company/company_card.html:45
+#: crm/clients/templates/admin/clients/company/company_card.html:47
 msgid "Firma"
 msgstr "Company"
 
@@ -418,8 +416,8 @@ msgstr "Institutional client"
 #: crm/clients/templates/admin/clients/client/_add_modal.html:48
 #: crm/clients/templates/admin/clients/client/person_card.html:71
 #: crm/clients/templates/admin/clients/client/person_card.html:89
-#: crm/clients/templates/admin/clients/company/company_card.html:179
-#: crm/clients/templates/admin/clients/company/company_card.html:222
+#: crm/clients/templates/admin/clients/company/company_card.html:181
+#: crm/clients/templates/admin/clients/company/company_card.html:224
 msgid "Imię"
 msgstr "First name"
 
@@ -431,8 +429,8 @@ msgstr "e.g. John"
 #: crm/clients/templates/admin/clients/client/_add_modal.html:49
 #: crm/clients/templates/admin/clients/client/person_card.html:72
 #: crm/clients/templates/admin/clients/client/person_card.html:90
-#: crm/clients/templates/admin/clients/company/company_card.html:179
-#: crm/clients/templates/admin/clients/company/company_card.html:223
+#: crm/clients/templates/admin/clients/company/company_card.html:181
+#: crm/clients/templates/admin/clients/company/company_card.html:225
 msgid "Nazwisko"
 msgstr "Last name"
 
@@ -446,10 +444,10 @@ msgstr "e.g. Smith"
 #: crm/clients/templates/admin/clients/client/klienci_list.html:102
 #: crm/clients/templates/admin/clients/client/person_card.html:73
 #: crm/clients/templates/admin/clients/client/person_card.html:93
-#: crm/clients/templates/admin/clients/company/company_card.html:125
-#: crm/clients/templates/admin/clients/company/company_card.html:149
-#: crm/clients/templates/admin/clients/company/company_card.html:180
-#: crm/clients/templates/admin/clients/company/company_card.html:226
+#: crm/clients/templates/admin/clients/company/company_card.html:127
+#: crm/clients/templates/admin/clients/company/company_card.html:151
+#: crm/clients/templates/admin/clients/company/company_card.html:182
+#: crm/clients/templates/admin/clients/company/company_card.html:228
 msgid "Telefon"
 msgstr "Phone"
 
@@ -458,83 +456,83 @@ msgstr "Phone"
 #: crm/clients/templates/admin/clients/client/klienci_list.html:103
 #: crm/clients/templates/admin/clients/client/person_card.html:74
 #: crm/clients/templates/admin/clients/client/person_card.html:94
-#: crm/clients/templates/admin/clients/company/company_card.html:124
-#: crm/clients/templates/admin/clients/company/company_card.html:150
-#: crm/clients/templates/admin/clients/company/company_card.html:179
-#: crm/clients/templates/admin/clients/company/company_card.html:227
+#: crm/clients/templates/admin/clients/company/company_card.html:126
+#: crm/clients/templates/admin/clients/company/company_card.html:152
+#: crm/clients/templates/admin/clients/company/company_card.html:181
+#: crm/clients/templates/admin/clients/company/company_card.html:229
 msgid "E-mail"
 msgstr "E-mail"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:61
-#: crm/clients/templates/admin/clients/company/company_card.html:73
-#: crm/clients/templates/admin/clients/company/company_card.html:90
+#: crm/clients/templates/admin/clients/company/company_card.html:75
+#: crm/clients/templates/admin/clients/company/company_card.html:92
 msgid "Nazwa"
 msgstr "Name"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:61
-#: crm/clients/templates/admin/clients/company/company_card.html:90
+#: crm/clients/templates/admin/clients/company/company_card.html:92
 msgid "np. Zetom Sp. z o.o."
 msgstr "e.g. Zetom Sp. z o.o."
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:67
 #: crm/clients/templates/admin/clients/client/klienci_list.html:76
-#: crm/clients/templates/admin/clients/company/company_card.html:76
-#: crm/clients/templates/admin/clients/company/company_card.html:96
+#: crm/clients/templates/admin/clients/company/company_card.html:78
+#: crm/clients/templates/admin/clients/company/company_card.html:98
 msgid "Typ dostawcy"
 msgstr "Supplier type"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:69
-#: crm/clients/templates/admin/clients/company/company_card.html:98
+#: crm/clients/templates/admin/clients/company/company_card.html:100
 msgid "— brak —"
 msgstr "— none —"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:74
-#: crm/clients/templates/admin/clients/company/company_card.html:119
-#: crm/clients/templates/admin/clients/company/company_card.html:140
+#: crm/clients/templates/admin/clients/company/company_card.html:121
+#: crm/clients/templates/admin/clients/company/company_card.html:142
 msgid "Kraj"
 msgstr "Country"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:74
-#: crm/clients/templates/admin/clients/company/company_card.html:140
+#: crm/clients/templates/admin/clients/company/company_card.html:142
 msgid "np. Polska"
 msgstr "e.g. Poland"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:75
-#: crm/clients/templates/admin/clients/company/company_card.html:121
-#: crm/clients/templates/admin/clients/company/company_card.html:141
+#: crm/clients/templates/admin/clients/company/company_card.html:123
+#: crm/clients/templates/admin/clients/company/company_card.html:143
 msgid "Województwo"
 msgstr "Voivodeship"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:75
-#: crm/clients/templates/admin/clients/company/company_card.html:141
+#: crm/clients/templates/admin/clients/company/company_card.html:143
 msgid "np. mazowieckie"
 msgstr "e.g. mazowieckie"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:78
-#: crm/clients/templates/admin/clients/company/company_card.html:122
-#: crm/clients/templates/admin/clients/company/company_card.html:144
+#: crm/clients/templates/admin/clients/company/company_card.html:124
+#: crm/clients/templates/admin/clients/company/company_card.html:146
 msgid "Kod pocztowy"
 msgstr "Post code"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:79
-#: crm/clients/templates/admin/clients/company/company_card.html:120
-#: crm/clients/templates/admin/clients/company/company_card.html:145
+#: crm/clients/templates/admin/clients/company/company_card.html:122
+#: crm/clients/templates/admin/clients/company/company_card.html:147
 msgid "Miasto"
 msgstr "City"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:79
-#: crm/clients/templates/admin/clients/company/company_card.html:145
+#: crm/clients/templates/admin/clients/company/company_card.html:147
 msgid "np. Warszawa"
 msgstr "e.g. Warsaw"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:81
-#: crm/clients/templates/admin/clients/company/company_card.html:123
-#: crm/clients/templates/admin/clients/company/company_card.html:147
+#: crm/clients/templates/admin/clients/company/company_card.html:125
+#: crm/clients/templates/admin/clients/company/company_card.html:149
 msgid "Ulica"
 msgstr "Street"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:81
-#: crm/clients/templates/admin/clients/company/company_card.html:147
+#: crm/clients/templates/admin/clients/company/company_card.html:149
 msgid "np. Przemysłowa 12"
 msgstr "e.g. Przemysłowa 12"
 
@@ -555,7 +553,7 @@ msgid "Zostanie powiązane:"
 msgstr "Will be linked:"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:116
-#: crm/clients/templates/admin/clients/company/company_card.html:196
+#: crm/clients/templates/admin/clients/company/company_card.html:198
 msgid "Usuń"
 msgstr "Delete"
 
@@ -578,9 +576,9 @@ msgstr "type a number or name to narrow it down"
 #: crm/clients/templates/admin/clients/client/_add_modal.html:167
 #: crm/clients/templates/admin/clients/client/person_card.html:98
 #: crm/clients/templates/admin/clients/client/person_card.html:202
-#: crm/clients/templates/admin/clients/company/company_card.html:104
-#: crm/clients/templates/admin/clients/company/company_card.html:154
-#: crm/clients/templates/admin/clients/company/company_card.html:236
+#: crm/clients/templates/admin/clients/company/company_card.html:106
+#: crm/clients/templates/admin/clients/company/company_card.html:156
+#: crm/clients/templates/admin/clients/company/company_card.html:238
 msgid "Anuluj"
 msgstr "Cancel"
 
@@ -686,21 +684,21 @@ msgstr "The form has not been saved. Close anyway?"
 #: crm/clients/templates/admin/clients/client/person_card.html:407
 #: crm/clients/templates/admin/clients/client/person_card.html:419
 #: crm/clients/templates/admin/clients/client/person_card.html:440
-#: crm/clients/templates/admin/clients/company/company_card.html:349
-#: crm/clients/templates/admin/clients/company/company_card.html:435
+#: crm/clients/templates/admin/clients/company/company_card.html:351
+#: crm/clients/templates/admin/clients/company/company_card.html:437
 msgid "Błąd sieci — spróbuj ponownie."
 msgstr "Network error — please try again."
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:325
 #: crm/clients/templates/admin/clients/client/person_card.html:314
 #: crm/clients/templates/admin/clients/client/person_card.html:386
-#: crm/clients/templates/admin/clients/company/company_card.html:344
-#: crm/clients/templates/admin/clients/company/company_card.html:424
+#: crm/clients/templates/admin/clients/company/company_card.html:346
+#: crm/clients/templates/admin/clients/company/company_card.html:426
 msgid "Nie udało się zapisać."
 msgstr "Could not save."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:40
-#: crm/clients/templates/admin/clients/company/company_card.html:36
+#: crm/clients/templates/admin/clients/company/company_card.html:38
 msgid "Wróć"
 msgstr "Back"
 
@@ -709,9 +707,9 @@ msgid "Dane osobowe"
 msgstr "Personal data"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:68
-#: crm/clients/templates/admin/clients/company/company_card.html:70
-#: crm/clients/templates/admin/clients/company/company_card.html:116
-#: crm/clients/templates/admin/clients/company/company_card.html:195
+#: crm/clients/templates/admin/clients/company/company_card.html:72
+#: crm/clients/templates/admin/clients/company/company_card.html:118
+#: crm/clients/templates/admin/clients/company/company_card.html:197
 msgid "Edytuj"
 msgstr "Edit"
 
@@ -725,9 +723,9 @@ msgstr "Person data."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:99
 #: crm/clients/templates/admin/clients/client/person_card.html:203
-#: crm/clients/templates/admin/clients/company/company_card.html:105
-#: crm/clients/templates/admin/clients/company/company_card.html:155
-#: crm/clients/templates/admin/clients/company/company_card.html:237
+#: crm/clients/templates/admin/clients/company/company_card.html:107
+#: crm/clients/templates/admin/clients/company/company_card.html:157
+#: crm/clients/templates/admin/clients/company/company_card.html:239
 msgid "Zapisz"
 msgstr "Save"
 
@@ -738,13 +736,13 @@ msgstr "Assign to company"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:114
 #: crm/clients/templates/admin/clients/client/person_card.html:195
-#: crm/clients/templates/admin/clients/company/company_card.html:180
-#: crm/clients/templates/admin/clients/company/company_card.html:229
+#: crm/clients/templates/admin/clients/company/company_card.html:182
+#: crm/clients/templates/admin/clients/company/company_card.html:231
 msgid "Stanowisko"
 msgstr "Position"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:114
-#: crm/clients/templates/admin/clients/company/company_card.html:181
+#: crm/clients/templates/admin/clients/company/company_card.html:183
 msgid "Operacje"
 msgstr "Actions"
 
@@ -789,23 +787,23 @@ msgid "Rola tej osoby w wybranej firmie."
 msgstr "This person's role in the selected company."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:195
-#: crm/clients/templates/admin/clients/company/company_card.html:229
+#: crm/clients/templates/admin/clients/company/company_card.html:231
 msgid "np. Dyrektor techniczny"
 msgstr "e.g. Technical director"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:198
-#: crm/clients/templates/admin/clients/company/company_card.html:187
-#: crm/clients/templates/admin/clients/company/company_card.html:232
+#: crm/clients/templates/admin/clients/company/company_card.html:189
+#: crm/clients/templates/admin/clients/company/company_card.html:234
 msgid "Główny kontakt"
 msgstr "Primary contact"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:198
-#: crm/clients/templates/admin/clients/company/company_card.html:232
+#: crm/clients/templates/admin/clients/company/company_card.html:234
 msgid "Główna osoba do kontaktu w tej firmie."
 msgstr "Primary contact person for this company."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:215
-#: crm/clients/templates/admin/clients/company/company_card.html:248
+#: crm/clients/templates/admin/clients/company/company_card.html:250
 msgid "Powiązane zgłoszenia"
 msgstr "Related requests"
 
@@ -814,17 +812,17 @@ msgid "Brak zgłoszeń powiązanych z tą osobą."
 msgstr "No requests linked to this person."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:241
-#: crm/clients/templates/admin/clients/company/company_card.html:274
+#: crm/clients/templates/admin/clients/company/company_card.html:276
 msgid "Historia kontaktów"
 msgstr "Contact history"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:260
-#: crm/clients/templates/admin/clients/company/company_card.html:293
+#: crm/clients/templates/admin/clients/company/company_card.html:295
 msgid "Brak historii kontaktów."
 msgstr "No contact history."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:263
-#: crm/clients/templates/admin/clients/company/company_card.html:296
+#: crm/clients/templates/admin/clients/company/company_card.html:298
 msgid "Tylko podgląd — dodawanie wpisów będzie dostępne później."
 msgstr "Preview only — adding entries will be available later."
 
@@ -836,72 +834,72 @@ msgstr "Are you sure you want to detach this person from the company?"
 msgid "Nie udało się przypisać."
 msgstr "Could not assign."
 
-#: crm/clients/templates/admin/clients/company/company_card.html:37
+#: crm/clients/templates/admin/clients/company/company_card.html:39
 msgid "Klient / Firma"
 msgstr "Client / Company"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:69
+#: crm/clients/templates/admin/clients/company/company_card.html:71
 msgid "Dane podstawowe"
 msgstr "Basic data"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:84
+#: crm/clients/templates/admin/clients/company/company_card.html:86
 msgid "Edytuj dane podstawowe"
 msgstr "Edit basic data"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:85
+#: crm/clients/templates/admin/clients/company/company_card.html:87
 msgid "Dane identyfikacyjne firmy."
 msgstr "Company identification data."
 
-#: crm/clients/templates/admin/clients/company/company_card.html:115
+#: crm/clients/templates/admin/clients/company/company_card.html:117
 msgid "Dane szczegółowe"
 msgstr "Detailed data"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:133
+#: crm/clients/templates/admin/clients/company/company_card.html:135
 msgid "Edytuj dane szczegółowe"
 msgstr "Edit detailed data"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:134
+#: crm/clients/templates/admin/clients/company/company_card.html:136
 msgid "Adres i dane kontaktowe firmy."
 msgstr "Company address and contact details."
 
-#: crm/clients/templates/admin/clients/company/company_card.html:173
+#: crm/clients/templates/admin/clients/company/company_card.html:175
 msgid "Osoby kontaktowe"
 msgstr "Contact persons"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:174
-#: crm/clients/templates/admin/clients/company/company_card.html:215
+#: crm/clients/templates/admin/clients/company/company_card.html:176
+#: crm/clients/templates/admin/clients/company/company_card.html:217
 msgid "Dodaj osobę kontaktową"
 msgstr "Add contact person"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:206
+#: crm/clients/templates/admin/clients/company/company_card.html:208
 msgid "Brak osób kontaktowych przypisanych do tej firmy."
 msgstr "No contact persons assigned to this company."
 
-#: crm/clients/templates/admin/clients/company/company_card.html:207
+#: crm/clients/templates/admin/clients/company/company_card.html:209
 msgid "Dodaj osobę"
 msgstr "Add person"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:215
+#: crm/clients/templates/admin/clients/company/company_card.html:217
 msgid "Edytuj osobę kontaktową"
 msgstr "Edit contact person"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:216
+#: crm/clients/templates/admin/clients/company/company_card.html:218
 msgid "Osoba kontaktowa powiązana z firmą."
 msgstr "Contact person linked to the company."
 
-#: crm/clients/templates/admin/clients/company/company_card.html:222
+#: crm/clients/templates/admin/clients/company/company_card.html:224
 msgid "np. Marek"
 msgstr "e.g. Mark"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:223
+#: crm/clients/templates/admin/clients/company/company_card.html:225
 msgid "np. Wiśniewski"
 msgstr "e.g. Johnson"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:266
+#: crm/clients/templates/admin/clients/company/company_card.html:268
 msgid "Brak zgłoszeń powiązanych z tą firmą."
 msgstr "No requests linked to this company."
 
-#: crm/clients/templates/admin/clients/company/company_card.html:366
+#: crm/clients/templates/admin/clients/company/company_card.html:368
 msgid "Czy na pewno chcesz usunąć tę osobę kontaktową?"
 msgstr "Are you sure you want to delete this contact person?"
 
@@ -914,55 +912,55 @@ msgstr ""
 msgid "Invalid NIP checksum."
 msgstr ""
 
-#: crm/clients/views.py:152
+#: crm/clients/views.py:164
 msgid "Nieprawidłowy adres e-mail."
 msgstr "Invalid e-mail address."
 
-#: crm/clients/views.py:165
+#: crm/clients/views.py:177
 msgid "Nieprawidłowy numer telefonu."
 msgstr "Invalid phone number."
 
-#: crm/clients/views.py:317
+#: crm/clients/views.py:329
 msgid "Nazwa firmy jest wymagana."
 msgstr "Company name is required."
 
-#: crm/clients/views.py:329
+#: crm/clients/views.py:341
 msgid "Firma z tym NIP-em już istnieje."
 msgstr "A company with this NIP already exists."
 
-#: crm/clients/views.py:332
+#: crm/clients/views.py:344
 msgid "Nieznany typ dostawcy."
 msgstr "Unknown supplier type."
 
-#: crm/clients/views.py:531
+#: crm/clients/views.py:543
 msgid "dopasowanie po telefonie"
 msgstr "phone match"
 
-#: crm/clients/views.py:533
+#: crm/clients/views.py:545
 msgid "dopasowanie po NIP"
 msgstr "NIP match"
 
-#: crm/clients/views.py:535
+#: crm/clients/views.py:547
 msgid "dopasowanie po e-mailu"
 msgstr "e-mail match"
 
-#: crm/clients/views.py:536
+#: crm/clients/views.py:548
 msgid "dopasowanie po nazwie"
 msgstr "name match"
 
-#: crm/clients/views.py:650
+#: crm/clients/views.py:662
 msgid "Tego zgłoszenia nie można powiązać z tym rodzajem klienta."
 msgstr "This request cannot be linked to this kind of client."
 
-#: crm/clients/views.py:654
+#: crm/clients/views.py:666
 msgid "Nie znaleziono wybranego zgłoszenia."
 msgstr "The selected request was not found."
 
-#: crm/clients/views.py:700
+#: crm/clients/views.py:712
 msgid "Podaj imię lub nazwisko."
 msgstr "Enter a first or last name."
 
-#: crm/clients/views.py:730
+#: crm/clients/views.py:742
 msgid "To zgłoszenie jest już powiązane z inną firmą."
 msgstr "This request is already linked to another company."
 
@@ -1027,7 +1025,8 @@ msgstr ""
 msgid "Subject"
 msgstr ""
 
-#: crm/notification/models.py:41 crm/zetom/admin/base.py:272
+#: crm/notification/models.py:41 crm/users/templates/users/user_list.html:23
+#: crm/zetom/admin/base.py:274
 msgid "Status"
 msgstr ""
 
@@ -1109,7 +1108,8 @@ msgstr ""
 
 #: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:12
 #, python-format
-msgid "%(actor_name)s changed status from \"%(old_status)s\" to \"%(new_status)s\"."
+msgid ""
+"%(actor_name)s changed status from \"%(old_status)s\" to \"%(new_status)s\"."
 msgstr ""
 
 #: crm/notification/templates/notification/inapp/staff/review_requested.txt:9
@@ -1459,8 +1459,9 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
-#: crm/status_manager/services/statuses.py:13
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:55
+#: crm/status_manager/services/statuses.py:13 crm/users/admin/user.py:336
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:63
+#: crm/users/templates/users/user_list.html:42
 msgid "Active"
 msgstr ""
 
@@ -1469,12 +1470,14 @@ msgid "Closed"
 msgstr ""
 
 #: crm/status_manager/services/statuses.py:16
+#: crm/users/templates/admin/auth/user/_partials/header_strip.html:27
+#: crm/users/templates/users/user_list.html:44
 msgid "Inactive"
 msgstr ""
 
 #: crm/status_manager/services/statuses.py:18
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/history_card.html:56
-#: templates/admin/index.html:689
+#: templates/admin/index.html:690
 msgid "Deleted"
 msgstr ""
 
@@ -1486,11 +1489,10 @@ msgstr ""
 msgid "Revoke head status for this department before removing."
 msgstr ""
 
-#: crm/users/admin/user.py:46 crm/users/admin/user.py:291
-#: crm/users/forms.py:34
+#: crm/users/admin/user.py:46 crm/users/admin/user.py:326 crm/users/forms.py:34
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:31
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:24
-#: crm/users/templates/users/user_detail.html:15 crm/zetom/admin/base.py:45
+#: crm/users/templates/users/user_detail.html:15 crm/zetom/admin/base.py:47
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:150
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:106
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/departments.html:5
@@ -1511,27 +1513,61 @@ msgstr ""
 msgid "Access"
 msgstr ""
 
-#: crm/users/admin/user.py:282 crm/users/forms.py:28 crm/users/forms.py:102
+#: crm/users/admin/user.py:317 crm/users/forms.py:28 crm/users/forms.py:102
 #: crm/users/templates/users/user_detail.html:14
 #: crm/users/templates/users/user_list.html:21
 msgid "Role"
 msgstr ""
 
-#: crm/users/admin/user.py:295 crm/users/forms.py:40 crm/users/forms.py:108
+#: crm/users/admin/user.py:330 crm/users/forms.py:40 crm/users/forms.py:108
 msgid "Job title"
 msgstr ""
 
-#: crm/users/admin/user.py:343
+#: crm/users/admin/user.py:450
+#, python-format
+msgid "%(name)s was deactivated and signed out."
+msgstr ""
+
+#: crm/users/admin/user.py:455
+#, python-format
+msgid "%(name)s can log in again."
+msgstr ""
+
+#: crm/users/admin/user.py:468
 msgid "Reset 2FA (delete OTP devices)"
 msgstr ""
 
-#: crm/users/admin/user.py:346
+#: crm/users/admin/user.py:471 crm/users/admin/user.py:502
 msgid "No permission."
 msgstr ""
 
-#: crm/users/admin/user.py:358
+#: crm/users/admin/user.py:483
 #, python-format
 msgid "2FA reset for %(n)s user(s). They will set it up again on next login."
+msgstr ""
+
+#: crm/users/admin/user.py:489
+msgid "Deactivate selected users"
+msgstr ""
+
+#: crm/users/admin/user.py:493
+msgid "Reactivate selected users"
+msgstr ""
+
+#: crm/users/admin/user.py:519
+#, python-format
+msgid "Reactivated %(n)s user(s)."
+msgstr ""
+
+#: crm/users/admin/user.py:523
+#, python-format
+msgid ""
+"Deactivated %(n)s user(s). Their sessions and trusted browsers were revoked."
+msgstr ""
+
+#: crm/users/admin/user.py:529
+#, python-format
+msgid "Skipped %(n)s (yourself or a superuser)."
 msgstr ""
 
 #: crm/users/forms.py:17
@@ -1546,7 +1582,7 @@ msgstr ""
 msgid "A user with this username already exists."
 msgstr ""
 
-#: crm/users/forms.py:68 crm/users/forms.py:171 crm/users/forms.py:265
+#: crm/users/forms.py:68 crm/users/forms.py:177 crm/users/forms.py:271
 msgid "This email is already in use."
 msgstr ""
 
@@ -1554,7 +1590,7 @@ msgstr ""
 msgid "Passwords don't match."
 msgstr ""
 
-#: crm/users/forms.py:113 crm/users/forms.py:230 crm/users/models.py:78
+#: crm/users/forms.py:113 crm/users/forms.py:236 crm/users/models.py:78
 msgid "Avatar"
 msgstr ""
 
@@ -1563,8 +1599,7 @@ msgid "2FA exempt"
 msgstr ""
 
 #: crm/users/forms.py:121 crm/users/models.py:69
-msgid ""
-"If enabled, this user is not required to use two-factor authentication."
+msgid "If enabled, this user is not required to use two-factor authentication."
 msgstr ""
 
 #: crm/users/forms.py:127
@@ -1579,7 +1614,7 @@ msgstr ""
 msgid "Enter the same password as before, for verification."
 msgstr ""
 
-#: crm/users/forms.py:184
+#: crm/users/forms.py:190
 msgid "The two password fields didn’t match."
 msgstr ""
 
@@ -1604,8 +1639,7 @@ msgstr ""
 
 #: crm/users/models.py:111
 msgid ""
-"A department can be marked as head-of only if the user already belongs to "
-"it."
+"A department can be marked as head-of only if the user already belongs to it."
 msgstr ""
 
 #: crm/users/models.py:155
@@ -1729,16 +1763,16 @@ msgstr ""
 msgid "All departments already assigned."
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/header_strip.html:24
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:64
+#: crm/users/templates/admin/auth/user/_partials/header_strip.html:34
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:78
 msgid "Staff"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/header_strip.html:33
+#: crm/users/templates/admin/auth/user/_partials/header_strip.html:43
 msgid "Joined"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/header_strip.html:36
+#: crm/users/templates/admin/auth/user/_partials/header_strip.html:46
 msgid "Last login"
 msgstr ""
 
@@ -1913,61 +1947,66 @@ msgstr ""
 msgid "Account status"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:56
-msgid "User can log in"
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:66
+#: crm/users/views.py:172
+msgid "You cannot deactivate your own account."
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:65
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:68
+msgid "Unchecking ends all their sessions and revokes trusted browsers."
+msgstr ""
+
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:79
 msgid "Access to the admin site"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:73
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:87
 msgid "Superuser"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:74
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:88
 msgid "All permissions without explicit grants"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:86
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:100
 msgid "Permissions Dashboard"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:93
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:107
 msgid "From role (locked)"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:97
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:111
 msgid "Individual (editable)"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:101
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:115
 msgid "Not implemented yet"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:107
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:121
 msgid ""
-"You can view permissions but not change them. The 'edit_roles' permission is"
-" required to assign roles and individual permissions."
+"You can view permissions but not change them. The 'edit_roles' permission is "
+"required to assign roles and individual permissions."
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:111
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:125
 msgid "from role"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:112
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:126
 msgid "Permission is seeded but no code checks it yet."
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:162
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:176
 msgid "From role"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:165
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:179
 msgid "Not implemented"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:174
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:188
 msgid "No permissions available."
 msgstr ""
 
@@ -1980,27 +2019,34 @@ msgstr ""
 msgid "Security"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_security.html:27
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:19
+msgid ""
+"This account is deactivated: the user cannot log in. Use “Reactivate user” "
+"at the bottom of the page to restore access — role and departments are still "
+"in place, only 2FA has to be set up again."
+msgstr ""
+
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:40
 msgid "Two-factor authentication:"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_security.html:29
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:42
 msgid "configured"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_security.html:31
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:44
 msgid "not configured yet"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_security.html:33
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:46
 msgid "lost device? use “Reset 2FA” in the Users list."
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_security.html:39
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:52
 msgid "Skips the 2FA requirement for this user only."
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_security.html:57
+#: crm/users/templates/admin/auth/user/_partials/tab_security.html:70
 msgid "Leave empty to keep the current password."
 msgstr ""
 
@@ -2010,6 +2056,34 @@ msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:12
 msgid "Profile"
+msgstr ""
+
+#: crm/users/templates/admin/auth/user/delete_confirmation.html:19
+msgid "This permanently destroys the audit trail for this user."
+msgstr ""
+
+#: crm/users/templates/admin/auth/user/delete_confirmation.html:23
+msgid ""
+"Their Activity Log entries and in-app notifications are deleted along with "
+"the account and cannot be restored. If you only need to revoke access, "
+"cancel and use “Deactivate” instead — that keeps the history and can be "
+"undone."
+msgstr ""
+
+#: crm/users/templates/admin/auth/user/submit_line.html:34
+msgid ""
+"Deactivate this user? They will be signed out everywhere immediately and "
+"will not be able to log in. Role, departments and history are kept — you can "
+"reactivate them at any time."
+msgstr ""
+
+#: crm/users/templates/admin/auth/user/submit_line.html:36
+#: crm/users/templates/users/user_confirm_delete.html:17
+msgid "Deactivate user"
+msgstr ""
+
+#: crm/users/templates/admin/auth/user/submit_line.html:42
+msgid "Reactivate user"
 msgstr ""
 
 #: crm/users/templates/users/_partials/back_to_login.html:11
@@ -2048,8 +2122,8 @@ msgstr ""
 
 #: crm/users/templates/users/otp_setup.html:18
 msgid ""
-"Scan this code with Google Authenticator, Authy or 1Password, then enter the"
-" 6-digit code it shows."
+"Scan this code with Google Authenticator, Authy or 1Password, then enter the "
+"6-digit code it shows."
 msgstr ""
 
 #: crm/users/templates/users/otp_setup.html:27
@@ -2080,23 +2154,31 @@ msgid ""
 "phone? Use one of your backup codes instead."
 msgstr ""
 
-#: crm/users/templates/users/user_confirm_delete.html:7
-msgid "Delete user"
+#: crm/users/templates/users/user_confirm_delete.html:22
+#: crm/users/templates/users/user_detail.html:23
+#: crm/users/templates/users/user_profile_edit.html:26
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:121
+msgid "Back"
 msgstr ""
 
-#: crm/users/templates/users/user_confirm_delete.html:9
+#: crm/users/templates/users/user_confirm_delete.html:25
 #, python-format
-msgid "Are you sure you want to delete user <strong>%(username)s</strong>?"
+msgid "Deactivate user <strong>%(username)s</strong>?"
 msgstr ""
 
-#: crm/users/templates/users/user_confirm_delete.html:14
-#: crm/users/templates/users/user_list.html:36
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:45
-#: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:71
-msgid "Delete"
+#: crm/users/templates/users/user_confirm_delete.html:27
+msgid ""
+"They will be signed out immediately and will no longer be able to log in. "
+"Their role, departments and history are kept — you can reactivate them at "
+"any time."
 msgstr ""
 
-#: crm/users/templates/users/user_confirm_delete.html:17
+#: crm/users/templates/users/user_confirm_delete.html:33
+#: crm/users/templates/users/user_list.html:51
+msgid "Deactivate"
+msgstr ""
+
+#: crm/users/templates/users/user_confirm_delete.html:36
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:218
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:253
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:343
@@ -2118,15 +2200,9 @@ msgid "Username"
 msgstr ""
 
 #: crm/users/templates/users/user_detail.html:20
-#: crm/users/templates/users/user_list.html:35
+#: crm/users/templates/users/user_list.html:49
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:44
 msgid "Edit"
-msgstr ""
-
-#: crm/users/templates/users/user_detail.html:23
-#: crm/users/templates/users/user_profile_edit.html:26
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:121
-msgid "Back"
 msgstr ""
 
 #: crm/users/templates/users/user_form.html:8
@@ -2149,14 +2225,14 @@ msgstr ""
 msgid "Department"
 msgstr ""
 
-#: crm/users/templates/users/user_list.html:34
+#: crm/users/templates/users/user_list.html:48
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:33
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:71
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:109
 msgid "View"
 msgstr ""
 
-#: crm/users/templates/users/user_list.html:41
+#: crm/users/templates/users/user_list.html:57
 msgid "No users"
 msgstr ""
 
@@ -2172,44 +2248,16 @@ msgstr ""
 msgid "No file chosen"
 msgstr ""
 
-#: crm/users/views.py:49
+#: crm/users/views.py:111
 msgid "User created."
 msgstr ""
 
-#: crm/users/views.py:81
+#: crm/users/views.py:153
 msgid "User updated."
 msgstr ""
 
-#: crm/users/views.py:97
-msgid "User deleted."
-msgstr ""
-
-#: crm/users/views.py:130
-msgid "Profile updated."
-msgstr ""
-
-#: crm/users/views.py:209
-msgid "Invalid code. Please try again."
-msgstr ""
-
-#: crm/users/views.py:231
-msgid "Invalid code."
-msgstr ""
-
-#: crm/zetom/admin/base.py:27
-msgid "Reason"
-msgstr ""
-
-#: crm/zetom/admin/base.py:93 crm/zetom/admin/deletedrequest.py:124
-#: crm/zetom/admin/deletedvalidationrequest.py:106
-#: crm/zetom/admin/requestmain.py:798 crm/zetom/admin/requestmain.py:813
-#: crm/zetom/admin/requestmain_mail.py:69
-#: crm/zetom/admin/requestmain_resolve_review.py:101
-#: crm/zetom/admin/requestmain_review.py:72
-msgid "Request not found."
-msgstr ""
-
-#: crm/zetom/admin/base.py:95 crm/zetom/admin/deletedrequest.py:119
+#: crm/users/views.py:174 crm/zetom/admin/base.py:97
+#: crm/zetom/admin/deletedrequest.py:119
 #: crm/zetom/admin/deletedvalidationrequest.py:101
 #: crm/zetom/admin/requestmain.py:793 crm/zetom/admin/requestmain.py:988
 #: crm/zetom/admin/requestmain.py:1013 crm/zetom/admin/requestmain_mail.py:64
@@ -2218,38 +2266,67 @@ msgstr ""
 msgid "You don't have permission for this action."
 msgstr ""
 
-#: crm/zetom/admin/base.py:108
+#: crm/users/views.py:193
+msgid "User deactivated."
+msgstr ""
+
+#: crm/users/views.py:231
+msgid "Profile updated."
+msgstr ""
+
+#: crm/users/views.py:310
+msgid "Invalid code. Please try again."
+msgstr ""
+
+#: crm/users/views.py:332
+msgid "Invalid code."
+msgstr ""
+
+#: crm/zetom/admin/base.py:29
+msgid "Reason"
+msgstr ""
+
+#: crm/zetom/admin/base.py:95 crm/zetom/admin/deletedrequest.py:124
+#: crm/zetom/admin/deletedvalidationrequest.py:106
+#: crm/zetom/admin/requestmain.py:798 crm/zetom/admin/requestmain.py:813
+#: crm/zetom/admin/requestmain_mail.py:69
+#: crm/zetom/admin/requestmain_resolve_review.py:101
+#: crm/zetom/admin/requestmain_review.py:72
+msgid "Request not found."
+msgstr ""
+
+#: crm/zetom/admin/base.py:110
 msgid "Could not add note. Check note text/date format."
 msgstr ""
 
-#: crm/zetom/admin/base.py:118
+#: crm/zetom/admin/base.py:120
 msgid "Step note added."
 msgstr ""
 
-#: crm/zetom/admin/base.py:163 crm/zetom/models.py:165
+#: crm/zetom/admin/base.py:165 crm/zetom/models.py:165
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:182
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:18
 msgid "Offer"
 msgstr ""
 
-#: crm/zetom/admin/base.py:165 crm/zetom/models.py:186
+#: crm/zetom/admin/base.py:167 crm/zetom/models.py:186
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:196
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:56
 msgid "Order"
 msgstr ""
 
-#: crm/zetom/admin/base.py:167 crm/zetom/models.py:206
+#: crm/zetom/admin/base.py:169 crm/zetom/models.py:206
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:210
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:94
 msgid "Application"
 msgstr ""
 
-#: crm/zetom/admin/base.py:176
+#: crm/zetom/admin/base.py:178
 #, python-format
 msgid "Request no. %(pk)s thread"
 msgstr ""
 
-#: crm/zetom/admin/base.py:260
+#: crm/zetom/admin/base.py:262
 msgid "Assigned"
 msgstr ""
 
@@ -2982,8 +3059,7 @@ msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:316
 msgid ""
-"Notification will be sent in-app to the specialist who requested this "
-"review."
+"Notification will be sent in-app to the specialist who requested this review."
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:320
@@ -3063,6 +3139,11 @@ msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/assigned_users.html:105
 msgid "Add user"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:45
+#: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:71
+msgid "Delete"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:52
@@ -3260,7 +3341,7 @@ msgid "Field changes"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/history_card.html:54
-#: templates/admin/index.html:685
+#: templates/admin/index.html:686
 #, fuzzy
 #| msgid "Created at"
 msgid "Created"
@@ -3401,8 +3482,8 @@ msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:201
 msgid ""
-"Move all duplicates to trash / cancel them? This is a soft delete and can be"
-" undone."
+"Move all duplicates to trash / cancel them? This is a soft delete and can be "
+"undone."
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:202
@@ -3665,39 +3746,39 @@ msgstr ""
 msgid "Client workspace"
 msgstr "Klient #%(pk)s"
 
-#: templates/admin/index.html:656
+#: templates/admin/index.html:657
 msgid "Interactions"
 msgstr ""
 
-#: templates/admin/index.html:660
+#: templates/admin/index.html:661
 #, fuzzy
 #| msgid "Created at"
 msgid "Create request"
 msgstr "Created at"
 
-#: templates/admin/index.html:668
+#: templates/admin/index.html:669
 msgid "Recent activity"
 msgstr ""
 
-#: templates/admin/index.html:669
+#: templates/admin/index.html:670
 msgid "Latest changes"
 msgstr ""
 
-#: templates/admin/index.html:680
+#: templates/admin/index.html:681
 msgid "Unknown content"
 msgstr ""
 
-#: templates/admin/index.html:687
+#: templates/admin/index.html:688
 #, fuzzy
 #| msgid "Updated at"
 msgid "Updated"
 msgstr "Updated at"
 
-#: templates/admin/index.html:705
+#: templates/admin/index.html:706
 msgid "No recent actions yet."
 msgstr ""
 
-#: templates/admin/index.html:709
+#: templates/admin/index.html:710
 msgid "Open full activity log"
 msgstr ""
 
