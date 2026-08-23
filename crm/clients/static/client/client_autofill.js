@@ -1,6 +1,15 @@
+// claude — what remains here is the NIP-on-blur autofill: type a NIP into the
+// request form and the matching firm's contact details fill themselves in.
+//
+// The other half of this file used to listen for `change` on the #id_client
+// <select> and then re-fetch, by NIP parsed out of the option's own text, the
+// data that select already had. That select is now a hidden input plus a search
+// box (crm/clients/fields.py), which fires no `change` and has no option text —
+// and client_picker.js fills the same fields straight from the search result it
+// already holds, without the second round trip.
 document.addEventListener("DOMContentLoaded", function () {
-    const clientSelect = document.getElementById("id_client");
     const nipField = document.getElementById("id_company_nip");
+    if (!nipField) return;
 
     const mapping = {
         "id_phone": "phone",
@@ -20,58 +29,21 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     };
 
-    if (clientSelect) {
-        clientSelect.addEventListener("change", function () {
-            const selectedOption = this.options[this.selectedIndex];
-            const query = selectedOption.text || "";
-            if (!query) return;
+    nipField.addEventListener("blur", function () {
+        const nip = this.value.trim();
+        if (!nip) return;
 
-            const nipMatch = query.match(/\(([^)]+)\)\s*$/);
-            if (nipMatch) {
-                const nip = nipMatch[1].trim();
-                if (nip) {
-                    fetch(`/clients/autofill/?nip=${encodeURIComponent(nip)}`)
-                        .then((r) => {
-                            if (!r.ok) throw new Error("no_client");
-                            return r.json();
-                        })
-                        .then((data) => {
-                            if (!data.exists) return;
-                            fillFields(data);
-                        })
-                        .catch(() => {
-                            // fallback to search if autofill by nip failed
-                        });
-                    return;
-                }
-            }
-
-            fetch(`/clients/search/?q=${encodeURIComponent(query)}`)
-                .then((r) => r.json())
-                .then((data) => {
-                    if (!data.results.length) return;
-                    fillFields(data.results[0]);
-                });
-        });
-    }
-
-    if (nipField) {
-        nipField.addEventListener("blur", function () {
-            const nip = this.value.trim();
-            if (!nip) return;
-
-            fetch(`/clients/autofill/?nip=${encodeURIComponent(nip)}`)
-                .then((r) => {
-                    if (!r.ok) throw new Error("no_client");
-                    return r.json();
-                })
-                .then((data) => {
-                    if (!data.exists) return;
-                    fillFields(data);
-                })
-                .catch(() => {
-                    // no matching client, ignore
-                });
-        });
-    }
+        fetch(`/clients/autofill/?nip=${encodeURIComponent(nip)}`)
+            .then((r) => {
+                if (!r.ok) throw new Error("no_client");
+                return r.json();
+            })
+            .then((data) => {
+                if (!data.exists) return;
+                fillFields(data);
+            })
+            .catch(() => {
+                // no matching client, ignore
+            });
+    });
 });

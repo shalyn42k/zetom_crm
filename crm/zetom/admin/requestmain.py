@@ -93,6 +93,10 @@ class RequestMainAdmin(
         js = [
             "client/client_autofill.js",
             "client/client_search.js",
+            # claude — drives the #id_client picker (see crm/clients/fields.py);
+            # replaced the select-change branch that used to live in
+            # client_autofill.js.
+            "client/client_picker.js",
             "zetom/js/requestmain_dupe_check.js",
             "zetom/js/requestmain_client_link.js",
         ]
