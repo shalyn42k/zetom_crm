@@ -1,22 +1,42 @@
 {% extends "unfold/layouts/base.html" %}
 {% load i18n %}
 
+{% comment %}
+  claude — страница раньше подтверждала безвозвратное удаление юзера.
+  Теперь это деактивация: доступ отзывается, история и роль остаются,
+  операция обратима. Hard-delete живёт только в админке и только у
+  суперюзера.
+
+  `blocked` приходит из UserDeactivateView, когда операция запрещена
+  (свой аккаунт или чужой суперюзер) — кнопку в этом случае не рисуем.
+{% endcomment %}
+
 {% block content %}
 <div class="p-6 max-w-xl mx-auto">
 
-    <h1 class="text-2xl font-bold mb-6 text-red-400">{% trans "Delete user" %}</h1>
+    <h1 class="text-2xl font-bold mb-6 text-red-400">{% trans "Deactivate user" %}</h1>
 
-    <p class="mb-6">{% blocktrans with username=user.username %}Are you sure you want to delete user <strong>{{ username }}</strong>?{% endblocktrans %}</p>
-
-    <form method="post" class="flex gap-4">
-        {% csrf_token %}
-        <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded">
-            {% trans "Delete" %}
-        </button>
+    {% if blocked %}
+        <p class="mb-6">{{ blocked }}</p>
         <a href="{% url 'user_list' %}" class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded">
-            {% trans "Cancel" %}
+            {% trans "Back" %}
         </a>
-    </form>
+    {% else %}
+        <p class="mb-2">{% blocktrans with username=user.username %}Deactivate user <strong>{{ username }}</strong>?{% endblocktrans %}</p>
+        <p class="mb-6 text-sm text-gray-400">
+            {% trans "They will be signed out immediately and will no longer be able to log in. Their role, departments and history are kept — you can reactivate them at any time." %}
+        </p>
+
+        <form method="post" class="flex gap-4">
+            {% csrf_token %}
+            <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded">
+                {% trans "Deactivate" %}
+            </button>
+            <a href="{% url 'user_list' %}" class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white rounded">
+                {% trans "Cancel" %}
+            </a>
+        </form>
+    {% endif %}
 
 </div>
 {% endblock content %}
