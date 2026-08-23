@@ -19,8 +19,27 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import RedirectView
+
+from crm.clients.views import company_changelist_redirect
 
 urlpatterns = [
+    # claude — the stock Company changelist, replaced by the Klienci list.
+    # Same reasoning as the app index below; see the view for details. Must sit
+    # BEFORE admin.site.urls to win the match.
+    path("admin/clients/company/", company_changelist_redirect),
+    # claude — /admin/clients/ is Django's app index: a bare page listing the
+    # three registered models (Client, Company, Client interaction). Unfold
+    # links it from the breadcrumbs on every clients screen, so going "back"
+    # from a card landed users on a three-way choice instead of the list they
+    # meant. Sent to the unified Klienci list instead. Must sit BEFORE
+    # admin.site.urls to win the match; the app index has no other entry point.
+    path(
+        "admin/clients/",
+        RedirectView.as_view(
+            pattern_name="admin:clients_client_changelist", permanent=False,
+        ),
+    ),
     path("admin/", admin.site.urls),
     path("i18n/", include("django.conf.urls.i18n")),
     path("zetom/", include("crm.zetom.urls")),
