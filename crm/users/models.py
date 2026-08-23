@@ -68,6 +68,15 @@ class UserProfile(models.Model):
         verbose_name=_("2FA exempt"),
         help_text=_("If enabled, this user is not required to use two-factor authentication."),
     )
+    # claude — если пусто, User.avatar_url (см. crm.users.apps) отдаёт
+    # заглушку по умолчанию — используется везде, где Unfold уже рисует
+    # аватар (сайдбар и т.д.), своего шаблона под это заводить не пришлось.
+    avatar = models.ImageField(
+        upload_to="avatars/",
+        null=True,
+        blank=True,
+        verbose_name=_("Avatar"),
+    )
 
     def __str__(self):
         return f"{self.user.username} - {self.role}"

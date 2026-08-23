@@ -1,0 +1,47 @@
+{% load i18n static unfold %}
+{% comment %}
+  claude — переопределение unfold/helpers/userlinks.html: добавлена
+  аватарка пользователя в правом верхнем углу шапки (видна на каждой
+  странице админки, включая /admin/, где своего object-tools/nav_global_side
+  нет и правая часть шапки раньше была пустой). Ссылка ведёт на страницу
+  редактирования профиля (users:user_profile_edit), где аватар и
+  загружается — сам аватар уже работает через User.avatar_url (см.
+  crm.users.apps), переиспользуем unfold/helpers/avatar.html как и в
+  сайдбаре (navigation_user.html). Слева от аватарки — имя и подпись под
+  ним (жирным/мельче, как в navigation_user.html): job_title, если он
+  заполнен (это необязательное поле, его нет в самостоятельном
+  редактировании профиля — только в админ-панели), иначе роль
+  (profile.role) — она, в отличие от job_title, обязательна и всегда
+  задаётся при создании пользователя.
+{% endcomment %}
+
+<div class="flex flex-row gap-4 items-center ml-auto">
+    {% if environment %}
+        {% include "unfold/helpers/label.html" with text=environment.0 type=environment.1 %}
+    {% endif %}
+
+    {% action_list %}
+
+    {% if nav_global_side %}
+        {{ nav_global_side }}
+    {% endif %}
+
+    {% if request.user.is_authenticated %}
+        <a href="{% url 'user_profile_edit' %}" title="{% trans "Your profile" %}" class="flex flex-row items-center gap-3 shrink-0 rounded-default transition-opacity hover:opacity-80">
+            <span class="flex flex-col min-w-0 text-right leading-none">
+                <span class="font-semibold text-font-important-light dark:text-font-important-dark truncate">
+                    {{ request.user.get_full_name|default:request.user.get_username }}
+                </span>
+                {% with subtitle=request.user.profile.job_title|default:request.user.profile.role %}
+                    {% if subtitle %}
+                        <span class="mt-1 text-xs text-font-subtle-light dark:text-font-subtle-dark truncate">
+                            {{ subtitle }}
+                        </span>
+                    {% endif %}
+                {% endwith %}
+            </span>
+
+            {% include "unfold/helpers/avatar.html" with user=request.user circle=True %}
+        </a>
+    {% endif %}
+</div>

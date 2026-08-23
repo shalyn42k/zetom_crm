@@ -110,6 +110,8 @@ class CustomUserChangeForm(forms.ModelForm):
         widget=forms.TextInput(attrs={"class": INPUT_CLASS})
     )
 
+    avatar = forms.ImageField(label=_("Avatar"), required=False)
+
     # claude — 2FA обязателен всем (crm.users.middleware.Enforce2FAMiddleware);
     # это единственная ручка, которой админ может отключить требование
     # конкретному юзеру (профиль.otp_exempt).
@@ -208,6 +210,10 @@ class CustomUserChangeForm(forms.ModelForm):
 
         profile.otp_exempt = self.cleaned_data.get("otp_exempt", False)
 
+        avatar = self.cleaned_data.get("avatar")
+        if avatar:
+            profile.avatar = avatar
+
         profile.save()
         return user
 
@@ -215,14 +221,39 @@ class CustomUserChangeForm(forms.ModelForm):
 class UserProfileEditForm(forms.ModelForm):
     """Форма редактирования своего профиля (без роли)"""
 
+    # claude — без widget тут рендерился голый нативный <input type="file">
+    # (кнопка ОС + "файл не выбран"). class="hidden" + <label for=...> в
+    # шаблоне (user_profile_edit.html) прячет его и заменяет кружком-
+    # превью с оверлеем — сам input остаётся тем же полем формы, просто
+    # невидимым триггером клика.
+    avatar = forms.ImageField(
+        label=_("Avatar"),
+        required=False,
+        widget=forms.FileInput(attrs={
+            "class": "hidden",
+            "accept": "image/*",
+            "x-on:change": (
+                "fileName = $event.target.files[0]?.name || '';"
+                " preview = $event.target.files[0]"
+                " ? URL.createObjectURL($event.target.files[0]) : null"
+            ),
+        }),
+    )
+
     class Meta:
         model = User
         fields = ["first_name", "last_name", "email"]
 
+        # claude — explicit autocomplete hints: without them Chrome's
+        # autofill was mispredicting first_name's value from the filename
+        # picked in the neighbouring avatar <input type="file"> (confirmed
+        # via a native browser autofill write that bypasses JS entirely —
+        # not something our own code triggers). Naming the field's real
+        # purpose stops Chrome from guessing.
         widgets = {
-            "email": forms.EmailInput(attrs={"class": INPUT_CLASS}),
-            "first_name": forms.TextInput(attrs={"class": INPUT_CLASS}),
-            "last_name": forms.TextInput(attrs={"class": INPUT_CLASS}),
+            "email": forms.EmailInput(attrs={"class": INPUT_CLASS, "autocomplete": "email"}),
+            "first_name": forms.TextInput(attrs={"class": INPUT_CLASS, "autocomplete": "given-name"}),
+            "last_name": forms.TextInput(attrs={"class": INPUT_CLASS, "autocomplete": "family-name"}),
         }
 
     def clean_email(self):
@@ -233,3 +264,12 @@ class UserProfileEditForm(forms.ModelForm):
         if qs.exists():
             raise forms.ValidationError(_("This email is already in use."))
         return email
+
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        avatar = self.cleaned_data.get("avatar")
+        if avatar:
+            profile, _created = UserProfile.objects.get_or_create(user=user)
+            profile.avatar = avatar
+            profile.save(update_fields=["avatar"])
+        return user
