@@ -1,0 +1,13 @@
+{% load i18n %}
+{% comment %}
+  claude — "назад на логин": logout требует POST (LogoutView в Django 5),
+  простой <a href> тут не подходит, оформляем кнопкой формы под ссылку.
+{% endcomment %}
+<form method="post" action="{% url 'admin:logout' %}" class="mb-6">
+  {% csrf_token %}
+  <button type="submit"
+          class="flex font-medium gap-1 group items-center text-font-subtle-light text-sm hover:text-font-important-light dark:text-font-subtle-dark dark:hover:text-font-important-dark">
+    <span class="material-symbols-outlined left-0 relative text-sm transition-all group-hover:-left-1">arrow_back</span>
+    {% trans "Back to login" %}
+  </button>
+</form>

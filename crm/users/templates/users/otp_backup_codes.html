@@ -17,14 +17,23 @@
         </p>
     </div>
 
-    <ul class="bg-base-100 dark:bg-base-800 font-mono grid gap-1 mb-8 p-4 rounded-default select-all text-font-important-light dark:text-font-important-dark text-base">
+    <ul class="bg-base-100 dark:bg-base-800 font-mono grid gap-1 mb-6 p-4 rounded-default select-all text-font-important-light dark:text-font-important-dark text-base">
         {% for code in codes %}
             <li>{{ code }}</li>
         {% endfor %}
     </ul>
 
-    {% url 'admin:index' as admin_index_url %}
-    {% component "unfold/components/button.html" with href=admin_index_url variant="primary" class="w-full" %}
-        {% trans "I've saved them — continue" %}
-    {% endcomponent %}
+    <a href="{{ download_href }}" download="zetom-2fa-backup-codes.txt"
+       class="font-medium inline-flex gap-1 items-center justify-center mb-4 px-3 py-2 rounded-default text-sm w-full
+              border border-base-200 text-font-important-light hover:bg-base-100 dark:border-base-700 dark:text-font-important-dark dark:hover:bg-base-800">
+        <span class="material-symbols-outlined text-base">download</span>
+        {% trans "Download as a file" %}
+    </a>
+
+    <div class="border-t border-base-200 mb-6 pt-6 dark:border-base-800">
+        {% url 'admin:index' as admin_index_url %}
+        {% component "unfold/components/button.html" with href=admin_index_url variant="primary" class="w-full" %}
+            {% trans "I've saved them — continue" %}
+        {% endcomponent %}
+    </div>
 {% endblock content %}
