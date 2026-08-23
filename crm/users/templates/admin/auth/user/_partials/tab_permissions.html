@@ -48,12 +48,25 @@
       <div class="up-subgroup">
         <span class="up-card__subtitle">{% trans "Account status" %}</span>
         <div class="up-checks">
+          {% comment %}
+            claude — снятие галочки идёт через сервис деактивации
+            (crm/users/services/deactivation.py): отзывает живые сессии и
+            доверенные браузеры, пишет запись в Activity Log. Подпись это
+            проговаривает, иначе выглядит как безобидный флажок. На самом
+            себе поле disabled (см. CustomUserAdmin.get_form).
+          {% endcomment %}
           {% with f=adminform.form.is_active %}
             <label class="up-check">
               {{ f }}
               <span class="up-check__meta">
                 <span class="up-check__title">{% trans "Active" %}</span>
-                <span class="up-check__sub">{% trans "User can log in" %}</span>
+                <span class="up-check__sub">
+                  {% if f.field.disabled %}
+                    {% trans "You cannot deactivate your own account." %}
+                  {% else %}
+                    {% trans "Unchecking ends all their sessions and revokes trusted browsers." %}
+                  {% endif %}
+                </span>
               </span>
             </label>
           {% endwith %}

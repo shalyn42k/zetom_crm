@@ -1,0 +1,47 @@
+{% extends "admin/submit_line.html" %}
+{% load i18n %}
+
+{% comment %}
+  claude — кнопка отзыва доступа в нижней панели, рядом с «Delete user».
+  Django резолвит submit_line.html через InclusionAdminNode по цепочке
+  admin/<app>/<model>/ → admin/<app>/ → admin/, поэтому файл подхватывается
+  автоматически, только для auth.User.
+
+  Наследуемся от Unfold-версии и дописываем кнопку после {{ block.super }},
+  не копируя её разметку — иначе апгрейд Unfold молча унёс бы кнопки Save.
+  Контейнер у Unfold `flex-row-reverse`, так что последний элемент в DOM
+  оказывается крайним слева — ровно рядом с Delete.
+
+  Здесь мы УЖЕ вне основной формы change-view (она закрывается раньше,
+  кнопки Save привязаны к ней через form="user_form"), поэтому можно
+  поставить обычный <form> — payload формы юзера в эндпоинт не улетает.
+
+  `can_toggle_active` считается в CustomUserAdmin._can_toggle_active — тот
+  же гейт, что и у самого эндпоинта.
+{% endcomment %}
+
+{% block submit-row %}
+  {{ block.super }}
+
+  {% if can_toggle_active %}
+    <form method="post"
+          action="{% url 'admin:auth_user_toggle_active' original.pk %}?tab={{ request.GET.tab|default:'profile' }}"
+          class="w-full lg:w-auto">
+      {% csrf_token %}
+      {% if original.is_active %}
+        <button type="submit"
+                class="font-medium inline-flex group items-center gap-1 relative rounded-default justify-center whitespace-nowrap cursor-pointer px-3 py-2 border border-red-600 text-red-600 hover:bg-red-600/10 w-full lg:w-auto dark:border-red-500 dark:text-red-400"
+                onclick="return confirm('{% trans "Deactivate this user? They will be signed out everywhere immediately and will not be able to log in. Role, departments and history are kept — you can reactivate them at any time." %}');">
+          <span class="material-symbols-outlined -ml-0.5">person_off</span>
+          {% trans "Deactivate user" %}
+        </button>
+      {% else %}
+        <button type="submit"
+                class="font-medium inline-flex group items-center gap-1 relative rounded-default justify-center whitespace-nowrap cursor-pointer px-3 py-2 border border-base-200 bg-white shadow-xs text-important dark:border-base-700 dark:bg-transparent hover:bg-base-100/80 dark:hover:bg-base-800/80 w-full lg:w-auto">
+          <span class="material-symbols-outlined -ml-0.5">person_check</span>
+          {% trans "Reactivate user" %}
+        </button>
+      {% endif %}
+    </form>
+  {% endif %}
+{% endblock %}

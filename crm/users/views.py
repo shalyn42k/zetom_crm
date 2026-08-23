@@ -8,7 +8,9 @@ import qrcode.image.svg
 from django.contrib import messages
 from django.contrib.admin.sites import site as admin_site
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -20,29 +22,89 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from crm.users import otp_trust
 from crm.users.models import UserProfile
+from crm.users.services.deactivation import deactivate_user
+from crm.users.utils import PRIVILEGED_ROLE_CODES, user_has_perm
 
 from .forms import (
     CustomUserChangeForm, CustomUserCreateForm, UserProfileEditForm,
 )
 
 
-class UserListView(View):
+# claude — до этого КАЖДАЯ вьюшка users_ui ниже была голым `View` без
+# единой проверки доступа, хотя роутится публично из config/urls.py.
+# Анонимный POST на /users/<pk>/delete/ удалял любого юзера, а POST на
+# /users/<pk>/edit/ с is_superuser=1 выдавал полные права — шаблон
+# user_form.html рендерит форму циклом `{% for field in form %}`, то есть
+# отдаёт все поля CustomUserChangeForm, включая привилегированные.
+# CSRF барьером не был: токен приезжал на том же анонимном GET.
+class RBACRequiredMixin(LoginRequiredMixin):
+    """Логин + один permission-код из RBAC-каталога (crm/users/signals.py)."""
+
+    required_perm = None
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not user_has_perm(
+            request.user, self.required_perm
+        ):
+            # 403, а не редирект на логин: юзер аутентифицирован, ему просто
+            # не положено — так же ведёт себя админка.
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+
+# claude — те же ограничения, что CustomUserAdmin.get_form ставит в админке.
+# Без них users_ui оставался обходным путём вокруг всей RBAC-модели.
+# Django игнорирует POST для disabled-полей (берёт значение из initial),
+# поэтому это защита и от подделанной формы, а не только косметика.
+def _harden_user_form(form, request, target=None):
+    # is_active / is_staff из этой формы убраны совсем: staff'ом управляет
+    # система, а деактивация идёт своим маршрутом (UserDeactivateView),
+    # который отзывает сессии и пишет в Activity Log.
+    for name in ("is_active", "is_staff"):
+        form.fields.pop(name, None)
+
+    if "is_superuser" in form.fields and not request.user.is_superuser:
+        form.fields["is_superuser"].disabled = True
+
+    role_field = form.fields.get("role")
+    if role_field is not None:
+        if not user_has_perm(request.user, "edit_roles"):
+            role_field.disabled = True
+        elif not request.user.is_superuser:
+            role_field.queryset = role_field.queryset.exclude(
+                code__in=PRIVILEGED_ROLE_CODES
+            )
+            # Себе роль не меняем — как и в админке.
+            if target is not None and target.pk == request.user.pk:
+                role_field.disabled = True
+
+    return form
+
+
+class UserListView(RBACRequiredMixin, View):
     """Список всех пользователей"""
 
+    required_perm = "view_users"
+
     def get(self, request):
-        users = User.objects.all().select_related("userprofile")
+        # claude — было select_related("userprofile"), но related_name у
+        # UserProfile.user — "profile", так что страница падала с FieldError
+        # на каждом запросе (тесты обходили это моком менеджера).
+        users = User.objects.all().select_related("profile")
         return render(request, "users/user_list.html", {"users": users})
 
 
-class UserCreateView(View):
+class UserCreateView(RBACRequiredMixin, View):
     """Создание нового пользователя"""
 
+    required_perm = "edit_users"
+
     def get(self, request):
-        form = CustomUserCreateForm()
+        form = _harden_user_form(CustomUserCreateForm(), request)
         return render(request, "users/user_form.html", {"form": form, "mode": "create"})
 
     def post(self, request):
-        form = CustomUserCreateForm(request.POST)
+        form = _harden_user_form(CustomUserCreateForm(request.POST), request)
 
         if form.is_valid():
             form.save()
@@ -52,16 +114,22 @@ class UserCreateView(View):
         return render(request, "users/user_form.html", {"form": form, "mode": "create"})
 
 
-class UserEditView(View):
+class UserEditView(RBACRequiredMixin, View):
     """Редактирование пользователя"""
+
+    required_perm = "edit_users"
 
     def get(self, request, pk):
         user = get_object_or_404(User, pk=pk)
         profile = UserProfile.objects.get(user=user)
 
-        form = CustomUserChangeForm(
-            instance=user,
-            initial={"role": profile.role, "departments": profile.departments}
+        form = _harden_user_form(
+            CustomUserChangeForm(
+                instance=user,
+                initial={"role": profile.role, "departments": profile.departments},
+            ),
+            request,
+            target=user,
         )
 
         return render(request, "users/user_form.html", {"form": form, "mode": "edit"})
@@ -70,10 +138,14 @@ class UserEditView(View):
         user = get_object_or_404(User, pk=pk)
         profile = UserProfile.objects.get(user=user)
 
-        form = CustomUserChangeForm(
-            request.POST,
-            instance=user,
-            initial={"role": profile.role}
+        form = _harden_user_form(
+            CustomUserChangeForm(
+                request.POST,
+                instance=user,
+                initial={"role": profile.role},
+            ),
+            request,
+            target=user,
         )
 
         if form.is_valid():
@@ -84,22 +156,48 @@ class UserEditView(View):
         return render(request, "users/user_form.html", {"form": form, "mode": "edit"})
 
 
-class UserDeleteView(View):
-    """Удаление пользователя"""
+# claude — раньше это был UserDeleteView с голым user.delete(). Теперь
+# деактивация: единый путь с админкой (см. project-решение в
+# crm/users/services/deactivation.py). Hard-delete остался только в
+# админке и только суперюзеру — там есть страница подтверждения,
+# которая проговаривает, что вместе с юзером умирает его Activity Log.
+class UserDeactivateView(RBACRequiredMixin, View):
+    """Отзыв доступа у пользователя (soft-delete)"""
+
+    required_perm = "edit_users"
+
+    def _guard(self, request, user):
+        # Те же два правила, что в bulk-действиях админки.
+        if user.pk == request.user.pk:
+            return _("You cannot deactivate your own account.")
+        if user.is_superuser and not request.user.is_superuser:
+            return _("You don't have permission for this action.")
+        return None
 
     def get(self, request, pk):
         user = get_object_or_404(User, pk=pk)
-        return render(request, "users/user_confirm_delete.html", {"user": user})
+        return render(request, "users/user_confirm_delete.html", {
+            "user": user,
+            "blocked": self._guard(request, user),
+        })
 
     def post(self, request, pk):
         user = get_object_or_404(User, pk=pk)
-        user.delete()
-        messages.success(request, _("User deleted."))
+
+        blocked = self._guard(request, user)
+        if blocked:
+            messages.error(request, blocked)
+            return redirect("user_list")
+
+        deactivate_user(user, actor=request.user)
+        messages.success(request, _("User deactivated."))
         return redirect("user_list")
 
 
-class UserDetailView(View):
+class UserDetailView(RBACRequiredMixin, View):
     """Просмотр профиля пользователя"""
+
+    required_perm = "view_users"
 
     def get(self, request, pk):
         user = get_object_or_404(User, pk=pk)
@@ -107,7 +205,10 @@ class UserDetailView(View):
         return render(request, "users/user_detail.html", {"user": user, "profile": profile})
 
 
-class UserProfileEditView(View):
+# claude — своя страница профиля: отдельного permission не нужно, но
+# аноним сюда попадать не должен (request.user был бы AnonymousUser,
+# и форма привязалась бы к нему).
+class UserProfileEditView(LoginRequiredMixin, View):
     """Редактирование своего профиля"""
 
     # claude — обычный render() не даёт шаблону admin/unfold-контекст
