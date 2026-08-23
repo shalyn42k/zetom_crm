@@ -1,10 +1,12 @@
 import base64
 import secrets
 from io import BytesIO
+from urllib.parse import quote
 
 import qrcode
 import qrcode.image.svg
 from django.contrib import messages
+from django.contrib.admin.sites import site as admin_site
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, redirect, render
@@ -108,19 +110,27 @@ class UserDetailView(View):
 class UserProfileEditView(View):
     """Редактирование своего профиля"""
 
+    # claude — обычный render() не даёт шаблону admin/unfold-контекст
+    # (is_nav_sidebar_enabled, has_permission и т.д.), поэтому сайдбар и
+    # шапка молча не рендерились — страница выглядела голым HTML без стилей
+    # сайта. each_context(request) — то же самое, что и обычные страницы
+    # админки получают через AdminSite.
+    def _context(self, request, form):
+        return {**admin_site.each_context(request), "form": form}
+
     def get(self, request):
         form = UserProfileEditForm(instance=request.user)
-        return render(request, "users/user_profile_edit.html", {"form": form})
+        return render(request, "users/user_profile_edit.html", self._context(request, form))
 
     def post(self, request):
-        form = UserProfileEditForm(request.POST, instance=request.user)
+        form = UserProfileEditForm(request.POST, request.FILES, instance=request.user)
 
         if form.is_valid():
             form.save()
             messages.success(request, _("Profile updated."))
             return redirect("user_profile_edit")
 
-        return render(request, "users/user_profile_edit.html", {"form": form})
+        return render(request, "users/user_profile_edit.html", self._context(request, form))
 
 
 # claude — SvgImage рисует модули как <svg:rect> с неймспейс-префиксом:
@@ -200,6 +210,7 @@ def otp_gate(request):
 
         secret_b32 = base64.b32encode(device.bin_key).decode()
         return render(request, "users/otp_setup.html", {
+            **admin_site.each_context(request),
             "qr_svg": _qr_svg(device.config_url),
             "secret": " ".join(secret_b32[i:i+4] for i in range(0, len(secret_b32), 4)),
         })
@@ -218,7 +229,7 @@ def otp_gate(request):
             otp_trust.remember(request, response, user)
             return response
         messages.error(request, _("Invalid code."))
-    return render(request, "users/otp_verify.html")
+    return render(request, "users/otp_verify.html", admin_site.each_context(request))
 
 
 @login_required
@@ -230,5 +241,14 @@ def otp_backup_codes(request):
         # verified, Enforce2FAMiddleware всё равно завернёт его обратно
         # следующим запросом; отправляем на otp_gate явно, а не намёком.
         return redirect("otp_gate")
-    return render(request, "users/otp_backup_codes.html", {"codes": codes})
+    # claude — data: URI со скачиваемым файлом, без отдельной вьюхи: коды и
+    # так одноразово в этом контексте, отдельный GET-эндпоинт под них не
+    # завести (session-ключ уже вычитан строкой выше).
+    codes_text = "Zetom CRM — 2FA backup codes\n\n" + "\n".join(codes) + "\n"
+    download_href = "data:text/plain;charset=utf-8," + quote(codes_text)
+    return render(request, "users/otp_backup_codes.html", {
+        **admin_site.each_context(request),
+        "codes": codes,
+        "download_href": download_href,
+    })
 
