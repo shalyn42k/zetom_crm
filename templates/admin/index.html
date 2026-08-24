@@ -654,7 +654,6 @@
                         <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__text-link">{% translate "Clients" %}</a>
                         {# claude — the stock Company changelist was replaced by the Klienci list; link its firms filter instead #}
                         <a href="{% url 'admin:clients_client_changelist' %}?rodzaj=firmy" class="crm-dashboard__text-link">{% translate "Companies" %}</a>
-                        <a href="{% url 'admin:clients_clientinteraction_changelist' %}" class="crm-dashboard__text-link">{% translate "Interactions" %}</a>
                     </div>
                     <div class="crm-dashboard__client-actions">
                         {% if can_view_requests %}

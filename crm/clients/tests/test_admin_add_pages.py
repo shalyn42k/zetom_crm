@@ -31,8 +31,6 @@ class AddPageTest(TestCase):
                 "first_name": "Jan", "last_name": "Nowak",
                 "email": "jan@zetom.pl", "phone": "+48501600300",
                 "address": "", "notes": "",
-                "interactions-TOTAL_FORMS": "0", "interactions-INITIAL_FORMS": "0",
-                "interactions-MIN_NUM_FORMS": "0", "interactions-MAX_NUM_FORMS": "1000",
             },
             HTTP_HOST="127.0.0.1",
         )

@@ -172,12 +172,11 @@ class CardRenderTest(TestCase):
         self.assertEqual(len(resp.context["zgloszenia"]), 1)
         self.assertEqual(len(resp.context["historia"]), 1)
 
-    # claude — ClientInteraction and CompanyPersonLink both autocomplete across
-    # the module boundary; each needs the target admin's search_fields intact.
+    # claude — CompanyPersonLink autocompletes across the module boundary
+    # (person lives on clients, but the field is reached from zetom); needs
+    # the target admin's search_fields intact.
     def test_cross_model_autocompletes(self):
         cases = [
-            ("clientinteraction", "client"),
-            ("clientinteraction", "request"),
             ("companypersonlink", "person"),
         ]
         for model_name, field_name in cases:

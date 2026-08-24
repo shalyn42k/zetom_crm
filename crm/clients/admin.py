@@ -12,9 +12,7 @@ from crm.users.utils import user_has_perm
 from crm.zetom.models import DepartmentsVariants, RequestMain
 
 from . import views
-from .models import (
-    Client, ClientInteraction, Company, CompanyPersonLink, SupplierType,
-)
+from .models import Client, Company, CompanyPersonLink, SupplierType
 from .services import build_request_rows, get_client_request_summary
 from .services_contacts import (
     contact_rows_for_company, contact_rows_for_person,
@@ -137,16 +135,6 @@ def _person_zgloszenia_rows(client) -> list[dict]:
     return rows
 
 
-# БАГ-9 + БАГ-10: inline история контактов прямо в карточке клиента
-class ClientInteractionInline(admin.TabularInline):
-    model = ClientInteraction
-    extra = 0
-    fields = ("contacted_at", "channel", "contact_person", "contacted_by", "summary", "request")
-    autocomplete_fields = ("request",)
-    readonly_fields = ("created_at",)
-    ordering = ("-contacted_at",)
-
-
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
     # claude — list_display/search_fields feed Django's default changelist
@@ -158,7 +146,6 @@ class ClientAdmin(admin.ModelAdmin):
         "col_requests", "col_ofertas", "col_zlecenia", "col_wnioski",
     )
     search_fields = ("first_name", "last_name", "email", "phone")
-    inlines = [ClientInteractionInline]
     # claude — Phase 3b Task 2: page size for the unified Klienci list
     # (changelist_view paginates a plain list, not list_display's QuerySet).
     list_per_page = 25
@@ -733,21 +720,3 @@ class CompanyAdmin(admin.ModelAdmin):
             **(extra_context or {}),
         }
         return render(request, self.company_card_template, context)
-
-
-# БАГ-9 + БАГ-10: отдельный раздел для просмотра всех контактов
-@admin.register(ClientInteraction)
-class ClientInteractionAdmin(admin.ModelAdmin):
-    list_display = ("contacted_at", "client", "channel", "contact_person", "contacted_by", "request")
-    list_filter = ("channel",)
-    # claude — client__company_name died with migration 0009 (company data moved
-    # to Company), so any search here raised FieldError. Company name is now
-    # reached through the CompanyPersonLink M2M; Django adds the needed
-    # distinct() itself when a search path spans a to-many relation.
-    search_fields = (
-        "client__first_name", "client__last_name",
-        "client__company_links__company__name", "summary", "contact_person",
-    )
-    autocomplete_fields = ("client", "request")
-    readonly_fields = ("created_at",)
-    date_hierarchy = "contacted_at"
