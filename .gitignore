@@ -221,3 +221,6 @@ DOCS/lab2/
 
 # Claude Code settings
 .claude/
+
+# SDD scratch workspace (superpowers)
+.superpowers/
