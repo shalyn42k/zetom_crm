@@ -454,11 +454,11 @@ class StepNote(models.Model):
         # свободные переменные (в отличие от функций), только global/builtin.
         constraints = [
             models.CheckConstraint(
-                check=~Q(kind="contact") | Q(contacted_at__isnull=False),
+                condition=~Q(kind="contact") | Q(contacted_at__isnull=False),
                 name="stepnote_contact_requires_contacted_at",
             ),
             models.CheckConstraint(
-                check=~Q(kind="reminder") | Q(next_contact_at__isnull=False),
+                condition=~Q(kind="reminder") | Q(next_contact_at__isnull=False),
                 name="stepnote_reminder_requires_next_contact_at",
             ),
         ]
