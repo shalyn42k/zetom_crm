@@ -135,12 +135,19 @@ def contact_rows_for_company(company) -> list[dict]:
     return [_history_row(note, labels) for note in notes]
 
 
+# claude — Task 13: `person_pk` was added on top of task-7-brief's field
+# list. The "Zaplanowane" checkmark posts to clients_client_step_note_done,
+# which is addressed by the owning person's pk (task-9-brief.md), not the
+# card's own pk — trivial on the Person card (always `client`), but a
+# company's reminders can belong to several different persons, so each row
+# needs to carry its own to build a correct (and not another person's) URL.
 def _reminder_row(note: StepNote, labels: dict[int, str], now) -> dict:
     row = _history_row(note, labels)
     row.update({
         "due_at": note.next_contact_at,
         "is_overdue": bool(note.next_contact_at and note.next_contact_at < now),
         "note_pk": note.pk,
+        "person_pk": note.person_id,
     })
     return row
 

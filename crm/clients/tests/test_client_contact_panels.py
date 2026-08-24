@@ -143,6 +143,31 @@ class CompanyHistoryTest(TestCase):
 
         self.assertEqual([row["summary"] for row in rows], ["Oddzwonić"])
 
+    # claude — Task 13: the company card's "Zaplanowane" checkmark posts to
+    # clients_client_step_note_done, which is addressed by the owning
+    # PERSON's pk (see task-9-brief.md), not the company's. A company can
+    # have reminders from several different persons on the same panel, so
+    # each row must carry its own person pk to build the right URL — reusing
+    # one person's pk for every row would let the checkmark 403 (wrong
+    # person) or, worse, close the wrong person's reminder.
+    def test_company_reminder_rows_carry_each_reminders_owning_person_pk(self):
+        second_person = Client.objects.create(first_name="Piotr", last_name="Nowak")
+        CompanyPersonLink.objects.create(company=self.company, person=second_person)
+        create_step_note(
+            author=None, kind=StepNote.Kind.REMINDER, text="Oddzwonić do Jana",
+            person=self.person, next_contact_at=timezone.now() + timedelta(days=1),
+        )
+        create_step_note(
+            author=None, kind=StepNote.Kind.REMINDER, text="Oddzwonić do Piotra",
+            person=second_person, next_contact_at=timezone.now() + timedelta(days=1),
+        )
+
+        rows = reminder_rows_for_company(self.company)
+
+        by_summary = {row["summary"]: row["person_pk"] for row in rows}
+        self.assertEqual(by_summary["Oddzwonić do Jana"], self.person.pk)
+        self.assertEqual(by_summary["Oddzwonić do Piotra"], second_person.pk)
+
 
 class ReminderPanelTest(TestCase):
     def setUp(self):
@@ -164,6 +189,7 @@ class ReminderPanelTest(TestCase):
 
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["note_pk"], open_note.pk)
+        self.assertEqual(rows[0]["person_pk"], self.person.pk)
 
     def test_overdue_reminder_is_flagged(self):
         create_step_note(
