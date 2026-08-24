@@ -87,8 +87,12 @@ class RequestMainAdmin(
     warn_unsaved_form = True
 
     class Media:
+        # claude — Task 12: RequestMainAdmin declares its own Media (fully
+        # overriding BaseRequestAdmin.Media, not merging with it), so the
+        # switch to company_card.css has to happen here too — see base.py's
+        # Media for the same change with the full rationale.
         css = {
-            "all": ("zetom/css/step_notes.css",),
+            "all": ("clients/css/company_card.css",),
         }
         js = [
             "client/client_autofill.js",

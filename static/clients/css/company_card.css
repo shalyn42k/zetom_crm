@@ -160,6 +160,12 @@ html.dark .cc-stage {
 .cc-stage .hev .hmeta .hdate { font-weight: 700; color: var(--text-2); }
 .cc-stage .hev .hmeta .hwho { color: var(--text-2); }
 .cc-stage .hev .htext { font-size: 15.5px; color: var(--text); margin-top: 5px; line-height: 1.5; }
+/* claude — Task 12: overdue reminder (zetom's work-log modal timeline).
+   --red is already theme-aware (:root vs html.dark at the top of this
+   file, per project memory project_unfold_dark_theme — Unfold puts
+   `class="dark"` on <html>, never `data-theme`), so no separate html.dark
+   override is needed here. */
+.cc-stage .hev.overdue .dot { background: var(--red); }
 .cc-stage .readonly-note { padding: 14px 22px; border-top: 1px solid var(--border); background: var(--bg-2); font-size: 14px; color: var(--text-3); display: flex; align-items: center; gap: 9px; }
 
 /* claude — mPerson add/edit modal (Task 2), reproduces

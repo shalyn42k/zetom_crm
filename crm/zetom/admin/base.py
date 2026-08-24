@@ -11,11 +11,12 @@ from django.db.models import Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect
 from django.urls import path, reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
-from crm.clients.models import Client
+from crm.clients.models import Client, CompanyPersonLink
 from crm.users.utils import user_has_perm
 from crm.zetom.models import (
     DepartmentsVariants, Oferta, RequestMain, StepNote, Wniosek, Zlecenie,
@@ -101,8 +102,11 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
         return qs.prefetch_related("assigned_to")
 
     class Media:
+        # claude — Task 12: the shared work-log modal moved onto the clients
+        # app's cc-* design system (static/clients/css/company_card.css);
+        # the old sn-* stylesheet is gone.
         css = {
-            "all": ("zetom/css/step_notes.css",),
+            "all": ("clients/css/company_card.css",),
         }
 
     def get_urls(self):
@@ -244,8 +248,20 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             .select_related("author")
             .order_by("-created_at")[:100]
         )
+        # claude — Task 12: annotate open reminders that are past due so the
+        # template can flag them (.hev.overdue -> red dot). Mirrors the
+        # is_overdue rule clients/services_contacts.py already uses for the
+        # Person/Company card's "Zaplanowane" panel: next_contact_at in the
+        # past and not yet closed (done_at is null).
+        now = timezone.now()
         for note in notes:
             note.stage_label = labels.get((note.target_content_type_id, note.target_object_id), "")
+            note.is_overdue = bool(
+                note.kind == StepNote.Kind.REMINDER
+                and note.done_at is None
+                and note.next_contact_at
+                and note.next_contact_at < now
+            )
         return notes
 
     def _build_step_notes_context(self, obj):
@@ -256,6 +272,7 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
                 "step_notes": [],
                 "step_notes_create_url": "",
                 "step_notes_target_label": "",
+                "step_notes_persons": [],
             }
 
         targets = self._step_note_targets(obj)
@@ -267,7 +284,39 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
                 args=[obj.pk],
             ),
             "step_notes_target_label": self._step_note_scope_title(obj, targets),
+            "step_notes_persons": self._step_note_persons(obj),
         }
+
+    # claude — Task 12: people the "who did you talk to" picker can offer —
+    # persons already linked to the request thread (RequestMain.clients)
+    # plus persons of its company (RequestMain.company -> CompanyPersonLink),
+    # deduplicated. `obj` can be RequestMain itself or a child document, so
+    # this resolves to the thread's RequestMain the same way
+    # `_step_note_targets` does.
+    def _step_note_persons(self, obj):
+        request_main = obj if isinstance(obj, RequestMain) else None
+        if request_main is None and hasattr(obj, "from_main_id") and obj.from_main_id:
+            request_main = obj.from_main
+        if request_main is None:
+            return []
+
+        persons = list(request_main.clients.all())
+        if request_main.company_id:
+            persons.extend(
+                link.person
+                for link in CompanyPersonLink.objects
+                .filter(company_id=request_main.company_id)
+                .select_related("person")
+            )
+
+        seen = set()
+        deduped = []
+        for person in persons:
+            if person.pk in seen:
+                continue
+            seen.add(person.pk)
+            deduped.append(person)
+        return deduped
 
     def render_change_form(self, request, context, *args, **kwargs):
         obj = context.get("original")
