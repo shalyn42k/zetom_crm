@@ -173,6 +173,18 @@ class Zlecenie(RequestTemplate):
     from_main = models.ForeignKey(
         RequestMain, on_delete=models.CASCADE, null=True, blank=True, verbose_name=_("From main")
     )
+    # claude — мягкая цепочка Oferta -> Zlecenie -> Wniosek (business order:
+    # offer -> order -> application). Nullable: zlecenie может быть создан и
+    # без оферты, как и раньше — from_main остаётся обязательной связью,
+    # from_oferta лишь фиксирует, из какого документа выросло это zlecenie.
+    from_oferta = models.ForeignKey(
+        Oferta,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="zlecenia",
+        verbose_name=_("From offer"),
+    )
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     deadline = models.DateField(null=True, blank=True)
@@ -193,6 +205,15 @@ class Wniosek(RequestTemplate):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
     from_main = models.ForeignKey(
         RequestMain, on_delete=models.CASCADE, null=True, blank=True, verbose_name=_("From main")
+    )
+    # claude — тот же паттерн soft-chain, что и Zlecenie.from_oferta.
+    from_zlecenie = models.ForeignKey(
+        Zlecenie,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="wnioski",
+        verbose_name=_("From order"),
     )
     notes = models.TextField(null=True, blank=True)
     application_number = models.CharField(max_length=20, null=True, blank=True)
