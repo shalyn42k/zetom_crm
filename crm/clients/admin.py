@@ -302,13 +302,23 @@ class ClientAdmin(admin.ModelAdmin):
         }
 
     def _person_row(self, client):
+        # claude — люди, привязанные к фирме, больше не прячутся из списка,
+        # поэтому «Osoba prywatna» перестало быть правдой для всех строк:
+        # у контактного лица подписью идёт его фирма. company/company_url
+        # нужны шаблону, чтобы дать ссылку прямо на карточку фирмы.
+        company = client.primary_company()
         return {
             "kind": "person",
             "pk": client.pk,
             "nazwa": client.full_name() or _("Client #%(pk)s") % {"pk": client.pk},
             "nip": "",
             "typ_value": "",
-            "typ_label": _("Osoba prywatna"),
+            "typ_label": company.name if company else _("Osoba prywatna"),
+            "company": company.name if company else "",
+            "company_url": (
+                reverse("admin:clients_company_change", args=[company.pk])
+                if company else ""
+            ),
             "telefon": client.phone,
             "email": client.email,
             # claude — the Person card counts all four document types
@@ -356,7 +366,14 @@ class ClientAdmin(admin.ModelAdmin):
         if q:
             companies = companies.filter(Q(name__icontains=q) | Q(nip__icontains=q))
 
-        persons = Client.objects.filter(company_links__isnull=True).annotate(
+        # claude — раньше здесь стоял `.filter(company_links__isnull=True)`:
+        # человек, привязанный к фирме, полностью пропадал из Klienci и его
+        # можно было найти только зайдя внутрь карточки фирмы. Теперь в
+        # списке видны все люди; принадлежность к фирме не прячет строку, а
+        # показывается подписью под именем (см. _person_row).
+        # prefetch — модель прямо предупреждает (Client.primary_company), что
+        # без него на каждую строку уходит отдельный запрос.
+        persons = Client.objects.prefetch_related("company_links__company").annotate(
             _c_main=Count(
                 "requests",
                 filter=~Q(requests__status__in=excluded_statuses),
@@ -371,7 +388,13 @@ class ClientAdmin(admin.ModelAdmin):
             # never match a supplier type, so selecting one zeroes this side.
             persons = persons.none()
         if q:
-            persons = persons.filter(Q(first_name__icontains=q) | Q(last_name__icontains=q))
+            # claude — по названию фирмы тоже: контактное лицо теперь в списке,
+            # и искать его по работодателю — первое, что приходит в голову.
+            persons = persons.filter(
+                Q(first_name__icontains=q)
+                | Q(last_name__icontains=q)
+                | Q(company_links__company__name__icontains=q)
+            ).distinct()
 
         # claude — sort/paginate on identity tuples, not on built rows. Two
         # models can't share a QuerySet, so the merge has to happen in Python;

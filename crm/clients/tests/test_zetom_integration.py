@@ -128,8 +128,14 @@ class IntakeCompatibilityTest(TestCase):
             reverse("admin:clients_client_changelist"), HTTP_HOST="127.0.0.1",
         )
         rows = resp.context["rows"]
-        # the firm shows up; the person is its contact, not a standalone row
-        self.assertEqual([(r["kind"], r["nazwa"]) for r in rows], [("company", "Zetom")])
+        # claude — intake creates both a firm and its contact, and the list now
+        # shows both; the contact carries the firm it belongs to.
+        self.assertEqual(
+            [(r["kind"], r["nazwa"]) for r in rows],
+            [("person", "Jan Kowalski"), ("company", "Zetom")],
+        )
+        person_row = next(r for r in rows if r["kind"] == "person")
+        self.assertEqual(person_row["company"], "Zetom")
 
 
 class CardRenderTest(TestCase):

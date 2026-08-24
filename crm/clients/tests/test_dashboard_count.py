@@ -1,7 +1,8 @@
 # claude — the dashboard's "Clients" tile links to the Klienci list, so its
-# number has to be that list's total. It used to be Client.objects.count(),
-# which counts every person row including a firm's contacts: one firm with
-# fifty contacts showed "50" on a link that led to a single row.
+# number has to be that list's total. The invariant is the point of this file;
+# what the list shows has changed twice. It first excluded a firm's contacts,
+# so the tile had to as well. The list now shows every person, contacts
+# included, so the tile counts them again — the two must not drift apart.
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -28,9 +29,9 @@ class DashboardClientsCountTest(TestCase):
             dashboard_summary(self.user)["clients"], resp.context["counts"]["all"],
         )
 
-    def test_contacts_are_not_counted_as_clients(self):
-        # one firm + one private person; the five contacts belong to the firm
-        self.assertEqual(dashboard_summary(self.user)["clients"], 2)
+    def test_contacts_are_counted_as_clients(self):
+        # one firm + five contacts + one private person, all visible in the list
+        self.assertEqual(dashboard_summary(self.user)["clients"], 7)
         self.assertEqual(Client.objects.count(), 6)
 
     def test_hidden_without_permission(self):
