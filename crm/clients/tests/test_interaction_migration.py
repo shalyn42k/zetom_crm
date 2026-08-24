@@ -30,6 +30,15 @@ User = get_user_model()
 class MigrateClientInteractionsTest(TestCase):
     def setUp(self):
         self.person = Client.objects.create(first_name="Jan", last_name="Kowalski")
+        # claude — desync the Client/User pk sequences on purpose. Without this,
+        # a fresh test DB gives person.pk == user.pk in every test, so an
+        # id-based assertion (note.person_id == with_request.client_id) would
+        # pass even if the helper transposed person_id and author_id — the
+        # single most likely bug when mapping two same-typed integer FK
+        # columns. Creating and discarding extra Users pushes the User
+        # sequence ahead so the two pks genuinely differ.
+        for i in range(3):
+            User.objects.create_user(f"discard{i}", f"d{i}@s.pl", "pass12345").delete()
         self.user = User.objects.create_user("staff", "s@s.pl", "pass12345")
         self.main = RequestMain.objects.create()
         self.now = timezone.now()
@@ -73,10 +82,10 @@ class MigrateClientInteractionsTest(TestCase):
         content_type = ContentType.objects.get_for_model(RequestMain)
 
         note = StepNote.objects.get(contact_person="Anna Nowak")
-        self.assertEqual(note.person_id, with_request.client_id)
+        self.assertEqual(note.person, self.person)
         self.assertEqual(note.channel, with_request.channel)
         self.assertEqual(note.text, with_request.summary)
-        self.assertEqual(note.author_id, with_request.contacted_by_id)
+        self.assertEqual(note.author, self.user)
         self.assertEqual(note.contact_person, with_request.contact_person)
         self.assertEqual(note.contacted_at, with_request.contacted_at)
         self.assertEqual(note.kind, "contact")
@@ -85,10 +94,10 @@ class MigrateClientInteractionsTest(TestCase):
         self.assertEqual(note.target, self.main)
 
         note2 = StepNote.objects.get(contact_person="Piotr Zieliński")
-        self.assertEqual(note2.person_id, without_request.client_id)
+        self.assertEqual(note2.person, self.person)
         self.assertEqual(note2.channel, without_request.channel)
         self.assertEqual(note2.text, without_request.summary)
-        self.assertEqual(note2.author_id, without_request.contacted_by_id)
+        self.assertEqual(note2.author, self.user)
         self.assertEqual(note2.contact_person, without_request.contact_person)
         self.assertEqual(note2.contacted_at, without_request.contacted_at)
         self.assertEqual(note2.kind, "contact")
@@ -98,7 +107,7 @@ class MigrateClientInteractionsTest(TestCase):
 
         note3 = StepNote.objects.get(text=empty_contact_person.summary)
         self.assertEqual(note3.contact_person, "")
-        self.assertEqual(note3.person_id, empty_contact_person.client_id)
+        self.assertEqual(note3.person, self.person)
         self.assertEqual(note3.contacted_at, empty_contact_person.contacted_at)
 
     def test_migrates_interaction_without_author(self):

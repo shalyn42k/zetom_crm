@@ -99,8 +99,13 @@ def migrate_client_interactions(interaction_model, step_note_model, content_type
         interaction_model._meta.get_field("request").related_model
     )
 
+    # claude — order_by("contacted_at") overrides ClientInteraction.Meta.ordering
+    # (-contacted_at). Without it, rows are read newest-first, and since
+    # StepNote.created_at is auto_now_add (stamped in insertion order), the
+    # two orderings would disagree — created_at would run opposite to
+    # contacted_at instead of merely being a different, unrelated timestamp.
     notes = []
-    for interaction in interaction_model.objects.all():
+    for interaction in interaction_model.objects.all().order_by("contacted_at"):
         notes.append(
             step_note_model(
                 person_id=interaction.client_id,
@@ -114,7 +119,12 @@ def migrate_client_interactions(interaction_model, step_note_model, content_type
                 kind="contact",
             )
         )
-    step_note_model.objects.bulk_create(notes)
+    # claude — explicit batch_size: Postgres doesn't override Django's default
+    # bulk_batch_size, so without this the whole table becomes one INSERT.
+    # Under psycopg3 (Django 5.2 supports it), 14 columns against the
+    # 65535-parameter cap crashes above ~4,600 rows. Production row count is
+    # unknown from this environment, so this must be safe unconditionally.
+    step_note_model.objects.bulk_create(notes, batch_size=500)
     return len(notes)
 
 
