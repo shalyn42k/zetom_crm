@@ -16,6 +16,10 @@ from .models import (
     Client, ClientInteraction, Company, CompanyPersonLink, SupplierType,
 )
 from .services import build_request_rows, get_client_request_summary
+from .services_contacts import (
+    contact_rows_for_company, contact_rows_for_person,
+    reminder_rows_for_company, reminder_rows_for_person,
+)
 
 # claude — Phase 3a Task 3: RequestStatus → the four status-badge CSS classes
 # the design defines (company_card.css `.st.*`). RequestMain's real statuses
@@ -520,25 +524,13 @@ class ClientAdmin(admin.ModelAdmin):
             # claude — Historia kontaktów (read-only), same row shape as
             # CompanyAdmin._build_company_context's historia (README §3:
             # "Historia kontaktów (read-only, как выше)" — reuse as-is).
-            "historia": [
-                {
-                    "data": interaction.contacted_at,
-                    "kanal_label": interaction.get_channel_display(),
-                    "sotrudnik": (
-                        interaction.contacted_by.get_full_name()
-                        or interaction.contacted_by.username
-                    ) if interaction.contacted_by else "",
-                    "kontakt_osoba": interaction.contact_person or client.full_name(),
-                    "zaglowek": _zgloszenie_label(interaction.request) if interaction.request else "",
-                    "summary": interaction.summary,
-                }
-                for interaction in (
-                    ClientInteraction.objects
-                    .filter(client=client)
-                    .select_related("contacted_by", "request")
-                    .order_by("-contacted_at")
-                )
-            ],
+            # Task 7: now reads zetom.StepNote (contact notes + closed
+            # reminders) instead of clients.ClientInteraction — see
+            # services_contacts.py.
+            "historia": contact_rows_for_person(client),
+            # claude — Task 7: open reminders ("Zaplanowane"), sorted by
+            # next_contact_at ascending.
+            "zaplanowane": reminder_rows_for_person(client),
         }
 
     # claude — fully custom Detail (change_form). Renders the Person (Osoba)
@@ -716,28 +708,16 @@ class CompanyAdmin(admin.ModelAdmin):
                 .exclude(status__in=[RequestStatus.cancelled, RequestStatus.deleted])
                 .order_by("-created_at")
             ],
-            # claude — Historia kontaktów (Task 3), read-only. Interactions of
-            # every person linked to this company (CompanyPersonLink), newest
+            # claude — Historia kontaktów (Task 3), read-only. Notes of every
+            # person linked to this company (CompanyPersonLink), newest
             # first. No write endpoint — the template shows the readonly-note.
-            "historia": [
-                {
-                    "data": interaction.contacted_at,
-                    "kanal_label": interaction.get_channel_display(),
-                    "sotrudnik": (
-                        interaction.contacted_by.get_full_name()
-                        or interaction.contacted_by.username
-                    ) if interaction.contacted_by else "",
-                    "kontakt_osoba": interaction.contact_person or interaction.client.full_name(),
-                    "zaglowek": _zgloszenie_label(interaction.request) if interaction.request else "",
-                    "summary": interaction.summary,
-                }
-                for interaction in (
-                    ClientInteraction.objects
-                    .filter(client__company_links__company=company)
-                    .select_related("client", "contacted_by", "request")
-                    .order_by("-contacted_at")
-                )
-            ],
+            # Task 7: now reads zetom.StepNote (contact notes + closed
+            # reminders) instead of clients.ClientInteraction — see
+            # services_contacts.py.
+            "historia": contact_rows_for_company(company),
+            # claude — Task 7: open reminders ("Zaplanowane") of every person
+            # linked to this company, sorted by next_contact_at ascending.
+            "zaplanowane": reminder_rows_for_company(company),
         }
 
     # claude — fully custom Detail (change_form). Bypasses the default

@@ -4,11 +4,10 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from crm.clients.models import (
-    Client, ClientInteraction, Company, CompanyPersonLink,
-)
+from crm.clients.models import Client, Company, CompanyPersonLink
 from crm.status_manager.services.statuses import RequestStatus
-from crm.zetom.models import DepartmentsVariants, RequestMain
+from crm.zetom.models import DepartmentsVariants, RequestMain, StepNote
+from crm.zetom.services.step_notes import create_step_note
 
 
 class CompanyCardPanelsTest(TestCase):
@@ -31,14 +30,15 @@ class CompanyCardPanelsTest(TestCase):
             company=self.company, status=RequestStatus.active,
             departments=[DepartmentsVariants.DEPARTMENT_1],
         )
-        ClientInteraction.objects.create(
-            client=self.person,
-            channel=ClientInteraction.Channel.CALL,
-            summary="Rozmowa o ofercie kalibracji",
-            contacted_by=self.user,
+        create_step_note(
+            author=self.user,
+            kind=StepNote.Kind.CONTACT,
+            channel=StepNote.Channel.CALL,
+            text="Rozmowa o ofercie kalibracji",
+            person=self.person,
             contact_person="Jan Kowalski",
             contacted_at=timezone.now(),
-            request=request_main,
+            target=request_main,
         )
 
         url = reverse("admin:clients_company_change", args=[self.company.pk])
@@ -56,10 +56,12 @@ class CompanyCardPanelsTest(TestCase):
         other_company = Company.objects.create(name="Other Sp.")
         other_person = Client.objects.create(first_name="Anna")
         CompanyPersonLink.objects.create(company=other_company, person=other_person)
-        ClientInteraction.objects.create(
-            client=other_person,
-            channel=ClientInteraction.Channel.EMAIL,
-            summary="Nie powinno się tu pojawić",
+        create_step_note(
+            author=None,
+            kind=StepNote.Kind.CONTACT,
+            channel=StepNote.Channel.EMAIL,
+            text="Nie powinno się tu pojawić",
+            person=other_person,
             contacted_at=timezone.now(),
         )
 
