@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
@@ -135,13 +137,65 @@ class StepNoteModalTest(TestCase):
 
         self.assertNotIn(unrelated, context["step_notes_persons"])
 
+    # claude — Fix round (coordinator review): the original version of this
+    # test only checked the two toggle-branch descriptions, which would
+    # still pass with the .cc-stage wrapper missing (unstyled modal), wrong
+    # field `name`s (silent data loss on submit), or a broken :disabled
+    # binding (cross-branch field clobbering — see the template's own
+    # comment on why that binding exists). Broadened to actually hold the
+    # modal to its contract.
     @override_settings(STORAGES=_SIMPLE_STATIC)
     def test_modal_renders_kind_toggle(self):
+        now = timezone.now()
+        StepNote.objects.create(
+            author=self.user,
+            target=self.main,
+            kind=StepNote.Kind.REMINDER,
+            text="Overdue reminder",
+            next_contact_at=now - timedelta(days=1),
+        )
+        StepNote.objects.create(
+            author=self.user,
+            target=self.main,
+            kind=StepNote.Kind.REMINDER,
+            text="Upcoming reminder",
+            next_contact_at=now + timedelta(days=1),
+        )
+
         self.client.force_login(self.user)
         url = reverse("admin:zetom_requestmain_change", args=[self.main.pk])
 
         resp = self.client.get(url)
 
         self.assertEqual(resp.status_code, 200)
+
+        # claude — every cc-* rule in company_card.css is scoped under
+        # .cc-stage; without the wrapper the whole modal renders unstyled.
+        self.assertContains(resp, 'class="cc-stage"')
+
+        # claude — StepNoteCreateForm's eight fields must all reach the DOM
+        # under their exact names, or create_step_note() silently never
+        # sees the submitted value for that field.
+        for field_name in (
+            "kind", "action", "text", "channel",
+            "contacted_at", "next_contact_at", "person", "contact_person",
+        ):
+            self.assertContains(resp, f'name="{field_name}"')
+
+        # claude — both toggle branches, plus the :disabled binding that
+        # keeps the inactive branch's same-named inputs from clobbering
+        # the active branch's values on submit.
         self.assertContains(resp, "Log a conversation that already happened")
         self.assertContains(resp, "Plan a future contact")
+        self.assertContains(resp, ':disabled="kind !== \'contact\'"')
+        self.assertContains(resp, ':disabled="kind !== \'reminder\'"')
+
+        # claude — overdue modifier: present once (the past reminder),
+        # absent for the future one.
+        self.assertContains(resp, "hev overdue", count=1)
+
+        # claude — no inline "add person" control (explicit brief
+        # requirement): the only clients-app link in the modal must be the
+        # changelist (browse/manage), never the add view.
+        self.assertContains(resp, reverse("admin:clients_client_changelist"))
+        self.assertNotContains(resp, reverse("admin:clients_client_add"))

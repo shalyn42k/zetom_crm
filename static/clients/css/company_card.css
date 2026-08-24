@@ -5,8 +5,11 @@
    verbatim from README.md "Design Tokens": light under :root, dark under
    html.dark — Unfold puts `class="dark"` on <html>, never `data-theme`
    (see project memory: project_unfold_dark_theme).
-   Only loaded on this page (extrastyle block), so global :root/html.dark
-   custom properties here don't leak into other admin screens.
+   Loaded via extrastyle on the clients Person/Company cards, and (Task 12)
+   also via BaseRequestAdmin.Media / RequestMainAdmin.Media on the zetom
+   request/document change forms (shared work-log modal). Not loaded
+   globally — global :root/html.dark custom properties here don't leak
+   into admin screens that don't pull this file in.
 */
 :root {
   --bg: #ffffff; --bg-2: #fafaf9; --bg-3: #f3f4f6; --surface: #ffffff;

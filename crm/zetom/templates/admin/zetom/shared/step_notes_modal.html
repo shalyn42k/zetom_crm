@@ -18,9 +18,17 @@ groups' `next_contact_at` / `action` / `text` inputs share the same
 user actually filled in on submit.
 {% endcomment %}
 {% if step_notes_enabled %}
-<div x-data="{ open: false, kind: 'contact' }" class="sn-root" @open-step-notes.window="open = true">
+<div x-data="{ open: false, kind: 'contact' }" @open-step-notes.window="open = true">
   {% if not step_notes_hide_inline_trigger %}
-  <div class="sn-trigger-wrap">
+  {% comment %}
+  claude — reproduces the old .sn-trigger-wrap rule (display:flex;
+  justify-content:flex-end; margin:0 0 .75rem), which lived in the now-
+  deleted static/zetom/css/step_notes.css. Inline rather than a new
+  company_card.css class: company_card.css is scoped under .cc-stage and
+  this wrapper sits outside it (it isn't part of the cc-* modal markup),
+  so a class here would need its own unscoped rule anyway.
+  {% endcomment %}
+  <div style="display:flex;justify-content:flex-end;margin:0 0 .75rem">
     <button type="button" class="rm-btn rm-btn--primary rm-btn--sm" @click="open = true">
       {% trans "Step notes" %}
     </button>
