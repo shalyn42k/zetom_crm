@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from crm.clients.models import Client
 from crm.zetom.models import StepNote
+from crm.zetom.services.step_notes import backfill_contact_kind
 
 
 class StepNoteContactFieldsTest(TestCase):
@@ -51,3 +52,28 @@ class StepNoteContactFieldsTest(TestCase):
 
         self.assertIsNone(note.person_id)
         self.assertEqual(note.contact_person, "Anna z sekretariatu")
+
+
+class BackfillContactKindTest(TestCase):
+    def test_backfill_sets_kind_and_contacted_at(self):
+        blank_notes = [
+            StepNote.objects.create(text="Note without contacted_at")
+            for _ in range(3)
+        ]
+        already_set = timezone.now() - timezone.timedelta(days=5)
+        filled_note = StepNote.objects.create(
+            text="Already filled",
+            contacted_at=already_set,
+        )
+
+        updated = backfill_contact_kind(StepNote)
+
+        self.assertEqual(updated, 3)
+
+        for note in blank_notes:
+            note.refresh_from_db()
+            self.assertEqual(note.kind, StepNote.Kind.CONTACT)
+            self.assertEqual(note.contacted_at, note.created_at)
+
+        filled_note.refresh_from_db()
+        self.assertEqual(filled_note.contacted_at, already_set)
