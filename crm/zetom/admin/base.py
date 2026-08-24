@@ -6,6 +6,7 @@ this module is loaded first and shouldn't pull in Crispy / heavy stuff.
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect
@@ -14,10 +15,12 @@ from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 from unfold.decorators import display
 
+from crm.clients.models import Client
 from crm.users.utils import user_has_perm
 from crm.zetom.models import (
     DepartmentsVariants, Oferta, RequestMain, StepNote, Wniosek, Zlecenie,
 )
+from crm.zetom.services.step_notes import create_step_note
 from crm.zetom.services.visibility import visible_requests_for
 
 
@@ -31,13 +34,38 @@ class ReasonForm(forms.Form):
     )
 
 
+# claude — text перестал быть required=True на уровне формы: обязательность
+# теперь зависит от kind (contact/reminder) и проверяется в StepNote.clean()
+# через create_step_note()/full_clean(), не здесь.
 class StepNoteCreateForm(forms.Form):
+    kind = forms.ChoiceField(
+        choices=StepNote.Kind.choices,
+        initial=StepNote.Kind.CONTACT,
+        label=_("Kind"),
+    )
     action = forms.CharField(max_length=255, required=False)
-    text = forms.CharField(required=True)
+    text = forms.CharField(required=False, label=_("Note"))
+    channel = forms.ChoiceField(
+        choices=[("", "---------"), *StepNote.Channel.choices],
+        required=False,
+        label=_("Channel"),
+    )
+    contacted_at = forms.DateTimeField(
+        required=False,
+        input_formats=["%Y-%m-%dT%H:%M"],
+        label=_("Contacted at"),
+    )
     next_contact_at = forms.DateTimeField(
         required=False,
         input_formats=["%Y-%m-%dT%H:%M"],
+        label=_("Next client contact at"),
     )
+    person = forms.ModelChoiceField(
+        queryset=Client.objects.all(),
+        required=False,
+        label=_("Person"),
+    )
+    contact_person = forms.CharField(max_length=255, required=False, label=_("Contact person"))
 
 
 class DepartmentsDisplayMixin:
@@ -110,13 +138,30 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             messages.error(request, _("Could not add note. Check note text/date format."))
             return redirect(self._change_url_for_id(object_id))
 
-        StepNote.objects.create(
-            author=request.user,
-            action=form.cleaned_data["action"],
-            text=form.cleaned_data["text"],
-            next_contact_at=form.cleaned_data["next_contact_at"],
-            target=obj,
-        )
+        # claude — раньше здесь был StepNote.objects.create(...) без kind/
+        # contacted_at, что падало IntegrityError на констрейнтах Task 3.
+        # Теперь всё создание идёт через create_step_note(), который валидирует
+        # через full_clean() до записи в БД.
+        try:
+            create_step_note(
+                author=request.user,
+                kind=form.cleaned_data["kind"],
+                action=form.cleaned_data["action"],
+                text=form.cleaned_data["text"],
+                target=obj,
+                person=form.cleaned_data["person"],
+                contact_person=form.cleaned_data["contact_person"],
+                channel=form.cleaned_data["channel"],
+                contacted_at=form.cleaned_data["contacted_at"],
+                next_contact_at=form.cleaned_data["next_contact_at"],
+            )
+        except ValidationError as exc:
+            messages.error(
+                request,
+                _("Could not add note: %(error)s") % {"error": "; ".join(exc.messages)},
+            )
+            return redirect(self._change_url_for_id(object_id))
+
         messages.success(request, _("Step note added."))
         return redirect(self._change_url_for_id(object_id))
 
