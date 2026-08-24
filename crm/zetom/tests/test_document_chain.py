@@ -88,9 +88,10 @@ class CloseOfertaOnZlecenieTests(TestCase):
 
     Не через change_status/handle_child_change: их transitions-таблица не
     пускает new/in_progress -> done напрямую (см. status_service.py:24-29).
-    Пишет одну строку StatusHistory (аудит на уровне родительской RequestMain,
-    т.к. у StatusHistory.request нет FK на дочерние документы) и каскадит
-    родителя через update_parent.
+    Каскадит родителя через update_parent. НЕ пишет StatusHistory: та таблица
+    привязана к RequestMain (request — FK только на RequestMain, колонки
+    типизированы RequestStatus), а change_status — обычный путь для всех
+    остальных переходов дочерних документов — тоже не пишет туда ни строки.
     """
 
     def setUp(self):
@@ -107,14 +108,12 @@ class CloseOfertaOnZlecenieTests(TestCase):
         self.oferta.refresh_from_db()
         self.assertEqual(self.oferta.status, Status.done)
 
-    def test_writes_single_status_history_row(self):
+    def test_does_not_write_status_history(self):
+        # StatusHistory is RequestMain-scoped and typed with RequestStatus;
+        # attaching a row here would show up on the parent request's own
+        # history as "new -> done", which never happened to the request.
         close_oferta_on_zlecenie(self.oferta, self.user)
-        entries = StatusHistory.objects.filter(request=self.main)
-        self.assertEqual(entries.count(), 1)
-        entry = entries.first()
-        self.assertEqual(entry.old_status, Status.new)
-        self.assertEqual(entry.new_status, Status.done)
-        self.assertEqual(entry.changed_by, self.user)
+        self.assertEqual(StatusHistory.objects.filter(request=self.main).count(), 0)
 
     def test_cascades_to_parent_via_update_parent(self):
         # Оферта — единственный ребёнок; после done update_parent пересчитывает
