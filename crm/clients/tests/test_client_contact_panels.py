@@ -2,11 +2,19 @@
 """Task 7: contact-history and reminders row-builders that read StepNote
 instead of ClientInteraction.
 
-See .superpowers/sdd/2026-08-24-step-notes-unification/task-7-brief.md.
+Task 9 (below) adds the write side: log-a-contact / close-a-reminder
+endpoints on ClientAdmin, plus the step-notes-modal context keys both
+cards must expose.
+
+See .superpowers/sdd/2026-08-24-step-notes-unification/task-7-brief.md and
+task-9-brief.md.
 """
 from datetime import timedelta
 
+from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from crm.clients.models import Client, Company, CompanyPersonLink
@@ -14,7 +22,10 @@ from crm.clients.services_contacts import (
     contact_rows_for_company, contact_rows_for_person,
     reminder_rows_for_company, reminder_rows_for_person,
 )
-from crm.zetom.models import Oferta, RequestMain, StepNote, Wniosek, Zlecenie
+from crm.users.models import Permission
+from crm.zetom.models import (
+    Oferta, RequestClientLink, RequestMain, StepNote, Wniosek, Zlecenie,
+)
 from crm.zetom.services.step_notes import create_step_note
 
 BASE_REQ = {
@@ -204,3 +215,156 @@ class TargetLabelResolutionTest(TestCase):
         self.assertIn(str(zlecenie.pk), labels["Kontakt 2"])
         self.assertIn(str(wniosek.pk), labels["Kontakt 3"])
         self.assertEqual(labels["Kontakt 4"], "")
+
+
+# claude — Task 9: write side. Both endpoints are addressed by PERSON pk
+# (see task-9-brief.md — the Company card has no urls of its own, its
+# "Dodaj kontakt" flow picks a person first and posts to the same url).
+class ClientStepNoteEndpointsTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser("staff9", "s9@s.pl", "pass12345")
+        self.client.force_login(self.user)
+        self.person = Client.objects.create(first_name="Jan", last_name="Kowalski")
+        self.create_url = reverse(
+            "admin:clients_client_step_note_create", args=[self.person.pk],
+        )
+
+    def test_create_contact_from_person_card(self):
+        resp = self.client.post(
+            self.create_url,
+            {"text": "Rozmowa telefoniczna", "channel": StepNote.Channel.CALL},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(resp.status_code, 302)
+        note = StepNote.objects.get()
+        self.assertEqual(note.kind, StepNote.Kind.CONTACT)
+        self.assertEqual(note.person_id, self.person.pk)
+        self.assertEqual(note.text, "Rozmowa telefoniczna")
+        self.assertIsNotNone(note.contacted_at)
+
+    def test_create_contact_with_related_request_sets_target(self):
+        request_main = RequestMain.objects.create(**BASE_REQ)
+        RequestClientLink.objects.create(request=request_main, client=self.person)
+
+        resp = self.client.post(
+            self.create_url,
+            {"text": "Omówiono zamówienie", "target": request_main.pk},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(resp.status_code, 302)
+        note = StepNote.objects.get()
+        self.assertEqual(note.target_object_id, request_main.pk)
+        self.assertEqual(
+            note.target_content_type, ContentType.objects.get_for_model(RequestMain),
+        )
+
+    # claude — security: `target` arrives as a raw pk in POST data. A request
+    # that is NOT linked to this client must be rejected outright — otherwise
+    # a crafted pk attaches a note to an unrelated customer's request.
+    def test_create_contact_rejects_unrelated_request(self):
+        unrelated_request = RequestMain.objects.create(**BASE_REQ)
+        # deliberately not linked to self.person via RequestClientLink
+
+        resp = self.client.post(
+            self.create_url,
+            {"text": "Próba podpięcia cudzej sprawy", "target": unrelated_request.pk},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertIn(resp.status_code, (302, 403))
+        self.assertEqual(StepNote.objects.count(), 0)
+        self.assertFalse(
+            StepNote.objects.filter(
+                target_content_type=ContentType.objects.get_for_model(RequestMain),
+                target_object_id=unrelated_request.pk,
+            ).exists()
+        )
+
+    def test_view_only_user_cannot_create_note(self):
+        viewer = User.objects.create_user(
+            "viewer9", "v9@v.pl", "pass12345", is_staff=True,
+        )
+        profile = viewer.profile
+        profile.otp_exempt = True
+        # claude — drop the default role (carries edit_clients) so
+        # effective_permissions() reflects only the extra we add below.
+        profile.role = None
+        profile.save()
+        profile.extra_permissions.add(Permission.objects.get(code="view_clients"))
+        self.client.force_login(viewer)
+
+        resp = self.client.post(
+            self.create_url, {"text": "x"}, HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(resp.status_code, 403)
+        self.assertEqual(StepNote.objects.count(), 0)
+
+    def test_get_request_does_not_create_note(self):
+        resp = self.client.get(self.create_url, HTTP_HOST="127.0.0.1")
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(StepNote.objects.count(), 0)
+
+    def test_done_endpoint_closes_reminder(self):
+        note = create_step_note(
+            author=self.user, kind=StepNote.Kind.REMINDER, text="Oddzwonić",
+            person=self.person, next_contact_at=timezone.now() + timedelta(days=1),
+        )
+        done_url = reverse(
+            "admin:clients_client_step_note_done", args=[self.person.pk, note.pk],
+        )
+
+        resp = self.client.post(done_url, {}, HTTP_HOST="127.0.0.1")
+
+        self.assertEqual(resp.status_code, 302)
+        note.refresh_from_db()
+        self.assertIsNotNone(note.done_at)
+        self.assertEqual(reminder_rows_for_person(self.person), [])
+
+
+# claude — Task 9 ADDED REQUIREMENT: both cards must feed the shared
+# work-log modal template (crm/zetom/templates/admin/zetom/shared/
+# step_notes_modal.html) the same four context keys the zetom-side cards
+# already provide, so a later task's modal doesn't render empty/crash.
+class ClientCardModalContextTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser("staff9b", "s9b@s.pl", "pass12345")
+        self.client.force_login(self.user)
+
+    def test_client_card_context_provides_modal_keys(self):
+        person = Client.objects.create(first_name="Jan", last_name="Kowalski")
+        company = Company.objects.create(name="Zetom Sp. z o.o.", nip="1234563218")
+        CompanyPersonLink.objects.create(company=company, person=person)
+
+        person_resp = self.client.get(
+            reverse("admin:clients_client_change", args=[person.pk]),
+            HTTP_HOST="127.0.0.1",
+        )
+        self.assertEqual(person_resp.status_code, 200)
+        for key in (
+            "step_notes_enabled", "step_notes_create_url",
+            "step_notes_target_label", "step_notes_persons",
+        ):
+            self.assertIn(key, person_resp.context)
+        self.assertTrue(person_resp.context["step_notes_enabled"])
+        self.assertEqual(
+            person_resp.context["step_notes_create_url"],
+            reverse("admin:clients_client_step_note_create", args=[person.pk]),
+        )
+        self.assertEqual(list(person_resp.context["step_notes_persons"]), [person])
+
+        company_resp = self.client.get(
+            reverse("admin:clients_company_change", args=[company.pk]),
+            HTTP_HOST="127.0.0.1",
+        )
+        self.assertEqual(company_resp.status_code, 200)
+        for key in (
+            "step_notes_enabled", "step_notes_create_url",
+            "step_notes_target_label", "step_notes_persons",
+        ):
+            self.assertIn(key, company_resp.context)
+        self.assertTrue(company_resp.context["step_notes_enabled"])
+        self.assertIn(person, list(company_resp.context["step_notes_persons"]))
