@@ -324,6 +324,85 @@ class ClientStepNoteEndpointsTest(TestCase):
         self.assertIsNotNone(note.done_at)
         self.assertEqual(reminder_rows_for_person(self.person), [])
 
+    # claude — Fix-round: `done` exercises a different view function than
+    # `create` (step_note_done_action vs step_note_create_action) and had no
+    # coverage of its own. Same real-profile pattern as
+    # test_view_only_user_cannot_create_note — no mocking user_has_perm.
+    def test_view_only_user_cannot_close_reminder(self):
+        note = create_step_note(
+            author=self.user, kind=StepNote.Kind.REMINDER, text="Oddzwonić",
+            person=self.person, next_contact_at=timezone.now() + timedelta(days=1),
+        )
+        done_url = reverse(
+            "admin:clients_client_step_note_done", args=[self.person.pk, note.pk],
+        )
+        viewer = User.objects.create_user(
+            "viewer9b", "v9b@v.pl", "pass12345", is_staff=True,
+        )
+        profile = viewer.profile
+        profile.otp_exempt = True
+        profile.role = None
+        profile.save()
+        profile.extra_permissions.add(Permission.objects.get(code="view_clients"))
+        self.client.force_login(viewer)
+
+        resp = self.client.post(done_url, {}, HTTP_HOST="127.0.0.1")
+
+        self.assertEqual(resp.status_code, 403)
+        note.refresh_from_db()
+        self.assertIsNone(note.done_at)
+
+    def test_get_done_request_does_not_close_reminder(self):
+        note = create_step_note(
+            author=self.user, kind=StepNote.Kind.REMINDER, text="Oddzwonić",
+            person=self.person, next_contact_at=timezone.now() + timedelta(days=1),
+        )
+        done_url = reverse(
+            "admin:clients_client_step_note_done", args=[self.person.pk, note.pk],
+        )
+
+        resp = self.client.get(done_url, HTTP_HOST="127.0.0.1")
+
+        self.assertEqual(resp.status_code, 302)
+        note.refresh_from_db()
+        self.assertIsNone(note.done_at)
+
+    # claude — mark_reminder_done() rejects kind=contact with ValidationError;
+    # the view must turn that into messages.error + redirect, not a 500.
+    def test_done_endpoint_rejects_contact_note(self):
+        note = create_step_note(
+            author=self.user, kind=StepNote.Kind.CONTACT, text="Rozmowa",
+            person=self.person, contacted_at=timezone.now(),
+        )
+        done_url = reverse(
+            "admin:clients_client_step_note_done", args=[self.person.pk, note.pk],
+        )
+
+        resp = self.client.post(done_url, {}, HTTP_HOST="127.0.0.1")
+
+        self.assertEqual(resp.status_code, 302)
+        note.refresh_from_db()
+        self.assertIsNone(note.done_at)
+
+    # claude — same class of cross-customer write the `target` check guards
+    # against on create: a note that belongs to a different client than the
+    # person pk in the url must not be closeable through this url.
+    def test_done_endpoint_rejects_note_of_a_different_client(self):
+        other_person = Client.objects.create(first_name="Anna", last_name="Nowak")
+        note = create_step_note(
+            author=self.user, kind=StepNote.Kind.REMINDER, text="Cudze przypomnienie",
+            person=other_person, next_contact_at=timezone.now() + timedelta(days=1),
+        )
+        done_url = reverse(
+            "admin:clients_client_step_note_done", args=[self.person.pk, note.pk],
+        )
+
+        resp = self.client.post(done_url, {}, HTTP_HOST="127.0.0.1")
+
+        self.assertEqual(resp.status_code, 403)
+        note.refresh_from_db()
+        self.assertIsNone(note.done_at)
+
 
 # claude — Task 9 ADDED REQUIREMENT: both cards must feed the shared
 # work-log modal template (crm/zetom/templates/admin/zetom/shared/
