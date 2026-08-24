@@ -4,6 +4,8 @@ backfill service (Task 2) and kind invariants (Task 3).
 
 See .superpowers/sdd/2026-08-24-step-notes-unification/ for the briefs.
 """
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.test import TestCase
 from django.utils import timezone
 
@@ -56,8 +58,19 @@ class StepNoteContactFieldsTest(TestCase):
 
 class BackfillContactKindTest(TestCase):
     def test_backfill_sets_kind_and_contacted_at(self):
+        # claude — до констрейнта Task 3 такие строки (kind=contact,
+        # contacted_at=None) были обычным legacy-состоянием. После констрейнта
+        # завести их напрямую нельзя — единственный kind, которому Meta
+        # разрешает пустой contacted_at, это reminder. Используем его здесь
+        # только чтобы получить пустой contacted_at и проверить, что backfill
+        # находит такие строки и проставляет им kind=contact/contacted_at,
+        # как и было бы для настоящих legacy-записей.
         blank_notes = [
-            StepNote.objects.create(text="Note without contacted_at")
+            StepNote.objects.create(
+                text="Note without contacted_at",
+                kind=StepNote.Kind.REMINDER,
+                next_contact_at=timezone.now() + timezone.timedelta(days=1),
+            )
             for _ in range(3)
         ]
         already_set = timezone.now() - timezone.timedelta(days=5)
@@ -77,3 +90,27 @@ class BackfillContactKindTest(TestCase):
 
         filled_note.refresh_from_db()
         self.assertEqual(filled_note.contacted_at, already_set)
+
+
+class StepNoteKindConstraintsTest(TestCase):
+    def test_contact_without_contacted_at_is_rejected(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                StepNote.objects.create(
+                    kind=StepNote.Kind.CONTACT,
+                    contacted_at=None,
+                )
+
+    def test_reminder_without_next_contact_at_is_rejected(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                StepNote.objects.create(
+                    kind=StepNote.Kind.REMINDER,
+                    next_contact_at=None,
+                )
+
+    def test_clean_gives_friendly_error_before_db(self):
+        note = StepNote(kind=StepNote.Kind.CONTACT, contacted_at=None)
+        with self.assertRaises(ValidationError) as ctx:
+            note.full_clean()
+        self.assertIn("contacted_at", ctx.exception.message_dict)

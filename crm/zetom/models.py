@@ -5,7 +5,9 @@ from django.contrib.contenttypes.fields import (
 )
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 # Other imports
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
@@ -444,10 +446,39 @@ class StepNote(models.Model):
         indexes = [
             models.Index(fields=["target_content_type", "target_object_id", "-created_at"]),
         ]
+        # claude — инварианты kind: contact обязательно несёт contacted_at,
+        # reminder — next_contact_at. Ставится только после Task 2 (backfill),
+        # иначе боевые строки без kind/contacted_at не пройдут констрейнт.
+        # claude — литералы "contact"/"reminder" вместо Kind.CONTACT/Kind.REMINDER:
+        # тело вложенного класса Meta не видит имена из тела StepNote как
+        # свободные переменные (в отличие от функций), только global/builtin.
+        constraints = [
+            models.CheckConstraint(
+                check=~Q(kind="contact") | Q(contacted_at__isnull=False),
+                name="stepnote_contact_requires_contacted_at",
+            ),
+            models.CheckConstraint(
+                check=~Q(kind="reminder") | Q(next_contact_at__isnull=False),
+                name="stepnote_reminder_requires_next_contact_at",
+            ),
+        ]
 
     def __str__(self):
         who = self.author.username if self.author_id else "system"
         return f"{who}: {self.action or self.text[:40]}"
+
+    # claude — дублирует CheckConstraint-ы с переводимыми сообщениями,
+    # привязанными к конкретному полю, чтобы админка показывала ошибку
+    # у поля, а не общим баннером над формой.
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.kind == self.Kind.CONTACT and self.contacted_at is None:
+            errors["contacted_at"] = _("Contact notes require a contacted-at date.")
+        if self.kind == self.Kind.REMINDER and self.next_contact_at is None:
+            errors["next_contact_at"] = _("Reminders require a next-contact date.")
+        if errors:
+            raise ValidationError(errors)
 
 
 class DeletedRequest(RequestMain):  # proxy może otwierać te same dane w innych klasach

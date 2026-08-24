@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.utils import timezone
 
 from crm.zetom.admin.children import OfertaAdmin
 from crm.zetom.admin.requestmain import RequestMainAdmin
@@ -35,12 +36,14 @@ class StepNotesThreadTest(TestCase):
             target=self.main,
             action="Main action",
             text="Main note",
+            contacted_at=timezone.now(),
         )
         StepNote.objects.create(
             author=self.user,
             target=self.oferta,
             action="Offer action",
             text="Offer note",
+            contacted_at=timezone.now(),
         )
 
         context = self.main_admin._build_step_notes_context(self.main)
@@ -55,12 +58,14 @@ class StepNotesThreadTest(TestCase):
             target=self.main,
             action="Main action",
             text="Main thread note",
+            contacted_at=timezone.now(),
         )
         StepNote.objects.create(
             author=self.user,
             target=self.oferta,
             action="Offer action",
             text="Offer thread note",
+            contacted_at=timezone.now(),
         )
 
         context = self.oferta_admin._build_step_notes_context(self.oferta)

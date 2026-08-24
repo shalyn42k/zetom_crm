@@ -36,6 +36,7 @@ class FollowupRemindersCommandTests(TestCase):
         note = StepNote.objects.create(
             author=self.author,
             target=req,
+            kind=StepNote.Kind.REMINDER,
             text="Call client and confirm details",
             next_contact_at=timezone.now() - timedelta(hours=1),
         )
@@ -55,6 +56,7 @@ class FollowupRemindersCommandTests(TestCase):
         StepNote.objects.create(
             author=self.author,
             target=req,
+            kind=StepNote.Kind.REMINDER,
             text="Call client once",
             next_contact_at=timezone.now() - timedelta(minutes=10),
         )
@@ -70,6 +72,7 @@ class FollowupRemindersCommandTests(TestCase):
         note = StepNote.objects.create(
             author=self.author,
             target=req,
+            kind=StepNote.Kind.REMINDER,
             text="Future contact",
             next_contact_at=timezone.now() + timedelta(days=1),
         )
@@ -87,6 +90,7 @@ class FollowupRemindersCommandTests(TestCase):
         StepNote.objects.create(
             author=self.author,
             target=req,
+            kind=StepNote.Kind.REMINDER,
             text="Owner must contact",
             next_contact_at=timezone.now() - timedelta(minutes=1),
         )
@@ -101,6 +105,7 @@ class FollowupRemindersCommandTests(TestCase):
         note = StepNote.objects.create(
             author=None,
             target=req,
+            kind=StepNote.Kind.REMINDER,
             text="Nobody assigned yet",
             next_contact_at=timezone.now() - timedelta(minutes=1),
         )
