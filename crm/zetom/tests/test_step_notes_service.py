@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.messages import get_messages
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
@@ -131,16 +132,24 @@ class MarkReminderDoneTest(TestCase):
 class StepNoteCreateActionHttpTest(TestCase):
     """Regression test: the admin "add note" button used to raise
     IntegrityError (StepNote.objects.create with no kind/contacted_at).
-    This drives the real HTTP path through the admin action end to end."""
+    This drives the real HTTP path through the admin action end to end.
+
+    # claude — user_has_perm is patched at its point of use (base.py), so
+    # every test in this class fully controls has_change_permission's
+    # answer; the real implementation (superuser bypass and all) never
+    # runs. The superuser account exists only to satisfy
+    # visible_requests_for (crm/zetom/services/visibility.py), which is an
+    # unrelated specialist-visibility filter — it is not what gates access
+    # here. Do not rely on `side_effect=lambda ...: perm == "edit_requests"`
+    # to prove denial: has_change_permission only ever calls the mock with
+    # "edit_requests", so that lambda can never return False. The negative
+    # case below uses `return_value=False` instead, matching the pattern in
+    # test_admin.py:240 (test_mail_freeform_returns_403_without_...).
+    """
 
     @classmethod
     def setUpTestData(cls):
         User = get_user_model()
-        # claude — суперюзер, чтобы обойти visible_requests_for (см.
-        # crm/zetom/services/visibility.py): она гейтит specialist-ов по
-        # assigned_to/departments, что не относится к этому тесту. Гейт,
-        # который тест реально проверяет — has_change_permission через
-        # user_has_perm(..., "edit_requests"), патчится ниже.
         cls.user = User.objects.create_superuser(
             username="admin3", email="c@c.com", password="x"
         )
@@ -150,7 +159,7 @@ class StepNoteCreateActionHttpTest(TestCase):
         self.client.force_login(self.user)
 
     def test_step_note_create_action_creates_note_via_admin_post(self, perm_mock):
-        perm_mock.side_effect = lambda user, perm: perm == "edit_requests"
+        perm_mock.return_value = True
         url = reverse("admin:zetom_requestmain_step_note_create", args=[self.main.pk])
 
         response = self.client.post(url, {
@@ -170,3 +179,49 @@ class StepNoteCreateActionHttpTest(TestCase):
         self.assertIsNotNone(note.contacted_at)
         self.assertEqual(note.channel, StepNote.Channel.CALL)
         self.assertEqual(note.author_id, self.user.pk)
+
+    def test_step_note_create_action_returns_403_without_edit_requests_permission(
+        self, perm_mock
+    ):
+        perm_mock.return_value = False
+        url = reverse("admin:zetom_requestmain_step_note_create", args=[self.main.pk])
+
+        response = self.client.post(url, {
+            "kind": StepNote.Kind.CONTACT,
+            "channel": StepNote.Channel.CALL,
+            "action": "Zadzwoniono",
+            "text": "Rozmowa",
+            "contacted_at": "2026-08-24T12:00",
+        })
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(StepNote.objects.count(), 0)
+
+    def test_step_note_create_action_redirects_with_error_on_invalid_payload(
+        self, perm_mock
+    ):
+        # claude — kind=contact without contacted_at trips the model-level
+        # ValidationError (StepNote.clean(), Task 3 invariant). This is the
+        # exact failure mode Task 4 exists to prevent: full_clean() inside
+        # create_step_note() must catch it before the DB does, and the admin
+        # action must turn it into messages.error + redirect, not a 500.
+        perm_mock.return_value = True
+        url = reverse("admin:zetom_requestmain_step_note_create", args=[self.main.pk])
+
+        response = self.client.post(url, {
+            "kind": StepNote.Kind.CONTACT,
+            "action": "Zadzwoniono",
+            "text": "Rozmowa",
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response["Location"],
+            reverse("admin:zetom_requestmain_change", args=[self.main.pk]),
+        )
+        self.assertEqual(StepNote.objects.count(), 0)
+        error_messages = [str(m) for m in get_messages(response.wsgi_request)]
+        self.assertTrue(
+            any("Could not add note" in message for message in error_messages),
+            error_messages,
+        )
