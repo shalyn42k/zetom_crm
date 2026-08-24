@@ -76,6 +76,48 @@ def mark_reminder_done(note: StepNote, user) -> StepNote:
     return note
 
 
+# claude
+def migrate_client_interactions(interaction_model, step_note_model, content_type_model) -> int:
+    """Copy every `clients.ClientInteraction` row into `zetom.StepNote` as
+    kind="contact". Used by migration 0010 (clients app), which hands over
+    historical model versions via `apps.get_model`; the historical models
+    don't expose `StepNote.Kind`, so "contact" is used literally here — same
+    reasoning as `backfill_contact_kind` above.
+
+    `target` is a GenericForeignKey and can't be assigned on a historical
+    model, so `target_content_type`/`target_object_id` are set directly.
+    `content_type_model` is passed in for the same reason as the other two
+    models: the migration needs the historical `ContentType`.
+
+    `created_at` is `auto_now_add` on StepNote, so migrated rows get "now"
+    rather than the original `ClientInteraction.created_at` — accepted,
+    panels sort by `contacted_at`, which IS copied faithfully.
+
+    Returns the number of StepNote rows created.
+    """
+    request_content_type = content_type_model.objects.get_for_model(
+        interaction_model._meta.get_field("request").related_model
+    )
+
+    notes = []
+    for interaction in interaction_model.objects.all():
+        notes.append(
+            step_note_model(
+                person_id=interaction.client_id,
+                target_content_type=request_content_type if interaction.request_id else None,
+                target_object_id=interaction.request_id,
+                channel=interaction.channel,
+                text=interaction.summary,
+                author_id=interaction.contacted_by_id,
+                contact_person=interaction.contact_person,
+                contacted_at=interaction.contacted_at,
+                kind="contact",
+            )
+        )
+    step_note_model.objects.bulk_create(notes)
+    return len(notes)
+
+
 def backfill_contact_kind(step_note_model) -> int:
     """Set kind=contact and contacted_at=created_at on rows missing contacted_at.
 
