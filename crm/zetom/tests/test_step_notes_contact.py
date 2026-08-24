@@ -1,0 +1,53 @@
+# claude
+"""Tests for the StepNote contact/reminder fields (Task 1) and the
+backfill service (Task 2) and kind invariants (Task 3).
+
+See .superpowers/sdd/2026-08-24-step-notes-unification/ for the briefs.
+"""
+from django.test import TestCase
+from django.utils import timezone
+
+from crm.clients.models import Client
+from crm.zetom.models import StepNote
+
+
+class StepNoteContactFieldsTest(TestCase):
+    def test_can_create_reminder_without_text_or_target(self):
+        note = StepNote.objects.create(
+            kind=StepNote.Kind.REMINDER,
+            next_contact_at=timezone.now() + timezone.timedelta(days=1),
+        )
+        note.refresh_from_db()
+        self.assertEqual(note.kind, StepNote.Kind.REMINDER)
+        self.assertEqual(note.text, "")
+        self.assertIsNone(note.target_content_type_id)
+        self.assertIsNone(note.target_object_id)
+
+    def test_can_create_contact_with_channel_and_person(self):
+        client = Client.objects.create(first_name="Anna", last_name="Kowalska")
+        contacted_at = timezone.now()
+
+        note = StepNote.objects.create(
+            kind=StepNote.Kind.CONTACT,
+            channel=StepNote.Channel.CALL,
+            contacted_at=contacted_at,
+            person=client,
+        )
+        note.refresh_from_db()
+
+        self.assertEqual(note.kind, StepNote.Kind.CONTACT)
+        self.assertEqual(note.channel, StepNote.Channel.CALL)
+        self.assertEqual(note.contacted_at, contacted_at)
+        self.assertEqual(note.person_id, client.pk)
+
+    def test_contact_person_fallback_survives_without_person_fk(self):
+        note = StepNote.objects.create(
+            kind=StepNote.Kind.CONTACT,
+            contacted_at=timezone.now(),
+            person=None,
+            contact_person="Anna z sekretariatu",
+        )
+        note.refresh_from_db()
+
+        self.assertIsNone(note.person_id)
+        self.assertEqual(note.contact_person, "Anna z sekretariatu")

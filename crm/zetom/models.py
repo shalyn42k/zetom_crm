@@ -345,6 +345,24 @@ class WniosekClientLink(models.Model):
 
 
 class StepNote(models.Model):
+    # claude — StepNote объединяет два смысла: "мы связались с клиентом" (kind=contact)
+    # и "напомни связаться" (kind=reminder). Task 3 добавит констрейнты, что contact
+    # требует contacted_at, а reminder — next_contact_at.
+    class Kind(models.TextChoices):
+        CONTACT = "contact", _("Contact")
+        REMINDER = "reminder", _("Reminder")
+
+    # claude — значения и метки скопированы один-в-один из
+    # clients.ClientInteraction.Channel (crm/clients/models.py:58-63): Task 6
+    # маппит записи ClientInteraction в StepNote напрямую по значению, любое
+    # расхождение тихо испортит данные.
+    class Channel(models.TextChoices):
+        CALL = "call", _("Call")
+        EMAIL = "email", _("Email")
+        MEETING = "meeting", _("Meeting")
+        CHAT = "chat", _("Chat")
+        OTHER = "other", _("Other")
+
     author = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -355,7 +373,7 @@ class StepNote(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
     action = models.CharField(max_length=255, blank=True, verbose_name=_("What was done"))
-    text = models.TextField(verbose_name=_("Note"))
+    text = models.TextField(blank=True, verbose_name=_("Note"))
     next_contact_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -367,13 +385,56 @@ class StepNote(models.Model):
         verbose_name=_("Reminder sent at"),
     )
 
+    # claude
+    kind = models.CharField(
+        max_length=20,
+        choices=Kind.choices,
+        default=Kind.CONTACT,
+        verbose_name=_("Kind"),
+    )
+    channel = models.CharField(
+        max_length=20,
+        choices=Channel.choices,
+        blank=True,
+        verbose_name=_("Channel"),
+    )
+    contacted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Contacted at"),
+    )
+    person = models.ForeignKey(
+        "clients.Client",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="step_notes",
+        verbose_name=_("Person"),
+    )
+    contact_person = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_("Contact person"),
+    )
+    done_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Done at"),
+    )
+
     target_content_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
         related_name="step_notes",
         verbose_name=_("Target content type"),
+        null=True,
+        blank=True,
     )
-    target_object_id = models.PositiveIntegerField(verbose_name=_("Target object id"))
+    target_object_id = models.PositiveIntegerField(
+        verbose_name=_("Target object id"),
+        null=True,
+        blank=True,
+    )
     target = GenericForeignKey("target_content_type", "target_object_id")
 
     class Meta:
