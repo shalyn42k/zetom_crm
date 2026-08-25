@@ -44,8 +44,12 @@ class Client(models.Model):
     # company_links). Callers that render many rows should prefetch
     # company_links__company to avoid a query per person.
     def primary_company(self):
-        link = self.company_links.first()
-        return link.company if link else None
+        # Итерируем .all() вместо .first(): .first() навешивает LIMIT 1, а
+        # срез в обход prefetch_related всегда идёт в базу — prefetch на
+        # списке клиентов при этом не давал ничего.
+        for link in self.company_links.all():
+            return link.company
+        return None
 
 
 class ClientInteraction(models.Model):

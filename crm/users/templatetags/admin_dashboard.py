@@ -52,13 +52,10 @@ def dashboard_summary(user):
 
     if user_has_perm(user, "view_clients"):
         # claude — the tile links to the Klienci list, so it has to count what
-        # that list shows: firms plus private persons. Client.objects.count()
-        # counted every person row, contacts of a firm included, so a base with
-        # one firm and fifty contacts showed "50" on a link leading to one row.
-        summary["clients"] = (
-            Company.objects.count()
-            + Client.objects.filter(company_links__isnull=True).count()
-        )
+        # that list shows: every firm plus every person. The person side used to
+        # exclude a firm's contacts, matching the list, which excluded them too;
+        # the list now shows all people, so the tile follows it.
+        summary["clients"] = Company.objects.count() + Client.objects.count()
 
     if user_has_perm(user, "view_users"):
         summary["active_users"] = get_user_model().objects.filter(is_active=True).count()

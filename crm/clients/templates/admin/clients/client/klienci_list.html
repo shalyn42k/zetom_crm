@@ -112,9 +112,20 @@ no longer linked from here.
                   <span class="ava {{ row.kind }}">{{ row.nazwa|slice:":2"|upper }}</span>
                   <div class="who-nm">
                     <div class="nm"><a href="{{ row.url }}">{{ row.nazwa }}</a></div>
+                    {% comment %}
+                      claude — люди, привязанные к фирме, больше не выпадают из
+                      списка, поэтому подпись под именем перестала быть
+                      константой: у контактного лица здесь его фирма со ссылкой
+                      на карточку. stopPropagation — иначе клик по ссылке
+                      сначала утащил бы на карточку человека через onclick
+                      строки.
+                    {% endcomment %}
                     <div class="sub">
                       {% if row.kind == "company" %}
                         {% blocktrans with typ=row.typ_label %}Firma · {{ typ }}{% endblocktrans %}
+                      {% elif row.company %}
+                        {% trans "Osoba kontaktowa" %} ·
+                        <a href="{{ row.company_url }}" onclick="event.stopPropagation()">{{ row.company }}</a>
                       {% else %}
                         {% trans "Osoba prywatna" %}
                       {% endif %}
