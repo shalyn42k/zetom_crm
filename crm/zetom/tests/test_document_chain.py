@@ -122,11 +122,43 @@ class CloseOfertaOnZlecenieTests(TestCase):
         self.main.refresh_from_db()
         self.assertIn(self.main.status, RequestStatus.values)
 
-    def test_noop_when_already_done(self):
-        self.oferta.status = Status.done
+    # claude — Fix-round: this used to assert StatusHistory.count() == 0,
+    # byte-identical to test_does_not_write_status_history above. Since no
+    # StatusHistory row is ever written by this function, that assertion held
+    # whether or not the early-return guard (status_orchestration.py:60)
+    # existed — it proved nothing about the no-op. The three tests below
+    # exercise the guard itself: for each of its branches, neither the
+    # offer's own status nor the parent cascade may be touched.
+
+    def _assert_untouched(self, status):
+        self.oferta.status = status
         self.oferta.save(update_fields=["status"])
-        close_oferta_on_zlecenie(self.oferta, self.user)
-        self.assertEqual(StatusHistory.objects.filter(request=self.main).count(), 0)
+        self.main.status = RequestStatus.closed
+        self.main.save(update_fields=["status"])
+
+        with patch(
+            "crm.zetom.services.status_orchestration.update_parent"
+        ) as update_parent_mock:
+            close_oferta_on_zlecenie(self.oferta, self.user)
+
+        update_parent_mock.assert_not_called()
+        self.oferta.refresh_from_db()
+        self.assertEqual(self.oferta.status, status)
+        self.main.refresh_from_db()
+        self.assertEqual(self.main.status, RequestStatus.closed)
+
+    def test_noop_when_already_done(self):
+        # an offer already closed must not be "closed" a second time, and the
+        # parent must not be recomputed off the back of a non-event.
+        self._assert_untouched(Status.done)
+
+    def test_noop_when_cancelled(self):
+        # a cancelled offer must never be resurrected into `done`: that would
+        # hide the cancellation and make the offer look successfully closed.
+        self._assert_untouched(RequestStatus.cancelled)
+
+    def test_noop_when_deleted(self):
+        self._assert_untouched(RequestStatus.deleted)
 
 
 # ─────────────────────────── Task 11: admin actions ────────────────────────────
