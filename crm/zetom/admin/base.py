@@ -8,6 +8,7 @@ from django.contrib import admin, messages
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.db.models.functions import Coalesce
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect
 from django.urls import path, reverse
@@ -242,11 +243,22 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             filters |= Q(target_content_type_id=ct_id, target_object_id=target.pk)
             labels[(ct_id, target.pk)] = self._step_note_target_label(target)
 
+        # claude — Fix-round: sort (and render, see the template) on when the
+        # contact actually happened, not on when the row was written.
+        # created_at is auto_now_add, so every note migrated from
+        # ClientInteraction carries the migration's run time — the whole
+        # historical log read as "X minutes ago", and a note logged today
+        # about last week's call jumped to the top as "now". Coalesce puts the
+        # fallback (reminders have no contacted_at) inside the ORDER BY rather
+        # than in a Python-side sort. Identical treatment to the Person/Company
+        # panels — crm/clients/services_contacts.py::_history_notes — so the
+        # two surfaces can't disagree about the same note.
         notes = list(
             StepNote.objects
             .filter(filters)
             .select_related("author")
-            .order_by("-created_at")[:100]
+            .annotate(sort_at=Coalesce("contacted_at", "created_at"))
+            .order_by("-sort_at")[:100]
         )
         # claude — Task 12: annotate open reminders that are past due so the
         # template can flag them (.hev.overdue -> red dot). Mirrors the

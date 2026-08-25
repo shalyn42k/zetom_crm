@@ -199,3 +199,73 @@ class StepNoteModalTest(TestCase):
         # changelist (browse/manage), never the add view.
         self.assertContains(resp, reverse("admin:clients_client_changelist"))
         self.assertNotContains(resp, reverse("admin:clients_client_add"))
+
+
+# claude — Fix-round: the document card's modal sorted and rendered
+# `created_at`. Every note migrated from ClientInteraction therefore read
+# "X minutes ago" (the migration's run time), and a note logged today about
+# last week's call read as "now". The clients-side panels already compensate
+# with Coalesce("contacted_at", "created_at") — see
+# crm/clients/services_contacts.py::_history_notes — so both surfaces have
+# to agree on the same timestamp.
+@override_settings(STORAGES=_SIMPLE_STATIC)
+class StepNoteTimelineTimestampTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(
+            "admin3", "admin3@example.com", "pass12345",
+        )
+        self.main = RequestMain.objects.create(
+            first_name="Jan",
+            last_name="Kowalski",
+            phone="+48500100200",
+            email="jan@example.com",
+            company_name="Zetom",
+        )
+        self.main_admin = RequestMainAdmin(RequestMain, admin.site)
+
+    def test_timeline_is_ordered_by_when_the_contact_happened(self):
+        now = timezone.now()
+        # written first, but about a conversation that happened *today*
+        recent = StepNote.objects.create(
+            author=self.user, target=self.main, text="Rozmowa dzisiaj",
+            contacted_at=now,
+        )
+        # written second, backfilling a conversation from last week
+        old = StepNote.objects.create(
+            author=self.user, target=self.main, text="Rozmowa w zeszłym tygodniu",
+            contacted_at=now - timedelta(days=7),
+        )
+
+        notes = self.main_admin._build_step_notes_context(self.main)["step_notes"]
+
+        self.assertEqual([note.pk for note in notes], [recent.pk, old.pk])
+
+    def test_timeline_renders_contacted_at_not_created_at(self):
+        contacted = timezone.now() - timedelta(days=7)
+        StepNote.objects.create(
+            author=self.user, target=self.main, text="Rozmowa w zeszłym tygodniu",
+            contacted_at=contacted,
+        )
+
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse("admin:zetom_requestmain_change", args=[self.main.pk]))
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(
+            resp, timezone.localtime(contacted).strftime("%Y-%m-%d %H:%M"),
+        )
+
+    def test_timeline_falls_back_to_created_at(self):
+        # a closed reminder never had a conversation, so it has no
+        # contacted_at — Coalesce must fall back rather than sort it to NULL.
+        note = StepNote.objects.create(
+            author=self.user, target=self.main, kind=StepNote.Kind.REMINDER,
+            text="Zamknięte przypomnienie",
+            next_contact_at=timezone.now() - timedelta(days=1),
+            done_at=timezone.now(),
+        )
+
+        notes = self.main_admin._build_step_notes_context(self.main)["step_notes"]
+
+        self.assertEqual([n.pk for n in notes], [note.pk])
+        self.assertEqual(notes[0].sort_at, note.created_at)

@@ -150,7 +150,15 @@ user actually filled in on submit.
               <div class="dotcol"><span class="dot"></span><span class="line"></span></div>
               <div class="hbody">
                 <div class="hmeta">
-                  <span class="hdate" title="{{ entry.created_at|date:'Y-m-d H:i' }}">{{ entry.created_at|naturaltime }}</span>
+                  {% comment %}
+                  claude — Fix-round: sort_at, not created_at. created_at is
+                  auto_now_add, so migrated notes all carry the migration's
+                  run time; sort_at is Coalesce(contacted_at, created_at) —
+                  when the conversation happened, with a fallback for
+                  reminders (which never had one). See
+                  BaseRequestAdmin._step_notes_for_targets.
+                  {% endcomment %}
+                  <span class="hdate" title="{{ entry.sort_at|date:'Y-m-d H:i' }}">{{ entry.sort_at|naturaltime }}</span>
                   <span class="hwho">{{ entry.author.get_full_name|default:entry.author.username|default:"—" }}</span>
                   {% if entry.stage_label %}<span class="hwho">{{ entry.stage_label }}</span>{% endif %}
                 </div>
