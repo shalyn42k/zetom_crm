@@ -220,15 +220,15 @@ msgstr "Uwagi"
 
 #: crm/clients/models.py:55
 msgid "Call"
-msgstr ""
+msgstr "Rozmowa telefoniczna"
 
 #: crm/clients/models.py:57
 msgid "Meeting"
-msgstr ""
+msgstr "Spotkanie"
 
 #: crm/clients/models.py:58
 msgid "Chat"
-msgstr ""
+msgstr "Czat"
 
 #: crm/clients/models.py:59 crm/users/admin/user.py:212 crm/zetom/models.py:38
 msgid "Other"
@@ -248,7 +248,7 @@ msgstr "Lista"
 
 #: crm/clients/models.py:81
 msgid "Summary"
-msgstr ""
+msgstr "Podsumowanie"
 
 #: crm/clients/models.py:89
 #, fuzzy
@@ -1393,7 +1393,7 @@ msgstr "E-mail:"
 
 #: crm/notification/templates/notification/mail/staff/request_new.txt:20
 msgid "Open the Validation Window in CRM to approve or reject this request."
-msgstr ""
+msgstr "Otwórz Okno walidacji w CRM, aby zatwierdzić lub odrzucić to zgłoszenie."
 "Otwórz Okno walidacji w CRM, aby zatwierdzić lub odrzucić to zgłoszenie."
 
 #: crm/notification/templates/notification/mail/staff/request_validated.txt:7
@@ -1559,7 +1559,7 @@ msgstr "Brak uprawnień."
 #: crm/users/admin/user.py:483
 #, python-format
 msgid "2FA reset for %(n)s user(s). They will set it up again on next login."
-msgstr ""
+msgstr "Zresetowano 2FA dla %(n)s użytkownika(ów). Skonfigurują je ponownie przy następnym logowaniu."
 "Zresetowano 2FA dla %(n)s użytkownika(ów). Skonfigurują je ponownie przy "
 "następnym logowaniu."
 
@@ -1611,7 +1611,7 @@ msgstr "Hasła nie są zgodne."
 
 #: crm/users/forms.py:113 crm/users/forms.py:236 crm/users/models.py:78
 msgid "Avatar"
-msgstr ""
+msgstr "Awatar"
 
 #: crm/users/forms.py:119 crm/users/models.py:68
 msgid "2FA exempt"
@@ -1861,7 +1861,7 @@ msgstr "Ustaw jako główny"
 
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:119
 msgid "Head department cannot be removed. Revoke head status first."
-msgstr ""
+msgstr "Nie można usunąć głównego działu. Najpierw odbierz status kierownika."
 "Nie można usunąć działu kierowanego. Najpierw cofnij status kierownika."
 
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:137
@@ -1988,7 +1988,7 @@ msgstr "Nie możesz dezaktywować własnego konta."
 
 #: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:68
 msgid "Unchecking ends all their sessions and revokes trusted browsers."
-msgstr ""
+msgstr "Odznaczenie kończy wszystkie ich sesje i unieważnia zaufane przeglądarki."
 "Odznaczenie kończy wszystkie sesje użytkownika i unieważnia zaufane "
 "przeglądarki."
 
@@ -2084,17 +2084,17 @@ msgstr "jeszcze nieskonfigurowane"
 #| msgid ""
 #| "to reset a lost device, use the “Reset 2FA” action from the Users list."
 msgid "lost device? use “Reset 2FA” in the Users list."
-msgstr ""
+msgstr "zgubione urządzenie? użyj “Resetuj 2FA” na liście użytkowników."
 "aby zresetować zgubione urządzenie, użyj akcji „Resetuj 2FA” z listy "
 "Użytkownicy."
 
 #: crm/users/templates/admin/auth/user/_partials/tab_security.html:52
 msgid "Skips the 2FA requirement for this user only."
-msgstr ""
+msgstr "Pomija wymóg 2FA tylko dla tego użytkownika."
 
 #: crm/users/templates/admin/auth/user/_partials/tab_security.html:70
 msgid "Leave empty to keep the current password."
-msgstr ""
+msgstr "Pozostaw puste, aby zachować obecne hasło."
 
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:7
 msgid "User profile sections"
@@ -2167,7 +2167,7 @@ msgstr ""
 
 #: crm/users/templates/users/otp_backup_codes.html:30
 msgid "Download as a file"
-msgstr ""
+msgstr "Pobierz jako plik"
 
 #: crm/users/templates/users/otp_backup_codes.html:36
 msgid "I've saved them — continue"
@@ -2310,13 +2310,11 @@ msgstr "Mój profil"
 
 #: crm/users/templates/users/user_profile_edit.html:82
 msgid "Choose photo"
-msgstr ""
+msgstr "Wybierz zdjęcie"
 
 #: crm/users/templates/users/user_profile_edit.html:84
-#, fuzzy
-#| msgid "No user selected."
 msgid "No file chosen"
-msgstr "Nie wybrano użytkownika."
+msgstr "Nie wybrano pliku."
 
 #: crm/users/views.py:111
 msgid "User created."
@@ -2367,11 +2365,11 @@ msgstr "Zlecenie nie znalezione."
 
 #: crm/zetom/admin/base.py:110
 msgid "Could not add note. Check note text/date format."
-msgstr ""
+msgstr "Nie udało się dodać notatki. Sprawdź treść notatki/format daty."
 
 #: crm/zetom/admin/base.py:120
 msgid "Step note added."
-msgstr ""
+msgstr "Dodano notatkę do etapu."
 
 #: crm/zetom/admin/base.py:165 crm/zetom/models.py:165
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:182
@@ -2549,7 +2547,7 @@ msgstr "Nie wybrano użytkownika."
 #: crm/zetom/admin/requestmain.py:1144
 #, python-format
 msgid "%(n)d file(s) uploaded."
-msgstr ""
+msgstr "Przesłano %(n)d plik(ów)."
 
 #: crm/zetom/admin/requestmain.py:1157
 #, fuzzy
@@ -2680,7 +2678,7 @@ msgstr "Brakuje wymaganych pól — sprawdź przed zatwierdzeniem"
 
 #: crm/zetom/admin/requestnull_validate.py:178
 msgid "Approve is disabled until the snapshot has all required fields."
-msgstr ""
+msgstr "Zatwierdzenie jest zablokowane, dopóki migawka nie ma wszystkich wymaganych pól."
 "Zatwierdzanie jest zablokowane, dopóki migawka nie ma wszystkich wymaganych "
 "pól."
 
@@ -2694,7 +2692,7 @@ msgstr "Utwórz nowego klienta na podstawie danych ze migawki."
 
 #: crm/zetom/admin/requestnull_validate.py:189
 msgid "One strong duplicate found · all required fields valid"
-msgstr ""
+msgstr "Znaleziono jeden silny duplikat · wszystkie wymagane pola poprawne"
 "Znaleziono jeden wyraźny duplikat · wszystkie wymagane pola są prawidłowe"
 
 #: crm/zetom/admin/requestnull_validate.py:190
@@ -2743,7 +2741,7 @@ msgstr "Istniejące zgłoszenie walidacji #%(id)d przeniesiono do kosza."
 
 #: crm/zetom/admin/requestnull_validate.py:364
 msgid "Existing request updated with this data; this request was removed."
-msgstr ""
+msgstr "Istniejące zgłoszenie zaktualizowano tymi danymi; to zgłoszenie zostało usunięte."
 "Istniejące zgłoszenie zaktualizowano tymi danymi; to zgłoszenie usunięto."
 
 #: crm/zetom/admin/requestnull_validate.py:375
@@ -2883,12 +2881,12 @@ msgstr "Powiązania klientów"
 
 #: crm/zetom/models.py:354
 msgid "Author"
-msgstr ""
+msgstr "Autor"
 
 #: crm/zetom/models.py:357
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:51
 msgid "What was done"
-msgstr ""
+msgstr "Co zrobiono"
 
 #: crm/zetom/models.py:358
 #, fuzzy
@@ -2898,7 +2896,7 @@ msgstr "Uwagi"
 
 #: crm/zetom/models.py:362
 msgid "Next client contact at"
-msgstr ""
+msgstr "Następny kontakt z klientem o"
 
 #: crm/zetom/models.py:367
 #, fuzzy
@@ -2908,7 +2906,7 @@ msgstr "Usuń status właściciela"
 
 #: crm/zetom/models.py:380
 msgid "Step note"
-msgstr ""
+msgstr "Notatka etapu"
 
 #: crm/zetom/models.py:381
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:86
@@ -3088,7 +3086,7 @@ msgstr "Zatwierdź lub odrzuć oczekującą prośbę o weryfikację"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:87
 msgid "Timeline of actions and notes for colleagues"
-msgstr ""
+msgstr "Oś czasu działań i notatek dla współpracowników"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:111
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:277
@@ -3277,7 +3275,7 @@ msgstr "Usuń"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:52
 msgid "Delete this attachment?"
-msgstr ""
+msgstr "Usunąć ten załącznik?"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:58
 #, fuzzy
@@ -3288,12 +3286,12 @@ msgstr "Brak zmian statusu."
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:97
 #: crm/zetom/templates/admin/zetom/requestmain/change_form.html:132
 msgid "Drop files here or click to browse"
-msgstr ""
+msgstr "Upuść pliki tutaj lub kliknij, aby wybrać"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:130
 #: crm/zetom/templates/admin/zetom/requestmain/change_form.html:158
 msgid "Clear"
-msgstr ""
+msgstr "Wyczyść"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:140
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:142
@@ -3423,7 +3421,7 @@ msgstr "Nie wiąż nic"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:76
 msgid "and the request is saved unlinked — you can attach a client later."
-msgstr ""
+msgstr "a zgłoszenie zostaje zapisane bez powiązania — klienta możesz dołączyć później."
 "a zgłoszenie zapisze się bez powiązania — klienta można dodać później."
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:84
@@ -3476,7 +3474,7 @@ msgstr "Brak zmian statusu."
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/history_card.html:46
 msgid "Field changes"
-msgstr ""
+msgstr "Zmiany pól"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/history_card.html:54
 #: templates/admin/index.html:686
@@ -3514,19 +3512,19 @@ msgstr "To zlecenie jest oznaczone jako usunięte. Przywróć je przed edycją."
 
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:37
 msgid "Save and continue editing"
-msgstr ""
+msgstr "Zapisz i kontynuuj edycję"
 
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:39
 msgid "Save and view"
-msgstr ""
+msgstr "Zapisz i wyświetl"
 
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:46
 msgid "Save and add another"
-msgstr ""
+msgstr "Zapisz i dodaj nowy"
 
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:52
 msgid "Save as new"
-msgstr ""
+msgstr "Zapisz jako nowy"
 
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:79
 #, fuzzy
@@ -3683,12 +3681,12 @@ msgstr "usuń"
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:234
 msgid "No duplicate requests found — safe to approve."
-msgstr ""
+msgstr "Nie znaleziono duplikatów zgłoszeń — można bezpiecznie zatwierdzić."
 "Nie znaleziono zduplikowanych zgłoszeń — można bezpiecznie zatwierdzić."
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:239
 msgid "Move THIS lead to trash as a duplicate? It can be restored later."
-msgstr ""
+msgstr "Przenieść TO zgłoszenie do kosza jako duplikat? Można je później przywrócić."
 "Przenieść TO zgłoszenie do kosza jako duplikat? Można je później przywrócić."
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:240
@@ -3710,7 +3708,7 @@ msgstr "Wielokrotny wybór. Wybór zapisuje się dopiero po zatwierdzeniu."
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:280
 msgid "No matching clients found. Create a new one below or leave unlinked."
-msgstr ""
+msgstr "Nie znaleziono pasujących klientów. Utwórz nowego poniżej lub pozostaw bez powiązania."
 "Nie znaleziono pasujących klientów. Utwórz nowego poniżej lub zostaw bez "
 "powiązania."
 
@@ -3755,7 +3753,7 @@ msgstr "Zatwierdź i utwórz RequestMain"
 
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:38
 msgid "Work log"
-msgstr ""
+msgstr "Dziennik pracy"
 
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:43
 #, fuzzy, python-format
@@ -3774,15 +3772,15 @@ msgstr ""
 
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:53
 msgid "e.g. Called client, clarified deadline"
-msgstr ""
+msgstr "np. Zadzwoniono do klienta, doprecyzowano termin"
 
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:56
 msgid "Note for colleagues"
-msgstr ""
+msgstr "Notatka dla współpracowników"
 
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:58
 msgid "Add context for the next employee working on this case"
-msgstr ""
+msgstr "Dodaj kontekst dla następnego pracownika zajmującego się tą sprawą"
 
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:61
 #, fuzzy
@@ -3798,11 +3796,11 @@ msgstr "Dodaj klienta"
 
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:71
 msgid "Timeline"
-msgstr ""
+msgstr "Oś czasu"
 
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:90
 msgid "Next client date:"
-msgstr ""
+msgstr "Następny termin klienta:"
 
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:101
 #, fuzzy
@@ -3872,7 +3870,7 @@ msgstr "Filtr"
 
 #: templates/admin/change_list_results.html:44
 msgid "Expand row"
-msgstr ""
+msgstr "Rozwiń wiersz"
 
 #: templates/admin/index.html:594
 #, fuzzy
@@ -3912,7 +3910,7 @@ msgstr "jest teraz w realizacji"
 
 #: templates/admin/index.html:625
 msgid "Customer records"
-msgstr ""
+msgstr "Rekordy klientów"
 
 #: templates/admin/index.html:632
 #, fuzzy
@@ -3976,11 +3974,11 @@ msgstr "Brak powiadomień."
 
 #: templates/admin/index.html:710
 msgid "Open full activity log"
-msgstr ""
+msgstr "Otwórz pełny dziennik aktywności"
 
 #: templates/admin/search_form.html:26
 msgid "Type to search"
-msgstr ""
+msgstr "Wpisz, aby wyszukać"
 
 #: templates/unfold/helpers/unauthenticated_header.html:15
 #, fuzzy
@@ -3990,11 +3988,11 @@ msgstr "Powrót"
 
 #: templates/unfold/helpers/unauthenticated_header.html:32
 msgid "Light"
-msgstr ""
+msgstr "Jasny"
 
 #: templates/unfold/helpers/unauthenticated_header.html:39
 msgid "Dark"
-msgstr ""
+msgstr "Ciemny"
 
 #: templates/unfold/helpers/userlinks.html:30
 #, fuzzy
