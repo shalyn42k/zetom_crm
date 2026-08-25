@@ -24,10 +24,6 @@
                        value="{{ cl.query }}"
                        {% if not cl.is_dataset %}id="searchbar"{% endif %}
                        placeholder="{% if cl.search_help_text %}{{ cl.search_help_text }}{% else %}{% trans "Type to search" %}{% endif %}" />
-
-                {% if not cl.is_dataset %}
-                    {% include "unfold/helpers/shortcut.html" with shortcut="/" %}
-                {% endif %}
             </div>
 
             {% for pair in cl.filter_params.items %}

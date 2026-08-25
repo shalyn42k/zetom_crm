@@ -1,0 +1,2 @@
+Unhandled request: {{ request_label }}
+Open since {{ created_at }} ({{ days_open }} days) — no one has picked it up yet.
