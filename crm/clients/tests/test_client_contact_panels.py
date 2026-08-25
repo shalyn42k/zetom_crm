@@ -533,3 +533,53 @@ class ClientCardModalContextTest(TestCase):
             self.assertIn(key, company_resp.context)
         self.assertTrue(company_resp.context["step_notes_enabled"])
         self.assertIn(person, list(company_resp.context["step_notes_persons"]))
+
+    # claude — Fix-round: neither card context carried `step_notes`, the key
+    # the shared modal iterates for its timeline, so the modal permanently
+    # showed "No notes yet." even on a client with a full contact history.
+    def test_client_cards_feed_the_modal_timeline(self):
+        person = Client.objects.create(first_name="Jan", last_name="Kowalski")
+        company = Company.objects.create(name="Zetom Sp. z o.o.", nip="1234563218")
+        CompanyPersonLink.objects.create(company=company, person=person)
+        request_main = RequestMain.objects.create(**BASE_REQ)
+        create_step_note(
+            author=self.user, kind=StepNote.Kind.CONTACT,
+            text="Rozmowa o kalibracji", person=person,
+            contacted_at=timezone.now(), target=request_main,
+        )
+
+        for url in (
+            reverse("admin:clients_client_change", args=[person.pk]),
+            reverse("admin:clients_company_change", args=[company.pk]),
+        ):
+            with self.subTest(url=url):
+                resp = self.client.get(url, HTTP_HOST="127.0.0.1")
+
+                self.assertEqual(resp.status_code, 200)
+                self.assertIn("step_notes", resp.context)
+                self.assertEqual(
+                    [note.text for note in resp.context["step_notes"]],
+                    ["Rozmowa o kalibracji"],
+                )
+                # the note's request label must resolve, like it does in the
+                # zetom-side timeline (entry.stage_label)
+                self.assertIn(
+                    str(request_main.pk), resp.context["step_notes"][0].stage_label,
+                )
+                self.assertNotContains(resp, "No notes yet.")
+
+    def test_open_reminders_stay_out_of_the_client_card_timeline(self):
+        # the client cards render their own "Zaplanowane" panel; an open
+        # reminder must not be duplicated into the modal's history list.
+        person = Client.objects.create(first_name="Jan", last_name="Kowalski")
+        create_step_note(
+            author=self.user, kind=StepNote.Kind.REMINDER, text="Oddzwonić",
+            person=person, next_contact_at=timezone.now() + timedelta(days=1),
+        )
+
+        resp = self.client.get(
+            reverse("admin:clients_client_change", args=[person.pk]),
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(list(resp.context["step_notes"]), [])

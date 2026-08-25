@@ -10,11 +10,23 @@ is a thin RunPython wrapper.
 from __future__ import annotations
 
 from django.core.exceptions import ValidationError
-from django.db.models import F
+from django.db.models import F, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from crm.zetom.models import StepNote
+
+# claude — Fix-round: the one definition of "what belongs in the contact log"
+# vs "what belongs in Zaplanowane", shared by both surfaces that render them:
+# the Person/Company cards (crm/clients/services_contacts.py) and the document
+# card's work-log modal (crm/zetom/admin/base.py). Spec §5.3: a closed
+# reminder leaves "Zaplanowane" but stays visible in the history. Lived in
+# services_contacts.py as a private constant while only one surface split its
+# notes; both do now, and one copy each would let them drift.
+HISTORY_FILTER = Q(kind=StepNote.Kind.CONTACT) | Q(
+    kind=StepNote.Kind.REMINDER, done_at__isnull=False,
+)
+OPEN_REMINDER_FILTER = Q(kind=StepNote.Kind.REMINDER, done_at__isnull=True)
 
 
 # claude

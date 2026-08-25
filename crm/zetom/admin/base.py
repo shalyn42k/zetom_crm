@@ -22,7 +22,9 @@ from crm.users.utils import user_has_perm
 from crm.zetom.models import (
     DepartmentsVariants, Oferta, RequestMain, StepNote, Wniosek, Zlecenie,
 )
-from crm.zetom.services.step_notes import create_step_note
+from crm.zetom.services.step_notes import (
+    HISTORY_FILTER, OPEN_REMINDER_FILTER, create_step_note, mark_reminder_done,
+)
 from crm.zetom.services.visibility import visible_requests_for
 
 
@@ -119,6 +121,18 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
                 self.admin_site.admin_view(self.step_note_create_action),
                 name=f"{opts.app_label}_{opts.model_name}_step_note_create",
             ),
+            # claude — Fix-round: spec §5.2's `zetom_stepnote_done`, which the
+            # plan dropped. Registered per-model alongside the create endpoint
+            # (rather than as one global url) for two reasons: the note has to
+            # be scoped to the thread of the document you are looking at, and
+            # the spec's gate is "тот же, что у создания заметки на
+            # соответствующей поверхности" — which is exactly this admin's
+            # has_change_permission, and is only reachable per ModelAdmin.
+            path(
+                "<path:object_id>/step-notes/<int:note_pk>/done/",
+                self.admin_site.admin_view(self.step_note_done_action),
+                name=f"{opts.app_label}_{opts.model_name}_step_note_done",
+            ),
         ]
         return custom + urls
 
@@ -169,6 +183,50 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
 
         messages.success(request, _("Step note added."))
         return redirect(self._change_url_for_id(object_id))
+
+    # claude — Fix-round: "close a reminder" from a document card. The
+    # clients-side twin (ClientAdmin.step_note_done_action) scopes the note by
+    # `person=client`; a reminder raised on a document card has no person at
+    # all, so it scopes by the note's target instead — the note must belong to
+    # this document's own thread (_step_note_targets: the RequestMain plus its
+    # child docs). Without that check a crafted note_pk would close another
+    # customer's reminder, the same hole `person=client` closes over there.
+    # No logic of its own beyond the scoping: the transition itself is
+    # services/step_notes.mark_reminder_done, shared with the clients side.
+    def step_note_done_action(self, request, object_id, note_pk):
+        if request.method != "POST":
+            return redirect(self._change_url_for_id(object_id))
+
+        obj, forbidden = self._get_obj_for_step_note(request, object_id)
+        if forbidden is not None:
+            return forbidden
+
+        note = self._thread_note_or_none(obj, note_pk)
+        if note is None:
+            return HttpResponseForbidden(_("Note not found."))
+
+        try:
+            mark_reminder_done(note, request.user)
+        except ValidationError as exc:
+            messages.error(
+                request,
+                _("Could not close reminder: %(error)s") % {"error": "; ".join(exc.messages)},
+            )
+            return redirect(self._change_url_for_id(object_id))
+
+        messages.success(request, _("Reminder closed."))
+        return redirect(self._change_url_for_id(object_id))
+
+    # claude — a StepNote is reachable from `obj`'s card only if its generic
+    # target is one of the thread's documents. Reuses the very filter the
+    # timeline is built from, so "closeable here" and "visible here" can't
+    # drift apart.
+    def _thread_note_or_none(self, obj, note_pk):
+        targets = self._step_note_targets(obj)
+        if not targets:
+            return None
+        filters, _labels = self._step_note_target_filters(targets)
+        return StepNote.objects.filter(filters).filter(pk=note_pk).first()
 
     def _change_url_for_id(self, object_id):
         opts = self.model._meta
@@ -228,10 +286,9 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             return _("Request no. %(pk)s thread") % {"pk": request_main.pk}
         return str(obj)
 
-    def _step_notes_for_targets(self, targets):
-        if not targets:
-            return []
-
+    # claude — Fix-round: extracted from _step_notes_for_targets so the done
+    # endpoint can scope a note by exactly the same rule the timeline uses.
+    def _step_note_target_filters(self, targets):
         type_ids = {}
         for model in {target.__class__ for target in targets}:
             type_ids[model] = ContentType.objects.get_for_model(model).pk
@@ -242,6 +299,20 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             ct_id = type_ids[target.__class__]
             filters |= Q(target_content_type_id=ct_id, target_object_id=target.pk)
             labels[(ct_id, target.pk)] = self._step_note_target_label(target)
+        return filters, labels
+
+    # claude — Fix-round: history only — contact notes plus *closed* reminders.
+    # Open reminders are handed to the modal separately by
+    # _open_reminders_for_targets so the document card gets the same
+    # "Zaplanowane above Historia" split the Person/Company cards have (spec
+    # §5.3; HISTORY_FILTER is shared with those panels). Without the
+    # split an open reminder was just another grey line in the log, with
+    # nothing to close it.
+    def _step_notes_for_targets(self, targets):
+        if not targets:
+            return []
+
+        filters, labels = self._step_note_target_filters(targets)
 
         # claude — Fix-round: sort (and render, see the template) on when the
         # contact actually happened, not on when the row was written.
@@ -256,25 +327,49 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
         notes = list(
             StepNote.objects
             .filter(filters)
+            .filter(HISTORY_FILTER)
             .select_related("author")
             .annotate(sort_at=Coalesce("contacted_at", "created_at"))
             .order_by("-sort_at")[:100]
         )
-        # claude — Task 12: annotate open reminders that are past due so the
-        # template can flag them (.hev.overdue -> red dot). Mirrors the
-        # is_overdue rule clients/services_contacts.py already uses for the
-        # Person/Company card's "Zaplanowane" panel: next_contact_at in the
-        # past and not yet closed (done_at is null).
-        now = timezone.now()
         for note in notes:
             note.stage_label = labels.get((note.target_content_type_id, note.target_object_id), "")
-            note.is_overdue = bool(
-                note.kind == StepNote.Kind.REMINDER
-                and note.done_at is None
-                and note.next_contact_at
-                and note.next_contact_at < now
-            )
+            note.is_overdue = False
         return notes
+
+    # claude — Fix-round: the thread's still-open reminders, soonest first.
+    # Deliberately NOT sliced like the history above: a thread with a hundred
+    # logged calls would otherwise push its one open reminder out of the
+    # result and make it unclosable again — the exact bug this fixes. There
+    # are only ever a handful of open reminders per thread.
+    def _open_reminders_for_targets(self, obj, targets):
+        if not targets:
+            return []
+
+        opts = self.model._meta
+        filters, labels = self._step_note_target_filters(targets)
+        reminders = list(
+            StepNote.objects
+            .filter(filters)
+            .filter(OPEN_REMINDER_FILTER)
+            .select_related("author")
+            .order_by("next_contact_at")
+        )
+        # claude — Task 12: flag past-due reminders so the template can mark
+        # them (.hev.overdue -> red dot). Same is_overdue rule as
+        # clients/services_contacts.py's "Zaplanowane" panel. done_url is what
+        # makes the checkmark possible on a document card at all — it is
+        # addressed by THIS document, not by the note's person (which a
+        # document-card reminder does not have).
+        now = timezone.now()
+        for note in reminders:
+            note.stage_label = labels.get((note.target_content_type_id, note.target_object_id), "")
+            note.is_overdue = bool(note.next_contact_at and note.next_contact_at < now)
+            note.done_url = reverse(
+                f"admin:{opts.app_label}_{opts.model_name}_step_note_done",
+                args=[obj.pk, note.pk],
+            )
+        return reminders
 
     def _build_step_notes_context(self, obj):
         opts = self.model._meta
@@ -282,6 +377,7 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             return {
                 "step_notes_enabled": False,
                 "step_notes": [],
+                "step_notes_open_reminders": [],
                 "step_notes_create_url": "",
                 "step_notes_target_label": "",
                 "step_notes_persons": [],
@@ -291,6 +387,7 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
         return {
             "step_notes_enabled": True,
             "step_notes": self._step_notes_for_targets(targets),
+            "step_notes_open_reminders": self._open_reminders_for_targets(obj, targets),
             "step_notes_create_url": reverse(
                 f"admin:{opts.app_label}_{opts.model_name}_step_note_create",
                 args=[obj.pk],

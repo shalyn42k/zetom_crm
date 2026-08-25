@@ -21,6 +21,7 @@ from .services import build_request_rows, get_client_request_summary
 from .services_contacts import (
     contact_rows_for_company, contact_rows_for_person,
     reminder_rows_for_company, reminder_rows_for_person,
+    timeline_notes_for_company, timeline_notes_for_person,
 )
 
 # claude — Phase 3a Task 3: RequestStatus → the four status-badge CSS classes
@@ -731,6 +732,12 @@ class ClientAdmin(admin.ModelAdmin):
             # fixed to `client` — no picker needed here (that's the Company
             # card's job, below).
             "step_notes_enabled": True,
+            # claude — Fix-round: `step_notes` was missing, so the modal's
+            # timeline rendered "No notes yet." forever, even on a person with
+            # a full history. Same notes and order as `historia` above, just
+            # as StepNote objects (which is what the shared template's loop
+            # reads) instead of row dicts.
+            "step_notes": timeline_notes_for_person(client),
             "step_notes_create_url": reverse(
                 "admin:clients_client_step_note_create", args=[client.pk],
             ),
@@ -933,6 +940,10 @@ class CompanyAdmin(admin.ModelAdmin):
             # future modal's JS does `.replace(/0\/create\/$/, personPk +
             # '/create/')` rather than round-tripping to the server per pick.
             "step_notes_enabled": True,
+            # claude — Fix-round: see the Person card above — without this the
+            # modal's timeline was permanently empty. Mirrors `historia`:
+            # every linked person's notes, newest conversation first.
+            "step_notes": timeline_notes_for_company(company),
             "step_notes_create_url": reverse(
                 "admin:clients_client_step_note_create", args=[0],
             ),

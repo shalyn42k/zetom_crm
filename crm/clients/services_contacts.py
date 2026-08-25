@@ -16,12 +16,16 @@ leaves "Zaplanowane" but stays visible in the log). Reminders = open
 """
 from __future__ import annotations
 
-from django.db.models import Q, QuerySet
+from django.db.models import QuerySet
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from crm.zetom.models import Oferta, RequestMain, StepNote, Wniosek, Zlecenie
+# claude — Fix-round: contact notes OR closed reminders (spec §5.3). The rule
+# moved to crm/zetom/services/step_notes.py so the document card's work-log
+# modal splits its timeline by exactly the same definition these panels use.
+from crm.zetom.services.step_notes import HISTORY_FILTER, OPEN_REMINDER_FILTER
 
 # claude — same PL words + msgid shape as admin.py's _PERSON_REQ_TYPE_LABEL /
 # _zgloszenie_label (crm/clients/admin.py:45-64). Deliberately not imported
@@ -101,20 +105,13 @@ def _history_row(note: StepNote, labels: dict[int, str]) -> dict:
     }
 
 
-# claude — contact notes OR closed reminders (done_at set); a reminder that
-# is still open belongs to the "Zaplanowane" panel only.
-_HISTORY_FILTER = Q(kind=StepNote.Kind.CONTACT) | Q(
-    kind=StepNote.Kind.REMINDER, done_at__isnull=False,
-)
-
-
 def _history_notes(base_qs: QuerySet) -> list[StepNote]:
     # claude — closed reminders have no contacted_at (only next_contact_at),
     # so the sort falls back to created_at for them; Coalesce makes that
     # fallback part of the ORDER BY itself instead of a Python-side sort.
     return list(
         base_qs
-        .filter(_HISTORY_FILTER)
+        .filter(HISTORY_FILTER)
         .select_related("author", "person", "target_content_type")
         .annotate(sort_at=Coalesce("contacted_at", "created_at"))
         .order_by("-sort_at")
@@ -155,7 +152,7 @@ def _reminder_row(note: StepNote, labels: dict[int, str], now) -> dict:
 def _open_reminder_notes(base_qs: QuerySet) -> list[StepNote]:
     return list(
         base_qs
-        .filter(kind=StepNote.Kind.REMINDER, done_at__isnull=True)
+        .filter(OPEN_REMINDER_FILTER)
         .select_related("author", "person", "target_content_type")
         .order_by("next_contact_at")
     )
@@ -175,3 +172,35 @@ def reminder_rows_for_company(company) -> list[dict]:
     labels = _target_labels(notes)
     now = timezone.now()
     return [_reminder_row(note, labels, now) for note in notes]
+
+
+# claude — Fix-round: the shared work-log modal's timeline (its `step_notes`
+# loop) wants StepNote *objects*, not the row dicts the panels above render —
+# it reads entry.author / entry.action / entry.text / entry.next_contact_at
+# / entry.sort_at / entry.stage_label. Neither card context passed the key at
+# all, so the modal permanently showed "No notes yet.".
+#
+# Same contents and ordering as contact_rows_for_* (history: contacts plus
+# closed reminders, newest conversation first), so the panel on the card and
+# the timeline inside the modal can never tell two different stories about the
+# same client. `stage_label` is the zetom-side name for what the panels call
+# `zaglowek` — the note's request/document label — and is set here so the one
+# template works unchanged on both surfaces. `is_overdue` is always False:
+# open reminders are excluded from history by definition, and the cards render
+# their own "Zaplanowane" panel for those.
+def _timeline_notes(notes: list[StepNote]) -> list[StepNote]:
+    labels = _target_labels(notes)
+    for note in notes:
+        note.stage_label = labels.get(note.pk, "")
+        note.is_overdue = False
+    return notes
+
+
+def timeline_notes_for_person(client) -> list[StepNote]:
+    return _timeline_notes(_history_notes(StepNote.objects.filter(person=client)))
+
+
+def timeline_notes_for_company(company) -> list[StepNote]:
+    return _timeline_notes(_history_notes(
+        StepNote.objects.filter(person__company_links__company=company).distinct()
+    ))

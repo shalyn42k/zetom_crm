@@ -169,6 +169,13 @@ html.dark .cc-stage {
    `class="dark"` on <html>, never `data-theme`), so no separate html.dark
    override is needed here. */
 .cc-stage .hev.overdue .dot { background: var(--red); }
+/* claude — Fix-round: the work-log modal's "Zaplanowane" section (open
+   reminders of the document thread) and the checkmark that closes one. The
+   heading separates it from the history list below; .hdone pushes the
+   close button to the right end of the flex .hmeta row, the same place the
+   Person card puts its own checkmark. */
+.cc-stage .hist-h { margin: 0; padding: 10px 22px 2px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); }
+.cc-stage .hev .hmeta .hdone { margin-left: auto; }
 .cc-stage .readonly-note { padding: 14px 22px; border-top: 1px solid var(--border); background: var(--bg-2); font-size: 14px; color: var(--text-3); display: flex; align-items: center; gap: 9px; }
 
 /* claude — mPerson add/edit modal (Task 2), reproduces

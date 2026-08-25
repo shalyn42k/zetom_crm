@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.contrib import admin
 from django.contrib.auth.models import User
@@ -269,3 +270,163 @@ class StepNoteTimelineTimestampTest(TestCase):
 
         self.assertEqual([n.pk for n in notes], [note.pk])
         self.assertEqual(notes[0].sort_at, note.created_at)
+
+
+# claude — Fix-round, spec §5.2/§9: a reminder created from a DOCUMENT card
+# has no `person` (the modal disables that select in reminder mode), so it
+# matched neither "Zaplanowane" panel — both filter on `person` — and the only
+# "done" endpoint required person=client. Such reminders were unclosable and
+# stayed overdue forever, breaking the DoD line "напоминание можно поставить и
+# закрыть с карточки персоны и с карточки документа". These pin the missing
+# half: an open reminder is listed separately on the document card and closed
+# through zetom's own done endpoint.
+@override_settings(STORAGES=_SIMPLE_STATIC)
+class DocumentCardReminderTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(
+            "admin4", "admin4@example.com", "pass12345",
+        )
+        self.client.force_login(self.user)
+        self.main = RequestMain.objects.create(
+            first_name="Jan", last_name="Kowalski",
+            phone="+48500100200", email="jan@example.com", company_name="Zetom",
+        )
+        self.oferta = Oferta.objects.create(
+            from_main=self.main,
+            first_name="Jan", last_name="Kowalski",
+            phone="+48500100200", email="jan@example.com", company_name="Zetom",
+        )
+        self.main_admin = RequestMainAdmin(RequestMain, admin.site)
+
+    def _reminder(self, target=None, done_at=None, **kwargs):
+        return StepNote.objects.create(
+            author=self.user,
+            target=target if target is not None else self.main,
+            kind=StepNote.Kind.REMINDER,
+            person=None,
+            next_contact_at=timezone.now() + timedelta(days=1),
+            done_at=done_at,
+            **kwargs,
+        )
+
+    def test_open_reminder_without_person_is_listed_on_the_document_card(self):
+        note = self._reminder(text="Wysłać ofertę w poniedziałek")
+
+        context = self.main_admin._build_step_notes_context(self.main)
+
+        self.assertEqual(
+            [n.pk for n in context["step_notes_open_reminders"]], [note.pk],
+        )
+        # an open reminder is not history — same split as the client cards
+        self.assertNotIn(note.pk, [n.pk for n in context["step_notes"]])
+
+    def test_closed_reminder_moves_from_the_panel_into_history(self):
+        note = self._reminder(text="Zamknięte", done_at=timezone.now())
+
+        context = self.main_admin._build_step_notes_context(self.main)
+
+        self.assertEqual(context["step_notes_open_reminders"], [])
+        self.assertIn(note.pk, [n.pk for n in context["step_notes"]])
+
+    def test_reminder_of_a_child_document_shows_on_the_parent_card(self):
+        note = self._reminder(target=self.oferta, text="Przypomnienie oferty")
+
+        context = self.main_admin._build_step_notes_context(self.main)
+
+        self.assertEqual(
+            [n.pk for n in context["step_notes_open_reminders"]], [note.pk],
+        )
+
+    def test_document_card_renders_the_open_reminder_and_its_close_button(self):
+        note = self._reminder(text="Wysłać ofertę w poniedziałek")
+        done_url = reverse(
+            "admin:zetom_requestmain_step_note_done", args=[self.main.pk, note.pk],
+        )
+
+        resp = self.client.get(reverse("admin:zetom_requestmain_change", args=[self.main.pk]))
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Wysłać ofertę w poniedziałek")
+        self.assertContains(resp, done_url)
+
+    def test_done_endpoint_closes_a_reminder_without_a_person(self):
+        note = self._reminder()
+        done_url = reverse(
+            "admin:zetom_requestmain_step_note_done", args=[self.main.pk, note.pk],
+        )
+
+        resp = self.client.post(done_url)
+
+        self.assertEqual(resp.status_code, 302)
+        note.refresh_from_db()
+        self.assertIsNotNone(note.done_at)
+
+    def test_done_endpoint_closes_a_child_documents_reminder_from_its_own_card(self):
+        note = self._reminder(target=self.oferta)
+        done_url = reverse(
+            "admin:zetom_oferta_step_note_done", args=[self.oferta.pk, note.pk],
+        )
+
+        resp = self.client.post(done_url)
+
+        self.assertEqual(resp.status_code, 302)
+        note.refresh_from_db()
+        self.assertIsNotNone(note.done_at)
+
+    def test_done_endpoint_rejects_a_note_from_another_thread(self):
+        other_main = RequestMain.objects.create(
+            first_name="Anna", last_name="Nowak",
+            phone="+48500100201", email="anna@example.com",
+        )
+        note = self._reminder(target=other_main)
+        done_url = reverse(
+            "admin:zetom_requestmain_step_note_done", args=[self.main.pk, note.pk],
+        )
+
+        resp = self.client.post(done_url)
+
+        self.assertEqual(resp.status_code, 403)
+        note.refresh_from_db()
+        self.assertIsNone(note.done_at)
+
+    def test_done_endpoint_rejects_a_contact_note(self):
+        note = StepNote.objects.create(
+            author=self.user, target=self.main, text="Rozmowa",
+            contacted_at=timezone.now(),
+        )
+        done_url = reverse(
+            "admin:zetom_requestmain_step_note_done", args=[self.main.pk, note.pk],
+        )
+
+        resp = self.client.post(done_url)
+
+        self.assertEqual(resp.status_code, 302)
+        note.refresh_from_db()
+        self.assertIsNone(note.done_at)
+
+    def test_get_does_not_close_a_reminder(self):
+        note = self._reminder()
+        done_url = reverse(
+            "admin:zetom_requestmain_step_note_done", args=[self.main.pk, note.pk],
+        )
+
+        resp = self.client.get(done_url)
+
+        self.assertEqual(resp.status_code, 302)
+        note.refresh_from_db()
+        self.assertIsNone(note.done_at)
+
+    @patch("crm.zetom.admin.base.user_has_perm")
+    def test_done_endpoint_requires_edit_permission(self, perm_mock):
+        # same gate as creating a note on this surface (spec §5.2)
+        perm_mock.side_effect = lambda user, perm: perm != "edit_requests"
+        note = self._reminder()
+        done_url = reverse(
+            "admin:zetom_requestmain_step_note_done", args=[self.main.pk, note.pk],
+        )
+
+        resp = self.client.post(done_url)
+
+        self.assertEqual(resp.status_code, 403)
+        note.refresh_from_db()
+        self.assertIsNone(note.done_at)

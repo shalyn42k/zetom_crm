@@ -144,6 +144,47 @@ user actually filled in on submit.
           </div>
         </form>
 
+        {% comment %}
+        claude — Fix-round: "Zaplanowane" above "Historia", the same split the
+        Person and Company cards use (spec §5.3). A reminder raised from a
+        document card has no `person`, so neither of those cards' panels can
+        show it and neither of their checkmarks can close it — this section
+        plus entry.done_url (BaseRequestAdmin._open_reminders_for_targets) is
+        where such a reminder lives and gets closed. Only rendered on the
+        document cards: the client cards have their own panels on the card
+        itself and never pass step_notes_open_reminders.
+        {% endcomment %}
+        {% if step_notes_open_reminders %}
+        <div class="hist">
+          <h4 class="hist-h">{% trans "Scheduled" %}</h4>
+          {% for entry in step_notes_open_reminders %}
+            <div class="hev{% if entry.is_overdue %} overdue{% endif %}">
+              <div class="dotcol"><span class="dot"></span><span class="line"></span></div>
+              <div class="hbody">
+                <div class="hmeta">
+                  <span class="hdate" title="{{ entry.next_contact_at|date:'Y-m-d H:i' }}">{{ entry.next_contact_at|date:"d.m.Y H:i" }}</span>
+                  <span class="hwho">{{ entry.author.get_full_name|default:entry.author.username|default:"—" }}</span>
+                  {% if entry.stage_label %}<span class="hwho">{{ entry.stage_label }}</span>{% endif %}
+                  {% comment %}
+                  claude — plain "✓" rather than the <use href="#cc-i-check"/>
+                  sprite the Person card's checkmark uses: that symbol is
+                  defined in the clients cards' own inline SVG sprite, and this
+                  modal is also included from the zetom change_form templates,
+                  which have no sprite at all.
+                  {% endcomment %}
+                  <form method="post" action="{{ entry.done_url }}" class="hdone">
+                    {% csrf_token %}
+                    <button type="submit" class="opbtn" title="{% trans 'Mark as done' %}">✓</button>
+                  </form>
+                </div>
+                {% if entry.action %}<div class="htext"><strong>{{ entry.action }}</strong></div>{% endif %}
+                {% if entry.text %}<div class="htext">{{ entry.text|linebreaksbr }}</div>{% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
         <div class="hist">
           {% for entry in step_notes %}
             <div class="hev{% if entry.is_overdue %} overdue{% endif %}">
