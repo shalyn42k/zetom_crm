@@ -123,6 +123,16 @@ class OfertaAdmin(BaseRequestAdmin):
         # though it may be `new`/`in_progress` and can't reach `done` through
         # the manual FSM (see close_oferta_on_zlecenie for why).
         close_oferta_on_zlecenie(obj, request.user)
+        # claude — Fix-round: the parent cascade must NOT be left to
+        # close_oferta_on_zlecenie. That helper returns early when the offer
+        # is already done/cancelled/deleted, so update_parent never ran and a
+        # parent sitting at `closed` stayed `closed` after gaining a fresh
+        # `new` Zlecenie. The new child changes the parent's picture no matter
+        # what the offer's own status was, so recompute unconditionally — same
+        # contract as wniosek_action below. update_parent is idempotent and
+        # already self-guards cancelled/deleted parents.
+        if obj.from_main_id:
+            update_parent(obj.from_main)
         messages.success(request, _("Order created."))
         return redirect("admin:zetom_zlecenie_change", zlecenie.pk)
 

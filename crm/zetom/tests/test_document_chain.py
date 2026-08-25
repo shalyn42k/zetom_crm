@@ -193,6 +193,27 @@ class ChildDocumentChainActionTests(TestCase):
         zlecenie.refresh_from_db()
         self.assertEqual(zlecenie.status, Status.new)
 
+    # claude — Fix-round: zlecenie_action delegated the parent cascade to
+    # close_oferta_on_zlecenie, which no-ops when the offer is already
+    # done/cancelled/deleted. A parent sitting at `closed` therefore stayed
+    # `closed` after gaining a fresh `new` Zlecenie — its status no longer
+    # described its children. wniosek_action (children.py:186) always calls
+    # update_parent; this pins zlecenie_action to the same contract.
+    def test_zlecenie_action_recomputes_parent_even_when_oferta_already_done(self):
+        self.oferta.status = Status.done
+        self.oferta.save(update_fields=["status"])
+        Zlecenie.objects.create(**BASE_DATA, from_main=self.main, status=Status.done)
+        Wniosek.objects.create(**BASE_DATA, from_main=self.main, status=Status.done)
+        self.main.status = RequestStatus.closed
+        self.main.save(update_fields=["status"])
+
+        url = reverse("admin:zetom_oferta_zlecenie_action", args=[self.oferta.pk])
+        self.client.post(url)
+
+        self.main.refresh_from_db()
+        # a brand-new `new` Zlecenie means the thread is no longer finished
+        self.assertEqual(self.main.status, RequestStatus.active)
+
     @patch("crm.zetom.admin.children.user_has_perm")
     def test_zlecenie_action_requires_edit_permission(self, perm_mock):
         perm_mock.side_effect = lambda user, perm: perm != "edit_requests"
