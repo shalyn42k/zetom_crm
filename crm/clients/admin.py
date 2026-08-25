@@ -139,15 +139,31 @@ def _person_zgloszenia_rows(client) -> list[dict]:
     return rows
 
 
-# claude — Task 9: "log a contact" form for ClientAdmin.step_note_create_action.
-# Always writes kind=contact (closing a reminder is the separate `done`
-# endpoint below) — same reasoning as zetom's StepNoteCreateForm
-# (crm/zetom/admin/base.py), just narrowed to the one kind this endpoint
-# creates. `target` is a plain pk, resolved and ownership-checked in the
-# view (see _clean_step_note_target) rather than a ModelChoiceField, because
-# its valid queryset (RequestMain rows linked to *this* client) is only known
-# once the view has the client in hand.
+# claude — Task 9: "log a contact / plan a reminder" form for
+# ClientAdmin.step_note_create_action. Mirrors zetom's StepNoteCreateForm
+# (crm/zetom/admin/base.py) field for field, because both are posted by the
+# very same shared modal (admin/zetom/shared/step_notes_modal.html) — which
+# sends `kind` along with either the contact-mode fields (channel,
+# contacted_at, contact_person) or the reminder-mode ones (next_contact_at,
+# action, text).
+#
+# claude — Fix-round: `kind` used to be absent here and the view hardcoded
+# kind=contact, so choosing "Przypomnienie" on a client card silently wrote a
+# CONTACT with a fabricated contacted_at=now. `required=False` (unlike the
+# zetom form) keeps a bare POST without `kind` working as a contact — the
+# view defaults it — so older/scripted callers don't start 400-ing.
+#
+# `target` is a plain pk, resolved and ownership-checked in the view (see
+# _clean_step_note_target) rather than a ModelChoiceField, because its valid
+# queryset (RequestMain rows linked to *this* client) is only known once the
+# view has the client in hand.
 class ClientStepNoteCreateForm(forms.Form):
+    kind = forms.ChoiceField(
+        choices=StepNote.Kind.choices,
+        required=False,
+        initial=StepNote.Kind.CONTACT,
+        label=_("Kind"),
+    )
     action = forms.CharField(max_length=255, required=False, label=_("What was done"))
     text = forms.CharField(required=False, label=_("Note"))
     channel = forms.ChoiceField(
@@ -358,11 +374,26 @@ class ClientAdmin(admin.ModelAdmin):
             return None, False
         return target, True
 
-    # claude — Task 9: "log a contact" from the Person/Company card. Always
-    # kind=contact; closing a reminder is the separate `done` endpoint below.
-    # POST-only, edit_clients-gated, all validation happens in
+    # claude — Task 9: "log a contact / plan a reminder" from the Person or
+    # Company card. POST-only, edit_clients-gated, all validation happens in
     # create_step_note() (full_clean() before save) — this method never
     # touches StepNote.objects.create directly.
+    #
+    # claude — Fix-round: honours the `kind` the shared modal posts instead of
+    # hardcoding contact. The two kinds carry disjoint field sets, so each is
+    # built explicitly rather than passing everything through:
+    #   contact  — channel / contacted_at / contact_person; contacted_at
+    #              defaults to now, because a logged conversation did just
+    #              happen. next_contact_at is the optional "call again on…".
+    #   reminder — next_contact_at only. contacted_at MUST stay None: filling
+    #              it in would invent a conversation that never took place and
+    #              put it in "Historia kontaktów". channel/contact_person are
+    #              likewise dropped: the modal disables those inputs in
+    #              reminder mode, and a channel on a call that hasn't happened
+    #              yet is a guess.
+    # A reminder with no next_contact_at fails StepNote's invariant inside
+    # create_step_note() and surfaces as messages.error — the reason this
+    # method must not pre-fill or "repair" anything itself.
     def step_note_create_action(self, request, pk):
         if request.method != "POST":
             return redirect(self._client_change_url(pk))
@@ -386,17 +417,23 @@ class ClientAdmin(admin.ModelAdmin):
             )
             return redirect(self._client_change_url(pk))
 
+        kind = form.cleaned_data["kind"] or StepNote.Kind.CONTACT
+        is_contact = kind == StepNote.Kind.CONTACT
+
         try:
             create_step_note(
                 author=request.user,
-                kind=StepNote.Kind.CONTACT,
+                kind=kind,
                 action=form.cleaned_data["action"],
                 text=form.cleaned_data["text"],
                 target=target,
                 person=client,
-                contact_person=form.cleaned_data["contact_person"],
-                channel=form.cleaned_data["channel"],
-                contacted_at=form.cleaned_data["contacted_at"] or timezone.now(),
+                contact_person=form.cleaned_data["contact_person"] if is_contact else "",
+                channel=form.cleaned_data["channel"] if is_contact else "",
+                contacted_at=(
+                    (form.cleaned_data["contacted_at"] or timezone.now())
+                    if is_contact else None
+                ),
                 next_contact_at=form.cleaned_data["next_contact_at"],
             )
         except ValidationError as exc:
@@ -406,7 +443,10 @@ class ClientAdmin(admin.ModelAdmin):
             )
             return redirect(self._client_change_url(pk))
 
-        messages.success(request, _("Step note added."))
+        messages.success(
+            request,
+            _("Reminder scheduled.") if not is_contact else _("Step note added."),
+        )
         return redirect(self._client_change_url(pk))
 
     # claude — Task 9: "close a reminder" from the Person/Company card.

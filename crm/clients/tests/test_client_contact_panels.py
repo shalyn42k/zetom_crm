@@ -269,6 +269,66 @@ class ClientStepNoteEndpointsTest(TestCase):
         self.assertEqual(note.text, "Rozmowa telefoniczna")
         self.assertIsNotNone(note.contacted_at)
 
+    # claude — Fix-round: the shared modal posts `kind`, but this form had no
+    # such field and the view hardcoded kind=CONTACT. Picking "Przypomnienie"
+    # on a person card returned 302 "Step note added" and silently wrote a
+    # CONTACT with a fabricated contacted_at=now: no reminder existed,
+    # "Zaplanowane" stayed empty, and a conversation that never happened
+    # showed up in "Historia kontaktów".
+    def test_create_reminder_from_person_card(self):
+        due = timezone.now() + timedelta(days=3)
+
+        resp = self.client.post(
+            self.create_url,
+            {
+                "kind": StepNote.Kind.REMINDER,
+                "next_contact_at": timezone.localtime(due).strftime("%Y-%m-%dT%H:%M"),
+                "action": "Oddzwonić w sprawie oferty",
+                "text": "Klient prosił o telefon w przyszłym tygodniu",
+            },
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(resp.status_code, 302)
+        note = StepNote.objects.get()
+        self.assertEqual(note.kind, StepNote.Kind.REMINDER)
+        self.assertEqual(note.person_id, self.person.pk)
+        self.assertEqual(note.action, "Oddzwonić w sprawie oferty")
+        self.assertIsNotNone(note.next_contact_at)
+        # a reminder is not a conversation — nothing may be invented here
+        self.assertIsNone(note.contacted_at)
+
+    def test_reminder_from_person_card_lands_in_zaplanowane(self):
+        due = timezone.now() + timedelta(days=3)
+
+        self.client.post(
+            self.create_url,
+            {
+                "kind": StepNote.Kind.REMINDER,
+                "next_contact_at": timezone.localtime(due).strftime("%Y-%m-%dT%H:%M"),
+                "action": "Oddzwonić",
+            },
+            HTTP_HOST="127.0.0.1",
+        )
+
+        rows = reminder_rows_for_person(self.person)
+        self.assertEqual([row["note_pk"] for row in rows], [StepNote.objects.get().pk])
+        # ...and not in the contact history, which is for conversations only
+        self.assertEqual(contact_rows_for_person(self.person), [])
+
+    # claude — the reminder invariant (kind=reminder => next_contact_at) is
+    # enforced by StepNote.clean()/CheckConstraint via create_step_note(); the
+    # view must surface that as an error, never as a note that isn't there.
+    def test_reminder_without_due_date_is_rejected(self):
+        resp = self.client.post(
+            self.create_url,
+            {"kind": StepNote.Kind.REMINDER, "action": "Bez daty"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(StepNote.objects.count(), 0)
+
     def test_create_contact_with_related_request_sets_target(self):
         request_main = RequestMain.objects.create(**BASE_REQ)
         RequestClientLink.objects.create(request=request_main, client=self.person)
