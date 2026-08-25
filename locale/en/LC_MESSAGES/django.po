@@ -2878,7 +2878,7 @@ msgstr "Step note"
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:86
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:34
 msgid "Step notes"
-msgstr ""
+msgstr "Work log"
 
 #: crm/zetom/models.py:498
 msgid "Contact notes require a contacted-at date."
