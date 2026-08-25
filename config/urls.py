@@ -18,8 +18,9 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from django.views.generic import RedirectView
+from django.views.static import serve as serve_static
 
 from crm.clients.views import company_changelist_redirect
 
@@ -50,3 +51,25 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    # claude — DEBUG-only static(MEDIA_URL, ...) above matches Django's own
+    # recommendation (don't serve user uploads through the app server in
+    # prod — nginx/S3 should), but this deployment has neither: no nginx
+    # config in the repo, no cloud storage backend, cloudflared tunnels
+    # straight to the Django container (see docker-compose.prod.yml). So in
+    # prod every /media/* URL 404s — avatars render as the browser's broken-
+    # image icon. Scoped to avatars/ only, not all of MEDIA_ROOT: it also
+    # holds request_attachments/ (RequestMain.file, crm/zetom/models.py),
+    # which are real client documents and need an authenticated view, not
+    # a public one — avatars are just profile photos, low-risk to serve
+    # plainly, same as Gravatar or any other public avatar host.
+    # claude — static() itself no-ops unless settings.DEBUG is True (its
+    # own internal check, independent of the `if` above), so wrap
+    # django.views.static.serve directly instead of that shortcut.
+    urlpatterns += [
+        re_path(
+            r"^media/avatars/(?P<path>.*)$",
+            serve_static,
+            kwargs={"document_root": settings.MEDIA_ROOT / "avatars"},
+        ),
+    ]
