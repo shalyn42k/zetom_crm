@@ -44,9 +44,21 @@ html.dark,
   padding: 16px;
 }
 .up-strip__meta { flex: 1; min-width: 0; }
+.up-strip__title-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
 .up-strip__name { margin: 0; font-size: 20px; font-weight: 600; color: var(--up-text); }
 .up-strip__sub {
-  margin: 4px 0 0; font-size: 13px; color: var(--up-text-muted);
+  margin: 6px 0 0; font-size: 13px; color: var(--up-text-muted);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+/* claude — не было ни одного правила для .up-strip__dates: дата вступления
+   и последний вход рендерились с дефолтным браузерным <p>-отступом прямо
+   под .up-strip__sub, поэтому весь блок читался как одна нерасчленённая
+   "куча" текста. Меньше размер + явный верхний отступ отделяют её как
+   вторичные метаданные. */
+.up-strip__dates {
+  margin: 6px 0 0; font-size: 12px; color: var(--up-text-muted); opacity: .8;
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
 }
 .up-sep { color: var(--up-card-border); }
