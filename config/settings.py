@@ -54,6 +54,23 @@ FOLLOWUP_REMINDERS_AUTOSTART = os.getenv(
 ).lower() == "true"
 FOLLOWUP_REMINDERS_INTERVAL_SECONDS = int(os.getenv("FOLLOWUP_REMINDERS_INTERVAL_SECONDS", "60"))
 
+# claude — the same scheduler tick (create_followup_reminders) also flags
+# RequestMain rows nobody has picked up: created STALE_REQUEST_REMINDER_DAYS+
+# ago, still no owner, no StepNote against it. One in-app reminder per
+# request (guarded by an existing Notification with the same target +
+# template, not a new field on RequestMain — see stale_request_reminders.py).
+STALE_REQUEST_REMINDER_DAYS = int(os.getenv("STALE_REQUEST_REMINDER_DAYS", "3"))
+
+# claude — first rollout of this feature (2026-08-24) mass-backfired on
+# every pre-existing untouched RequestMain the moment it shipped: 54 months-
+# old demo/test rows all qualified at once, one in-app notification per
+# recipient per row (693 rows created within the first scheduler tick,
+# on someone's own running dev server — found and cleaned up the same day).
+# Only requests created on/after this date are ever eligible, so the
+# feature can only ever fire on things that go stale *after* it exists,
+# never on a backlog it just inherited.
+STALE_REQUEST_REMINDER_EPOCH = os.getenv("STALE_REQUEST_REMINDER_EPOCH", "2026-08-24")
+
 # Прод-настройки безопасности (включаются автоматически при DEBUG=False).
 # Cloudflare терминирует TLS, поэтому редирект и сертификаты не наша забота.
 if not DEBUG:
