@@ -4,6 +4,4 @@
 {% block extrahead %}
   {{ block.super }}
   <link rel="icon" type="image/png" href="{% static 'img/icon.png' %}">
-  {% comment %}claude — versioned query string busts the browser cache on custom_admin.css on every load{% endcomment %}
-  <link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}?v={% now "U" %}">
 {% endblock %}

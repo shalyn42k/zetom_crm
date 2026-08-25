@@ -30,17 +30,23 @@ html.dark {
 }
 
 /* Все input и textarea поля (кроме чекбоксов, радио, файлов и кнопок) */
-.form-row input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),
+/* claude — :not([data-client-picker]):not(#dept-search): у их собственных
+   правил ниже (padding под иконку-лупу, border-radius:999px) специфичность
+   ниже, чем у ID+7×:not() тут — без этого исключения оно перебивает их
+   несмотря на !important (проверено getComputedStyle не раз, это исключение
+   уже дважды куда-то пропадало из файла между сессиями — если лупа опять
+   налезает на текст, первым делом проверить, что оно всё ещё здесь). */
+.form-row input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):not([data-client-picker]):not(#dept-search),
 .form-row textarea,
 .form-row select,
-#content-main input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]),
+#content-main input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"]):not([data-client-picker]):not(#dept-search),
 #content-main textarea,
 #content-main select {
     background-color: var(--custom-input-bg) !important;
     border: 1px solid var(--custom-input-border) !important;
     color: var(--custom-input-text) !important;
-    border-radius: 4px !important;
-    padding: 6px 10px !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
 }
 
 /* Placeholder текст */
@@ -53,6 +59,116 @@ html.dark {
 /* Фокус на поле */
 .form-row input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
 .form-row textarea:focus {
+    border-color: var(--custom-input-focus-border) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px var(--custom-input-focus-shadow) !important;
+}
+
+
+input[data-client-picker],
+#dept-search {
+    /* claude — neither the widget's HTML (crm/clients/fields.py,
+       ClientPickerWidget.render()) nor this rule set a width, so the
+       input fell back to the browser's intrinsic default for a plain
+       <input> — about 20 characters — much narrower than the field's
+       actual container. The long placeholder text overflowed/clipped
+       against the search icon instead of just... having room. */
+    box-sizing: border-box !important;
+    width: 100% !important;
+    background-color: var(--custom-input-bg) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8aa0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: 14px center !important;
+    background-size: 17px !important;
+    border: 1px solid var(--custom-input-border) !important;
+    border-radius: 999px !important;
+    color: var(--custom-input-text) !important;
+    padding: 10px 16px 10px 42px !important;
+    font-size: 14px !important;
+    transition: box-shadow .15s ease, border-color .15s ease;
+}
+
+html.dark input[data-client-picker],
+html.dark #dept-search {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238592a2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") !important;
+}
+
+input[data-client-picker]:focus,
+#dept-search:focus {
+    border-color: var(--custom-input-focus-border) !important;
+    outline: none !important;
+    box-shadow: 0 1px 6px var(--custom-input-focus-shadow), 0 0 0 1px var(--custom-input-focus-border) !important;
+}
+
+input[data-client-picker]::placeholder,
+#dept-search::placeholder {
+    color: var(--custom-input-placeholder) !important;
+    opacity: 1 !important;
+}
+
+/* claude — нативный <select> (например "How was this request received?")
+   выглядел голым системным виджетом посреди дизайнерской формы. Те же
+   токены, что у input, плюс свой шеврон вместо системной стрелки
+   (native select со своей стрелкой в Chrome/Firefox её не убирает
+   через border/padding одни, нужен явный appearance:none). :not([multiple])
+   — многострочный select (например "Departments"/"Assigned to") это другой
+   виджет: список видимых строк, а не однострочный дропдаун, шеврон и
+   appearance:none тут не подходят (был реальный регресс: appearance:none
+   без width убил intrinsic-размер, поле схлопнулось до ~70px). */
+select:not([multiple]) {
+    /* claude — appearance:none drops the browser's own intrinsic sizing for
+       <select>; without an explicit width some (e.g. RequestMain's "source"
+       field, class="form-control" — a dead Bootstrap class, no CSS actually
+       loads it here) collapsed to ~70px, clipping the option text. */
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background-color: var(--custom-input-bg) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8aa0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    background-size: 16px !important;
+    border: 1px solid var(--custom-input-border) !important;
+    border-radius: 8px !important;
+    color: var(--custom-input-text) !important;
+    padding: 8px 36px 8px 12px !important;
+    font-size: 14px !important;
+}
+
+html.dark select:not([multiple]) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238592a2' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+}
+
+/* claude — multi-selects (Departments, Assigned to): same surface/border
+   tokens, no chevron (a scrollable option list, not a dropdown), rows
+   tall enough to read comfortably and a visible highlight for the
+   selected ones (native selected-option styling is a flat platform blue
+   that ignores the theme otherwise). */
+select[multiple] {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background-color: var(--custom-input-bg) !important;
+    border: 1px solid var(--custom-input-border) !important;
+    border-radius: 8px !important;
+    color: var(--custom-input-text) !important;
+    padding: 6px !important;
+    font-size: 14px !important;
+}
+
+select[multiple] option {
+    padding: 6px 8px !important;
+    border-radius: 4px !important;
+}
+
+select[multiple] option:checked {
+    background: var(--custom-input-focus-border) !important;
+    color: #fff !important;
+}
+
+select:focus {
     border-color: var(--custom-input-focus-border) !important;
     outline: none !important;
     box-shadow: 0 0 0 2px var(--custom-input-focus-shadow) !important;
@@ -93,11 +209,15 @@ html.dark {
        как .search/.seg2 на Klienci: каждый контрол — отдельная карточка
        на прозрачном .toolbar. */
     .zt-search-box {
+        /* claude — полная "таблетка" (как у Google/YouTube, тот же приём,
+           что у input[data-client-picker]): угол = половина высоты поля,
+           поэтому 999px универсально перебивает любую реальную высоту. */
         background: #fafaf9 !important;
         border-color: #e5e4e2 !important;
-        border-radius: 12px !important;
-        padding-top: 10px !important;
-        padding-bottom: 10px !important;
+        border-radius: 999px !important;
+        padding-top: 12px !important;
+        padding-bottom: 12px !important;
+        padding-left: 18px !important;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
     }
 
@@ -106,14 +226,19 @@ html.dark {
         border-color: #2c3644 !important;
     }
 
-    /* claude — у правила #content-main input:not(...)х7 выше в файле
-       специфичность (1 id, 7 псевдо-класс/атрибут, 1 элемент) выше, чем у
-       простого .zt-search-box input (1 id, 1 класс, 1 элемент) — оно
-       перебивало фон инпута несмотря на !important. Двойной #id здесь
-       (id+id > id+7 классов по правилам сравнения specificity) гарантированно
-       перевешивает. */
-    #content-main .zt-search-box input,
-    #content-main #searchbar {
+    /* claude — #content-main#content-main (id повторён намеренно): правило
+       выше (input:not(...):not([data-client-picker]):not(#dept-search))
+       само содержит #dept-search внутри :not(), а специфичность :not()
+       равна специфичности её аргумента — то есть это правило на самом
+       деле (2 id, 8 класс, 1 элемент), а не (1, 7, 1), как кажется на
+       первый взгляд. Один #content-main здесь давал только (2,0,0) —
+       ничья по ID, проигрыш по классам. Повторный ID поднимает счёт до 3
+       и забивает сравнение насмерть ещё на первой колонке. Проверено
+       через getComputedStyle, не на глаз — если правило снова "не
+       работает", сначала пересчитай specificity, а не удваивай ставку на
+       ещё один !important. */
+    #content-main#content-main .zt-search-box input,
+    #content-main#content-main #searchbar {
         background: transparent !important;
         border: none !important;
         border-radius: 0 !important;
