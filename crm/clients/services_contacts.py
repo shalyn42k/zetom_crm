@@ -8,7 +8,9 @@ Both cards used to build their "Historia kontaktów" rows straight from
 module is the single place that turns StepNote rows into the two panels the
 cards render — the row shape the templates consume (`data`, `kanal_label`,
 `sotrudnik`, `kontakt_osoba`, `zaglowek`, `summary`) is unchanged from the
-old ClientInteraction-based version (admin.py:523/724).
+old ClientInteraction-based version (admin.py:523/724). `action` was added
+in the final fix round (StepNote's own field, no ClientInteraction
+equivalent existed).
 
 History = contact notes + *closed* reminders (spec §5.3: a closed reminder
 leaves "Zaplanowane" but stays visible in the log). Reminders = open
@@ -101,6 +103,13 @@ def _history_row(note: StepNote, labels: dict[int, str]) -> dict:
             note.person.full_name() if note.person_id else ""
         ),
         "zaglowek": labels.get(note.pk, ""),
+        # claude — Final-fix-round: `action` ("What to do") used to be
+        # dropped here entirely, so a reminder logged with only that field
+        # (reminder mode's lead input; text is optional there) rendered as a
+        # blank row on both cards. Carried through alongside `summary` so the
+        # templates can render both, matching how the zetom document-card
+        # modal already shows entry.action above entry.text.
+        "action": note.action,
         "summary": note.text,
     }
 

@@ -262,7 +262,15 @@ company_card.css.
                   </form>
                   {% endif %}
                 </div>
-                <div class="htext">{{ r.summary }}</div>
+                {% comment %}
+                claude — Final-fix-round: action ("What to do") is the lead
+                input in reminder mode and text is optional there, so a
+                reminder can legitimately have only one of the two. Guard
+                each div independently — a row with neither must not leave
+                behind an empty <div class="htext"></div>.
+                {% endcomment %}
+                {% if r.action %}<div class="htext"><strong>{{ r.action }}</strong></div>{% endif %}
+                {% if r.summary %}<div class="htext">{{ r.summary }}</div>{% endif %}
               </div>
             </div>
             {% endfor %}
@@ -292,7 +300,8 @@ company_card.css.
                 <div class="hmeta">
                   <span class="hdate">{{ h.data|date:"d.m.Y H:i" }}</span>·<span class="hwho">{{ h.kanal_label }}</span>·<span class="hwho">{{ h.sotrudnik|default:"—" }} → {{ h.kontakt_osoba|default:"—" }}</span>{% if h.zaglowek %}·<span class="hwho">{{ h.zaglowek }}</span>{% endif %}
                 </div>
-                <div class="htext">{{ h.summary }}</div>
+                {% if h.action %}<div class="htext"><strong>{{ h.action }}</strong></div>{% endif %}
+                {% if h.summary %}<div class="htext">{{ h.summary }}</div>{% endif %}
               </div>
             </div>
             {% endfor %}

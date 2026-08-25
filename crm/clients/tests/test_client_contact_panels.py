@@ -87,6 +87,21 @@ class PersonHistoryTest(TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["summary"], "Oddzwonić w sprawie kalibracji")
 
+    # claude — Final-fix-round: `action` was dropped entirely by
+    # `_history_row`, so a reminder logged with only "What to do" (action)
+    # and no "Note" (text) rendered as a blank row on both cards.
+    def test_person_history_row_carries_action(self):
+        create_step_note(
+            author=None, kind=StepNote.Kind.CONTACT,
+            action="Ustalono termin", text="Klient prosi o kontakt jutro",
+            person=self.person, contacted_at=timezone.now(),
+        )
+
+        rows = contact_rows_for_person(self.person)
+
+        self.assertEqual(rows[0]["action"], "Ustalono termin")
+        self.assertEqual(rows[0]["summary"], "Klient prosi o kontakt jutro")
+
 
 class CompanyHistoryTest(TestCase):
     def setUp(self):
@@ -168,6 +183,20 @@ class CompanyHistoryTest(TestCase):
         self.assertEqual(by_summary["Oddzwonić do Jana"], self.person.pk)
         self.assertEqual(by_summary["Oddzwonić do Piotra"], second_person.pk)
 
+    # claude — Final-fix-round: same drop as the person-side row builder,
+    # exercised through the company aggregate.
+    def test_company_reminder_row_carries_action(self):
+        create_step_note(
+            author=None, kind=StepNote.Kind.REMINDER,
+            action="Zadzwonić do klienta",
+            person=self.person, next_contact_at=timezone.now() + timedelta(days=1),
+        )
+
+        rows = reminder_rows_for_company(self.company)
+
+        self.assertEqual(rows[0]["action"], "Zadzwonić do klienta")
+        self.assertEqual(rows[0]["summary"], "")
+
 
 class ReminderPanelTest(TestCase):
     def setUp(self):
@@ -206,6 +235,21 @@ class ReminderPanelTest(TestCase):
 
         self.assertTrue(by_summary["Przeterminowane"]["is_overdue"])
         self.assertFalse(by_summary["Przyszłe"]["is_overdue"])
+
+    # claude — Final-fix-round: the reminder-mode work-log modal leads with
+    # "What to do" (action) and treats "Note" (text) as optional — a reminder
+    # scheduled with only an action must still carry it into the row.
+    def test_reminder_row_carries_action_only(self):
+        create_step_note(
+            author=None, kind=StepNote.Kind.REMINDER,
+            action="Zadzwonić do klienta",
+            person=self.person, next_contact_at=timezone.now() + timedelta(days=1),
+        )
+
+        rows = reminder_rows_for_person(self.person)
+
+        self.assertEqual(rows[0]["action"], "Zadzwonić do klienta")
+        self.assertEqual(rows[0]["summary"], "")
 
 
 class TargetLabelResolutionTest(TestCase):

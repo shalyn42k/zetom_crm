@@ -98,6 +98,60 @@ class PersonCardStepNotesTest(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertNotContains(resp, "Dodaj kontakt")
 
+    # claude — Final-fix-round: the reminder-mode work-log modal leads with
+    # "What to do" (action) and treats "Note" (text) as optional. A reminder
+    # scheduled with only an action used to render as a blank "Zaplanowane"
+    # row (a date, a dot and a checkmark, nothing else).
+    def test_person_card_reminder_with_only_action_renders_it(self):
+        create_step_note(
+            author=self.user, kind=StepNote.Kind.REMINDER,
+            action="Zadzwonić do klienta",
+            person=self.person, next_contact_at=timezone.now() + timedelta(days=1),
+        )
+
+        resp = self.client.get(self.url, HTTP_HOST="127.0.0.1")
+
+        self.assertContains(resp, "Zadzwonić do klienta")
+
+    # claude — Final-fix-round: a note (here a closed reminder, which lands
+    # in "Historia kontaktów" per spec §5.3) carrying both action and text
+    # must render both — action as the lead line, text below.
+    #
+    # count=2, not just assertContains: the same note also feeds the shared
+    # work-log modal's (already-correct) hidden timeline included at the
+    # bottom of this panel, which already renders entry.action. A plain
+    # assertContains would pass on that alone even before this fix — count=2
+    # pins that the *visible* "Historia kontaktów" row renders it too.
+    def test_person_card_history_note_with_action_and_text_renders_both(self):
+        note = create_step_note(
+            author=self.user, kind=StepNote.Kind.REMINDER,
+            action="Ustalono termin", text="Klient prosi o kontakt jutro",
+            person=self.person, next_contact_at=timezone.now() + timedelta(days=1),
+        )
+        note.done_at = timezone.now()
+        note.save(update_fields=["done_at"])
+
+        resp = self.client.get(self.url, HTTP_HOST="127.0.0.1")
+
+        self.assertContains(resp, "Ustalono termin", count=2)
+        self.assertContains(resp, "Klient prosi o kontakt jutro", count=2)
+
+    # claude — Final-fix-round: regression guard — a plain contact note with
+    # only text (no action, the pre-fix-round shape of every note) must keep
+    # rendering exactly as before, with no stray empty markup for the
+    # missing action.
+    def test_person_card_history_note_with_only_text_renders_as_before(self):
+        create_step_note(
+            author=self.user, kind=StepNote.Kind.CONTACT,
+            text="Rozmowa telefoniczna",
+            person=self.person, contacted_at=timezone.now(),
+        )
+
+        resp = self.client.get(self.url, HTTP_HOST="127.0.0.1")
+
+        self.assertContains(resp, "Rozmowa telefoniczna")
+        self.assertNotContains(resp, "<strong></strong>")
+
     def test_person_card_hides_done_checkmark_for_viewer(self):
         note = create_step_note(
             author=self.user, kind=StepNote.Kind.REMINDER, text="Oddzwonić",

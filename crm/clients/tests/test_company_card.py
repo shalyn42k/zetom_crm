@@ -99,6 +99,20 @@ class CompanyCardStepNotesTest(TestCase):
             "admin:clients_client_step_note_done", args=[second_person.pk, note_b.pk],
         ))
 
+    # claude — Final-fix-round: same drop as the person card's reminder
+    # panel — a reminder scheduled with only "What to do" (action) used to
+    # render as a blank row on the company card too.
+    def test_company_card_reminder_with_only_action_renders_it(self):
+        create_step_note(
+            author=self.user, kind=StepNote.Kind.REMINDER,
+            action="Zadzwonić do klienta",
+            person=self.person, next_contact_at=timezone.now() + timedelta(days=1),
+        )
+
+        resp = self.client.get(self.url, HTTP_HOST="127.0.0.1")
+
+        self.assertContains(resp, "Zadzwonić do klienta")
+
     def test_company_card_shows_add_contact_button_for_editor(self):
         resp = self.client.get(self.url, HTTP_HOST="127.0.0.1")
 

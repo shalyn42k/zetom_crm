@@ -50,6 +50,45 @@ class CompanyCardPanelsTest(TestCase):
         self.assertContains(resp, f"Request no. {request_main.pk}")
         self.assertContains(resp, "Rozmowa o ofercie kalibracji")
 
+    # claude — Final-fix-round: a note carrying both action and text must
+    # render both on the company card's "Historia kontaktów" panel too —
+    # action as the lead line, text below (same as the zetom document-card
+    # modal already does for entry.action / entry.text).
+    #
+    # count=2, not just assertContains: the same note also feeds the shared
+    # work-log modal's (already-correct) hidden timeline included at the
+    # bottom of this panel, which already renders entry.action. A plain
+    # assertContains would pass on that alone even before this fix — count=2
+    # pins that the *visible* "Historia kontaktów" row renders it too.
+    def test_history_note_with_action_and_text_renders_both(self):
+        create_step_note(
+            author=self.user, kind=StepNote.Kind.CONTACT,
+            action="Ustalono termin", text="Klient prosi o kontakt jutro",
+            person=self.person, contacted_at=timezone.now(),
+        )
+
+        url = reverse("admin:clients_company_change", args=[self.company.pk])
+        resp = self.client.get(url)
+
+        self.assertContains(resp, "Ustalono termin", count=2)
+        self.assertContains(resp, "Klient prosi o kontakt jutro", count=2)
+
+    # claude — Final-fix-round: regression guard — a plain note with only
+    # text (no action) must keep rendering exactly as before, with no stray
+    # empty markup for the missing action.
+    def test_history_note_with_only_text_renders_as_before(self):
+        create_step_note(
+            author=self.user, kind=StepNote.Kind.CONTACT,
+            text="Rozmowa telefoniczna",
+            person=self.person, contacted_at=timezone.now(),
+        )
+
+        url = reverse("admin:clients_company_change", args=[self.company.pk])
+        resp = self.client.get(url)
+
+        self.assertContains(resp, "Rozmowa telefoniczna")
+        self.assertNotContains(resp, "<strong></strong>")
+
     def test_unrelated_company_history_not_leaked(self):
         # A ClientInteraction for a person of another firm must not show up
         # on this company's card (regression guard for the M2M filter).
