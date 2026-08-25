@@ -229,8 +229,10 @@
 
 {% block extra_js %}
   {{ block.super }}
-  {# claude — the file lives under static/client/, not static/clients/ (that
-     dir only holds css); the old path 404'd here and raises outright under
-     ManifestStaticFilesStorage. Same path RequestMainAdmin.Media uses. #}
+  {% comment %}
+    claude — the file lives under static/client/, not static/clients/ (that
+    dir only holds css); the old path 404'd here and raises outright under
+    ManifestStaticFilesStorage. Same path RequestMainAdmin.Media uses.
+  {% endcomment %}
   <script src="{% static 'client/client_autofill.js' %}"></script>
 {% endblock extra_js %}
