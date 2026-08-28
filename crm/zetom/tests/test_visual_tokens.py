@@ -109,6 +109,7 @@ RGB_STRICT_FILES = [
     "static/zetom/css/validation_window.css",
     "crm/zetom/static/zetom/css/email_form.css",
     "static/admin/css/notification_badge.css",
+    "static/zetom/css/requestmain_detail.css",
 ]
 
 EXPECTED_ROLES = [
