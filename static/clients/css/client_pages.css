@@ -18,13 +18,20 @@
    static/css/tokens.css for anything under .cl-stage the same way :root
    redeclarations would (nearest custom-property definition wins). Those
    names are deleted outright here too. --bg/--bg-2/--bg-3/--border-2/
-   --text-2/--text-3/--green-bright/--green-dim have no counterpart in
-   tokens.css, so they stay — expressed via roles instead of hex. The
-   *-bg tint mixes keep separate light/dark alpha (%) because that's a
-   real intentional difference, not colour drift. */
+   --text-2/--text-3/--green-dim have no counterpart in tokens.css, so they
+   stay — expressed via roles instead of hex. The *-bg tint mixes keep
+   separate light/dark alpha (%) because that's a real intentional
+   difference, not colour drift.
+
+   claude — second fix-round: --green-bright used to be aliased to plain
+   --green here too. Promoted to a real tokens.css role after a
+   cache-bypassed screenshot showed the same alias collapsing the person
+   card's dark "Active" badge in company_card.css (controller ruling — see
+   tokens.css). Deleted the local alias here for the same reason, even
+   though this file isn't wired into a template yet — it should converge
+   the same way when it eventually is. */
 
 .cl-stage {
-  --green-bright: var(--green);
   --green-dim: color-mix(in srgb, var(--green) 80%, black);
   --red-bg: color-mix(in srgb, var(--red) 8%, transparent);
   --amber-bg: color-mix(in srgb, var(--amber) 10%, transparent);
@@ -341,9 +348,10 @@ table.rq tbody tr:hover { background:var(--bg-2); }
    separate copy because the modal renders outside .cl-stage's DOM subtree —
    see the comment further down). --shadow-md/--shadow-lg are tokens.css
    roles, deleted here too; --r-sm/--r-md/--r-lg are radii, out of scope for
-   a colour migration, left as-is. */
+   a colour migration, left as-is. --green-bright is also a tokens.css role
+   now (second fix-round — see the .cl-stage comment above and tokens.css),
+   deleted here for the same reason. */
 .cl-modal-backdrop {
-  --green-bright: var(--green);
   --green-dim: color-mix(in srgb, var(--green) 80%, black);
   --red-bg: color-mix(in srgb, var(--red) 8%, transparent);
   --amber-bg: color-mix(in srgb, var(--amber) 10%, transparent);

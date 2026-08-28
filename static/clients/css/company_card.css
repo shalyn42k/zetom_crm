@@ -16,10 +16,19 @@
    context" note in the task). Those names are deleted outright, not aliased,
    so this file actually consumes the global roles instead of always winning
    the cascade. What's left below are names with NO counterpart in tokens.css
-   (--bg/--bg-2/--bg-3/--border-2/--text-2/--text-3/--green-bright/--green-dim)
-   — genuinely local, so they stay declared, just expressed via roles instead
-   of hand-copied hex. They resolve per-theme automatically through the roles
-   they reference, so one block (no html.dark split) is enough. */
+   (--bg/--bg-2/--bg-3/--border-2/--text-2/--text-3/--green-dim) — genuinely
+   local, so they stay declared, just expressed via roles instead of
+   hand-copied hex. They resolve per-theme automatically through the roles
+   they reference, so one block (no html.dark split) is enough.
+
+   claude — second fix-round: --green-bright used to be aliased to plain
+   --green here (tokens.css had no separate role for it). A cache-bypassed
+   screenshot proved that collapse visibly shifted the person card's
+   dark-theme "Active" badge, so --green-bright was promoted to a real role
+   in tokens.css (controller ruling — see the note there). Deleted from
+   here too, same as the other now-global names above; every
+   var(--green-bright) below falls through to the global role and the
+   reference card is byte-identical to pre-migration again. */
 :root {
   --bg: var(--surface);
   --bg-2: var(--surface-soft);
@@ -27,7 +36,6 @@
   --border-2: var(--border-strong);
   --text-2: var(--text-muted);
   --text-3: var(--text-subtle);
-  --green-bright: var(--green);
   --green-dim: color-mix(in srgb, var(--green) 80%, black);
 }
 

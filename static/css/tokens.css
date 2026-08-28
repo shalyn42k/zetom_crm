@@ -31,6 +31,27 @@
 
    Dark mode is `html.dark` (the class Unfold puts on <html>), never
    `data-theme="dark"`.
+
+   claude — controller ruling, Task 4 second fix-round
+   (visual-tokens-unification): --green-bright added here as a role,
+   overriding this task's original "produce no new roles" constraint.
+   Task 4's migration first aliased company_card.css's --green-bright onto
+   plain --green, which was accepted in principle (no role invention from a
+   single task) but then measured, via a cache-bypassed screenshot, to
+   visibly shift the person card's dark-theme "Active" badge — the person
+   card is the spec's fixed reference and must not change. --green-bright is
+   a genuine third contrast tier (text-on-tint in dark mode) that recurs
+   across company_card.css and at least three more legacy stylesheets
+   (validation_window.css, requestmain_detail.css, client_pages.css) still
+   to be migrated in Tasks 5/6 — deferring the role would just repeat this
+   same collapse on each of them. The values below are exactly what
+   company_card.css carried pre-migration, not a new design: note that in
+   the LIGHT theme --green-bright coincides with --green (#16a34a) — the
+   app never had a brighter light-mode tier, only a brighter dark-mode one.
+   Do not "fix" that asymmetry into a matching light value; it reproduces
+   how the reference card already looked. The other legacy files currently
+   carry a drifted #22c55e for this name in dark mode — they converge onto
+   #4ade80 here when their migration tasks touch them.
 */
 
 :root {
@@ -48,6 +69,7 @@
 
   /* Status colours — light */
   --green: #16a34a;
+  --green-bright: #16a34a;
   --red: #dc2626;
   --amber: #d97706;
   --blue: #2563eb;
@@ -80,6 +102,7 @@ html.dark {
 
   /* Status colours — dark */
   --green: #22c55e;
+  --green-bright: #4ade80;
   --red: #ef4444;
   --amber: #f59e0b;
   --blue: #3b82f6;
