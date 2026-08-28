@@ -1,3 +1,17 @@
+/* claude — Task 5 (visual-tokens-unification): this file's own --zf-*
+   custom properties are already namespaced (no name collides with a
+   static/css/tokens.css role), so there's no shadowing here to fix. 34 of
+   its 39 colour values were already oklch(...) functions — not hex, so
+   the "no hex outside tokens.css" invariant never flagged them — leaving
+   only 5 real hex literals to convert. Decided NOT to repoint --zf-* at
+   the shared roles (spec §9 allows either): the --zf-* set is a
+   self-consistent, hand-tuned light/dark palette (matching hue across
+   primary/hover/ring/notice/error) built for this one card, and this
+   file isn't in Task 5's screenshot set to verify a repoint against — a
+   blind repoint risks visually drifting a form nobody is watching this
+   round. The 5 literals are converted to rgb()/the `white` keyword
+   instead: exact, driftless re-encodings of the same pixels, not new
+   colour decisions. */
 .email-page {
     min-height: calc(100vh - 64px);
     padding: 40px 20px;
@@ -8,7 +22,7 @@
 
 .email-form-card {
     --zf-radius: 6px;
-    --zf-surface: #ffffff;
+    --zf-surface: white;
     --zf-border: oklch(92.8% .006 264.531);
     --zf-border-strong: oklch(87.2% .01 258.338);
     --zf-text: oklch(21% .034 264.665);
@@ -24,7 +38,7 @@
     --zf-error-text: oklch(45% .2 25);
     --zf-error-border: oklch(80% .15 25);
     --zf-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.06);
-    --zf-input-bg: #f6f8fb;
+    --zf-input-bg: rgb(246, 248, 251);
 
     width: 100%;
     max-width: 560px;
@@ -203,7 +217,7 @@ body .email-form-card .form-group textarea:-webkit-autofill:focus {
 .email-form-card .form-group input:focus-visible,
 .email-form-card .form-group textarea:focus,
 .email-form-card .form-group textarea:focus-visible {
-    border-color: #5a5aff !important;
+    border-color: rgb(90, 90, 255) !important;
     box-shadow: 0 0 0 2px rgba(90, 90, 255, 0.25) !important;
     outline: none !important;
 }
@@ -212,7 +226,7 @@ html.dark .email-form-card .form-group input:focus,
 html.dark .email-form-card .form-group input:focus-visible,
 html.dark .email-form-card .form-group textarea:focus,
 html.dark .email-form-card .form-group textarea:focus-visible {
-    border-color: #7a7aff !important;
+    border-color: rgb(122, 122, 255) !important;
     box-shadow: 0 0 0 2px rgba(122, 122, 255, 0.3) !important;
 }
 
@@ -235,7 +249,7 @@ html.dark .email-form-card .form-group textarea:focus-visible {
     font-size: 14px;
     font-weight: 500;
     font-family: inherit;
-    color: #ffffff;
+    color: white;
     background-color: var(--zf-primary);
     border: 1px solid var(--zf-primary);
     border-radius: var(--zf-radius);

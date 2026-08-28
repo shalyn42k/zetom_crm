@@ -1,5 +1,14 @@
 /* claude — pill-бейдж непрочитанных нотификаций. Заполняется JS-ом
    (static/admin/js/notification_badge.js) на ссылках /notifications/. */
+/* claude — Task 5 (visual-tokens-unification): background-color used to
+   hardcode Unfold's --color-primary-500/600 with a hex fallback in each
+   theme (the two fallbacks had drifted to the same value, so the
+   "different shade per theme" the fallback implied never actually
+   happened). Repointed at tokens.css's --accent role, which already
+   resolves to the right Unfold primary shade per theme
+   (--color-primary-600 light / --color-primary-400 dark — see
+   static/css/tokens.css) — no fallback needed since tokens.css is always
+   loaded first. */
 
 .js-unread-badge {
     display: inline-flex;
@@ -13,12 +22,7 @@
     font-size: 11px;
     font-weight: 600;
     line-height: 1;
-    background-color: var(--color-primary-500, #16a34a);
-    color: #fff;
+    background-color: var(--accent);
+    color: white;
     white-space: nowrap;
-}
-
-html.dark .js-unread-badge {
-    background-color: var(--color-primary-600, #16a34a);
-    color: #fff;
 }

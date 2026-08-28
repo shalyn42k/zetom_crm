@@ -30,10 +30,20 @@ SKELETON_HTML = (
 # Задача 3: static/admin/css/custom_admin.css мигрирован на роли из tokens.css.
 # Задача 4: карточки clients (company_card.css, client_pages.css) мигрированы,
 # заодно устранён дрейф company_card.css (--border/--purple/--shadow-lg).
+# Задача 5: validation_window.css, email_form.css, notification_badge.css —
+# три мелких файла. validation_window.css заодно избавлен от шедоуинга
+# --green/--red/--amber/--blue/--purple/--slate/--shadow-sm/--shadow-lg и
+# от левых --color-primary-500/600/700 (перекрывали шкалу Unfold). У
+# email_form.css основная часть цветов уже была на oklch(...), не hex —
+# только 5 литералов конвертированы 1:1 (rgb()/white), сами --zf-*
+# переменные не перепривязаны к общим ролям (см. комментарий в файле).
 MIGRATED_FILES = [
     "static/admin/css/custom_admin.css",
     "static/clients/css/company_card.css",
     "static/clients/css/client_pages.css",
+    "static/zetom/css/validation_window.css",
+    "crm/zetom/static/zetom/css/email_form.css",
+    "static/admin/css/notification_badge.css",
 ]
 
 # Hex-литерал цвета: #fff, #ffffff, #ffffffcc и т.п. rgba(...) сюда не
