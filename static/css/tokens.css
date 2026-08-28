@@ -1,0 +1,93 @@
+/* claude
+   Visual token layer — the single source of truth for colour in this
+   project (see docs/superpowers/specs/2026-08-25-visual-tokens-unification-
+   design.md §4.1). Loaded globally, before every other stylesheet, via
+   templates/unfold/layouts/skeleton.html.
+
+   THIS IS THE ONLY FILE IN THE PROJECT ALLOWED TO CONTAIN HEX COLOUR
+   LITERALS. Everywhere else, colour comes from one of the custom
+   properties defined here (`static/zetom/css/test_visual_tokens.py`'s
+   `test_no_raw_hex_outside_tokens` enforces this file-by-file as each
+   stylesheet migrates onto these tokens).
+
+   Two kinds of tokens live here:
+
+   1. Semantic roles (--surface, --border, --text, ...) — these are NOT
+      literals. They resolve to Unfold's own `--color-base-*` /
+      `--color-primary-*` scale (confirmed present on every admin page —
+      base hue is a cool neutral, primary hue is green). Riding on
+      Unfold's scale means our tokens automatically follow any palette
+      change Unfold ships, instead of drifting like the hand-copied hex
+      values in the nine legacy stylesheets this refactor replaces.
+
+   2. Status colours (--green, --red, --amber, --blue, --purple, --slate)
+      — these DO need literals: Unfold's palette has no notion of
+      "success" or "danger", so there is nothing to ride on. Each is a
+      light/dark PAIR (not a flat value — a flat value would look wrong
+      in one of the two themes), copied verbatim from the values that
+      `requestmain_detail.css`, `client_pages.css` and
+      `validation_window.css` already agreed on before they drifted
+      apart from `company_card.css`.
+
+   Dark mode is `html.dark` (the class Unfold puts on <html>), never
+   `data-theme="dark"`.
+*/
+
+:root {
+  /* Semantic roles — light (Unfold base-* / primary-* scale) */
+  --surface: var(--color-base-50);
+  --surface-soft: var(--color-base-100);
+  --border: var(--color-base-200);
+  --border-strong: var(--color-base-300);
+  --text: var(--color-base-900);
+  --text-muted: var(--color-base-600);
+  --text-subtle: var(--color-base-500);
+  --input-bg: var(--color-base-50);
+  --input-border: var(--color-base-300);
+  --accent: var(--color-primary-600);
+
+  /* Status colours — light */
+  --green: #16a34a;
+  --red: #dc2626;
+  --amber: #d97706;
+  --blue: #2563eb;
+  --purple: #7c3aed;
+  --slate: #64748b;
+
+  /* Shadows — light (theme-dependent, so also redeclared under html.dark) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .03);
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, .10), 0 4px 10px rgba(0, 0, 0, .06);
+
+  /* Radii — theme-independent, defined once */
+  --r-sm: 5px;
+  --r-md: 7px;
+  --r-lg: 10px;
+}
+
+html.dark {
+  /* Semantic roles — dark (Unfold base-* / primary-* scale) */
+  --surface: var(--color-base-900);
+  --surface-soft: var(--color-base-800);
+  --border: var(--color-base-800);
+  --border-strong: var(--color-base-700);
+  --text: var(--color-base-100);
+  --text-muted: var(--color-base-300);
+  --text-subtle: var(--color-base-400);
+  --input-bg: var(--color-base-900);
+  --input-border: var(--color-base-700);
+  --accent: var(--color-primary-400);
+
+  /* Status colours — dark */
+  --green: #22c55e;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --blue: #3b82f6;
+  --purple: #8b5cf6;
+  --slate: #94a3b8;
+
+  /* Shadows — dark */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, .3);
+  --shadow-lg: 0 24px 50px rgba(0, 0, 0, .6), 0 4px 12px rgba(0, 0, 0, .4);
+}

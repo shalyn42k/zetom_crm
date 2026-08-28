@@ -14,9 +14,18 @@
   Unfold, а значит вырезан при паковке). Теперь подключаем файл здесь, в
   общем предке, — работает везде одинаково, а дубль в base_site.html
   убран, чтобы не грузить дважды на обычных страницах админки.
+
+  claude — visual-tokens-unification Task 2: tokens.css подключается
+  строкой ВЫШЕ custom_admin.css, с тем же cache-busting. Порядок важен:
+  tokens.css объявляет семантические роли (--surface, --border, --text,
+  ...) и статусные цвета в :root/html.dark; custom_admin.css и все
+  файлы, которые впоследствии переедут на эти токены, должны видеть их
+  уже объявленными. Обратный порядок оставил бы токены неопределёнными
+  на первом кадре отрисовки для всего, что их читает.
 {% endcomment %}
 
 {% block extrastyle %}
   {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}?v={% now "U" %}">
   <link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}?v={% now "U" %}">
 {% endblock %}
