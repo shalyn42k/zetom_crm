@@ -11,7 +11,12 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
 
 {% block extrastyle %}
   {{ block.super }}
-  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}">
+  {% comment %}
+  claude — Task 4 fix-round (visual-tokens-unification): cache-buster to
+  match tokens.css/custom_admin.css in skeleton.html — see person_card.html
+  for the rationale.
+  {% endcomment %}
+  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}?v={% now "U" %}">
 {% endblock extrastyle %}
 
 {% block content %}
