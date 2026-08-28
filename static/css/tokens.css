@@ -69,8 +69,8 @@ html.dark {
   /* Semantic roles — dark (Unfold base-* / primary-* scale) */
   --surface: var(--color-base-900);
   --surface-soft: var(--color-base-800);
-  --border: var(--color-base-800);
-  --border-strong: var(--color-base-700);
+  --border: var(--color-base-700);
+  --border-strong: var(--color-base-600);
   --text: var(--color-base-100);
   --text-muted: var(--color-base-300);
   --text-subtle: var(--color-base-400);
