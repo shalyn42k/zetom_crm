@@ -421,7 +421,12 @@ html.dark .cl-modal-backdrop {
 .cl-modal-backdrop .btn.primary:disabled { opacity:.6; pointer-events:none; }
 .cl-modal-backdrop .btn.primary span { display:inline-flex; align-items:center; gap:6px; }
 
-.cl-modal-backdrop .spinner { width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,.4); border-top-color:white; animation:cl-spin .7s linear infinite; }
+/* claude — Task 7: was a hardcoded literal rgb() triple for plain white at
+   40% alpha — the exact same pixels as the `white` keyword used one
+   declaration later for border-top-color, just spelled differently. Same
+   color-mix(white, transparent) idiom already used for this white
+   keyword's tinted variants elsewhere in the migrated files. */
+.cl-modal-backdrop .spinner { width:14px; height:14px; border-radius:50%; border:2px solid color-mix(in srgb, white 40%, transparent); border-top-color:white; animation:cl-spin .7s linear infinite; }
 @keyframes cl-spin { to { transform:rotate(360deg); } }
 
 /* type selector */

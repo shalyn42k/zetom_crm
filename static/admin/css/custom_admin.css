@@ -252,20 +252,29 @@ select:focus {
         padding-right: 18px !important;
     }
 
+    /* claude — Task 7: was a hardcoded slate-grey rgb() triple in light
+       theme and a hardcoded white rgb() triple in dark theme — the same
+       "hardcoded pixels in a different notation" bug the rest of this
+       refactor has been closing. (136, 152, 170) is this project's own
+       slate family (see --slate in tokens.css), just not routed through
+       the token; converges onto var(--slate) in both themes (kept as two
+       separate rules, not one shared declaration, so each theme can keep
+       its own already-tuned alpha — dark used roughly half the light
+       alpha to stay equally subtle against a dark surface). */
     #result_list thead th {
-        background: rgba(136, 152, 170, 0.09);
+        background: color-mix(in srgb, var(--slate) 9%, transparent);
     }
 
     html.dark #result_list thead th {
-        background: rgba(255, 255, 255, 0.045);
+        background: color-mix(in srgb, var(--slate) 4.5%, transparent);
     }
 
     #result_list tbody:hover {
-        background: rgba(136, 152, 170, 0.1);
+        background: color-mix(in srgb, var(--slate) 10%, transparent);
     }
 
     html.dark #result_list tbody:hover {
-        background: rgba(255, 255, 255, 0.05);
+        background: color-mix(in srgb, var(--slate) 5%, transparent);
     }
 
     /* Футер пагинации (zt-pagination-bar, unfold/helpers/pagination.html) —
@@ -300,7 +309,28 @@ select:focus {
    gradient card, in both site themes. Its `color: white` declarations
    are therefore intentionally the literal keyword, not var(--text):
    --text flips to a near-black value in light theme, which would make
-   this permanently-dark card's text vanish. */
+   this permanently-dark card's text vanish.
+
+   claude — Task 7: the block's rgba() tints/gradient stops below carry the
+   same theme-independence requirement, so they cannot repoint onto
+   --slate/--green/--border/etc. — those roles flip under html.dark and
+   would make this permanently-dark card's accents shift hue depending on
+   site theme, a behaviour it has never had. Unfold's own --color-base-N
+   and --color-primary-N swatches are NOT theme-reactive (config/
+   unfold_config.py defines each step once; html.dark only changes which
+   step a *role* points at, not the swatches themselves — confirmed via
+   Unfold's compiled CSS), so they're the correct fixed target here.
+   Measured each literal's actual oklch (python srgb->oklch conversion,
+   not eyeballed) and matched to the nearest scale step — none landed
+   exactly on a step, so this is the same "converge legacy hand-picked
+   pixels onto the nearest canonical step" move already applied to
+   company_card.css's drifted purple/border earlier in this refactor, not
+   a byte-exact preserving one: (136,152,170) -> base-400, (48,214,114)
+   -> primary-400, and the near-black gradient/panel stops -> base-900 or
+   base-950 depending on which was closer. (255,255,255,x) stays literal
+   white via color-mix, same as `white` used freely elsewhere. This page
+   isn't in the Task 7 screenshot set, so any hue drift here doesn't show
+   up in the acceptance sweep — flagged in the report for visibility. */
 .crm-dashboard__hero,
 .crm-dashboard__panel,
 .crm-dashboard__primary-card,
@@ -308,7 +338,7 @@ select:focus {
 .crm-dashboard__activity-item,
 .crm-dashboard__hint-item,
 .crm-dashboard__stat {
-    border: 1px solid rgba(136, 152, 170, 0.14);
+    border: 1px solid color-mix(in srgb, var(--color-base-400) 14%, transparent);
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
 }
 
@@ -318,8 +348,8 @@ select:focus {
     padding: 32px;
     border-radius: 28px;
     background:
-        radial-gradient(circle at top right, rgba(48, 214, 114, 0.18), transparent 34%),
-        linear-gradient(135deg, rgba(18, 27, 42, 0.98), rgba(10, 15, 25, 0.96));
+        radial-gradient(circle at top right, color-mix(in srgb, var(--color-primary-400) 18%, transparent), transparent 34%),
+        linear-gradient(135deg, color-mix(in srgb, var(--color-base-900) 98%, transparent), color-mix(in srgb, var(--color-base-950) 96%, transparent));
 }
 
 .crm-dashboard__eyebrow,
@@ -369,7 +399,7 @@ select:focus {
     min-height: 132px;
     padding: 20px;
     border-radius: 22px;
-    background: rgba(8, 13, 22, 0.54);
+    background: color-mix(in srgb, var(--color-base-950) 54%, transparent);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -397,7 +427,7 @@ select:focus {
 .crm-dashboard__panel {
     padding: 28px;
     border-radius: 28px;
-    background: linear-gradient(180deg, rgba(15, 22, 35, 0.92), rgba(9, 14, 24, 0.88));
+    background: linear-gradient(180deg, color-mix(in srgb, var(--color-base-900) 92%, transparent), color-mix(in srgb, var(--color-base-950) 88%, transparent));
 }
 
 .crm-dashboard__panel--aside {
@@ -444,7 +474,7 @@ select:focus {
 .crm-dashboard__activity-item,
 .crm-dashboard__hint-item {
     border-radius: 24px;
-    background: rgba(8, 13, 22, 0.56);
+    background: color-mix(in srgb, var(--color-base-950) 56%, transparent);
 }
 
 .crm-dashboard__primary-grid {
@@ -462,7 +492,7 @@ select:focus {
     width: 48px;
     height: 48px;
     border-radius: 16px;
-    background: rgba(48, 214, 114, 0.12);
+    background: color-mix(in srgb, var(--color-primary-400) 12%, transparent);
     color: var(--color-primary-100);
 }
 
@@ -514,22 +544,22 @@ select:focus {
 }
 
 .crm-dashboard__button {
-    border: 1px solid rgba(136, 152, 170, 0.2);
-    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid color-mix(in srgb, var(--color-base-400) 20%, transparent);
+    background: color-mix(in srgb, white 2%, transparent);
     color: var(--color-base-100);
 }
 
 .crm-dashboard__button--primary {
-    border-color: rgba(48, 214, 114, 0.34);
-    background: rgba(48, 214, 114, 0.14);
+    border-color: color-mix(in srgb, var(--color-primary-400) 34%, transparent);
+    background: color-mix(in srgb, var(--color-primary-400) 14%, transparent);
     color: white;
 }
 
 .crm-dashboard__button:hover,
 .crm-dashboard__text-link:hover,
 .crm-dashboard__activity-title a:hover {
-    border-color: rgba(48, 214, 114, 0.4);
-    background: rgba(48, 214, 114, 0.12);
+    border-color: color-mix(in srgb, var(--color-primary-400) 40%, transparent);
+    background: color-mix(in srgb, var(--color-primary-400) 12%, transparent);
     color: white;
     transform: translateY(-1px);
 }
@@ -549,7 +579,7 @@ select:focus {
 .crm-dashboard__workspace-badge {
     padding: 8px 12px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.04);
+    background: color-mix(in srgb, white 4%, transparent);
     color: var(--color-base-200);
     font-size: 11px;
     font-weight: 700;
@@ -560,8 +590,8 @@ select:focus {
 
 .crm-dashboard__text-link {
     padding: 0 14px;
-    border: 1px solid rgba(136, 152, 170, 0.16);
-    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid color-mix(in srgb, var(--color-base-400) 16%, transparent);
+    background: color-mix(in srgb, white 2%, transparent);
     color: var(--color-base-100);
 }
 
@@ -589,8 +619,8 @@ select:focus {
     width: 40px;
     height: 40px;
     border-radius: 14px;
-    background: rgba(48, 214, 114, 0.12);
-    border: 1px solid rgba(48, 214, 114, 0.22);
+    background: color-mix(in srgb, var(--color-primary-400) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-primary-400) 22%, transparent);
     color: white;
     font-size: 14px;
     font-weight: 700;

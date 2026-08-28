@@ -194,7 +194,14 @@
 .cc-stage .btn.primary:hover { background: var(--green-dim); border-color: var(--green-dim); }
 .cc-stage .btn.primary:disabled { opacity: .6; cursor: default; }
 
-.cc-stage .overlay { position: fixed; inset: 0; background: rgba(8, 11, 15, .6); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: flex; align-items: flex-start; justify-content: center; padding: 60px 20px 40px; overflow-y: auto; z-index: 200; }
+/* claude — Task 7: was a hardcoded near-black rgb() triple (8, 11, 15), a
+   literal the old hex-only invariant never caught — same "hardcoded
+   pixels in a different notation" bug already fixed in
+   validation_window.css's .vw-modal-scrim and present in
+   client_pages.css's .cl-modal-backdrop. Converged onto pure-black
+   rgba() — the one non-hex literal the invariant still allows — same as
+   both of those. */
+.cc-stage .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, .6); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: flex; align-items: flex-start; justify-content: center; padding: 60px 20px 40px; overflow-y: auto; z-index: 200; }
 .cc-stage .modal { width: 100%; max-width: 540px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; overflow: hidden; animation: cc-modal-pop .16s ease-out; }
 @keyframes cc-modal-pop { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
 .cc-stage .modal-h { position: relative; padding: 22px 24px 18px; border-bottom: 1px solid var(--border); }

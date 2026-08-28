@@ -22,7 +22,37 @@
    stays. --zf-shadow-lg's light-mode
    channel values were also a hardcoded slate-900-ish tint (not the
    pure-black the dark-mode half already used) — recoloured to match,
-   same blur/spread geometry, colour only. */
+   same blur/spread geometry, colour only.
+
+   claude — Task 7: tried repointing the 22 literals that matched a
+   base-N or primary-N step at var(--color-base-N)/var(--color-primary-N)
+   — every one of
+   them is a byte-for-byte copy of an Unfold scale step (measured against
+   config/unfold_config.py's COLORS table), so on paper it looked like the
+   same "hardcoded pixels, different notation" bug this whole refactor has
+   been closing. Reverted it: this template (crm/zetom/templates/zetom/
+   email_template.html) extends admin/base_site.html but is rendered from
+   a bare `render()` call outside any ModelAdmin changeform, and on that
+   page var(--color-base-900) etc. compute to an EMPTY string (checked
+   with getComputedStyle in a live browser, both themes) — Unfold never
+   injects those custom properties for it. tokens.css's own roles
+   (--border, --accent, ...) are themselves built from the same
+   var(--color-base-N), so they're equally unusable here; that's also why
+   --zf-input-bg: var(--input-bg) (Task 5, already shipped, not touched by
+   this task) silently renders transparent on this exact page — a
+   pre-existing bug, out of this task's scope, flagged in the Task 7
+   report rather than fixed here. Confirmed swapping to var() breaks the
+   card (transparent background in dark theme, no visible border in
+   either) and reverted back to literal oklch. Task 5's original call —
+   "self-consistent, hand-tuned palette... this file isn't in the
+   screenshot set to verify a wholesale repoint against" — was right, for
+   a better reason than it knew at the time: this page can't consume the
+   shared token layer at all, so its colours have to be genuinely
+   self-sufficient literals, not a matter of taste. All 28 (not just the
+   error triad) are listed as a deliberate, narrow, per-file exemption in
+   test_visual_tokens.py's OKLCH_EXEMPT_BY_FILE — the check still catches
+   a literal oklch() anywhere else, including any *new* one added to this
+   file beyond these 28 known values. */
 .email-page {
     min-height: calc(100vh - 64px);
     padding: 40px 20px;
