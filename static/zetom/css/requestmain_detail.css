@@ -988,13 +988,19 @@ a.rm-linked-name:hover { text-decoration:underline; }
    — both converge onto the token now, which is the point of this migration.
    --bg-3/--border-2/--text-2/--text-3/--green-dim/--*-bg have no tokens.css
    counterpart, so they stay as local aliases built from roles/status tokens
-   instead of literals. --bg-3 has no distinct role of its own (tokens.css
-   offers only one "soft surface" tier) so it collapses onto --surface-soft,
-   same as --bg-2 — a small, deliberate loss of that third tier. --green-dim
-   likewise has no "dimmed" role; approximated as a darkened mix of --green
-   rather than left as a bare hex. */
+   instead of literals.
+   claude — Task 7 addition 1: --bg-3 originally collapsed onto
+   --surface-soft here too (same as --bg-2), losing the inset tier that
+   --bg-2/--bg-3 used to be a genuine step apart in both themes (one step
+   further from the page background than --bg-2 in each theme). tokens.css
+   now has a role for that inset step, --surface-inset — repointed below.
+   It happens to equal
+   --border in value; see the comment on --surface-inset in tokens.css for
+   why that is fine here (inset fill vs. parent border, not self-border).
+   --green-dim likewise has no "dimmed" role; approximated as a darkened
+   mix of --green rather than left as a bare hex. */
 .rm-scrim{
-  --bg-2:var(--surface-soft);--bg-3:var(--surface-soft);
+  --bg-2:var(--surface-soft);--bg-3:var(--surface-inset);
   --border-2:var(--border-strong);--text-2:var(--text-muted);--text-3:var(--text-subtle);
   --green-dim:color-mix(in srgb, var(--green) 80%, black);
   --red-bg:color-mix(in srgb, var(--red) 8%, transparent);
