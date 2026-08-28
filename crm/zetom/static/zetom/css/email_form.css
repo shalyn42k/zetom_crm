@@ -3,15 +3,26 @@
    static/css/tokens.css role), so there's no shadowing here to fix. 34 of
    its 39 colour values were already oklch(...) functions — not hex, so
    the "no hex outside tokens.css" invariant never flagged them — leaving
-   only 5 real hex literals to convert. Decided NOT to repoint --zf-* at
-   the shared roles (spec §9 allows either): the --zf-* set is a
+   only 5 real hex literals to convert. Decided NOT to repoint the rest of
+   --zf-* at the shared roles (spec §9 allows either): that set is a
    self-consistent, hand-tuned light/dark palette (matching hue across
    primary/hover/ring/notice/error) built for this one card, and this
-   file isn't in Task 5's screenshot set to verify a repoint against — a
-   blind repoint risks visually drifting a form nobody is watching this
-   round. The 5 literals are converted to rgb()/the `white` keyword
-   instead: exact, driftless re-encodings of the same pixels, not new
-   colour decisions. */
+   file isn't in Task 5's screenshot set to verify a wholesale repoint
+   against.
+
+   claude — fix round: the first pass converted 3 of the 5 literals to
+   rgb()/rgba() with the same hardcoded channel values, which is the same
+   bug in a notation the old regex didn't catch — still doesn't track the
+   token layer. --zf-input-bg now points straight at var(--input-bg)
+   (identical role to validation_window.css's --vw-input-bg), and the
+   focus-ring pair (was a fixed indigo shade, unrelated to --zf-primary's
+   green hue) now uses var(--blue) — not --accent, which is green. Only
+   the plain-white literal becoming the `white` keyword was a real
+   driftless conversion (a universal keyword, not a project colour); it
+   stays. --zf-shadow-lg's light-mode
+   channel values were also a hardcoded slate-900-ish tint (not the
+   pure-black the dark-mode half already used) — recoloured to match,
+   same blur/spread geometry, colour only. */
 .email-page {
     min-height: calc(100vh - 64px);
     padding: 40px 20px;
@@ -37,8 +48,8 @@
     --zf-error-bg: oklch(96% .03 25);
     --zf-error-text: oklch(45% .2 25);
     --zf-error-border: oklch(80% .15 25);
-    --zf-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.06);
-    --zf-input-bg: rgb(246, 248, 251);
+    --zf-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.06);
+    --zf-input-bg: var(--input-bg);
 
     width: 100%;
     max-width: 560px;
@@ -53,7 +64,6 @@
 
 html.dark .email-form-card {
     --zf-surface: oklch(21% .034 264.665);
-    --zf-input-bg: oklch(25% .033 256.848);
     --zf-border: oklch(27.8% .033 256.848);
     --zf-border-strong: oklch(37.3% .034 259.733);
     --zf-text: oklch(96.7% .003 264.542);
@@ -217,8 +227,8 @@ body .email-form-card .form-group textarea:-webkit-autofill:focus {
 .email-form-card .form-group input:focus-visible,
 .email-form-card .form-group textarea:focus,
 .email-form-card .form-group textarea:focus-visible {
-    border-color: rgb(90, 90, 255) !important;
-    box-shadow: 0 0 0 2px rgba(90, 90, 255, 0.25) !important;
+    border-color: var(--blue) !important;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--blue) 25%, transparent) !important;
     outline: none !important;
 }
 
@@ -226,8 +236,7 @@ html.dark .email-form-card .form-group input:focus,
 html.dark .email-form-card .form-group input:focus-visible,
 html.dark .email-form-card .form-group textarea:focus,
 html.dark .email-form-card .form-group textarea:focus-visible {
-    border-color: rgb(122, 122, 255) !important;
-    box-shadow: 0 0 0 2px rgba(122, 122, 255, 0.3) !important;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--blue) 30%, transparent) !important;
 }
 
 .email-form-card .form-group textarea {

@@ -156,7 +156,13 @@ html.dark .vw-footbar{box-shadow:0 -4px 14px rgba(0,0,0,.3)}
 .vw-btn.danger:hover{filter:brightness(1.08)}
 
 /* ============ MODALS ============ */
-.vw-modal-scrim{position:fixed;inset:0;background:rgba(8,11,15,.6);backdrop-filter:blur(2px);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:48px 20px;overflow-y:auto;color:var(--vw-text)}
+/* claude — fix round: scrim background was a hardcoded near-black rgba()
+   triple, a literal the old hex-only invariant never caught (same
+   "hardcoded pixels in a different notation" bug email_form.css had).
+   Converged onto a pure-black rgba() — the one non-hex literal the
+   invariant still allows — same as client_pages.css's .cl-modal-backdrop
+   scrim. */
+.vw-modal-scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:48px 20px;overflow-y:auto;color:var(--vw-text)}
 .vw-modal-scrim.open{display:flex}
 .vw-modal{width:100%;max-width:760px;background:var(--vw-surface);border:1px solid var(--vw-border-2);border-radius:var(--r-xl);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;max-height:calc(100vh - 96px);overflow:hidden}
 .vw-modal .modal-h{padding:16px 20px;border-bottom:1px solid var(--vw-border);display:flex;align-items:center;gap:12px}

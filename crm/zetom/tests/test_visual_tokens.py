@@ -50,6 +50,60 @@ MIGRATED_FILES = [
 # попадает — это не hex и не покрывается инвариантом (см. бриф).
 HEX_COLOR_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 
+# claude — fix-round (Task 5, second pass): the hex-only regex above has a
+# loophole — `rgb(90, 90, 255)` is the exact same hardcoded pixels as
+# `#5a5aff`, just spelled differently, and it slid straight through. This
+# regex closes that: it matches any rgb()/rgba() with literal numeric
+# channels, in any of the notations seen in this codebase (with or without
+# spaces after commas, with or without an alpha channel).
+#
+# Exemptions (deliberately narrow, not "any rgba() is fine"):
+#   1. Pure black — r=g=b=0, e.g. rgba(0,0,0,.6) or rgb(0, 0, 0). Treated
+#      the same as the `white`/`black` CSS keywords already used freely
+#      elsewhere in these files (see email_form.css, validation_window.css):
+#      a universal colour, not a project palette decision, so it needs no
+#      role. This is checked in code below (RGB_LITERAL_RE captures the
+#      channels; the test filters out the (0, 0, 0) triple), not in the
+#      regex itself, so the same pattern also matches — and therefore still
+#      *reports* — non-black triples for a clear failure message.
+#   2. `%23`-encoded colours inside `url("data:image/svg+xml...")` — those
+#      aren't rgb()/rgba() at all (SVG uses its own `stroke='%23...'`
+#      attribute encoding) and can't use var() in that position, so this
+#      regex never touches them; no special-casing needed.
+RGB_LITERAL_RE = re.compile(
+    r"rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*[\d.]+\s*)?\)"
+)
+
+
+def _non_exempt_rgb_matches(content):
+    """rgb()/rgba() channel triples in `content`, minus the pure-black
+    exemption (see RGB_LITERAL_RE comment above)."""
+    return [m for m in RGB_LITERAL_RE.findall(content) if m != ("0", "0", "0")]
+
+
+# claude — fix-round: RGB_LITERAL_RE is enforced only on the three files
+# Task 5 actually owns. static/admin/css/custom_admin.css (Task 3) and
+# static/clients/css/company_card.css / client_pages.css (Task 4) already
+# contain pre-existing non-exempt literal rgba() tints that predate this
+# stricter check (e.g. custom_admin.css's rgba(48, 214, 114, ...) green
+# tints and rgba(136, 152, 170, ...) slate tints; company_card.css's
+# rgba(8, 11, 15, .6) modal scrim) — the same "hardcoded pixels in a
+# different notation" bug this fix-round found in email_form.css and
+# validation_window.css, just not yet caught in those two files because
+# they're out of Task 5's file scope ("do NOT modify any other CSS file").
+# Deliberately NOT silently widening MIGRATED_FILES' hex check to also
+# cover rgb() for those three — that would either fail the suite on files
+# this task isn't allowed to touch, or require rewriting someone else's
+# already-shipped, already-reviewed work as a side effect of a test-only
+# ask. Named here as follow-up debt instead. Every file added to
+# RGB_STRICT_FILES from here on (this task's three, and whatever migrates
+# next) must stay clean of it going forward.
+RGB_STRICT_FILES = [
+    "static/zetom/css/validation_window.css",
+    "crm/zetom/static/zetom/css/email_form.css",
+    "static/admin/css/notification_badge.css",
+]
+
 EXPECTED_ROLES = [
     "--surface",
     "--surface-soft",
@@ -148,6 +202,22 @@ class NoRawHexOutsideTokensTests(SimpleTestCase):
                     matches,
                     f"{relative_path} содержит hex-литералы вне tokens.css: "
                     f"{matches}",
+                )
+
+    def test_no_raw_rgb_outside_tokens(self):
+        # claude — fix-round: closes the rgb()/rgba() loophole in the hex
+        # check above. Scoped to RGB_STRICT_FILES, not MIGRATED_FILES — see
+        # the comment on RGB_STRICT_FILES for why.
+        for relative_path in RGB_STRICT_FILES:
+            path = settings.BASE_DIR / relative_path
+            with self.subTest(file=relative_path):
+                self.assertTrue(path.exists(), f"{path} не существует")
+                content = path.read_text(encoding="utf-8")
+                matches = _non_exempt_rgb_matches(content)
+                self.assertFalse(
+                    matches,
+                    f"{relative_path} содержит hardcoded rgb()/rgba() вне "
+                    f"tokens.css (не pure-black): {matches}",
                 )
 
     def test_grey_input_background_is_gone(self):
