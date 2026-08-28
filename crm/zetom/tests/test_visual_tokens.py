@@ -88,29 +88,173 @@ def _non_exempt_rgb_matches(content):
     return [m for m in RGB_LITERAL_RE.findall(content) if m != ("0", "0", "0")]
 
 
-# claude — fix-round: RGB_LITERAL_RE is enforced only on the three files
-# Task 5 actually owns. static/admin/css/custom_admin.css (Task 3) and
-# static/clients/css/company_card.css / client_pages.css (Task 4) already
-# contain pre-existing non-exempt literal rgba() tints that predate this
-# stricter check (e.g. custom_admin.css's rgba(48, 214, 114, ...) green
-# tints and rgba(136, 152, 170, ...) slate tints; company_card.css's
-# rgba(8, 11, 15, .6) modal scrim) — the same "hardcoded pixels in a
-# different notation" bug this fix-round found in email_form.css and
-# validation_window.css, just not yet caught in those two files because
-# they're out of Task 5's file scope ("do NOT modify any other CSS file").
-# Deliberately NOT silently widening MIGRATED_FILES' hex check to also
-# cover rgb() for those three — that would either fail the suite on files
-# this task isn't allowed to touch, or require rewriting someone else's
-# already-shipped, already-reviewed work as a side effect of a test-only
-# ask. Named here as follow-up debt instead. Every file added to
-# RGB_STRICT_FILES from here on (this task's three, and whatever migrates
-# next) must stay clean of it going forward.
+# claude — fix-round (Task 5): RGB_LITERAL_RE was enforced only on the
+# three files Task 5 owned — static/admin/css/custom_admin.css (Task 3) and
+# static/clients/css/company_card.css / client_pages.css (Task 4) carried
+# pre-existing non-exempt literal rgba() tints that predated this stricter
+# check, named at the time as follow-up debt rather than fixed on the spot
+# (out of Task 5's file scope).
+#
+# claude — Task 7 (final acceptance): that debt is paid off here.
+# RGB_STRICT_FILES now covers all seven migrated files — the three above
+# have had their non-exempt rgba() literals repointed at roles (see the
+# per-rule comments in those files: custom_admin.css's #result_list
+# striping and .crm-dashboard__* hero onto --slate/--color-base-N/
+# --color-primary-N, company_card.css's modal scrim converged onto the
+# pure-black exemption like validation_window.css's already was, and
+# client_pages.css's spinner border onto the same white/color-mix idiom
+# its own border-top-color already used) rather than by loosening this
+# regex or shrinking the file list.
 RGB_STRICT_FILES = [
+    "static/admin/css/custom_admin.css",
+    "static/clients/css/company_card.css",
+    "static/clients/css/client_pages.css",
     "static/zetom/css/validation_window.css",
     "crm/zetom/static/zetom/css/email_form.css",
     "static/admin/css/notification_badge.css",
     "static/zetom/css/requestmain_detail.css",
 ]
+
+# claude — Task 7: RGB_STRICT_FILES above now equals MIGRATED_FILES (every
+# file that's ever been checked for hex is now also checked for rgb()).
+# The three new checks below (hsl()/hsla(), literal oklch(), and named
+# colours) reuse MIGRATED_FILES directly rather than introduce a fourth
+# near-duplicate file list — there's no remaining scoping debt to track
+# separately for them.
+
+# claude — Task 7: hsl()/hsla() and literal oklch() slipped past both the
+# hex check (not hex) and the rgb() check (not rgb) — the same
+# "hardcoded pixels, different notation" bug in two more notations. oklch()
+# is the important one: most of this codebase's non-hex colour already is
+# oklch (Unfold's own --color-base-*/--color-primary-* scale resolves to
+# oklch at runtime), so a literal oklch() is exactly as easy to slip in
+# unnoticed as a literal hex was before Task 2. The tricky part is telling
+# "var(--color-base-900), which happens to resolve to an oklch value" apart
+# from "oklch(21% .034 264.665) typed out by hand" — only the source text
+# matters here, and var(...) never contains the literal string "oklch(".
+# Both regexes require a digit (or +/-) immediately after "(" and optional
+# whitespace, which also means neither one accidentally matches this test
+# file's own "oklch(...)" ellipsis or plain-English mentions of the syntax
+# in code comments — those never start with a digit.
+HSL_LITERAL_RE = re.compile(r"hsla?\(\s*-?\d[^)]*\)")
+OKLCH_LITERAL_RE = re.compile(r"oklch\(\s*-?\d[^)]*\)")
+
+# claude — Task 7: email_form.css's whole --zf-* palette (28 literal
+# oklch() calls, 22 distinct values — see that file's header comment for
+# the full story) is the one deliberate, per-file exemption to the oklch
+# check. Short version: every one of these 22 turned out to be a
+# byte-for-byte copy of an Unfold --color-base-N/--color-primary-N step,
+# which looked at first like the same "hardcoded pixels, different
+# notation" bug this whole refactor has been closing — repointing them at
+# var(--color-base-N)/var(--color-primary-N) seemed like the fix. It
+# isn't: that file's own template (crm/zetom/templates/zetom/
+# email_template.html) is rendered outside any ModelAdmin changeform, and
+# on that specific page var(--color-base-900) etc. compute to an empty
+# string (verified with getComputedStyle in a live browser) — Unfold
+# never injects those custom properties for it. Swapping to var() breaks
+# the card for real (confirmed: transparent background in dark theme, no
+# visible border in either theme), so these 22 stay literal, plus the
+# pre-existing hue-25 --zf-error-* triad (6 more, already literal before
+# this task — no equivalent step in Unfold's scale for that hue at all).
+# Scoped per-file (not a global value allowlist), so the same numbers
+# appearing in some other file's literal oklch() would still be caught,
+# and any *new* literal oklch() added to email_form.css beyond these 22
+# known values would be too.
+OKLCH_EXEMPT_BY_FILE = {
+    "crm/zetom/static/zetom/css/email_form.css": {
+        "oklch(21% .034 264.665)",
+        "oklch(27.8% .033 256.848)",
+        "oklch(28% .12 145)",
+        "oklch(28% .12 25)",
+        "oklch(37.3% .034 259.733)",
+        "oklch(42% .18 145)",
+        "oklch(44.6% .03 256.802)",
+        "oklch(45% .2 25)",
+        "oklch(50% .2 145)",
+        "oklch(55.1% .027 264.364)",
+        "oklch(60% .22 145)",
+        "oklch(70% .2 145 / 0.35)",
+        "oklch(70% .2 145)",
+        "oklch(70.7% .022 261.325)",
+        "oklch(80% .15 145)",
+        "oklch(80% .15 25)",
+        "oklch(87.2% .01 258.338)",
+        "oklch(92.8% .006 264.531)",
+        "oklch(94% .05 145)",
+        "oklch(94% .05 25)",
+        "oklch(96% .03 25)",
+        "oklch(96.7% .003 264.542)",
+    },
+}
+
+
+def _strip_comments(content):
+    """Remove /* ... */ comments before scanning for named-colour usage.
+    Unlike HEX_COLOR_RE/RGB_LITERAL_RE/HSL_LITERAL_RE/OKLCH_LITERAL_RE
+    above (all kept scanning raw content, matching HEX/RGB's existing,
+    already-shipped behaviour), a named-colour scan without this would
+    flag ordinary English prose — these CSS files' own `claude —` comments
+    talk about "green hue", "a red family", "drifted purple" etc.
+    constantly, in ways that are much harder to reword around than the odd
+    literal hex/rgb/oklch value quoted as an example."""
+    return re.sub(r"/\*.*?\*/", "", content, flags=re.S)
+
+
+# claude — Task 7: named CSS colour keywords beyond `white`/`black`, which
+# this codebase already uses freely as universal keywords (see the
+# HEX_COLOR_RE-era comments elsewhere in this file) and which this list
+# deliberately excludes — flagging them would just force everyone to spell
+# "white" as `var(--something)` for no reason. `transparent`, `currentColor`
+# and `inherit` are not CSS named *colours* (they're separate keywords /
+# computed values) and were never in this list to begin with, so they need
+# no explicit exemption. The list itself is the full CSS Color Module
+# extended-keyword set minus white/black.
+NAMED_COLORS = [
+    "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige",
+    "bisque", "blanchedalmond", "blueviolet", "brown", "burlywood",
+    "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue",
+    "cornsilk", "crimson", "cyan", "darkblue", "darkcyan", "darkgoldenrod",
+    "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta",
+    "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon",
+    "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey",
+    "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray",
+    "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen",
+    "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray",
+    "green", "greenyellow", "grey", "honeydew", "hotpink", "indianred",
+    "indigo", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen",
+    "lemonchiffon", "lightblue", "lightcoral", "lightcyan",
+    "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey",
+    "lightpink", "lightsalmon", "lightseagreen", "lightskyblue",
+    "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow",
+    "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine",
+    "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen",
+    "mediumslateblue", "mediumspringgreen", "mediumturquoise",
+    "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin",
+    "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange",
+    "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise",
+    "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum",
+    "powderblue", "purple", "rebeccapurple", "red", "rosybrown",
+    "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen",
+    "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray",
+    "slategrey", "snow", "springgreen", "steelblue", "tan", "teal",
+    "thistle", "tomato", "turquoise", "violet", "wheat", "whitesmoke",
+    "yellow", "yellowgreen",
+]
+
+# claude — Task 7: matches a named colour only where it's used as a value
+# (preceded/followed by punctuation or whitespace), not as a fragment of an
+# identifier. (?<![\w.#-]) rejects a match preceded by a word character, a
+# dot (class selector, e.g. `.green-badge`), a hash (id selector) or a
+# hyphen — that last one is what keeps this from matching "green" inside
+# `--green` or `var(--green-bright)`: CSS custom property names and
+# multi-word idents use `-` as a separator, and `\b` alone treats `-` as a
+# boundary, so a plain \bgreen\b would wrongly fire on `--green`. Mirrored
+# on the right with (?![\w-]) so "greenyellow" doesn't also register a
+# spurious "green" hit.
+NAMED_COLOR_RE = re.compile(
+    r"(?<![\w.#-])(" + "|".join(NAMED_COLORS) + r")(?![\w-])",
+    re.IGNORECASE,
+)
 
 EXPECTED_ROLES = [
     "--surface",
@@ -228,6 +372,63 @@ class NoRawHexOutsideTokensTests(SimpleTestCase):
                     f"tokens.css (не pure-black): {matches}",
                 )
 
+    def test_no_raw_hsl_outside_tokens(self):
+        # claude — Task 7: hsl()/hsla() with literal numeric channels — the
+        # same class of bug as raw hex/rgb(), just a notation nobody had
+        # happened to use yet in these seven files (confirmed empty below,
+        # not "presumed empty" — see test_hsl_regex_detects_a_real_literal
+        # for proof the regex isn't just trivially passing).
+        for relative_path in MIGRATED_FILES:
+            path = settings.BASE_DIR / relative_path
+            with self.subTest(file=relative_path):
+                self.assertTrue(path.exists(), f"{path} не существует")
+                content = path.read_text(encoding="utf-8")
+                matches = HSL_LITERAL_RE.findall(content)
+                self.assertFalse(
+                    matches,
+                    f"{relative_path} содержит literal hsl()/hsla(): "
+                    f"{matches}",
+                )
+
+    def test_no_raw_oklch_outside_tokens(self):
+        # claude — Task 7: literal oklch() — see the OKLCH_LITERAL_RE and
+        # OKLCH_EXEMPT_BY_FILE comments above for what this catches and the
+        # one deliberate, per-file exemption (email_form.css's whole
+        # --zf-* palette — that page can't consume var(--color-base-N)/
+        # var(--color-primary-N) at all, confirmed live, so its colours
+        # have to stay genuinely self-sufficient literals).
+        for relative_path in MIGRATED_FILES:
+            path = settings.BASE_DIR / relative_path
+            with self.subTest(file=relative_path):
+                self.assertTrue(path.exists(), f"{path} не существует")
+                content = path.read_text(encoding="utf-8")
+                exempt = OKLCH_EXEMPT_BY_FILE.get(relative_path, set())
+                matches = [
+                    m for m in OKLCH_LITERAL_RE.findall(content)
+                    if m not in exempt
+                ]
+                self.assertFalse(
+                    matches,
+                    f"{relative_path} содержит literal oklch() вне "
+                    f"tokens.css: {matches}",
+                )
+
+    def test_no_named_colors_outside_tokens(self):
+        # claude — Task 7: named CSS colours beyond white/black — see
+        # NAMED_COLOR_RE's comment above for the identifier/selector
+        # false-positive guard and why comments are stripped first.
+        for relative_path in MIGRATED_FILES:
+            path = settings.BASE_DIR / relative_path
+            with self.subTest(file=relative_path):
+                self.assertTrue(path.exists(), f"{path} не существует")
+                content = _strip_comments(path.read_text(encoding="utf-8"))
+                matches = NAMED_COLOR_RE.findall(content)
+                self.assertFalse(
+                    matches,
+                    f"{relative_path} содержит именованные CSS-цвета вне "
+                    f"white/black: {matches}",
+                )
+
     def test_grey_input_background_is_gone(self):
         # claude — #2a2a3d был тёмным фоном полей ввода custom_admin.css
         # (единственный цвет в проекте с фиолетовым подтоном, см. task-3-
@@ -254,4 +455,71 @@ class NoRawHexOutsideTokensTests(SimpleTestCase):
         self.assertFalse(
             hits,
             f"Литерал {needle} всё ещё встречается: {hits}",
+        )
+
+
+class NewDetectorsCanActuallyFailTests(SimpleTestCase):
+    """claude — Task 7: "prove each new detector can fail before you rely
+    on it" (task-7-brief addition 2). All seven migrated files are clean
+    of hsl()/literal-oklch()/named-colours right now, which means the
+    three tests above pass whether or not their regexes actually work — a
+    regex that matched nothing at all would pass exactly as green. These
+    tests feed each new regex a minimal fixture string that a legacy CSS
+    file plausibly could have contained, and assert it DOES match — so a
+    future accidental loosening of the regex (e.g. dropping the `-?\\d`
+    anchor, or the identifier guard) fails loudly here instead of silently
+    passing everything upstream."""
+
+    def test_hsl_regex_detects_a_real_literal(self):
+        fixture = ".legacy { background: hsl(210, 60%, 50%); }"
+        self.assertTrue(
+            HSL_LITERAL_RE.search(fixture),
+            "HSL_LITERAL_RE не поймал явный hsl() литерал — "
+            "детектор не работает",
+        )
+        # var()-based usage must NOT be flagged — only literals are.
+        self.assertFalse(
+            HSL_LITERAL_RE.search(".ok { color: hsl(var(--h) 60% 50%); }"),
+            "HSL_LITERAL_RE ложно сработал на var()-based hsl()",
+        )
+
+    def test_oklch_regex_detects_a_real_literal(self):
+        fixture = ".legacy { color: oklch(55.1% .027 264.364); }"
+        self.assertTrue(
+            OKLCH_LITERAL_RE.search(fixture),
+            "OKLCH_LITERAL_RE не поймал явный oklch() литерал — "
+            "детектор не работает",
+        )
+        # var(--color-base-900) resolves to oklch at runtime but must NOT
+        # be flagged — the regex only cares about the source text.
+        self.assertFalse(
+            OKLCH_LITERAL_RE.search(".ok { color: var(--color-base-900); }"),
+            "OKLCH_LITERAL_RE ложно сработал на var(--color-base-900)",
+        )
+        # A prose mention of the syntax (no leading digit) must not match
+        # either — this is what keeps this test file's and the migrated
+        # files' own comments from tripping the check on themselves.
+        self.assertFalse(
+            OKLCH_LITERAL_RE.search("/* colours are oklch(...) now */"),
+            "OKLCH_LITERAL_RE ложно сработал на прозу 'oklch(...)'",
+        )
+
+    def test_named_color_regex_detects_a_real_literal(self):
+        fixture = ".legacy { border-color: indigo; }"
+        self.assertTrue(
+            NAMED_COLOR_RE.search(fixture),
+            "NAMED_COLOR_RE не поймал явный именованный цвет — "
+            "детектор не работает",
+        )
+        # white/black are tolerated by convention — not flagged.
+        self.assertFalse(
+            NAMED_COLOR_RE.search(".ok { color: white; background: black; }"),
+            "NAMED_COLOR_RE ложно сработал на white/black",
+        )
+        # Custom-property and class-name fragments must not be flagged —
+        # this is the false positive that would otherwise fire on every
+        # var(--green)/.green-badge in the migrated files.
+        self.assertFalse(
+            NAMED_COLOR_RE.search(".green-badge { color: var(--green-bright); }"),
+            "NAMED_COLOR_RE ложно сработал на --green/.green-badge",
         )
