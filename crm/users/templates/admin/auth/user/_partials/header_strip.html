@@ -9,40 +9,44 @@
   </div>
 
   <div class="up-strip__meta">
-    <h1 class="up-strip__name">{{ original.get_full_name|default:original.username }}</h1>
+    <div class="up-strip__title-row">
+      <h1 class="up-strip__name">{{ original.get_full_name|default:original.username }}</h1>
+      {% comment %}
+        claude — раньше роль/статус жили в общей "куче" под именем вперемешку
+        с username/email/отделами, разделённые только точками — визуально
+        всё сливалось в одну строку без иерархии. Бейджи теперь рядом с
+        именем (то, что определяет юзера), контакты и даты — отдельными,
+        явно более тихими строками ниже.
+      {% endcomment %}
+      {% if not original.is_active %}
+        <span class="up-badge up-badge--inactive">{% trans "Inactive" %}</span>
+      {% endif %}
+      {% if original.profile.role %}
+        <span class="up-badge up-badge--role-{{ original.profile.role.code|lower }}">{% trans original.profile.role.name %}</span>
+      {% elif original.is_staff %}
+        <span class="up-badge up-badge--role-staff">{% trans "Staff" %}</span>
+      {% endif %}
+    </div>
+
     <p class="up-strip__sub">
       <span>{{ original.username }}</span>
       {% if original.email %}
         <span class="up-sep" aria-hidden="true">·</span>
         <span>{{ original.email }}</span>
       {% endif %}
-      {% comment %}
-        claude — деактивированный аккаунт должен читаться с первого взгляда:
-        логин заблокирован, из пикеров ассайни/owner'ов юзер выпал, но
-        карточка выглядит как обычная.
-      {% endcomment %}
-      {% if not original.is_active %}
-        <span class="up-sep" aria-hidden="true">·</span>
-        <span class="up-badge up-badge--inactive">{% trans "Inactive" %}</span>
-      {% endif %}
-      {% if original.profile.role %}
-        <span class="up-sep" aria-hidden="true">·</span>
-        <span class="up-badge up-badge--role-{{ original.profile.role.code|lower }}">{% trans original.profile.role.name %}</span>
-      {% elif original.is_staff %}
-        <span class="up-sep" aria-hidden="true">·</span>
-        <span class="up-badge up-badge--role-staff">{% trans "Staff" %}</span>
-      {% endif %}
       {% if original.profile.departments %}
         <span class="up-sep" aria-hidden="true">·</span>
         <span>{{ original.profile.departments_summary }}</span>
       {% endif %}
     </p>
+
     <p class="up-strip__dates">
       {% if original.date_joined %}
-        <span>{% trans "Joined" %}: {{ original.date_joined|date:"d.m.Y" }}</span>
+        <span>{% trans "Joined" %} {{ original.date_joined|date:"d.m.Y" }}</span>
       {% endif %}
       {% if original.last_login %}
-        <span>{% trans "Last login" %}: {{ original.last_login|date:"d.m.Y H:i" }}</span>
+        <span class="up-sep" aria-hidden="true">·</span>
+        <span>{% trans "Last login" %} {{ original.last_login|date:"d.m.Y H:i" }}</span>
       {% endif %}
     </p>
   </div>

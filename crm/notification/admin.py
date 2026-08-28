@@ -1,7 +1,7 @@
 import json
 
 from django.contrib import admin
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 
@@ -10,16 +10,30 @@ from crm.notification.utils import render_notification
 from crm.users.utils import user_has_perm
 
 
-# claude
+# claude — было json.dumps в <pre>: technically readable, but reads as raw
+# code (braces, quotes) even for a two-key payload like
+# {"request_id": 69, "stage": "new"} — flagged as "code in the interface"
+# on the email-log detail page. Payloads here are flat dicts in practice
+# (see callers of send_notification / EmailNotification.objects.create),
+# so render those as a plain key/value list; anything with a nested
+# dict/list (not expected, but the field is JSONField — no schema
+# enforced) falls back to the old formatted-JSON <pre> rather than risk
+# mangling a shape this wasn't designed for.
 def _pretty_json(value):
-    """Format a JSON-friendly dict so Cyrillic stays readable in admin.
-
-    Django's default JSONField widget calls json.dumps(ensure_ascii=True),
-    which turns every non-ASCII glyph into \\uXXXX. Wrapping in <pre> keeps
-    line breaks; format_html on the json text safely escapes < and >.
-    """
+    """Render a flat dict payload as key/value pairs; formatted JSON as fallback."""
     if not value:
         return "—"
+    if isinstance(value, dict) and all(
+        not isinstance(v, (dict, list)) for v in value.values()
+    ):
+        rows = format_html_join(
+            "",
+            "<div style='display:flex;gap:8px;padding:2px 0'>"
+            "<span style='color:var(--font-subtle-light, #71717a);min-width:11ch'>{}</span>"
+            "<span>{}</span></div>",
+            ((k, "—" if v is None else v) for k, v in sorted(value.items())),
+        )
+        return format_html("<div>{}</div>", rows)
     text = json.dumps(value, indent=2, ensure_ascii=False, sort_keys=True)
     return format_html("<pre style='white-space:pre-wrap;margin:0'>{}</pre>", text)
 

@@ -1,0 +1,22 @@
+{% extends "unfold/layouts/skeleton.html" %}
+{% load static %}
+{% comment %}
+  claude — переопределение unfold/layouts/skeleton.html: единственный
+  общий предок ВСЕХ раскладок Unfold (admin/base.html — обычные страницы
+  админки, unfold/layouts/base.html — /users/me/, unfold/layouts/
+  unauthenticated.html — страницы 2FA). custom_admin.css раньше подключался
+  только в templates/admin/base_site.html — той ветке, что использует
+  admin/base.html; на /users/me/ и всех otp_*.html файл вообще не
+  загружался. Из-за этого там не работала тёмная/светлая тема инпутов
+  (--custom-input-*): в light-теме поля выглядели пустыми — текст (класс
+  text-white, есть в сборке Unfold) был белым без явного фона (bg-gray-900
+  из forms.py в сборку не попал — не был нигде использован в шаблонах
+  Unfold, а значит вырезан при паковке). Теперь подключаем файл здесь, в
+  общем предке, — работает везде одинаково, а дубль в base_site.html
+  убран, чтобы не грузить дважды на обычных страницах админки.
+{% endcomment %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}?v={% now "U" %}">
+{% endblock %}

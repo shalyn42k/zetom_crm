@@ -9,8 +9,25 @@ from crm.clients.fields import ClientField
 from crm.clients.validators import normalize_nip, validate_nip
 # Zetom app imports
 from crm.zetom.models import (
-    Oferta, RequestMain, RequestNull, Wniosek, Zlecenie,
+    DepartmentsVariants, Oferta, RequestMain, RequestNull, Wniosek, Zlecenie,
 )
+
+
+# claude — Oferta/Zlecenie/Wniosek list "departments" in their ModelAdmin.fields
+# without declaring it on the form (unlike price/notes/etc below), so Django
+# auto-generates it from ArrayField.formfield() — that default is
+# SimpleArrayField, a plain textarea expecting hand-typed comma-separated
+# codes, with no indication of which codes are valid. Declared explicitly
+# here (same pattern as elsewhere in this file) so it's a real multi-select
+# instead; TypedMultipleChoiceField.clean() returns a plain list of strings,
+# which is exactly what ArrayField stores — no widget/data-shape mismatch.
+def _departments_field():
+    return forms.TypedMultipleChoiceField(
+        choices=DepartmentsVariants.choices,
+        required=False,
+        coerce=str,
+        widget=forms.SelectMultiple,
+    )
 
 
 class TemplateForm(forms.ModelForm):
@@ -117,6 +134,7 @@ class AddRequestFormMain(TemplateForm):
 
 
 class AddOferta(TemplateForm):
+    departments = _departments_field()
     price = forms.DecimalField(
         required=False, widget=forms.NumberInput(attrs={"placeholder": "0"})
     )
@@ -135,6 +153,7 @@ class AddOferta(TemplateForm):
             "client",          # NEW
             "from_main",
             "phone",
+            "departments",
             "email",
             "company_name",
             "company_nip",
@@ -145,6 +164,7 @@ class AddOferta(TemplateForm):
 
 
 class AddZlecenie(TemplateForm):
+    departments = _departments_field()
     price = forms.DecimalField(
         required=False, widget=forms.NumberInput(attrs={"placeholder": "0"})
     )
@@ -163,6 +183,7 @@ class AddZlecenie(TemplateForm):
             "client",          # NEW
             "from_main",
             "phone",
+            "departments",
             "email",
             "company_name",
             "company_nip",
@@ -173,6 +194,7 @@ class AddZlecenie(TemplateForm):
 
 
 class AddWniosek(TemplateForm):
+    departments = _departments_field()
     notes = forms.CharField(
         required=False,
         widget=forms.Textarea(
@@ -188,6 +210,7 @@ class AddWniosek(TemplateForm):
             "client",          # NEW
             "from_main",
             "phone",
+            "departments",
             "email",
             "company_name",
             "company_nip",

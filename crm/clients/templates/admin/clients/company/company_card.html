@@ -34,8 +34,10 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
 <div class="cc-stage">
 
   <div class="backrow">
-    {# claude — back to the Klienci list filtered to firms, not the stock
-       Company changelist (which now redirects here anyway). #}
+    {% comment %}
+      claude — back to the Klienci list filtered to firms, not the stock
+      Company changelist (which now redirects here anyway).
+    {% endcomment %}
     <a class="btn-back" href="{% url 'admin:clients_client_changelist' %}?rodzaj=firmy"><svg class="i"><use href="#cc-i-arrow-l"/></svg> {% trans "Wróć" %}</a>
     <span class="podglad-tag"><b>{% trans "Klient / Firma" %}</b> · podgląd</span>
   </div>

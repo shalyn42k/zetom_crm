@@ -74,7 +74,40 @@ def _send(*, recipients, subject, body, template_name="", payload=None, actor=No
             records.append(record)
         return records
 
-    with connection:
+    # claude — `with connection:` calls connection.open() on __enter__, which
+    # is where the actual socket connects. That was outside any try/except,
+    # so a refused/unreachable SMTP server raised straight out of `_send()`
+    # into whatever signal/view called it (e.g. saving an Oferta in the admin
+    # triggers a status-change signal that emails the client — a dead SMTP
+    # server turned that into an unhandled 500 on save). Open explicitly so
+    # the same "no recipients reached, record FAILED, don't raise" contract
+    # from the get_connection() branch above also covers the socket-open step.
+    try:
+        connection.open()
+    except Exception as open_error:
+        logger.error(
+            "notification.mail: failed to open SMTP connection. "
+            "SMTP Config: host=%s, port=%s, use_tls=%s, user=%s. Error: %s",
+            settings.EMAIL_HOST,
+            settings.EMAIL_PORT,
+            settings.EMAIL_USE_TLS,
+            settings.EMAIL_HOST_USER or "(empty)",
+            open_error,
+        )
+        for email in recipients:
+            record = EmailNotification.objects.create(
+                recipient_email=email,
+                actor=actor,
+                template_name=template_name,
+                subject=subject,
+                payload=payload or {},
+                status=EmailStatus.FAILED,
+                status_reason=f"Connection failed: {open_error}",
+            )
+            records.append(record)
+        return records
+
+    try:
         for email in recipients:
             record = EmailNotification.objects.create(
                 recipient_email=email,
@@ -111,6 +144,8 @@ def _send(*, recipients, subject, body, template_name="", payload=None, actor=No
                 record.sent_at = timezone.now()
                 record.save(update_fields=["status", "sent_at"])
             records.append(record)
+    finally:
+        connection.close()
     return records
 
 
