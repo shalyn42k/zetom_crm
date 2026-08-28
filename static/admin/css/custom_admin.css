@@ -1,32 +1,21 @@
-/* Цветовые переменные — светлая тема по умолчанию */
+/* claude — цветовые переменные --custom-input-* больше не значения, а
+   алиасы ролей из static/css/tokens.css (см. docs/superpowers/specs/
+   2026-08-25-visual-tokens-unification-design.md §4.3). Имена сохранены —
+   их продолжает использовать остальной файл — источник цвета теперь
+   tokens.css. Роли уже переключаются под html.dark сами (tokens.css
+   переопределяет --input-bg/--text/--text-subtle/--accent в своём
+   html.dark блоке), поэтому здесь больше не нужно повторно объявлять
+   --custom-input-* под html.dark — раньше это делалось трижды (:root,
+   html.dark и @media (prefers-color-scheme: dark) как подстраховка до
+   применения класса), сейчас переменная сама "видит" тему через
+   каскадное разрешение var() в месте использования. */
 :root {
-    --custom-input-bg: #ffffff;
-    --custom-input-border: #d0d0d8;
-    --custom-input-text: #1a1a2e;
-    --custom-input-placeholder: #8a8aa0;
-    --custom-input-focus-border: #5a5aff;
-    --custom-input-focus-shadow: rgba(90, 90, 255, 0.25);
-}
-
-/* Тёмная тема: класс .dark на <html> (Unfold), или системные настройки */
-html.dark {
-    --custom-input-bg: #2a2a3d;
-    --custom-input-border: #4a4a6a;
-    --custom-input-text: #ffffff;
-    --custom-input-placeholder: #8888aa;
-    --custom-input-focus-border: #7a7aff;
-    --custom-input-focus-shadow: rgba(122, 122, 255, 0.3);
-}
-
-@media (prefers-color-scheme: dark) {
-    html:not(.light) {
-        --custom-input-bg: #2a2a3d;
-        --custom-input-border: #4a4a6a;
-        --custom-input-text: #ffffff;
-        --custom-input-placeholder: #8888aa;
-        --custom-input-focus-border: #7a7aff;
-        --custom-input-focus-shadow: rgba(122, 122, 255, 0.3);
-    }
+    --custom-input-bg: var(--input-bg);
+    --custom-input-border: var(--input-border);
+    --custom-input-text: var(--text);
+    --custom-input-placeholder: var(--text-subtle);
+    --custom-input-focus-border: var(--accent);
+    --custom-input-focus-shadow: color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 /* Все input и textarea поля (кроме чекбоксов, радио, файлов и кнопок) */
@@ -165,7 +154,10 @@ select[multiple] option {
 
 select[multiple] option:checked {
     background: var(--custom-input-focus-border) !important;
-    color: #fff !important;
+    /* claude — white against the accent-coloured highlight, fixed
+       regardless of theme (same treatment as text on the green Save
+       button elsewhere in Unfold) — not a role, so not var(--text). */
+    color: white !important;
 }
 
 select:focus {
@@ -184,22 +176,19 @@ select:focus {
    (min-width: 1024px), т.к. на мобильном у Unfold уже отдельная
    карточная раскладка со своими отступами. */
 @media (min-width: 1024px) {
-    /* claude — светлая/тёмная "поверхность карточки" — те же hex, что
-       --surface/--bg/--border в company_card.css (Klienci), а не
-       полупрозрачная заливка поверх фона: у Unfold фон страницы и фон
-       панели раньше были одного цвета, поэтому скругления/тень были
-       не видны. Теперь у панелей свой, заметно более светлый (в тёмной
-       теме) или чуть более светлый (в светлой) фон — как в Klienci. */
+    /* claude — светлая/тёмная "поверхность карточки" — роли --surface-soft
+       /--border из static/css/tokens.css (та же пара, на которую
+       опирается company_card.css), а не полупрозрачная заливка поверх
+       фона: у Unfold фон страницы и фон панели раньше были одного цвета,
+       поэтому скругления/тень были не видны. Теперь у панелей свой,
+       заметно более светлый (в тёмной теме) или чуть более светлый (в
+       светлой) фон — как в Klienci. Роль сама переключается под
+       html.dark в tokens.css, поэтому отдельный html.dark-блок здесь
+       больше не нужен. */
     .zt-list-panel,
     .zt-pagination-bar {
-        background: #fafaf9 !important;
-        border: 1px solid #e5e4e2 !important;
-    }
-
-    html.dark .zt-list-panel,
-    html.dark .zt-pagination-bar {
-        background: #1a2028 !important;
-        border: 1px solid #2c3644 !important;
+        background: var(--surface-soft) !important;
+        border: 1px solid var(--border) !important;
     }
 
     /* claude — строка поиска (zt-search-box, search_form.html) и кнопка
@@ -212,18 +201,13 @@ select:focus {
         /* claude — полная "таблетка" (как у Google/YouTube, тот же приём,
            что у input[data-client-picker]): угол = половина высоты поля,
            поэтому 999px универсально перебивает любую реальную высоту. */
-        background: #fafaf9 !important;
-        border-color: #e5e4e2 !important;
+        background: var(--surface-soft) !important;
+        border-color: var(--border) !important;
         border-radius: 999px !important;
         padding-top: 12px !important;
         padding-bottom: 12px !important;
         padding-left: 18px !important;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-    }
-
-    html.dark .zt-search-box {
-        background: #1a2028 !important;
-        border-color: #2c3644 !important;
     }
 
     /* claude — #content-main#content-main (id повторён намеренно): правило
@@ -246,13 +230,8 @@ select:focus {
     }
 
     .zt-filter-btn:not(.bg-primary-600) {
-        background: #fafaf9 !important;
-        border-color: #e5e4e2 !important;
-    }
-
-    html.dark .zt-filter-btn:not(.bg-primary-600) {
-        background: #1a2028 !important;
-        border-color: #2c3644 !important;
+        background: var(--surface-soft) !important;
+        border-color: var(--border) !important;
     }
 
     .zt-list-panel {
@@ -315,6 +294,13 @@ select:focus {
     gap: 24px;
 }
 
+/* claude — .crm-dashboard__* below is a fixed dark hero/panel design that
+   does not follow html.dark (no dark-mode override exists for it in this
+   file, before or after this migration) — it's always the same dark
+   gradient card, in both site themes. Its `color: white` declarations
+   are therefore intentionally the literal keyword, not var(--text):
+   --text flips to a near-black value in light theme, which would make
+   this permanently-dark card's text vanish. */
 .crm-dashboard__hero,
 .crm-dashboard__panel,
 .crm-dashboard__primary-card,
@@ -390,7 +376,7 @@ select:focus {
 }
 
 .crm-dashboard__stat-value {
-    color: #ffffff;
+    color: white;
     font-size: clamp(1.9rem, 2.5vw, 2.6rem);
     font-weight: 700;
     line-height: 1;
@@ -433,7 +419,7 @@ select:focus {
 
 .crm-dashboard__section-title {
     margin: 6px 0 0;
-    color: #ffffff;
+    color: white;
     font-size: 30px;
     font-weight: 700;
     line-height: 1.12;
@@ -491,7 +477,7 @@ select:focus {
 .crm-dashboard__card-title,
 .crm-dashboard__workspace-title {
     margin: 10px 0 0;
-    color: #ffffff;
+    color: white;
     font-size: 22px;
     font-weight: 700;
     line-height: 1.2;
@@ -536,7 +522,7 @@ select:focus {
 .crm-dashboard__button--primary {
     border-color: rgba(48, 214, 114, 0.34);
     background: rgba(48, 214, 114, 0.14);
-    color: #ffffff;
+    color: white;
 }
 
 .crm-dashboard__button:hover,
@@ -544,7 +530,7 @@ select:focus {
 .crm-dashboard__activity-title a:hover {
     border-color: rgba(48, 214, 114, 0.4);
     background: rgba(48, 214, 114, 0.12);
-    color: #ffffff;
+    color: white;
     transform: translateY(-1px);
 }
 
@@ -605,7 +591,7 @@ select:focus {
     border-radius: 14px;
     background: rgba(48, 214, 114, 0.12);
     border: 1px solid rgba(48, 214, 114, 0.22);
-    color: #ffffff;
+    color: white;
     font-size: 14px;
     font-weight: 700;
 }
@@ -614,7 +600,7 @@ select:focus {
 .crm-dashboard__hint-item strong {
     display: block;
     margin-bottom: 4px;
-    color: #ffffff;
+    color: white;
     font-size: 15px;
 }
 
@@ -645,7 +631,7 @@ select:focus {
 
 .crm-dashboard__activity-title {
     margin-top: 10px;
-    color: #ffffff;
+    color: white;
     font-size: 15px;
     font-weight: 600;
     line-height: 1.5;

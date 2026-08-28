@@ -27,7 +27,10 @@ SKELETON_HTML = (
 
 # Задача 2: список пуст — ни один файл ещё не мигрирован на токены.
 # Каждая следующая задача добавляет сюда свой файл (по одному за задачу).
-MIGRATED_FILES = []
+# Задача 3: static/admin/css/custom_admin.css мигрирован на роли из tokens.css.
+MIGRATED_FILES = [
+    "static/admin/css/custom_admin.css",
+]
 
 # Hex-литерал цвета: #fff, #ffffff, #ffffffcc и т.п. rgba(...) сюда не
 # попадает — это не hex и не покрывается инвариантом (см. бриф).
@@ -132,3 +135,31 @@ class NoRawHexOutsideTokensTests(SimpleTestCase):
                     f"{relative_path} содержит hex-литералы вне tokens.css: "
                     f"{matches}",
                 )
+
+    def test_grey_input_background_is_gone(self):
+        # claude — #2a2a3d был тёмным фоном полей ввода custom_admin.css
+        # (единственный цвет в проекте с фиолетовым подтоном, см. task-3-
+        # brief.md и §1.1 спека). Task 3 переводит его на роль --input-bg;
+        # величина должна исчезнуть из проекта целиком, а не просто из
+        # одного файла — ищем по всему static/ и crm/.
+        needle = "2a2a3d"
+        # claude — этот тест-файл сам обязан упоминать needle текстом (выше
+        # и в этой строке), иначе он совпадёт сам с собой при сканировании
+        # crm/ — исключаем свой путь явно, а не потому что он "особенный".
+        self_path = Path(__file__).resolve()
+        hits = []
+        for root_name in ("static", "crm"):
+            root = settings.BASE_DIR / root_name
+            for path in root.rglob("*"):
+                if not path.is_file() or path.resolve() == self_path:
+                    continue
+                try:
+                    content = path.read_text(encoding="utf-8")
+                except (UnicodeDecodeError, PermissionError):
+                    continue
+                if needle in content:
+                    hits.append(str(path.relative_to(settings.BASE_DIR)))
+        self.assertFalse(
+            hits,
+            f"Литерал {needle} всё ещё встречается: {hits}",
+        )
