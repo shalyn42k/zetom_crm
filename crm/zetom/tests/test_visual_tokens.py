@@ -139,51 +139,40 @@ RGB_STRICT_FILES = [
 HSL_LITERAL_RE = re.compile(r"hsla?\(\s*-?\d[^)]*\)")
 OKLCH_LITERAL_RE = re.compile(r"oklch\(\s*-?\d[^)]*\)")
 
-# claude — Task 7: email_form.css's whole --zf-* palette (28 literal
-# oklch() calls, 22 distinct values — see that file's header comment for
-# the full story) is the one deliberate, per-file exemption to the oklch
-# check. Short version: every one of these 22 turned out to be a
-# byte-for-byte copy of an Unfold --color-base-N/--color-primary-N step,
-# which looked at first like the same "hardcoded pixels, different
-# notation" bug this whole refactor has been closing — repointing them at
-# var(--color-base-N)/var(--color-primary-N) seemed like the fix. It
-# isn't: that file's own template (crm/zetom/templates/zetom/
-# email_template.html) is rendered outside any ModelAdmin changeform, and
-# on that specific page var(--color-base-900) etc. compute to an empty
-# string (verified with getComputedStyle in a live browser) — Unfold
-# never injects those custom properties for it. Swapping to var() breaks
-# the card for real (confirmed: transparent background in dark theme, no
-# visible border in either theme), so these 22 stay literal, plus the
-# pre-existing hue-25 --zf-error-* triad (6 more, already literal before
-# this task — no equivalent step in Unfold's scale for that hue at all).
-# Scoped per-file (not a global value allowlist), so the same numbers
-# appearing in some other file's literal oklch() would still be caught,
-# and any *new* literal oklch() added to email_form.css beyond these 22
-# known values would be too.
+# claude — Task 7 fix-round: static/css/tokens.css's roles now carry a
+# var()-fallback hex, so email_form.css no longer needs to stay fully
+# literal to survive rendering outside a ModelAdmin changeform — see that
+# file's header comment for the full story. The 8 values that were an
+# exact byte-for-byte match to both an Unfold base/primary-N step AND the
+# specific role tokens.css assigns that same step (--zf-border/--zf-text/
+# --zf-text-muted/--zf-text-subtle in light, --zf-surface/--zf-text/
+# --zf-text-muted/--zf-text-subtle in dark, --zf-primary in light) were
+# repointed at those roles and no longer appear here. What remains
+# exempt is every value that has no exact-step role to repoint at —
+# either the closest role sits on a *different* numeric step (dark
+# --zf-border is base-800, tokens.css's --border role is base-700 — using
+# it would silently shift this card's colour), or the hue (145 for
+# --zf-primary-hover/--zf-primary-ring/--zf-notice-*, 25 for
+# --zf-error-*) has no role at all. Scoped per-file (not a global value
+# allowlist), so the same numbers appearing in some other file's literal
+# oklch() would still be caught, and any *new* literal oklch() added to
+# email_form.css beyond this known list would be too.
 OKLCH_EXEMPT_BY_FILE = {
     "crm/zetom/static/zetom/css/email_form.css": {
-        "oklch(21% .034 264.665)",
         "oklch(27.8% .033 256.848)",
         "oklch(28% .12 145)",
         "oklch(28% .12 25)",
         "oklch(37.3% .034 259.733)",
         "oklch(42% .18 145)",
-        "oklch(44.6% .03 256.802)",
         "oklch(45% .2 25)",
-        "oklch(50% .2 145)",
-        "oklch(55.1% .027 264.364)",
         "oklch(60% .22 145)",
         "oklch(70% .2 145 / 0.35)",
         "oklch(70% .2 145)",
-        "oklch(70.7% .022 261.325)",
         "oklch(80% .15 145)",
         "oklch(80% .15 25)",
-        "oklch(87.2% .01 258.338)",
-        "oklch(92.8% .006 264.531)",
         "oklch(94% .05 145)",
         "oklch(94% .05 25)",
         "oklch(96% .03 25)",
-        "oklch(96.7% .003 264.542)",
     },
 }
 

@@ -32,6 +32,49 @@
    Dark mode is `html.dark` (the class Unfold puts on <html>), never
    `data-theme="dark"`.
 
+   claude — Task 7 fix-round (root cause): Unfold only injects its
+   `--color-base-*`/`--color-primary-*` custom properties inside a
+   ModelAdmin changeform's rendered DOM. Any page outside that (confirmed:
+   /zetom/email/, rendered by a bare `render()` call, not a ModelAdmin
+   view) never gets those properties defined at all, so every role above
+   was resolving to nothing there — not "the wrong colour", literally an
+   empty computed value, which cascades to "no background", "no border",
+   etc. for anything consuming a role.
+
+   Fixed by giving every role a fallback via var()'s second argument:
+   `var(--color-base-900, #101828)`. This prefers Unfold's live scale
+   wherever it exists (unchanged behaviour on every admin page — the
+   fallback never wins there) and stands on its own where it doesn't. This
+   is the one place simple var()-fallback hex literals for the Unfold
+   scale are allowed, for the same reason the rest of this file's literals
+   are: there is nothing further upstream to ride on.
+
+   Fallback values were computed, not eyeballed, from the oklch(L% C H)
+   triples in config/unfold_config.py's COLORS table (base + primary
+   scales) via the standard OKLab → linear sRGB matrices from Björn
+   Ottosson's "A perceptual color space for image processing" (the same
+   math the CSS Color 4 oklch() spec itself is built on):
+     l_ = L + 0.3963377774·a + 0.2158037573·b
+     m_ = L − 0.1055613458·a − 0.0638541728·b
+     s_ = L − 0.0894841775·a − 1.2914855480·b   (a,b = C·cos H, C·sin H)
+     l,m,s = l_³, m_³, s_³
+     r = 4.0767416621·l − 3.3077115913·m + 0.2309699292·s
+     g = −1.2684380046·l + 2.6097574011·m − 0.3413193965·s
+     b = −0.0041960863·l − 0.7034186147·m + 1.7076147010·s
+   then the sRGB EOTF (piecewise 12.92 / 1.055·x^(1/2.4)−0.055) converts
+   linear r,g,b to 0–255 channels. Two of the primary-scale steps
+   (primary-500/600, the deep-green end) fall slightly outside the sRGB
+   gamut at full chroma; those were gamut-mapped by binary-searching the
+   largest in-gamut chroma at the same L and H (holding lightness and hue
+   fixed, reducing only chroma) — the same axis CSS Color 4's own gamut-
+   mapping algorithm reduces first — rather than naively clipping each
+   channel to [0,1], which would shift the hue. base-* needed no mapping;
+   every base step landed in-gamut already. The base scale's resulting
+   hexes land within a few least-significant-bits of Tailwind's own
+   published gray-* hex swatches at the same steps — expected, since
+   Unfold's base scale numbers are Tailwind's, and a sanity check that the
+   matrices above are the standard ones, not a wrong or transposed set.
+
    claude — controller ruling, Task 4 second fix-round
    (visual-tokens-unification): --green-bright added here as a role,
    overriding this task's original "produce no new roles" constraint.
@@ -56,8 +99,8 @@
 
 :root {
   /* Semantic roles — light (Unfold base-* / primary-* scale) */
-  --surface: var(--color-base-50);
-  --surface-soft: var(--color-base-100);
+  --surface: var(--color-base-50, #f9fafb);
+  --surface-soft: var(--color-base-100, #f3f4f6);
   /* claude — Task 7 addition 1: a third surface tier, one inset step past
      --surface-soft, restoring what requestmain_detail.css's --bg-3 used to
      be before migration collapsed it onto --bg-2/--surface-soft (see that
@@ -69,15 +112,15 @@
      border. Elements using --surface-inset (e.g. .dup-score .bar) still
      carry their own 1px var(--border) outline, which remains visible
      against --surface-soft, the colour of the card around them. */
-  --surface-inset: var(--color-base-200);
-  --border: var(--color-base-200);
-  --border-strong: var(--color-base-300);
-  --text: var(--color-base-900);
-  --text-muted: var(--color-base-600);
-  --text-subtle: var(--color-base-500);
-  --input-bg: var(--color-base-50);
-  --input-border: var(--color-base-300);
-  --accent: var(--color-primary-600);
+  --surface-inset: var(--color-base-200, #e5e7eb);
+  --border: var(--color-base-200, #e5e7eb);
+  --border-strong: var(--color-base-300, #d1d5dc);
+  --text: var(--color-base-900, #101828);
+  --text-muted: var(--color-base-600, #4a5565);
+  --text-subtle: var(--color-base-500, #6a7282);
+  --input-bg: var(--color-base-50, #f9fafb);
+  --input-border: var(--color-base-300, #d1d5dc);
+  --accent: var(--color-primary-600, #00791e);
 
   /* Status colours — light */
   --green: #16a34a;
@@ -101,19 +144,19 @@
 
 html.dark {
   /* Semantic roles — dark (Unfold base-* / primary-* scale) */
-  --surface: var(--color-base-900);
-  --surface-soft: var(--color-base-800);
+  --surface: var(--color-base-900, #101828);
+  --surface-soft: var(--color-base-800, #1e2939);
   /* claude — see the :root comment above: --surface-inset intentionally
      shares its value with --border here too. */
-  --surface-inset: var(--color-base-700);
-  --border: var(--color-base-700);
-  --border-strong: var(--color-base-600);
-  --text: var(--color-base-100);
-  --text-muted: var(--color-base-300);
-  --text-subtle: var(--color-base-400);
-  --input-bg: var(--color-base-900);
-  --input-border: var(--color-base-700);
-  --accent: var(--color-primary-400);
+  --surface-inset: var(--color-base-700, #364153);
+  --border: var(--color-base-700, #364153);
+  --border-strong: var(--color-base-600, #4a5565);
+  --text: var(--color-base-100, #f3f4f6);
+  --text-muted: var(--color-base-300, #d1d5dc);
+  --text-subtle: var(--color-base-400, #99a1af);
+  --input-bg: var(--color-base-900, #101828);
+  --input-border: var(--color-base-700, #364153);
+  --accent: var(--color-primary-400, #30bd44);
 
   /* Status colours — dark */
   --green: #22c55e;

@@ -24,35 +24,43 @@
    pure-black the dark-mode half already used) — recoloured to match,
    same blur/spread geometry, colour only.
 
-   claude — Task 7: tried repointing the 22 literals that matched a
-   base-N or primary-N step at var(--color-base-N)/var(--color-primary-N)
-   — every one of
-   them is a byte-for-byte copy of an Unfold scale step (measured against
-   config/unfold_config.py's COLORS table), so on paper it looked like the
-   same "hardcoded pixels, different notation" bug this whole refactor has
-   been closing. Reverted it: this template (crm/zetom/templates/zetom/
-   email_template.html) extends admin/base_site.html but is rendered from
-   a bare `render()` call outside any ModelAdmin changeform, and on that
-   page var(--color-base-900) etc. compute to an EMPTY string (checked
-   with getComputedStyle in a live browser, both themes) — Unfold never
-   injects those custom properties for it. tokens.css's own roles
-   (--border, --accent, ...) are themselves built from the same
-   var(--color-base-N), so they're equally unusable here; that's also why
-   --zf-input-bg: var(--input-bg) (Task 5, already shipped, not touched by
-   this task) silently renders transparent on this exact page — a
-   pre-existing bug, out of this task's scope, flagged in the Task 7
-   report rather than fixed here. Confirmed swapping to var() breaks the
-   card (transparent background in dark theme, no visible border in
-   either) and reverted back to literal oklch. Task 5's original call —
-   "self-consistent, hand-tuned palette... this file isn't in the
-   screenshot set to verify a wholesale repoint against" — was right, for
-   a better reason than it knew at the time: this page can't consume the
-   shared token layer at all, so its colours have to be genuinely
-   self-sufficient literals, not a matter of taste. All 28 (not just the
-   error triad) are listed as a deliberate, narrow, per-file exemption in
+   claude — Task 7 fix-round (root cause, not the symptom): the previous
+   attempt above reverted a repoint of the 22 base/primary-matching
+   literals because on this page (rendered by a bare `render()` call,
+   outside any ModelAdmin changeform) var(--color-base-900) etc. computed
+   to an EMPTY string — Unfold never injects those custom properties here,
+   and tokens.css's own roles were built straight on top of them with no
+   fallback, so the roles were exactly as unusable here. That included
+   --zf-input-bg: var(--input-bg) (Task 5, already shipped) — this page's
+   inputs were rendering with no background or border at all, a real
+   user-facing regression, not just a missed repoint.
+
+   Fixed at the root instead: every role in static/css/tokens.css now
+   carries a var()-fallback colour as the second argument to var(), so
+   roles resolve everywhere — Unfold's live scale on admin pages,
+   tokens.css's own fallback here. --zf-input-bg needs no further change;
+   it already pointed at the role, and the role now works.
+
+   With roles now self-sufficient, the values below that are an EXACT
+   byte-for-byte match to both a base/primary-N step AND the specific role
+   tokens.css assigns that same step consume the role instead of repeating
+   the literal: --zf-border/--zf-text/--zf-text-muted/--zf-text-subtle
+   (light) and --zf-surface/--zf-text/--zf-text-muted/--zf-text-subtle
+   (dark) onto --border/--text/--text-muted/--text-subtle/--surface;
+   --zf-primary (light) onto --accent (both are exactly primary-600). The
+   remaining literals stay literal on purpose, not by omission: several
+   base/primary-N steps this card uses (dark --zf-border/
+   --zf-border-strong, --zf-primary-hover, --zf-primary-ring,
+   --zf-notice-*, dark --zf-primary) don't correspond to any role
+   tokens.css actually defines at that exact step — e.g. dark --zf-border
+   is base-800, but tokens.css's --border role is base-700 — so repointing
+   those would silently shift this card's colour rather than reproduce it.
+   Same as before for the hue-25 --zf-error-* values: no equivalent step
+   exists in Unfold's scale for that hue at all. All remaining literals
+   are listed as a deliberate, narrow, per-file exemption in
    test_visual_tokens.py's OKLCH_EXEMPT_BY_FILE — the check still catches
    a literal oklch() anywhere else, including any *new* one added to this
-   file beyond these 28 known values. */
+   file beyond the known list. */
 .email-page {
     min-height: calc(100vh - 64px);
     padding: 40px 20px;
@@ -64,12 +72,12 @@
 .email-form-card {
     --zf-radius: 6px;
     --zf-surface: white;
-    --zf-border: oklch(92.8% .006 264.531);
-    --zf-border-strong: oklch(87.2% .01 258.338);
-    --zf-text: oklch(21% .034 264.665);
-    --zf-text-muted: oklch(44.6% .03 256.802);
-    --zf-text-subtle: oklch(55.1% .027 264.364);
-    --zf-primary: oklch(50% .2 145);
+    --zf-border: var(--border);
+    --zf-border-strong: var(--border-strong);
+    --zf-text: var(--text);
+    --zf-text-muted: var(--text-muted);
+    --zf-text-subtle: var(--text-subtle);
+    --zf-primary: var(--accent);
     --zf-primary-hover: oklch(42% .18 145);
     --zf-primary-ring: oklch(70% .2 145 / 0.35);
     --zf-notice-bg: oklch(94% .05 145);
@@ -93,12 +101,12 @@
 }
 
 html.dark .email-form-card {
-    --zf-surface: oklch(21% .034 264.665);
+    --zf-surface: var(--surface);
     --zf-border: oklch(27.8% .033 256.848);
     --zf-border-strong: oklch(37.3% .034 259.733);
-    --zf-text: oklch(96.7% .003 264.542);
-    --zf-text-muted: oklch(87.2% .01 258.338);
-    --zf-text-subtle: oklch(70.7% .022 261.325);
+    --zf-text: var(--text);
+    --zf-text-muted: var(--text-muted);
+    --zf-text-subtle: var(--text-subtle);
     --zf-primary: oklch(60% .22 145);
     --zf-primary-hover: oklch(70% .2 145);
     --zf-notice-bg: oklch(28% .12 145);
