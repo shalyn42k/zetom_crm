@@ -37,6 +37,12 @@ SKELETON_HTML = (
 # email_form.css основная часть цветов уже была на oklch(...), не hex —
 # только 5 литералов конвертированы 1:1 (rgb()/white), сами --zf-*
 # переменные не перепривязаны к общим ролям (см. комментарий в файле).
+# Задача 6: static/zetom/css/requestmain_detail.css — самый рискованный файл
+# (1191 строка, 175 литералов, 40% всей краски проекта). Убран шедоуинг
+# --surface/--border/--text/--green/--green-bright/--red/--amber/--blue/
+# --purple/--slate/--input-bg/--shadow-lg/--r-lg внутри .rm-scrim (эти имена
+# уже есть в tokens.css); --rm-st-* отображены на статусные токены
+# (--rm-st-closed — на --text-subtle, у него нет статусного аналога).
 MIGRATED_FILES = [
     "static/admin/css/custom_admin.css",
     "static/clients/css/company_card.css",
@@ -44,6 +50,7 @@ MIGRATED_FILES = [
     "static/zetom/css/validation_window.css",
     "crm/zetom/static/zetom/css/email_form.css",
     "static/admin/css/notification_badge.css",
+    "static/zetom/css/requestmain_detail.css",
 ]
 
 # Hex-литерал цвета: #fff, #ffffff, #ffffffcc и т.п. rgba(...) сюда не
