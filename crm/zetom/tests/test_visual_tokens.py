@@ -28,8 +28,12 @@ SKELETON_HTML = (
 # Задача 2: список пуст — ни один файл ещё не мигрирован на токены.
 # Каждая следующая задача добавляет сюда свой файл (по одному за задачу).
 # Задача 3: static/admin/css/custom_admin.css мигрирован на роли из tokens.css.
+# Задача 4: карточки clients (company_card.css, client_pages.css) мигрированы,
+# заодно устранён дрейф company_card.css (--border/--purple/--shadow-lg).
 MIGRATED_FILES = [
     "static/admin/css/custom_admin.css",
+    "static/clients/css/company_card.css",
+    "static/clients/css/client_pages.css",
 ]
 
 # Hex-литерал цвета: #fff, #ffffff, #ffffffcc и т.п. rgba(...) сюда не

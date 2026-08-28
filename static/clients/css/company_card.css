@@ -1,31 +1,34 @@
 /* claude
    Company detail card (Klient / Firma) — Phase 3a Task 1.
    Layout/components reproduce design_handoff_clients_unified/Zetom Klienci.html
-   screen "Firma" (§2 in the handoff README). Tokens below are copied
-   verbatim from README.md "Design Tokens": light under :root, dark under
-   html.dark — Unfold puts `class="dark"` on <html>, never `data-theme`
-   (see project memory: project_unfold_dark_theme).
+   screen "Firma" (§2 in the handoff README). Colour comes from
+   static/css/tokens.css's roles (see the Task 4 note right below) — Unfold
+   puts `class="dark"` on <html>, never `data-theme` (see project memory:
+   project_unfold_dark_theme).
    Loaded via extrastyle on the clients Person/Company cards, and (Task 12)
    also via BaseRequestAdmin.Media / RequestMainAdmin.Media on the zetom
-   request/document change forms (shared work-log modal). Not loaded
-   globally — global :root/html.dark custom properties here don't leak
-   into admin screens that don't pull this file in.
+   request/document change forms (shared work-log modal).
 */
+/* claude — Task 4 (visual-tokens-unification): this used to redeclare
+   --surface/--border/--text/--input-bg/--green/--red/--amber/--blue/--purple/
+   --slate/--shadow-lg on :root and html.dark, shadowing static/css/tokens.css
+   (loaded earlier in document order — see task-4-brief.md and the "critical
+   context" note in the task). Those names are deleted outright, not aliased,
+   so this file actually consumes the global roles instead of always winning
+   the cascade. What's left below are names with NO counterpart in tokens.css
+   (--bg/--bg-2/--bg-3/--border-2/--text-2/--text-3/--green-bright/--green-dim)
+   — genuinely local, so they stay declared, just expressed via roles instead
+   of hand-copied hex. They resolve per-theme automatically through the roles
+   they reference, so one block (no html.dark split) is enough. */
 :root {
-  --bg: #ffffff; --bg-2: #fafaf9; --bg-3: #f3f4f6; --surface: #ffffff;
-  --border: #e5e4e2; --border-2: #d4d2cf; --text: #161513; --text-2: #4b4945;
-  --text-3: #77746e; --input-bg: #ffffff; --green: #15803d; --green-bright: #16a34a;
-  --green-dim: #166534; --red: #dc2626; --amber: #b45309; --blue: #1d4ed8;
-  --purple: #6d28d9; --slate: #475569;
-  --shadow-lg: 0 24px 48px rgba(0, 0, 0, .14), 0 4px 12px rgba(0, 0, 0, .08);
-}
-html.dark {
-  --bg: #0f1419; --bg-2: #151b22; --bg-3: #1f2732; --surface: #1a2028;
-  --border: #2c3644; --border-2: #3d4a5c; --text: #f1f3f6; --text-2: #b3bcc8;
-  --text-3: #8592a2; --input-bg: #11161c; --green: #22c55e; --green-bright: #4ade80;
-  --green-dim: #16a34a; --red: #f87171; --amber: #fbbf24; --blue: #60a5fa;
-  --purple: #a78bfa; --slate: #94a3b8;
-  --shadow-lg: 0 28px 60px rgba(0, 0, 0, .6), 0 6px 16px rgba(0, 0, 0, .45);
+  --bg: var(--surface);
+  --bg-2: var(--surface-soft);
+  --bg-3: var(--surface-soft);
+  --border-2: var(--border-strong);
+  --text-2: var(--text-muted);
+  --text-3: var(--text-subtle);
+  --green-bright: var(--green);
+  --green-dim: color-mix(in srgb, var(--green) 80%, black);
 }
 
 /* claude — Alpine hides x-cloak'd elements until it finishes initializing;
@@ -41,17 +44,12 @@ html.dark {
   --purple-bg: color-mix(in srgb, var(--purple) 10%, transparent);
   --slate-bg: color-mix(in srgb, var(--slate) 10%, transparent);
   --r-sm: 6px; --r-md: 9px; --r-lg: 13px; --r-xl: 18px;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .05);
-  --shadow-md: 0 2px 10px rgba(0, 0, 0, .07), 0 1px 2px rgba(0, 0, 0, .04);
 
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 15.5px;
   line-height: 1.5;
   color: var(--text);
   padding: 20px 24px 40px;
-}
-html.dark .cc-stage {
-  --shadow-md: 0 4px 14px rgba(0, 0, 0, .35);
 }
 
 .cc-stage .i { width: 18px; height: 18px; display: inline-block; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; flex-shrink: 0; }
@@ -71,11 +69,12 @@ html.dark .cc-stage {
 
 /* identity header */
 .cc-stage .id-hero { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
-.cc-stage .id-hero .ava { width: 68px; height: 68px; border-radius: 16px; font-size: 24px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; background: linear-gradient(135deg, #8b5cf6, #6d28d9); flex-shrink: 0; }
+.cc-stage .id-hero .ava { width: 68px; height: 68px; border-radius: 16px; font-size: 24px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; background: linear-gradient(135deg, var(--purple), color-mix(in srgb, var(--purple) 65%, black)); flex-shrink: 0; }
 /* claude — Person (Osoba) hero avatar/pill, Phase 3b Task 1. Blue gradient
-   per README §"Design Tokens" row colour (person: #3b82f6→#2563eb, vs.
-   company's purple #8b5cf6→#6d28d9 above). */
-.cc-stage .id-hero .ava.person { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+   per README §"Design Tokens" row colour (person: --blue tinted darker, vs.
+   company's --purple tinted darker above) — Task 4 (visual-tokens-
+   unification) moved these off hand-copied hex onto the shared roles. */
+.cc-stage .id-hero .ava.person { background: linear-gradient(135deg, var(--blue), color-mix(in srgb, var(--blue) 65%, black)); }
 .cc-stage .id-hero .h-nm { font-size: 28px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .cc-stage .id-hero .h-sub { margin-top: 6px; font-size: 15.5px; color: var(--text-3); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
@@ -183,9 +182,8 @@ html.dark .cc-stage {
    kontaktowa". Scoped to .cc-stage like the rest of the sheet even though
    the overlay renders at the panel's DOM position (position:fixed lifts it
    out of layout regardless of nesting). */
-.cc-stage .btn.primary { background: var(--green-bright); border-color: var(--green-bright); color: #06230f; }
-html.dark .cc-stage .btn.primary { color: #052e16; }
-.cc-stage .btn.primary:hover { background: var(--green); border-color: var(--green); }
+.cc-stage .btn.primary { background: var(--green-bright); border-color: var(--green-bright); color: color-mix(in srgb, var(--green) 18%, black); }
+.cc-stage .btn.primary:hover { background: var(--green-dim); border-color: var(--green-dim); }
 .cc-stage .btn.primary:disabled { opacity: .6; cursor: default; }
 
 .cc-stage .overlay { position: fixed; inset: 0; background: rgba(8, 11, 15, .6); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); display: flex; align-items: flex-start; justify-content: center; padding: 60px 20px 40px; overflow-y: auto; z-index: 200; }
@@ -268,9 +266,9 @@ html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,
 .cc-stage .cell-c.em { color: var(--text-3); font-size: 14px; }
 
 /* list avatar (44px) — hero override (.id-hero .ava) stays more specific */
-.cc-stage .ava { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #fff; flex-shrink: 0; }
-.cc-stage .ava.person { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-.cc-stage .ava.company { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.cc-stage .ava { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: white; flex-shrink: 0; }
+.cc-stage .ava.person { background: linear-gradient(135deg, var(--blue), color-mix(in srgb, var(--blue) 65%, black)); }
+.cc-stage .ava.company { background: linear-gradient(135deg, var(--purple), color-mix(in srgb, var(--purple) 65%, black)); }
 
 /* zgłoszenia badge */
 .cc-stage .zgcount { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 52px; height: 38px; padding: 0 14px; border-radius: 11px; font-size: 16px; font-weight: 800; border: 1px solid var(--border); background: var(--bg-2); color: var(--text); }
@@ -283,7 +281,7 @@ html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,
 .cc-stage .pager { display: flex; gap: 6px; }
 .cc-stage .pager a, .cc-stage .pager span { min-width: 38px; height: 38px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
 .cc-stage .pager a:hover { background: var(--bg-3); color: var(--text); }
-.cc-stage .pager span.active { background: var(--green-bright); border-color: var(--green-bright); color: #052e16; }
+.cc-stage .pager span.active { background: var(--green-bright); border-color: var(--green-bright); color: color-mix(in srgb, var(--green) 18%, black); }
 .cc-stage .pager span.dis { opacity: .4; cursor: default; }
 .cc-stage .pager span.gap { border-color: transparent; background: transparent; }
 
