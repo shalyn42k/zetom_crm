@@ -3368,6 +3368,11 @@ msgstr "Utwórz z zgłoszenia"
 msgid "Edit Client"
 msgstr "Edytuj klienta"
 
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:73
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:117
+msgid "Link a client"
+msgstr "Powiąż klienta"
+
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/departments.html:22
 msgid "Remove department"
 msgstr "Usuń dział"

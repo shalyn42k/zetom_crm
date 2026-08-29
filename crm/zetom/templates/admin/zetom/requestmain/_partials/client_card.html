@@ -2,12 +2,34 @@
 {% comment %}
 Client card. Shows:
   1. Avatar + name header (existing behaviour)
-  2. Linked clients (M2M) with JS-fetch unlink button
-  3. Suggested clients (duplicate_matcher) when none linked — compact, dismissible
-  4. Linker widget: search-select + Create-from-request (JS fetch, no page reload)
+  2. Linked clients (M2M) as compact rows with small icon buttons for
+     edit/unlink (js-edit-client / js-unlink-client)
+  3. On the change view (original.pk exists): one button that opens a
+     modal holding the Suggested clients (duplicate_matcher) block and the
+     search-select + Create-from-request linker widget — moved off the
+     card face per the owner's ask (2026-08-29: "client field looks
+     wrong"), built like mOsobowe on the person card
+     (crm/clients/templates/admin/clients/client/person_card.html): same
+     overlay, same header/body panel shape. This file already carries a
+     second modal below (#rm-edit-client-modal) using the exact same
+     .rm-modal / .rm-modal__overlay / .rm-modal__content shape, so the new
+     link modal reuses those classes rather than pulling in company_card.css's
+     differently-named .overlay/.modal/.modal-h from another app.
+  4. On the add view (no original.pk yet — a linked-clients relationship
+     can't exist before the request itself does): the Client/NIP/Company/
+     First/Last name fields stay directly on the card face, unmodalled —
+     they are the only way to enter a brand-new request's client info, not
+     just a "link an existing client" convenience, so hiding them behind a
+     button here would block filling in a new request.
 
-All link/unlink/create POST via fetch so they don't interfere with the main form.
-URLs injected via data- attributes; JS lives in requestmain_client_link.js.
+All link/unlink/create POST via fetch so they don't interfere with the main
+form. URLs injected via data- attributes; JS lives in requestmain_client_link.js.
+The modal below only *hides* the linker fields with the `hidden` attribute —
+it never removes them from the DOM, so requestmain_client_link.js's
+getElementById lookups (run once on DOMContentLoaded, before the modal has
+ever been opened) keep finding #id_client / #rm-linker-btn / #rm-create-btn
+regardless of modal state. Verified by exercising the modal + link/unlink/
+create/suggest flows in a live browser, not just by reading the markup.
 {% endcomment %}
 <section class="rm-card rm-client-card" aria-labelledby="rm-client-heading" id="client-card"
          data-link-url="{% if original.pk %}{% url 'admin:zetom_requestmain_link_client_json' original.pk 0 %}{% endif %}"
@@ -51,53 +73,100 @@ URLs injected via data- attributes; JS lives in requestmain_client_link.js.
     {% endif %}
   </div>
 
-  {# ---- Client suggestions (only when nothing linked + suggestions exist) ---- #}
-  {% if suggested_clients and not linked_clients and original.pk %}
-    <div class="rm-suggestions" id="rm-suggestions">
-      <div class="rm-suggestions__label">{% trans "Suggested matches" %}</div>
-      {% for c in suggested_clients %}
-        <div class="rm-suggestion-row">
-          <span class="rm-sug-name">{{ c.client.short_label }}</span>
-          <span class="rm-sug-badges">{% for b in c.badges %}<span class="rm-mb {{ b.kind }}">{{ b.label }}</span>{% endfor %}</span>
-          <span class="rm-sug-score {% if c.is_strong %}strong{% endif %}">{{ c.score }}/100</span>
-          <button type="button" class="rm-dupe-btn link js-link-client" data-client="{{ c.client.pk }}">{% trans "Link" %}</button>
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %}
-
-  {# ---- Existing form fields (autofill select + key fields) ---- #}
-  {# Client select doubles as linker — Link button creates M2M entry immediately via fetch #}
-  <dl class="rm-linked-fields">
-    <div class="rm-linked-field rm-linked-field--client">
-      <dt class="rm-linked-field__label"><label for="{{ form.client.id_for_label }}">{% trans "Client" %}</label></dt>
-      <dd class="rm-linked-field__value rm-client-select-row">
-        {{ form.client }}
-        {% if original.pk %}
-          <button type="button" id="rm-linker-btn" class="rm-dupe-btn link">{% trans "Link" %}</button>
-          <button type="button" id="rm-create-btn" class="rm-dupe-btn create">{% trans "Create from request" %}</button>
-        {% endif %}
-      </dd>
-    </div>
+  {% if original.pk %}
+    {# ---- Trigger: opens the link/create modal below (outside this <section>, still inside <form class="rm-grid">) ---- #}
+    <button type="button" id="rm-link-client-open" class="rm-btn rm-btn--sm rm-btn--block rm-client-link-trigger">
+      {% trans "Link a client" %}
+    </button>
     <div id="rm-link-status" class="rm-link-status" hidden></div>
-    <div class="rm-linked-field">
-      <dt class="rm-linked-field__label"><label for="{{ form.company_nip.id_for_label }}">{% trans "NIP" %}</label></dt>
-      <dd class="rm-linked-field__value">{{ form.company_nip }}</dd>
-    </div>
-    <div class="rm-linked-field">
-      <dt class="rm-linked-field__label"><label for="{{ form.company_name.id_for_label }}">{% trans "Company" %}</label></dt>
-      <dd class="rm-linked-field__value">{{ form.company_name }}</dd>
-    </div>
-    <div class="rm-linked-field">
-      <dt class="rm-linked-field__label"><label for="{{ form.first_name.id_for_label }}">{% trans "First name" %}</label></dt>
-      <dd class="rm-linked-field__value">{{ form.first_name }}</dd>
-    </div>
-    <div class="rm-linked-field">
-      <dt class="rm-linked-field__label"><label for="{{ form.last_name.id_for_label }}">{% trans "Last name" %}</label></dt>
-      <dd class="rm-linked-field__value">{{ form.last_name }}</dd>
-    </div>
-  </dl>
+  {% else %}
+    {# ---- New request: these fields ARE the request's own client info, always visible ---- #}
+    <dl class="rm-linked-fields">
+      <div class="rm-linked-field rm-linked-field--client">
+        <dt class="rm-linked-field__label"><label for="{{ form.client.id_for_label }}">{% trans "Client" %}</label></dt>
+        <dd class="rm-linked-field__value rm-client-select-row">
+          {{ form.client }}
+        </dd>
+      </div>
+      <div class="rm-linked-field">
+        <dt class="rm-linked-field__label"><label for="{{ form.company_nip.id_for_label }}">{% trans "NIP" %}</label></dt>
+        <dd class="rm-linked-field__value">{{ form.company_nip }}</dd>
+      </div>
+      <div class="rm-linked-field">
+        <dt class="rm-linked-field__label"><label for="{{ form.company_name.id_for_label }}">{% trans "Company" %}</label></dt>
+        <dd class="rm-linked-field__value">{{ form.company_name }}</dd>
+      </div>
+      <div class="rm-linked-field">
+        <dt class="rm-linked-field__label"><label for="{{ form.first_name.id_for_label }}">{% trans "First name" %}</label></dt>
+        <dd class="rm-linked-field__value">{{ form.first_name }}</dd>
+      </div>
+      <div class="rm-linked-field">
+        <dt class="rm-linked-field__label"><label for="{{ form.last_name.id_for_label }}">{% trans "Last name" %}</label></dt>
+        <dd class="rm-linked-field__value">{{ form.last_name }}</dd>
+      </div>
+    </dl>
+  {% endif %}
 </section>
+
+{% if original.pk %}
+{# ---- Modal: link an existing client or create one from this request's snapshot (mOsobowe shape) ---- #}
+<div id="rm-link-client-modal" class="rm-modal" hidden>
+  <div class="rm-modal__overlay" id="rm-link-modal-overlay"></div>
+  <div class="rm-modal__content">
+    <header class="rm-modal__header">
+      <h3 class="rm-modal__title">{% trans "Link a client" %}</h3>
+      <button type="button" class="rm-modal__close" id="rm-link-modal-close" title="{% trans "Close" %}">×</button>
+    </header>
+    <div class="rm-modal__body">
+      {# ---- Client suggestions (only when nothing linked + suggestions exist) ---- #}
+      {% if suggested_clients and not linked_clients %}
+        <div class="rm-suggestions" id="rm-suggestions">
+          <div class="rm-suggestions__label">{% trans "Suggested matches" %}</div>
+          {% for c in suggested_clients %}
+            <div class="rm-suggestion-row">
+              <span class="rm-sug-name">{{ c.client.short_label }}</span>
+              <span class="rm-sug-badges">{% for b in c.badges %}<span class="rm-mb {{ b.kind }}">{{ b.label }}</span>{% endfor %}</span>
+              <span class="rm-sug-score {% if c.is_strong %}strong{% endif %}">{{ c.score }}/100</span>
+              <button type="button" class="rm-dupe-btn link js-link-client" data-client="{{ c.client.pk }}">{% trans "Link" %}</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% comment %}
+      ---- Search-and-create form. Client select doubles as linker — Link
+      button creates the M2M entry immediately via fetch, no page reload. ----
+      {% endcomment %}
+      <dl class="rm-linked-fields">
+        <div class="rm-linked-field rm-linked-field--client">
+          <dt class="rm-linked-field__label"><label for="{{ form.client.id_for_label }}">{% trans "Client" %}</label></dt>
+          <dd class="rm-linked-field__value rm-client-select-row">
+            {{ form.client }}
+            <button type="button" id="rm-linker-btn" class="rm-dupe-btn link">{% trans "Link" %}</button>
+            <button type="button" id="rm-create-btn" class="rm-dupe-btn create">{% trans "Create from request" %}</button>
+          </dd>
+        </div>
+        <div class="rm-linked-field">
+          <dt class="rm-linked-field__label"><label for="{{ form.company_nip.id_for_label }}">{% trans "NIP" %}</label></dt>
+          <dd class="rm-linked-field__value">{{ form.company_nip }}</dd>
+        </div>
+        <div class="rm-linked-field">
+          <dt class="rm-linked-field__label"><label for="{{ form.company_name.id_for_label }}">{% trans "Company" %}</label></dt>
+          <dd class="rm-linked-field__value">{{ form.company_name }}</dd>
+        </div>
+        <div class="rm-linked-field">
+          <dt class="rm-linked-field__label"><label for="{{ form.first_name.id_for_label }}">{% trans "First name" %}</label></dt>
+          <dd class="rm-linked-field__value">{{ form.first_name }}</dd>
+        </div>
+        <div class="rm-linked-field">
+          <dt class="rm-linked-field__label"><label for="{{ form.last_name.id_for_label }}">{% trans "Last name" %}</label></dt>
+          <dd class="rm-linked-field__value">{{ form.last_name }}</dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 {# Modal for editing linked client #}
 <div id="rm-edit-client-modal" class="rm-modal" hidden>
@@ -105,7 +174,7 @@ URLs injected via data- attributes; JS lives in requestmain_client_link.js.
   <div class="rm-modal__content">
     <header class="rm-modal__header">
       <h3 class="rm-modal__title">{% trans "Edit Client" %}</h3>
-      <button type="button" class="rm-modal__close" id="rm-modal-close" title="{% trans "Close" %}">&#x2715;</button>
+      <button type="button" class="rm-modal__close" id="rm-modal-close" title="{% trans "Close" %}">×</button>
     </header>
     <div id="rm-modal-body" class="rm-modal__body"></div>
     <footer class="rm-modal__footer">
@@ -114,4 +183,3 @@ URLs injected via data- attributes; JS lives in requestmain_client_link.js.
     </footer>
   </div>
 </div>
-
