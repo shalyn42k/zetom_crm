@@ -6,11 +6,10 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from crm.clients.models import (
-    Client, ClientInteraction, Company, CompanyPersonLink,
-)
+from crm.clients.models import Client, Company, CompanyPersonLink
 from crm.clients.services import create_person_with_company
-from crm.zetom.models import RequestMain
+from crm.zetom.models import RequestMain, StepNote
+from crm.zetom.services.step_notes import create_step_note
 
 BASE_REQ = {
     "first_name": "Jan",
@@ -149,9 +148,10 @@ class CardRenderTest(TestCase):
         CompanyPersonLink.objects.create(company=self.company, person=self.person)
         self.request_main = RequestMain.objects.create(**BASE_REQ, company=self.company)
         self.request_main.clients.add(self.person)
-        ClientInteraction.objects.create(
-            client=self.person, channel=ClientInteraction.Channel.CALL,
-            summary="Rozmowa", contacted_at=timezone.now(), request=self.request_main,
+        create_step_note(
+            author=self.user, kind=StepNote.Kind.CONTACT, channel=StepNote.Channel.CALL,
+            text="Rozmowa", person=self.person, contacted_at=timezone.now(),
+            target=self.request_main,
         )
 
     def test_company_card_shows_request_and_history(self):
@@ -172,12 +172,11 @@ class CardRenderTest(TestCase):
         self.assertEqual(len(resp.context["zgloszenia"]), 1)
         self.assertEqual(len(resp.context["historia"]), 1)
 
-    # claude — ClientInteraction and CompanyPersonLink both autocomplete across
-    # the module boundary; each needs the target admin's search_fields intact.
+    # claude — CompanyPersonLink autocompletes across the module boundary
+    # (person lives on clients, but the field is reached from zetom); needs
+    # the target admin's search_fields intact.
     def test_cross_model_autocompletes(self):
         cases = [
-            ("clientinteraction", "client"),
-            ("clientinteraction", "request"),
             ("companypersonlink", "person"),
         ]
         for model_name, field_name in cases:

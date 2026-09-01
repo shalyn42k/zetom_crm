@@ -36,6 +36,7 @@ class FollowupRemindersCommandTests(TestCase):
         note = StepNote.objects.create(
             author=self.author,
             target=req,
+            kind=StepNote.Kind.REMINDER,
             text="Call client and confirm details",
             next_contact_at=timezone.now() - timedelta(hours=1),
         )
@@ -55,6 +56,7 @@ class FollowupRemindersCommandTests(TestCase):
         StepNote.objects.create(
             author=self.author,
             target=req,
+            kind=StepNote.Kind.REMINDER,
             text="Call client once",
             next_contact_at=timezone.now() - timedelta(minutes=10),
         )
@@ -70,6 +72,7 @@ class FollowupRemindersCommandTests(TestCase):
         note = StepNote.objects.create(
             author=self.author,
             target=req,
+            kind=StepNote.Kind.REMINDER,
             text="Future contact",
             next_contact_at=timezone.now() + timedelta(days=1),
         )
@@ -87,6 +90,7 @@ class FollowupRemindersCommandTests(TestCase):
         StepNote.objects.create(
             author=self.author,
             target=req,
+            kind=StepNote.Kind.REMINDER,
             text="Owner must contact",
             next_contact_at=timezone.now() - timedelta(minutes=1),
         )
@@ -101,8 +105,45 @@ class FollowupRemindersCommandTests(TestCase):
         note = StepNote.objects.create(
             author=None,
             target=req,
+            kind=StepNote.Kind.REMINDER,
             text="Nobody assigned yet",
             next_contact_at=timezone.now() - timedelta(minutes=1),
+        )
+
+        call_command("create_followup_reminders")
+
+        self.assertEqual(Notification.objects.count(), 0)
+        note.refresh_from_db()
+        self.assertIsNone(note.reminder_sent_at)
+
+    # claude
+    def test_reminder_without_target_notifies_author(self):
+        note = StepNote.objects.create(
+            author=self.author,
+            target=None,
+            kind=StepNote.Kind.REMINDER,
+            text="Call client back, no request yet",
+            next_contact_at=timezone.now() - timedelta(hours=1),
+        )
+
+        call_command("create_followup_reminders")
+
+        self.assertEqual(Notification.objects.count(), 1)
+        n = Notification.objects.first()
+        self.assertEqual(n.recipient, self.author)
+        note.refresh_from_db()
+        self.assertIsNotNone(note.reminder_sent_at)
+
+    # claude
+    def test_reminder_without_target_and_inactive_author_creates_nothing(self):
+        self.author.is_active = False
+        self.author.save(update_fields=["is_active"])
+        note = StepNote.objects.create(
+            author=self.author,
+            target=None,
+            kind=StepNote.Kind.REMINDER,
+            text="Call client back, no request yet",
+            next_contact_at=timezone.now() - timedelta(hours=1),
         )
 
         call_command("create_followup_reminders")

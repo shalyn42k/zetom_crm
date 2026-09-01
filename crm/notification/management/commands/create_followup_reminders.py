@@ -1,7 +1,9 @@
 from django.core.management.base import BaseCommand
 
 from crm.notification.services.followup_reminders import process_due_followups
-from crm.notification.services.stale_request_reminders import process_stale_requests
+from crm.notification.services.stale_request_reminders import (
+    process_stale_requests,
+)
 
 
 class Command(BaseCommand):

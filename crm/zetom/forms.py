@@ -12,6 +12,7 @@ from crm.zetom.models import (
     DepartmentsVariants, Oferta, RequestMain, RequestNull, Wniosek, Zlecenie,
 )
 
+
 # claude — Oferta/Zlecenie/Wniosek list "departments" in their ModelAdmin.fields
 # without declaring it on the form (unlike price/notes/etc below), so Django
 # auto-generates it from ArrayField.formfield() — that default is

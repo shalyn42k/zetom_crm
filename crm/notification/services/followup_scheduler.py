@@ -7,7 +7,9 @@ import time
 from django.conf import settings
 
 from crm.notification.services.followup_reminders import process_due_followups
-from crm.notification.services.stale_request_reminders import process_stale_requests
+from crm.notification.services.stale_request_reminders import (
+    process_stale_requests,
+)
 
 logger = logging.getLogger(__name__)
 _thread_started = False

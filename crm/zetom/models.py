@@ -5,7 +5,9 @@ from django.contrib.contenttypes.fields import (
 )
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 # Other imports
 from django.utils.translation import gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
@@ -171,6 +173,18 @@ class Zlecenie(RequestTemplate):
     from_main = models.ForeignKey(
         RequestMain, on_delete=models.CASCADE, null=True, blank=True, verbose_name=_("From main")
     )
+    # claude — мягкая цепочка Oferta -> Zlecenie -> Wniosek (business order:
+    # offer -> order -> application). Nullable: zlecenie может быть создан и
+    # без оферты, как и раньше — from_main остаётся обязательной связью,
+    # from_oferta лишь фиксирует, из какого документа выросло это zlecenie.
+    from_oferta = models.ForeignKey(
+        Oferta,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="zlecenia",
+        verbose_name=_("From offer"),
+    )
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     deadline = models.DateField(null=True, blank=True)
@@ -191,6 +205,15 @@ class Wniosek(RequestTemplate):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
     from_main = models.ForeignKey(
         RequestMain, on_delete=models.CASCADE, null=True, blank=True, verbose_name=_("From main")
+    )
+    # claude — тот же паттерн soft-chain, что и Zlecenie.from_oferta.
+    from_zlecenie = models.ForeignKey(
+        Zlecenie,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="wnioski",
+        verbose_name=_("From order"),
     )
     notes = models.TextField(null=True, blank=True)
     application_number = models.CharField(max_length=20, null=True, blank=True)
@@ -345,6 +368,24 @@ class WniosekClientLink(models.Model):
 
 
 class StepNote(models.Model):
+    # claude — StepNote объединяет два смысла: "мы связались с клиентом" (kind=contact)
+    # и "напомни связаться" (kind=reminder). Task 3 добавит констрейнты, что contact
+    # требует contacted_at, а reminder — next_contact_at.
+    class Kind(models.TextChoices):
+        CONTACT = "contact", _("Contact")
+        REMINDER = "reminder", _("Reminder")
+
+    # claude — значения и метки скопированы один-в-один из
+    # clients.ClientInteraction.Channel (crm/clients/models.py:58-63): Task 6
+    # маппит записи ClientInteraction в StepNote напрямую по значению, любое
+    # расхождение тихо испортит данные.
+    class Channel(models.TextChoices):
+        CALL = "call", _("Call")
+        EMAIL = "email", _("Email")
+        MEETING = "meeting", _("Meeting")
+        CHAT = "chat", _("Chat")
+        OTHER = "other", _("Other")
+
     author = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -355,7 +396,7 @@ class StepNote(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
     action = models.CharField(max_length=255, blank=True, verbose_name=_("What was done"))
-    text = models.TextField(verbose_name=_("Note"))
+    text = models.TextField(blank=True, verbose_name=_("Note"))
     next_contact_at = models.DateTimeField(
         null=True,
         blank=True,
@@ -367,13 +408,56 @@ class StepNote(models.Model):
         verbose_name=_("Reminder sent at"),
     )
 
+    # claude
+    kind = models.CharField(
+        max_length=20,
+        choices=Kind.choices,
+        default=Kind.CONTACT,
+        verbose_name=_("Kind"),
+    )
+    channel = models.CharField(
+        max_length=20,
+        choices=Channel.choices,
+        blank=True,
+        verbose_name=_("Channel"),
+    )
+    contacted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Contacted at"),
+    )
+    person = models.ForeignKey(
+        "clients.Client",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="step_notes",
+        verbose_name=_("Person"),
+    )
+    contact_person = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_("Contact person"),
+    )
+    done_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Done at"),
+    )
+
     target_content_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
         related_name="step_notes",
         verbose_name=_("Target content type"),
+        null=True,
+        blank=True,
     )
-    target_object_id = models.PositiveIntegerField(verbose_name=_("Target object id"))
+    target_object_id = models.PositiveIntegerField(
+        verbose_name=_("Target object id"),
+        null=True,
+        blank=True,
+    )
     target = GenericForeignKey("target_content_type", "target_object_id")
 
     class Meta:
@@ -383,10 +467,39 @@ class StepNote(models.Model):
         indexes = [
             models.Index(fields=["target_content_type", "target_object_id", "-created_at"]),
         ]
+        # claude — инварианты kind: contact обязательно несёт contacted_at,
+        # reminder — next_contact_at. Ставится только после Task 2 (backfill),
+        # иначе боевые строки без kind/contacted_at не пройдут констрейнт.
+        # claude — литералы "contact"/"reminder" вместо Kind.CONTACT/Kind.REMINDER:
+        # тело вложенного класса Meta не видит имена из тела StepNote как
+        # свободные переменные (в отличие от функций), только global/builtin.
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(kind="contact") | Q(contacted_at__isnull=False),
+                name="stepnote_contact_requires_contacted_at",
+            ),
+            models.CheckConstraint(
+                condition=~Q(kind="reminder") | Q(next_contact_at__isnull=False),
+                name="stepnote_reminder_requires_next_contact_at",
+            ),
+        ]
 
     def __str__(self):
         who = self.author.username if self.author_id else "system"
         return f"{who}: {self.action or self.text[:40]}"
+
+    # claude — дублирует CheckConstraint-ы с переводимыми сообщениями,
+    # привязанными к конкретному полю, чтобы админка показывала ошибку
+    # у поля, а не общим баннером над формой.
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.kind == self.Kind.CONTACT and self.contacted_at is None:
+            errors["contacted_at"] = _("Contact notes require a contacted-at date.")
+        if self.kind == self.Kind.REMINDER and self.next_contact_at is None:
+            errors["next_contact_at"] = _("Reminders require a next-contact date.")
+        if errors:
+            raise ValidationError(errors)
 
 
 class DeletedRequest(RequestMain):  # proxy może otwierać te same dane w innych klasach

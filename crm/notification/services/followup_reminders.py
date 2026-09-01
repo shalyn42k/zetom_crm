@@ -62,7 +62,11 @@ def _create_for_note(note: StepNote, now):
 
 
 def _resolve_recipients(note: StepNote, target):
+    # claude — заметка без target (напоминание с карточки клиента) не имеет
+    # ни владельцев, ни назначенных: единственный получатель — автор, если он активен.
     if target is None:
+        if note.author_id and note.author.is_active:
+            return [note.author]
         return []
 
     recipients = []

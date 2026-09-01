@@ -28,6 +28,7 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
   <symbol id="cc-i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
   <symbol id="cc-i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
   <symbol id="cc-i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="cc-i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
 </svg>
 
 <div class="cc-stage">
@@ -270,32 +271,113 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
         {% endif %}
       </div>
 
-      {# Historia kontaktów (read-only) #}
-      <div class="panel">
-        <div class="panel-h">
-          <h2><svg class="i hico"><use href="#cc-i-clock"/></svg> {% trans "Historia kontaktów" %}</h2>
-        </div>
-        {% if historia %}
-        <div class="hist">
-          {% for h in historia %}
-          <div class="hev">
-            <div class="dotcol"><span class="dot"></span><span class="line"></span></div>
-            <div class="hbody">
-              <div class="hmeta">
-                <span class="hdate">{{ h.data|date:"d.m.Y H:i" }}</span>·<span class="hwho">{{ h.kanal_label }}</span>·<span class="hwho">{{ h.sotrudnik|default:"—" }} → {{ h.kontakt_osoba|default:"—" }}</span>{% if h.zaglowek %}·<span class="hwho">{{ h.zaglowek }}</span>{% endif %}
-              </div>
-              <div class="htext">{{ h.summary }}</div>
-            </div>
+      {% comment %}
+      claude — Task 13: "Zaplanowane" stacks above "Historia kontaktów" in
+      the same grid2 cell (brief: the section goes ABOVE the history panel),
+      reusing .stack for the vertical gap rather than a new wrapper class.
+      Both panels reuse the .hist/.hev timeline primitives Task 12 already
+      styled for the shared step-notes modal. Reminders here can belong to
+      different persons of this company (see services_contacts.py's
+      reminder_rows_for_company), so each row's checkmark posts to its own
+      owning person's pk — never the company's.
+      {% endcomment %}
+      <div class="stack">
+        {# Zaplanowane — open reminders of every person linked to this company #}
+        <div class="panel">
+          <div class="panel-h">
+            <h2><svg class="i hico"><use href="#cc-i-clock"/></svg> {% trans "Zaplanowane" %}{% if zaplanowane %} <span class="count">{{ zaplanowane|length }}</span>{% endif %}</h2>
           </div>
-          {% endfor %}
+          {% if zaplanowane %}
+          <div class="hist">
+            {% for r in zaplanowane %}
+            <div class="hev{% if r.is_overdue %} overdue{% endif %}">
+              <div class="dotcol"><span class="dot"></span><span class="line"></span></div>
+              <div class="hbody">
+                <div class="hmeta">
+                  <span class="hdate">{{ r.due_at|date:"d.m.Y H:i" }}</span>
+                  {% if can_edit %}
+                  <form method="post" action="{% url 'admin:clients_client_step_note_done' r.person_pk r.note_pk %}" style="margin-left:auto">
+                    {% csrf_token %}
+                    <button type="submit" class="opbtn" title="{% trans 'Oznacz jako wykonane' %}"><svg class="i i-sm"><use href="#cc-i-check"/></svg></button>
+                  </form>
+                  {% endif %}
+                </div>
+                {% comment %}
+                claude — Final-fix-round: action ("What to do") is the lead
+                input in reminder mode and text is optional there, so a
+                reminder can legitimately have only one of the two. Guard
+                each div independently — a row with neither must not leave
+                behind an empty <div class="htext"></div>.
+                {% endcomment %}
+                {% if r.action %}<div class="htext"><strong>{{ r.action }}</strong></div>{% endif %}
+                {% if r.summary %}<div class="htext">{{ r.summary }}</div>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty">
+            <span class="ring"><svg class="i"><use href="#cc-i-clock"/></svg></span>
+            <p>{% trans "Brak zaplanowanych przypomnień." %}</p>
+          </div>
+          {% endif %}
         </div>
-        {% else %}
-        <div class="empty">
-          <span class="ring"><svg class="i"><use href="#cc-i-clock"/></svg></span>
-          <p>{% trans "Brak historii kontaktów." %}</p>
+
+        {# Historia kontaktów #}
+        <div class="panel">
+          <div class="panel-h">
+            <h2><svg class="i hico"><use href="#cc-i-clock"/></svg> {% trans "Historia kontaktów" %}</h2>
+            {% if can_edit %}
+            {% if step_notes_persons %}
+            {% comment %}
+            claude — Task 13: the company card has no step-notes url of its
+            own (task-9-brief.md) — its create flow always posts to a
+            PERSON's url. The picker below chooses which of this company's
+            persons the note is filed under; openCompanyStepNotes() (see the
+            <script> block) rewrites the shared modal's form action to that
+            person's create url before opening it.
+            {% endcomment %}
+            <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+              <select id="cc-step-note-person" class="dropdown">
+                {% for p in step_notes_persons %}<option value="{{ p.pk }}">{{ p }}</option>{% endfor %}
+              </select>
+              <button type="button" class="btn sm" onclick="openCompanyStepNotes()"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Dodaj kontakt" %}</button>
+            </div>
+            {% else %}
+            <span class="fv none" style="margin-left:auto" title="{% trans 'Najpierw dodaj osobę kontaktową do tej firmy.' %}">{% trans "Brak osób do wyboru" %}</span>
+            {% endif %}
+            {% endif %}
+          </div>
+          {% if historia %}
+          <div class="hist">
+            {% for h in historia %}
+            <div class="hev">
+              <div class="dotcol"><span class="dot"></span><span class="line"></span></div>
+              <div class="hbody">
+                <div class="hmeta">
+                  <span class="hdate">{{ h.data|date:"d.m.Y H:i" }}</span>·<span class="hwho">{{ h.kanal_label }}</span>·<span class="hwho">{{ h.sotrudnik|default:"—" }} → {{ h.kontakt_osoba|default:"—" }}</span>{% if h.zaglowek %}·<span class="hwho">{{ h.zaglowek }}</span>{% endif %}
+                </div>
+                {% if h.action %}<div class="htext"><strong>{{ h.action }}</strong></div>{% endif %}
+                {% if h.summary %}<div class="htext">{{ h.summary }}</div>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty">
+            <span class="ring"><svg class="i"><use href="#cc-i-clock"/></svg></span>
+            <p>{% trans "Brak historii kontaktów." %}</p>
+          </div>
+          {% endif %}
+          {% comment %}
+          claude — Task 13: shared work-log modal (Task 12). step_notes_create_url
+          from _build_company_context carries a `0` placeholder pk
+          (".../0/step-notes/create/") — openCompanyStepNotes() below rewrites
+          it to the picked person's pk before the modal opens, exactly like
+          firmyPanel()'s linkBase pattern elsewhere on this card.
+          {% endcomment %}
+          {% include "admin/zetom/shared/step_notes_modal.html" with step_notes_hide_inline_trigger=True %}
         </div>
-        {% endif %}
-        <div class="readonly-note"><svg class="i i-sm"><use href="#cc-i-info"/></svg> {% trans "Tylko podgląd — dodawanie wpisów będzie dostępne później." %}</div>
       </div>
     </div>
   </div>
@@ -451,6 +533,23 @@ function personPanel(initialRows, canEdit) {
       if (j.ok) this.rows = this.rows.filter((r2) => r2.link_pk !== row.link_pk);
     },
   };
+}
+
+// claude — Task 13: the Historia panel's add-a-contact person picker. The
+// company card has no step-notes url of its own (task-9-brief.md — the
+// create endpoint is addressed by PERSON pk); step_notes_create_url from
+// _build_company_context carries a `0` placeholder pk
+// (".../0/step-notes/create/"). Before opening the shared modal (Task 12),
+// rewrite the form's action to the picked person's own create url — same
+// "0" placeholder + regex-replace pattern firmyPanel() above uses for
+// clients_client_company_link_save/_detach.
+function openCompanyStepNotes() {
+  const select = document.getElementById('cc-step-note-person');
+  if (!select || !select.value) return;
+  const base = "{{ step_notes_create_url }}";
+  const form = document.getElementById('step-note-form');
+  form.action = base.replace(/0\/step-notes\/create\/$/, select.value + '/step-notes/create/');
+  window.dispatchEvent(new CustomEvent('open-step-notes'));
 }
 </script>
 {% endblock content %}

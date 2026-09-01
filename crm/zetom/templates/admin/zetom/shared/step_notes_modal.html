@@ -1,106 +1,224 @@
 {% load i18n humanize %}
+{% comment %}
+Shared "Work log" modal — Task 12 moved this off the old sn-* stylesheet
+onto the clients app's design system (static/clients/css/company_card.css,
+loaded via BaseRequestAdmin.Media). Every rule in that file is scoped
+under .cc-stage, hence the wrapper below; the wrapper carries
+style="padding:0" because .cc-stage also sets page-level padding meant for
+a full Person/Company card, which would otherwise show up as empty space
+around the trigger button (or, on the RequestMain page, around nothing at
+all — see step_notes_hide_inline_trigger).
+
+The kind toggle (.type-opt, copied from clients/client/_add_modal.html's
+Rodzaj klienta step) switches between two field groups. Both groups stay
+in the DOM (Alpine x-show, per the brief) but every one of their inputs
+is :disabled when its group isn't the active kind — otherwise both
+groups' `next_contact_at` / `action` / `text` inputs share the same
+`name` and a disabled-vs-empty field would silently clobber the one the
+user actually filled in on submit.
+{% endcomment %}
 {% if step_notes_enabled %}
-<div x-data="{ open: false }" class="sn-root" @open-step-notes.window="open = true">
+<div x-data="{ open: false, kind: 'contact' }" @open-step-notes.window="open = true">
   {% if not step_notes_hide_inline_trigger %}
-  <div class="sn-trigger-wrap">
-    <button type="button" class="sn-trigger rm-btn rm-btn--primary rm-btn--sm" @click="open = true">
+  {% comment %}
+  claude — reproduces the old .sn-trigger-wrap rule (display:flex;
+  justify-content:flex-end; margin:0 0 .75rem), which lived in the now-
+  deleted static/zetom/css/step_notes.css. Inline rather than a new
+  company_card.css class: company_card.css is scoped under .cc-stage and
+  this wrapper sits outside it (it isn't part of the cc-* modal markup),
+  so a class here would need its own unscoped rule anyway.
+  {% endcomment %}
+  <div style="display:flex;justify-content:flex-end;margin:0 0 .75rem">
+    <button type="button" class="rm-btn rm-btn--primary rm-btn--sm" @click="open = true">
       {% trans "Step notes" %}
     </button>
   </div>
   {% endif %}
 
-    <div class="sn-modal"
-      x-show="open"
-      x-transition:enter="sn-trans-enter"
-      x-transition:enter-start="sn-trans-enter-start"
-      x-transition:enter-end="sn-trans-enter-end"
-      x-transition:leave="sn-trans-leave"
-      x-transition:leave-start="sn-trans-leave-start"
-      x-transition:leave-end="sn-trans-leave-end"
-      x-cloak role="dialog" aria-modal="true" aria-labelledby="sn-modal-title">
-      <div class="sn-modal__backdrop"
-        x-transition:enter="sn-backdrop-enter"
-        x-transition:enter-start="sn-backdrop-enter-start"
-        x-transition:enter-end="sn-backdrop-enter-end"
-        x-transition:leave="sn-backdrop-leave"
-        x-transition:leave-start="sn-backdrop-leave-start"
-        x-transition:leave-end="sn-backdrop-leave-end"
-        @click="open = false"></div>
-      <div class="sn-modal__panel"
-        x-transition:enter="sn-panel-enter"
-        x-transition:enter-start="sn-panel-enter-start"
-        x-transition:enter-end="sn-panel-enter-end"
-        x-transition:leave="sn-panel-leave"
-        x-transition:leave-start="sn-panel-leave-start"
-        x-transition:leave-end="sn-panel-leave-end"
-        @click.stop>
-      <header class="sn-modal__header">
-        <h2 id="sn-modal-title" class="sn-modal__title">{% trans "Work log" %}</h2>
-        <button type="button" class="sn-modal__close" @click="open = false" aria-label='{% trans "Close" %}'>×</button>
-      </header>
-
-      <p class="sn-modal__hint">
-        {% blocktrans with target=step_notes_target_label %}
-          Timeline for: <strong>{{ target }}</strong>
-        {% endblocktrans %}
-      </p>
-
-      <form method="post" action="{{ step_notes_create_url }}" class="sn-form">
-        {% csrf_token %}
-        <div class="sn-form__group">
-          <label for="sn-action">{% trans "What was done" %}</label>
-             <input id="sn-action" name="action" type="text" maxlength="255" class="sn-input"
-               placeholder="{% trans "e.g. Called client, clarified deadline" %}">
+  <div class="cc-stage" style="padding:0">
+    <div class="overlay" x-show="open" x-cloak
+      @click.self="open = false" @keydown.escape.window="open = false"
+      role="dialog" aria-modal="true" aria-labelledby="sn-modal-title">
+      <div class="modal">
+        <div class="modal-h">
+          <h3 id="sn-modal-title">{% trans "Work log" %}</h3>
+          <p>
+            {% blocktrans with target=step_notes_target_label %}
+              Timeline for: <strong>{{ target }}</strong>
+            {% endblocktrans %}
+          </p>
+          <button type="button" class="modal-x" @click="open = false" aria-label="{% trans 'Close' %}">×</button>
         </div>
-        <div class="sn-form__group">
-          <label for="sn-text">{% trans "Note for colleagues" %}</label>
-          <textarea id="sn-text" name="text" rows="4" class="sn-textarea" required
-                    placeholder="{% trans 'Add context for the next employee working on this case' %}"></textarea>
-        </div>
-        <div class="sn-form__group">
-          <label for="sn-next-contact">{% trans "Next client date (optional)" %}</label>
-          <input id="sn-next-contact" name="next_contact_at" type="datetime-local" class="sn-input">
-        </div>
-        <footer class="sn-form__footer">
-          <button type="button" class="sn-btn" @click="open = false">{% trans "Cancel" %}</button>
-          <button type="submit" class="sn-btn sn-btn--primary">{% trans "Add note" %}</button>
-        </footer>
-      </form>
 
-      <div class="sn-thread">
-        <h3>{% trans "Timeline" %}</h3>
-        <ul class="sn-list">
-          {% for entry in step_notes %}
-            <li class="sn-item">
-              <span class="sn-avatar" aria-hidden="true">
-                {{ entry.author.first_name|default:entry.author.username|default:'?'|slice:":1"|upper }}
-              </span>
-              <div class="sn-item__body">
-                <div class="sn-item__meta">
-                  <strong>{{ entry.author.get_full_name|default:entry.author.username|default:'—' }}</strong>
-                  <span>·</span>
-                  <span title="{{ entry.created_at|date:'Y-m-d H:i' }}">{{ entry.created_at|naturaltime }}</span>
-                  {% if entry.stage_label %}
-                    <span>·</span>
-                    <span>{{ entry.stage_label }}</span>
-                  {% endif %}
-                </div>
-                {% if entry.next_contact_at %}
-                  <div class="sn-item__next-contact">
-                    {% trans "Next client date:" %}
-                    <strong>{{ entry.next_contact_at|date:"Y-m-d H:i" }}</strong>
-                  </div>
-                {% endif %}
-                {% if entry.action %}
-                  <div class="sn-item__action">{{ entry.action }}</div>
-                {% endif %}
-                <div class="sn-item__text">{{ entry.text|linebreaksbr }}</div>
+        <form id="step-note-form" method="post" action="{{ step_notes_create_url }}" class="modal-b">
+          {% csrf_token %}
+          <input type="hidden" name="kind" x-model="kind">
+
+          <div class="field">
+            <label>{% trans "Entry type" %}</label>
+            <div class="type-opt">
+              <button type="button" :class="kind === 'contact' ? 'active person' : ''" @click="kind = 'contact'">
+                <span><b>{% trans "Contact" %}</b>{% trans "Log a conversation that already happened" %}</span>
+              </button>
+              <button type="button" :class="kind === 'reminder' ? 'active company' : ''" @click="kind = 'reminder'">
+                <span><b>{% trans "Reminder" %}</b>{% trans "Plan a future contact" %}</span>
+              </button>
+            </div>
+          </div>
+
+          {% comment %} Contact fields {% endcomment %}
+          <div x-show="kind === 'contact'" x-cloak>
+            <div class="field-row">
+              <div class="field">
+                <label for="sn-channel">{% trans "Channel" %}</label>
+                <select id="sn-channel" name="channel" :disabled="kind !== 'contact'">
+                  <option value="">---------</option>
+                  <option value="call">{% trans "Call" %}</option>
+                  <option value="email">{% trans "Email" %}</option>
+                  <option value="meeting">{% trans "Meeting" %}</option>
+                  <option value="chat">{% trans "Chat" %}</option>
+                  <option value="other">{% trans "Other" %}</option>
+                </select>
               </div>
-            </li>
-          {% empty %}
-            <li class="sn-empty">{% trans "No notes yet." %}</li>
+              <div class="field">
+                <label for="sn-contacted-at">{% trans "Contacted at" %}</label>
+                <input id="sn-contacted-at" type="datetime-local" name="contacted_at" :disabled="kind !== 'contact'">
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="sn-person">{% trans "Person" %}</label>
+                <select id="sn-person" name="person" :disabled="kind !== 'contact'">
+                  <option value="">{% trans "— not in the client base —" %}</option>
+                  {% for person in step_notes_persons %}
+                    <option value="{{ person.pk }}">{{ person }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="field">
+                <label for="sn-contact-person">{% trans "Or type a name" %}</label>
+                <input id="sn-contact-person" type="text" name="contact_person" maxlength="255"
+                  :disabled="kind !== 'contact'"
+                  placeholder="{% trans 'e.g. Anna from accounting' %}">
+              </div>
+            </div>
+            <p style="margin:-8px 0 0;font-size:13.5px;color:var(--text-3)">
+              {% trans "Not in the list?" %}
+              <a href="{% url 'admin:clients_client_changelist' %}" target="_blank" rel="noopener">{% trans "Open the client list" %}</a>
+            </p>
+
+            <div class="field">
+              <label for="sn-action-contact">{% trans "What was done" %}</label>
+              <input id="sn-action-contact" type="text" name="action" maxlength="255"
+                :disabled="kind !== 'contact'"
+                placeholder="{% trans 'e.g. Called client, clarified deadline' %}">
+            </div>
+            <div class="field">
+              <label for="sn-text-contact">{% trans "Note for colleagues" %}</label>
+              <textarea id="sn-text-contact" name="text" rows="4" :disabled="kind !== 'contact'"
+                placeholder="{% trans 'Add context for the next employee working on this case' %}"></textarea>
+            </div>
+            <div class="field">
+              <label for="sn-next-contact">{% trans "Next client contact at (optional)" %}</label>
+              <input id="sn-next-contact" type="datetime-local" name="next_contact_at" :disabled="kind !== 'contact'">
+            </div>
+          </div>
+
+          {% comment %} Reminder fields {% endcomment %}
+          <div x-show="kind === 'reminder'" x-cloak>
+            <div class="field">
+              <label for="sn-remind-at">{% trans "Remind at" %}</label>
+              <input id="sn-remind-at" type="datetime-local" name="next_contact_at" :disabled="kind !== 'reminder'">
+            </div>
+            <div class="field">
+              <label for="sn-action-reminder">{% trans "What to remind" %}</label>
+              <input id="sn-action-reminder" type="text" name="action" maxlength="255"
+                :disabled="kind !== 'reminder'"
+                placeholder="{% trans 'e.g. Follow up on the offer' %}">
+            </div>
+            <div class="field">
+              <label for="sn-text-reminder">{% trans "Note" %}</label>
+              <textarea id="sn-text-reminder" name="text" rows="4" :disabled="kind !== 'reminder'"></textarea>
+            </div>
+          </div>
+        </form>
+
+        {% comment %}
+        claude — Fix-round: "Zaplanowane" above "Historia", the same split the
+        Person and Company cards use (spec §5.3). A reminder raised from a
+        document card has no `person`, so neither of those cards' panels can
+        show it and neither of their checkmarks can close it — this section
+        plus entry.done_url (BaseRequestAdmin._open_reminders_for_targets) is
+        where such a reminder lives and gets closed. Only rendered on the
+        document cards: the client cards have their own panels on the card
+        itself and never pass step_notes_open_reminders.
+        {% endcomment %}
+        {% if step_notes_open_reminders %}
+        <div class="hist">
+          <h4 class="hist-h">{% trans "Scheduled" %}</h4>
+          {% for entry in step_notes_open_reminders %}
+            <div class="hev{% if entry.is_overdue %} overdue{% endif %}">
+              <div class="dotcol"><span class="dot"></span><span class="line"></span></div>
+              <div class="hbody">
+                <div class="hmeta">
+                  <span class="hdate" title="{{ entry.next_contact_at|date:'Y-m-d H:i' }}">{{ entry.next_contact_at|date:"d.m.Y H:i" }}</span>
+                  <span class="hwho">{{ entry.author.get_full_name|default:entry.author.username|default:"—" }}</span>
+                  {% if entry.stage_label %}<span class="hwho">{{ entry.stage_label }}</span>{% endif %}
+                  {% comment %}
+                  claude — plain "✓" rather than the <use href="#cc-i-check"/>
+                  sprite the Person card's checkmark uses: that symbol is
+                  defined in the clients cards' own inline SVG sprite, and this
+                  modal is also included from the zetom change_form templates,
+                  which have no sprite at all.
+                  {% endcomment %}
+                  <form method="post" action="{{ entry.done_url }}" class="hdone">
+                    {% csrf_token %}
+                    <button type="submit" class="opbtn" title="{% trans 'Mark as done' %}">✓</button>
+                  </form>
+                </div>
+                {% if entry.action %}<div class="htext"><strong>{{ entry.action }}</strong></div>{% endif %}
+                {% if entry.text %}<div class="htext">{{ entry.text|linebreaksbr }}</div>{% endif %}
+              </div>
+            </div>
           {% endfor %}
-        </ul>
+        </div>
+        {% endif %}
+
+        <div class="hist">
+          {% for entry in step_notes %}
+            <div class="hev{% if entry.is_overdue %} overdue{% endif %}">
+              <div class="dotcol"><span class="dot"></span><span class="line"></span></div>
+              <div class="hbody">
+                <div class="hmeta">
+                  {% comment %}
+                  claude — Fix-round: sort_at, not created_at. created_at is
+                  auto_now_add, so migrated notes all carry the migration's
+                  run time; sort_at is Coalesce(contacted_at, created_at) —
+                  when the conversation happened, with a fallback for
+                  reminders (which never had one). See
+                  BaseRequestAdmin._step_notes_for_targets.
+                  {% endcomment %}
+                  <span class="hdate" title="{{ entry.sort_at|date:'Y-m-d H:i' }}">{{ entry.sort_at|naturaltime }}</span>
+                  <span class="hwho">{{ entry.author.get_full_name|default:entry.author.username|default:"—" }}</span>
+                  {% if entry.stage_label %}<span class="hwho">{{ entry.stage_label }}</span>{% endif %}
+                </div>
+                {% if entry.action %}<div class="htext"><strong>{{ entry.action }}</strong></div>{% endif %}
+                <div class="htext">{{ entry.text|linebreaksbr }}</div>
+                {% if entry.next_contact_at %}
+                  <div class="htext">{% trans "Next client contact at:" %} {{ entry.next_contact_at|date:"Y-m-d H:i" }}</div>
+                {% endif %}
+              </div>
+            </div>
+          {% empty %}
+            <div class="empty"><p>{% trans "No notes yet." %}</p></div>
+          {% endfor %}
+        </div>
+
+        <div class="modal-f">
+          <button type="button" class="btn" @click="open = false">{% trans "Cancel" %}</button>
+          <button type="submit" form="step-note-form" class="btn primary">{% trans "Add note" %}</button>
+        </div>
       </div>
     </div>
   </div>

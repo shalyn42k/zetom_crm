@@ -1,21 +1,28 @@
-from django.contrib import admin
-from django.core.exceptions import PermissionDenied
+from django import forms
+from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
-from django.shortcuts import get_object_or_404, render
+from django.http import HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect, render
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from crm.status_manager.services.statuses import RequestStatus, Status
 from crm.users.utils import user_has_perm
-from crm.zetom.models import DepartmentsVariants, RequestMain
+from crm.zetom.models import DepartmentsVariants, RequestMain, StepNote
+from crm.zetom.services.step_notes import create_step_note, mark_reminder_done
 
 from . import views
-from .models import (
-    Client, ClientInteraction, Company, CompanyPersonLink, SupplierType,
-)
+from .models import Client, Company, CompanyPersonLink, SupplierType
 from .services import build_request_rows, get_client_request_summary
+from .services_contacts import (
+    contact_rows_for_company, contact_rows_for_person,
+    reminder_rows_for_company, reminder_rows_for_person,
+    timeline_notes_for_company, timeline_notes_for_person,
+)
 
 # claude — Phase 3a Task 3: RequestStatus → the four status-badge CSS classes
 # the design defines (company_card.css `.st.*`). RequestMain's real statuses
@@ -133,14 +140,50 @@ def _person_zgloszenia_rows(client) -> list[dict]:
     return rows
 
 
-# БАГ-9 + БАГ-10: inline история контактов прямо в карточке клиента
-class ClientInteractionInline(admin.TabularInline):
-    model = ClientInteraction
-    extra = 0
-    fields = ("contacted_at", "channel", "contact_person", "contacted_by", "summary", "request")
-    autocomplete_fields = ("request",)
-    readonly_fields = ("created_at",)
-    ordering = ("-contacted_at",)
+# claude — Task 9: "log a contact / plan a reminder" form for
+# ClientAdmin.step_note_create_action. Mirrors zetom's StepNoteCreateForm
+# (crm/zetom/admin/base.py) field for field, because both are posted by the
+# very same shared modal (admin/zetom/shared/step_notes_modal.html) — which
+# sends `kind` along with either the contact-mode fields (channel,
+# contacted_at, contact_person) or the reminder-mode ones (next_contact_at,
+# action, text).
+#
+# claude — Fix-round: `kind` used to be absent here and the view hardcoded
+# kind=contact, so choosing "Przypomnienie" on a client card silently wrote a
+# CONTACT with a fabricated contacted_at=now. `required=False` (unlike the
+# zetom form) keeps a bare POST without `kind` working as a contact — the
+# view defaults it — so older/scripted callers don't start 400-ing.
+#
+# `target` is a plain pk, resolved and ownership-checked in the view (see
+# _clean_step_note_target) rather than a ModelChoiceField, because its valid
+# queryset (RequestMain rows linked to *this* client) is only known once the
+# view has the client in hand.
+class ClientStepNoteCreateForm(forms.Form):
+    kind = forms.ChoiceField(
+        choices=StepNote.Kind.choices,
+        required=False,
+        initial=StepNote.Kind.CONTACT,
+        label=_("Kind"),
+    )
+    action = forms.CharField(max_length=255, required=False, label=_("What was done"))
+    text = forms.CharField(required=False, label=_("Note"))
+    channel = forms.ChoiceField(
+        choices=[("", "---------"), *StepNote.Channel.choices],
+        required=False,
+        label=_("Channel"),
+    )
+    contact_person = forms.CharField(max_length=255, required=False, label=_("Contact person"))
+    contacted_at = forms.DateTimeField(
+        required=False,
+        input_formats=["%Y-%m-%dT%H:%M"],
+        label=_("Contacted at"),
+    )
+    next_contact_at = forms.DateTimeField(
+        required=False,
+        input_formats=["%Y-%m-%dT%H:%M"],
+        label=_("Next client contact at"),
+    )
+    target = forms.IntegerField(required=False)
 
 
 @admin.register(Client)
@@ -154,7 +197,6 @@ class ClientAdmin(admin.ModelAdmin):
         "col_requests", "col_ofertas", "col_zlecenia", "col_wnioski",
     )
     search_fields = ("first_name", "last_name", "email", "phone")
-    inlines = [ClientInteractionInline]
     # claude — Phase 3b Task 2: page size for the unified Klienci list
     # (changelist_view paginates a plain list, not list_display's QuerySet).
     list_per_page = 25
@@ -279,8 +321,163 @@ class ClientAdmin(admin.ModelAdmin):
                 view(views.detach_company),
                 name="clients_client_company_link_detach",
             ),
+            # claude — Task 9: log-a-contact / close-a-reminder, both
+            # addressed by PERSON pk (see task-9-brief.md — the Company card
+            # has no urls of its own: its "Dodaj kontakt" flow picks a person
+            # first, then posts here). Bound methods (not views.py functions)
+            # to mirror the pattern in crm/zetom/admin/base.py's
+            # step_note_create_action — both just call the step_notes
+            # service, no logic of their own.
+            path(
+                "<int:pk>/step-notes/create/",
+                view(self.step_note_create_action),
+                name="clients_client_step_note_create",
+            ),
+            path(
+                "<int:pk>/step-notes/<int:note_pk>/done/",
+                view(self.step_note_done_action),
+                name="clients_client_step_note_done",
+            ),
         ]
         return custom + urls
+
+    # claude — Task 9: shared permission+lookup guard for both step-note
+    # endpoints below. Mirrors crm/zetom/admin/base.py's
+    # _get_obj_for_step_note (403 for both "not found" and "no permission",
+    # rather than a 404/403 split — matches this admin's other write
+    # endpoints, e.g. views.person_save).
+    def _get_client_for_step_note(self, request, pk):
+        client = Client.objects.filter(pk=pk).first()
+        if client is None:
+            return None, HttpResponseForbidden(_("Client not found."))
+        if not user_has_perm(request.user, "edit_clients"):
+            return None, HttpResponseForbidden(
+                _("You don't have permission for this action.")
+            )
+        return client, None
+
+    def _client_change_url(self, pk):
+        return reverse("admin:clients_client_change", args=[pk])
+
+    # claude — Task 9: resolves the optional `target` POST field (a raw
+    # RequestMain pk) into a model instance, but only if that request is
+    # actually linked to `client` via RequestMain.clients (through
+    # RequestClientLink). This is the security check the brief calls out:
+    # without it, a crafted pk could attach a note to an unrelated
+    # customer's request. Returns (target_or_None, ok); ok=False means the
+    # pk was supplied but didn't resolve to a linked request — the caller
+    # must reject the whole submission, not silently drop the target.
+    def _clean_step_note_target(self, client, target_pk):
+        if not target_pk:
+            return None, True
+        target = RequestMain.objects.filter(pk=target_pk, clients=client).first()
+        if target is None:
+            return None, False
+        return target, True
+
+    # claude — Task 9: "log a contact / plan a reminder" from the Person or
+    # Company card. POST-only, edit_clients-gated, all validation happens in
+    # create_step_note() (full_clean() before save) — this method never
+    # touches StepNote.objects.create directly.
+    #
+    # claude — Fix-round: honours the `kind` the shared modal posts instead of
+    # hardcoding contact. The two kinds carry disjoint field sets, so each is
+    # built explicitly rather than passing everything through:
+    #   contact  — channel / contacted_at / contact_person; contacted_at
+    #              defaults to now, because a logged conversation did just
+    #              happen. next_contact_at is the optional "call again on…".
+    #   reminder — next_contact_at only. contacted_at MUST stay None: filling
+    #              it in would invent a conversation that never took place and
+    #              put it in "Historia kontaktów". channel/contact_person are
+    #              likewise dropped: the modal disables those inputs in
+    #              reminder mode, and a channel on a call that hasn't happened
+    #              yet is a guess.
+    # A reminder with no next_contact_at fails StepNote's invariant inside
+    # create_step_note() and surfaces as messages.error — the reason this
+    # method must not pre-fill or "repair" anything itself.
+    def step_note_create_action(self, request, pk):
+        if request.method != "POST":
+            return redirect(self._client_change_url(pk))
+
+        client, forbidden = self._get_client_for_step_note(request, pk)
+        if forbidden is not None:
+            return forbidden
+
+        form = ClientStepNoteCreateForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, _("Could not add note. Check note text/date format."))
+            return redirect(self._client_change_url(pk))
+
+        target, target_ok = self._clean_step_note_target(
+            client, form.cleaned_data["target"],
+        )
+        if not target_ok:
+            messages.error(
+                request,
+                _("Could not add note: the selected request is not linked to this client."),
+            )
+            return redirect(self._client_change_url(pk))
+
+        kind = form.cleaned_data["kind"] or StepNote.Kind.CONTACT
+        is_contact = kind == StepNote.Kind.CONTACT
+
+        try:
+            create_step_note(
+                author=request.user,
+                kind=kind,
+                action=form.cleaned_data["action"],
+                text=form.cleaned_data["text"],
+                target=target,
+                person=client,
+                contact_person=form.cleaned_data["contact_person"] if is_contact else "",
+                channel=form.cleaned_data["channel"] if is_contact else "",
+                contacted_at=(
+                    (form.cleaned_data["contacted_at"] or timezone.now())
+                    if is_contact else None
+                ),
+                next_contact_at=form.cleaned_data["next_contact_at"],
+            )
+        except ValidationError as exc:
+            messages.error(
+                request,
+                _("Could not add note: %(error)s") % {"error": "; ".join(exc.messages)},
+            )
+            return redirect(self._client_change_url(pk))
+
+        messages.success(
+            request,
+            _("Reminder scheduled.") if not is_contact else _("Step note added."),
+        )
+        return redirect(self._client_change_url(pk))
+
+    # claude — Task 9: "close a reminder" from the Person/Company card.
+    # `note_pk` is scoped to `person=client` in the lookup itself — a note
+    # belonging to a different client 404s (via the same "not found" 403
+    # HttpResponseForbidden as a missing client), so a crafted note_pk can't
+    # be used to close someone else's reminder either.
+    def step_note_done_action(self, request, pk, note_pk):
+        if request.method != "POST":
+            return redirect(self._client_change_url(pk))
+
+        client, forbidden = self._get_client_for_step_note(request, pk)
+        if forbidden is not None:
+            return forbidden
+
+        note = StepNote.objects.filter(pk=note_pk, person=client).first()
+        if note is None:
+            return HttpResponseForbidden(_("Note not found."))
+
+        try:
+            mark_reminder_done(note, request.user)
+        except ValidationError as exc:
+            messages.error(
+                request,
+                _("Could not close reminder: %(error)s") % {"error": "; ".join(exc.messages)},
+            )
+            return redirect(self._client_change_url(pk))
+
+        messages.success(request, _("Reminder closed."))
+        return redirect(self._client_change_url(pk))
 
     # claude — Phase 3b Task 2: row builders for the unified Klienci list.
     # Company rows never touch Client.company_*/client_type (per the
@@ -520,25 +717,32 @@ class ClientAdmin(admin.ModelAdmin):
             # claude — Historia kontaktów (read-only), same row shape as
             # CompanyAdmin._build_company_context's historia (README §3:
             # "Historia kontaktów (read-only, как выше)" — reuse as-is).
-            "historia": [
-                {
-                    "data": interaction.contacted_at,
-                    "kanal_label": interaction.get_channel_display(),
-                    "sotrudnik": (
-                        interaction.contacted_by.get_full_name()
-                        or interaction.contacted_by.username
-                    ) if interaction.contacted_by else "",
-                    "kontakt_osoba": interaction.contact_person or client.full_name(),
-                    "zaglowek": _zgloszenie_label(interaction.request) if interaction.request else "",
-                    "summary": interaction.summary,
-                }
-                for interaction in (
-                    ClientInteraction.objects
-                    .filter(client=client)
-                    .select_related("contacted_by", "request")
-                    .order_by("-contacted_at")
-                )
-            ],
+            # Task 7: now reads zetom.StepNote (contact notes + closed
+            # reminders) instead of clients.ClientInteraction — see
+            # services_contacts.py.
+            "historia": contact_rows_for_person(client),
+            # claude — Task 7: open reminders ("Zaplanowane"), sorted by
+            # next_contact_at ascending.
+            "zaplanowane": reminder_rows_for_person(client),
+            # claude — Task 9: seeds for the shared work-log modal
+            # (crm/zetom/templates/admin/zetom/shared/step_notes_modal.html),
+            # same four keys _build_step_notes_context hands the zetom-side
+            # cards (crm/zetom/admin/base.py). The Person card always logs
+            # against itself, so the create url and the person list are both
+            # fixed to `client` — no picker needed here (that's the Company
+            # card's job, below).
+            "step_notes_enabled": True,
+            # claude — Fix-round: `step_notes` was missing, so the modal's
+            # timeline rendered "No notes yet." forever, even on a person with
+            # a full history. Same notes and order as `historia` above, just
+            # as StepNote objects (which is what the shared template's loop
+            # reads) instead of row dicts.
+            "step_notes": timeline_notes_for_person(client),
+            "step_notes_create_url": reverse(
+                "admin:clients_client_step_note_create", args=[client.pk],
+            ),
+            "step_notes_target_label": str(client),
+            "step_notes_persons": [client],
         }
 
     # claude — fully custom Detail (change_form). Renders the Person (Osoba)
@@ -716,28 +920,35 @@ class CompanyAdmin(admin.ModelAdmin):
                 .exclude(status__in=[RequestStatus.cancelled, RequestStatus.deleted])
                 .order_by("-created_at")
             ],
-            # claude — Historia kontaktów (Task 3), read-only. Interactions of
-            # every person linked to this company (CompanyPersonLink), newest
+            # claude — Historia kontaktów (Task 3), read-only. Notes of every
+            # person linked to this company (CompanyPersonLink), newest
             # first. No write endpoint — the template shows the readonly-note.
-            "historia": [
-                {
-                    "data": interaction.contacted_at,
-                    "kanal_label": interaction.get_channel_display(),
-                    "sotrudnik": (
-                        interaction.contacted_by.get_full_name()
-                        or interaction.contacted_by.username
-                    ) if interaction.contacted_by else "",
-                    "kontakt_osoba": interaction.contact_person or interaction.client.full_name(),
-                    "zaglowek": _zgloszenie_label(interaction.request) if interaction.request else "",
-                    "summary": interaction.summary,
-                }
-                for interaction in (
-                    ClientInteraction.objects
-                    .filter(client__company_links__company=company)
-                    .select_related("client", "contacted_by", "request")
-                    .order_by("-contacted_at")
-                )
-            ],
+            # Task 7: now reads zetom.StepNote (contact notes + closed
+            # reminders) instead of clients.ClientInteraction — see
+            # services_contacts.py.
+            "historia": contact_rows_for_company(company),
+            # claude — Task 7: open reminders ("Zaplanowane") of every person
+            # linked to this company, sorted by next_contact_at ascending.
+            "zaplanowane": reminder_rows_for_company(company),
+            # claude — Task 9: seeds for the shared work-log modal, same four
+            # keys the Person card supplies above. The Company card has no
+            # step-note urls of its own (see ClientAdmin.get_urls) — its
+            # "Dodaj kontakt" flow has to pick one of `step_notes_persons`
+            # first, then post to that person's own create url. So the base
+            # url here carries a `0` placeholder pk for the person id,
+            # exactly like `linkBase` in person_card.html's firmyPanel(): the
+            # future modal's JS does `.replace(/0\/create\/$/, personPk +
+            # '/create/')` rather than round-tripping to the server per pick.
+            "step_notes_enabled": True,
+            # claude — Fix-round: see the Person card above — without this the
+            # modal's timeline was permanently empty. Mirrors `historia`:
+            # every linked person's notes, newest conversation first.
+            "step_notes": timeline_notes_for_company(company),
+            "step_notes_create_url": reverse(
+                "admin:clients_client_step_note_create", args=[0],
+            ),
+            "step_notes_target_label": company.name,
+            "step_notes_persons": [link.person for link in osoby],
         }
 
     # claude — fully custom Detail (change_form). Bypasses the default
@@ -753,21 +964,3 @@ class CompanyAdmin(admin.ModelAdmin):
             **(extra_context or {}),
         }
         return render(request, self.company_card_template, context)
-
-
-# БАГ-9 + БАГ-10: отдельный раздел для просмотра всех контактов
-@admin.register(ClientInteraction)
-class ClientInteractionAdmin(admin.ModelAdmin):
-    list_display = ("contacted_at", "client", "channel", "contact_person", "contacted_by", "request")
-    list_filter = ("channel",)
-    # claude — client__company_name died with migration 0009 (company data moved
-    # to Company), so any search here raised FieldError. Company name is now
-    # reached through the CompanyPersonLink M2M; Django adds the needed
-    # distinct() itself when a search path spans a to-many relation.
-    search_fields = (
-        "client__first_name", "client__last_name",
-        "client__company_links__company__name", "summary", "contact_person",
-    )
-    autocomplete_fields = ("client", "request")
-    readonly_fields = ("created_at",)
-    date_hierarchy = "contacted_at"
