@@ -1,5 +1,6 @@
 import sys
 
+from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import resolve, reverse
 from django_otp import login as otp_login
@@ -36,11 +37,12 @@ class Enforce2FAMiddleware:
 
     def __call__(self, request):
         user = getattr(request, "user", None)
+        admin_path = f"/{settings.ADMIN_URL}"
         if (
             not _RUNNING_TESTS
             and user and user.is_authenticated
-            and request.path.startswith("/admin/")
-            and not request.path.startswith("/admin/login/")
+            and request.path.startswith(admin_path)
+            and not request.path.startswith(f"{admin_path}login/")
             and not _is_2fa_exempt(user)
             and not user.is_verified()
         ):
