@@ -1,6 +1,7 @@
 # claude — cross-module contract between clients and zetom. The clients cards
 # and the request admin write to the same Company/Client rows from opposite
 # ends, so these check that each side survives what the other does.
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -182,7 +183,7 @@ class CardRenderTest(TestCase):
         for model_name, field_name in cases:
             with self.subTest(field=f"{model_name}.{field_name}"):
                 resp = self.client.get(
-                    "/admin/autocomplete/",
+                    f"/{settings.ADMIN_URL}autocomplete/",
                     {
                         "app_label": "clients", "model_name": model_name,
                         "field_name": field_name, "term": "Zeto",

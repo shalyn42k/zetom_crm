@@ -253,7 +253,7 @@ UNFOLD = {
                     {
                         "title": _("Activity Log"),
                         "icon": "history",
-                        "link": "/admin/admin/logentry/",
+                        "link": reverse_lazy("admin:admin_logentry_changelist"),
                         "permission": lambda request: user_has_perm(
                             request.user, "view_logs"
                         ),
