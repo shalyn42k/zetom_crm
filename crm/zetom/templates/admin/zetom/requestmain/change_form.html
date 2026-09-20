@@ -9,7 +9,20 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
 
 {% block extrastyle %}
   {{ block.super }}
-  <link rel="stylesheet" href="{% static 'zetom/css/requestmain_detail.css' %}">
+  <link rel="stylesheet" href="{% static 'zetom/css/requestmain_detail.css' %}?v={% now "U" %}">
+  {% comment %}
+  claude — Fix-round: company_card.css also loads here via
+  RequestMainAdmin.Media, but Django's forms.Media has no hook to
+  cache-bust that link (it's a static tuple, rendered the same on every
+  request) — so it was the one stylesheet on this page with a bare,
+  cacheable URL, unlike everything else here. Reloaded explicitly with
+  ?v=… so an edit to it is guaranteed visible on next page load, same
+  guarantee custom_admin.css/requestmain_detail.css already have. Loading
+  it twice (Media's copy + this one) is harmless — same rules, and this
+  one wins any tie on source order if a stale cached copy of the first
+  is still in play.
+  {% endcomment %}
+  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}?v={% now "U" %}">
 {% endblock extrastyle %}
 
 {% block extrahead %}

@@ -11,7 +11,15 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
 
 {% block extrastyle %}
   {{ block.super }}
-  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}">
+  {% comment %}
+  claude — Fix-round: was a bare static URL with no cache-busting, unlike
+  every other admin stylesheet (see unfold/layouts/skeleton.html's
+  custom_admin.css, which uses this same `?v={% now "U" %}` pattern
+  precisely because bare static URLs here have been a recurring "my CSS
+  edit isn't showing up" problem). This file changes often during
+  iteration, so it needs the same guarantee.
+  {% endcomment %}
+  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}?v={% now "U" %}">
 {% endblock extrastyle %}
 
 {% block content %}

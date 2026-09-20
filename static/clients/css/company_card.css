@@ -201,9 +201,35 @@ html.dark .cc-stage .btn.primary { color: #052e16; }
 
 .cc-stage .field { display: flex; flex-direction: column; gap: 8px; }
 .cc-stage .field > label { font-size: 14.5px; font-weight: 600; color: var(--text-2); }
-.cc-stage .field input { width: 100%; padding: 13px 15px; border: 1px solid var(--border-2); border-radius: 11px; background: var(--input-bg); color: var(--text); font-size: 16px; font-family: inherit; outline: none; transition: border-color .12s, box-shadow .12s; }
-.cc-stage .field input:focus { border-color: var(--green-bright); box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 22%, transparent); }
-.cc-stage .field input::placeholder { color: var(--text-3); }
+/* claude — Fix-round: static/admin/css/custom_admin.css carries
+   `#content-main input, #content-main textarea, #content-main select { ...
+   !important }` (a blanket dark-theme re-skin for every plain admin form
+   field). This modal always renders inside #content-main (every page that
+   includes it extends admin/base_site.html, whose #content-main wraps
+   {% block content %}), so that blanket rule was beating the rules below
+   even after adding !important here too: an ID beats any number of
+   classes on specificity regardless of !important — `.cc-stage .field
+   input` (0 ids, 2 classes) can never outrank `#content-main input`
+   (1 id) on its own. Prefixing with #content-main matches it back onto
+   equal footing (same id count) while our extra classes then win the
+   tie-break, so with matching !important on both sides this rule now
+   actually applies. Without this, every field in the modal silently used
+   custom_admin.css's own --custom-input-border/--custom-input-bg instead
+   of this file's (better-contrast) --border-2/--input-bg — in dark mode
+   that pairing (#4a4a6a on #2a2a3d) reads as almost no border at all,
+   exactly the "Note field has no visible border, blends into the
+   background" report. */
+#content .cc-stage .field input { width: 100%; padding: 13px 15px !important; border: 1px solid var(--border-2) !important; border-radius: 11px !important; background: var(--input-bg) !important; color: var(--text) !important; font-size: 16px; font-family: inherit; outline: none; transition: border-color .12s, box-shadow .12s; }
+#content .cc-stage .field input:focus { border-color: var(--green-bright) !important; box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 22%, transparent); }
+#content .cc-stage .field input::placeholder { color: var(--text-3) !important; }
+/* claude — textarea had no rule here at all, so it fell back to raw
+   browser defaults: a narrow fixed width instead of matching the other
+   fields, resize:both (draggable sideways), and no word-break — a long
+   word with no spaces (or any long unbroken run of text) overflowed the
+   box to the right instead of wrapping down. */
+#content .cc-stage .field textarea { width: 100%; padding: 13px 15px !important; border: 1px solid var(--border-2) !important; border-radius: 11px !important; background: var(--input-bg) !important; color: var(--text) !important; font-size: 16px; font-family: inherit; outline: none; resize: vertical; overflow-wrap: break-word; word-break: break-word; transition: border-color .12s, box-shadow .12s; }
+#content .cc-stage .field textarea:focus { border-color: var(--green-bright) !important; box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 22%, transparent); }
+#content .cc-stage .field textarea::placeholder { color: var(--text-3) !important; }
 .cc-stage .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 480px) { .cc-stage .field-row { grid-template-columns: 1fr; } }
 
@@ -306,8 +332,8 @@ html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,
 
 /* claude — selects were never styled: the Company card's Typ dostawcy modal
    and this one both drop a <select> into .field. Matches .field input. */
-.cc-stage .field select { width: 100%; padding: 13px 15px; border: 1px solid var(--border-2); border-radius: 11px; background: var(--input-bg); color: var(--text); font-size: 16px; font-family: inherit; outline: none; }
-.cc-stage .field select:focus { border-color: var(--green-bright); box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 22%, transparent); }
+#content .cc-stage .field select { width: 100%; padding: 13px 15px !important; border: 1px solid var(--border-2) !important; border-radius: 11px !important; background: var(--input-bg) !important; color: var(--text) !important; font-size: 16px; font-family: inherit; outline: none; }
+#content .cc-stage .field select:focus { border-color: var(--green-bright) !important; box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 22%, transparent); }
 
 .cc-stage .btn.lg { padding: 13px 24px; font-size: 15.5px; }
 
@@ -345,3 +371,30 @@ html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,
 .cc-stage .req-chip button { border: none; background: transparent; color: var(--text-3); display: inline-flex; cursor: pointer; padding: 0; }
 .cc-stage .req-chip button:hover { color: var(--red); }
 .cc-stage .req-chip.sm { padding: 3px 9px; font-size: 12.5px; flex-shrink: 0; }
+
+/* claude — Fix-round: the "Step notes" trigger button
+   (templates/admin/zetom/shared/step_notes_modal.html) sits outside
+   .cc-stage (see the comment on that button) and only carried
+   rm-btn/rm-btn--primary/rm-btn--sm, which are styled by
+   static/zetom/css/requestmain_detail.css — loaded solely on the
+   RequestMain change form, not via BaseRequestAdmin.Media (shared by
+   Oferta/Zlecenie/Wniosek/RequestNull, where this button also renders).
+   On those pages it had no border/background at all — read as plain
+   unstyled text, easy to miss. cc-action-btn is scoped to #content (this
+   file's own tokens, not requestmain_detail.css's --rm-*) with the same
+   !important treatment as the .field rules above, for the same reason:
+   Tailwind's @layer base reset otherwise wins button background/border
+   over an unlayered non-important rule regardless of specificity.
+   claude — Fix-round 2: was solid --green-bright with white text — white
+   on a light/bright green has poor contrast (the label was hard to read,
+   not just "unstyled"). Switched to the same neutral surface/border/text
+   combo .cc-stage .btn already uses elsewhere in this file, which is
+   built for readable body text against it in both themes. */
+#content .cc-action-btn { display: inline-flex !important; align-items: center !important; gap: 6px; padding: 8px 14px !important; border-radius: 6px !important; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border-2) !important; background: var(--surface) !important; color: var(--text) !important; }
+#content .cc-action-btn:hover { background: var(--bg-3) !important; border-color: var(--border-2) !important; }
+/* claude — "Mark as done" is the one primary/affirmative action among
+   these (Step notes and Create order/application are neutral); a small
+   accent keeps it distinguishable without repeating the low-contrast
+   solid-green mistake above (accent text + border, no fill). */
+#content .cc-action-btn--accent { color: var(--green-bright) !important; border-color: color-mix(in srgb, var(--green-bright) 45%, var(--border-2)) !important; }
+#content .cc-action-btn--accent:hover { background: color-mix(in srgb, var(--green) 14%, var(--surface)) !important; }
