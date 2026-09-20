@@ -150,12 +150,38 @@ class ApproveChildActionTests(TestCase):
         oferta.refresh_from_db()
         self.assertEqual(oferta.status, Status.done)
 
-    def test_approve_zlecenie_does_not_touch_oferta_in_other_statuses(self):
-        # Только waiting -> done. new/in_progress оферты не трогаем.
+    def test_approve_zlecenie_closes_oferta_in_other_statuses_too(self):
+        # new/in_progress ofertas get force-closed too, not just waiting —
+        # opening a zlecenie always supersedes every not-yet-done oferta.
         oferta = approve_oferta_action(self.main.pk)
         self.assertEqual(oferta.status, Status.new)
 
         approve_zlecenie_action(self.main.pk)
 
         oferta.refresh_from_db()
-        self.assertEqual(oferta.status, Status.new)
+        self.assertEqual(oferta.status, Status.done)
+
+    def test_approve_wniosek_closes_open_zlecenie(self):
+        zlec = approve_zlecenie_action(self.main.pk)
+        zlec.status = Status.waiting
+        zlec.save()
+
+        approve_wniosek_action(self.main.pk)
+
+        zlec.refresh_from_db()
+        self.assertEqual(zlec.status, Status.done)
+
+    # claude — but a request can still have more than one Zlecenie/Wniosek —
+    # close_oferta_on_zlecenie/close_zlecenie_on_wniosek only no-op on an
+    # already-done sibling, they don't block creating further documents.
+    def test_approve_zlecenie_allows_multiple_per_request(self):
+        approve_oferta_action(self.main.pk)
+        approve_zlecenie_action(self.main.pk)
+        approve_zlecenie_action(self.main.pk)
+        self.assertEqual(Zlecenie.objects.filter(from_main=self.main).count(), 2)
+
+    def test_approve_wniosek_allows_multiple_per_request(self):
+        approve_zlecenie_action(self.main.pk)
+        approve_wniosek_action(self.main.pk)
+        approve_wniosek_action(self.main.pk)
+        self.assertEqual(Wniosek.objects.filter(from_main=self.main).count(), 2)
