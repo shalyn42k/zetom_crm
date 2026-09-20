@@ -19,6 +19,7 @@ from crm.notification.models import Notification, NotificationKind
 from crm.notification.services import inapp_service
 from crm.zetom.models import RequestMain
 from crm.zetom.services.per_req_perms import can_resolve_review
+from crm.zetom.services.visibility import visible_requests_for
 
 REVIEW_RESOLVED_TEMPLATE = "notification/inapp/staff/review_resolved.txt"
 
@@ -96,7 +97,16 @@ class RequestResolveReviewMixin:
         # claude — owner-of-Req тоже может резолвить (даже если у него
         # роль specialist), поэтому perm-чек теперь контекстный. Грузим
         # Req первым, чтобы было что передать в can_resolve_review.
-        obj = RequestMain.objects.filter(pk=object_id).first()
+        # claude — was RequestMain.objects.filter(...), unlike every other
+        # per-Req action in this app (requestmain.py/requestmain_mail.py/
+        # requestmain_review.py all go through visible_requests_for first).
+        # Harmless today since every role that can hold `resolve_review`
+        # globally already sees all requests (visibility.py), but the
+        # per_req_perms module is built to allow granting resolve_review to
+        # one specialist via extra_permissions — for that case this was the
+        # one action that could resolve a review outside the user's own
+        # department/visibility scope.
+        obj = visible_requests_for(request.user, RequestMain.objects.all()).filter(pk=object_id).first()
         if obj is None:
             messages.error(request, _("Request not found."))
             return redirect("admin:zetom_requestmain_changelist")

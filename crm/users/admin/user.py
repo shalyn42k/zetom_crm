@@ -135,6 +135,14 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
         if "role" in form.base_fields and not can_edit_roles:
             form.base_fields["role"].disabled = True
 
+        # claude — otp_exempt is a mandatory-2FA kill switch
+        # (Enforce2FAMiddleware skips anyone with profile.otp_exempt=True).
+        # Never gated here either — plain edit_users (no edit_roles, no
+        # superuser) could flip it on themselves or anyone else through
+        # this same changeform. Same permission `role` requires above.
+        if "otp_exempt" in form.base_fields and not can_edit_roles:
+            form.base_fields["otp_exempt"].disabled = True
+
         if not request.user.is_superuser:
             if "is_superuser" in form.base_fields:
                 form.base_fields["is_superuser"].disabled = True
@@ -306,10 +314,21 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
             job_title = form.cleaned_data.get("job_title")
             profile.job_title = job_title if job_title else None
 
+        # claude — Fix-round: the NB below is right for `change` (the
+        # Departments tab owns departments post-creation via its own HTMX
+        # endpoints, and an outer-form submit must not clobber it), but it
+        # was applying unconditionally — so `departments`, a real field on
+        # add_fieldsets/CustomUserCreateForm, was silently discarded on
+        # every new user. There's no tab data to protect yet at creation
+        # time, so apply it only here.
+        if not change:
+            profile.departments = form.cleaned_data.get("departments") or []
+
         profile.save()
-        # NB: departments / main_departments умышленно НЕ трогаются здесь —
-        # ими управляет вкладка Departments через HTMX-эндпоинты, иначе
-        # сабмит outer-формы перезатёр бы свежие изменения вкладки. — claude
+        # NB: departments / main_departments умышленно НЕ трогаются при
+        # редактировании — ими управляет вкладка Departments через
+        # HTMX-эндпоинты, иначе сабмит outer-формы перезатёр бы свежие
+        # изменения вкладки. — claude
 
     #  Колонки в списке 
     def get_role(self, obj):
@@ -351,7 +370,17 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
         return user_has_perm(request.user, "edit_users")
 
     def has_change_permission(self, request, obj=None):
-        return user_has_perm(request.user, "edit_users")
+        if not user_has_perm(request.user, "edit_users"):
+            return False
+        # claude — get_form disables is_superuser/role for a non-superuser
+        # editor, but nothing stopped them from reaching this obj's other
+        # fields (username/email/first_name/last_name) at all — the
+        # changeform itself was reachable for ANY user, superuser target
+        # included. Same boundary UserDeactivateView._guard and
+        # UserEditView._forbidden_target (users/views.py) already enforce.
+        if obj is not None and obj.is_superuser and not request.user.is_superuser:
+            return False
+        return True
 
     # claude — hard-delete переведён в разряд аварийного выхода и оставлен
     # только суперюзеру: обычный способ убрать человека из системы — это

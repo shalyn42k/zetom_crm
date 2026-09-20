@@ -32,6 +32,7 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
@@ -43,12 +44,14 @@ from crm.notification.services.notification_service import (
 )
 from crm.status_manager.services.status_service import cancel_request
 from crm.status_manager.services.statuses import RequestStatus
+from crm.users.utils import user_has_perm
 from crm.zetom.models import (
     DepartmentsVariants, RequestClientLink, RequestMain, RequestNull,
 )
 from crm.zetom.services.duplicate_matcher import find_candidates
 from crm.zetom.services.request_duplicate_finder import find_request_duplicates
 from crm.zetom.services.request_service import approve_null_action
+from crm.zetom.services.visibility import visible_requests_for
 
 # ---------------------------------------------------------------------------
 # Form
@@ -397,8 +400,31 @@ class ValidationWindowMixin:
         ]
         return custom + urls
 
+    # claude — this view had NO permission check at all: the URL is only
+    # wrapped in admin_site.admin_view (is_staff/is_active), and
+    # RequestNullAdmin.change_view (requestnull.py) just redirects here
+    # without going through Django's own has_view_or_change_permission
+    # gate, so any staff account — regardless of RBAC role — could read
+    # lead PII and approve/merge/delete duplicates via POST. Mirrors the
+    # perm split every other custom admin view in this app uses: view for
+    # GET, edit for the POST mutations (approve + duplicate ops).
+    # get_queryset (not RequestNull.objects) also applies the same
+    # department-visibility filter as the changelist, closing the gap
+    # where a filtered-out object was still reachable by pk directly.
     def validation_window_view(self, request, object_id):
-        rn = get_object_or_404(RequestNull, pk=object_id)
+        if not user_has_perm(request.user, "view_requests"):
+            return HttpResponseForbidden(
+                _("You don't have permission for this action.")
+            )
+        rn = get_object_or_404(
+            visible_requests_for(request.user, RequestNull.objects.all()),
+            pk=object_id,
+        )
+
+        if request.method == "POST" and not user_has_perm(request.user, "edit_requests"):
+            return HttpResponseForbidden(
+                _("You don't have permission for this action.")
+            )
 
         # Duplicate-management ops fire from the possible-duplicate panel.
         # Each is encoded in one __action value so a single button carries both

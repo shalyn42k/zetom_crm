@@ -10,10 +10,11 @@ from crispy_forms.layout import Column, Field, Layout, Row
 from django.contrib import admin, messages
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
+from unfold.decorators import display
 
 from crm.clients.models import Client
 from crm.clients.services import create_person_with_company
@@ -108,6 +109,43 @@ class RequestMainAdmin(
     def get_queryset(self, request):
        qs = super().get_queryset(request)
        return qs.exclude(status__in=[RequestStatus.cancelled, RequestStatus.deleted])
+
+    # claude — Fix-round: BaseRequestAdmin.colored_status (base.py) is
+    # shared by every admin in this module, but its `label` dict only has
+    # keys for the child-doc Status enum (new/in_progress/waiting/done) —
+    # RequestMain uses the entirely different RequestStatus enum
+    # (active/open/closed/inactive/cancelled/deleted), none of which match,
+    # so every row silently fell through unfold's default (gray) badge
+    # regardless of status. Same bug hit the display TEXT too: it did
+    # `Status(obj.status).label if obj.status in Status.values else
+    # obj.status` — since a RequestStatus value is never in Status.values,
+    # every row showed the raw lowercase code, not a real translated label.
+    # This override replaces both for RequestMain specifically.
+    #
+    # claude — every RequestStatus value MUST have a dict entry, even the
+    # ones meant to render as the plain gray badge ("secondary" below isn't
+    # one of label.html's recognised keywords — info/danger/warning/
+    # success/primary — so it falls through to gray same as an absent key
+    # would). Found the hard way: unfold.utils.display_for_label does
+    # `label[value[0]]` in a try/except, and on KeyError it doesn't just
+    # skip the color — it also replaces the display text with the RAW
+    # value[0] (the lowercase status code) instead of the translated
+    # value[1] this method returns. Omitting "closed" here reproduced
+    # exactly that: an untranslated "closed" badge sitting next to properly
+    # colored, properly translated "Aktywne"/"Otwarte" ones.
+    @display(
+        label={
+            RequestStatus.active: "success",
+            RequestStatus.open: "warning",
+            RequestStatus.cancelled: "danger",
+            RequestStatus.closed: "secondary",
+            RequestStatus.inactive: "secondary",
+            RequestStatus.deleted: "secondary",
+        },
+        description=_("Status"),
+    )
+    def colored_status(self, obj):
+        return obj.status, str(RequestStatus(obj.status).label)
 
 
     def get_changeform_initial_data(self, request):
@@ -663,7 +701,15 @@ class RequestMainAdmin(
     # claude — JSON-эндпоинт: возвращает возможные дубликаты (клиенты + заявки)
     # для значений add-формы. JS-попап дёргает его при нажатии Save и, если
     # хоть что-то похоже, показывает предупреждение до отправки формы.
+    # claude — was reachable by any staff account (only admin_view's
+    # is_staff check applied), returning name/phone/email/NIP for clients
+    # and requests across the whole DB, unfiltered by department. Same perm
+    # this class requires for viewing requests at all.
     def check_duplicates_action(self, request):
+        if not user_has_perm(request.user, "view_requests"):
+            return HttpResponseForbidden(
+                _("You don't have permission for this action.")
+            )
         probe = RequestMain(
             first_name=request.GET.get("first_name") or None,
             last_name=request.GET.get("last_name") or None,
@@ -720,9 +766,21 @@ class RequestMainAdmin(
 
     # claude — generic duplicate-request action for the add-form popup
     # (no new RequestMain pk needed — acts on existing records only).
+    # claude — was reachable by any staff account with zero permission check
+    # (only admin_view's is_staff), and looked objects up by raw pk with no
+    # visibility filter — a user without edit_requests, or one who couldn't
+    # even see a given department's requests, could cancel/soft-delete any
+    # RequestMain/RequestNull in the DB by id. Gated the same as every other
+    # mutating POST action on this admin (edit_requests), and both lookups
+    # now go through visible_requests_for so a department-hidden object
+    # can't be reached by id either.
     def dup_request_action(self, request):
         if request.method != "POST":
             return JsonResponse({"ok": False, "error": "POST required"}, status=405)
+        if not user_has_perm(request.user, "edit_requests"):
+            return JsonResponse(
+                {"ok": False, "error": "forbidden"}, status=403
+            )
         from crm.status_manager.services.status_service import (
             cancel_request as _cancel,
         )
@@ -735,11 +793,11 @@ class RequestMainAdmin(
         # or None.
         def _soft_delete_existing(kind, pk):
             if kind == KIND_NULL:
-                obj = RN.objects.filter(pk=pk).first()
+                obj = visible_requests_for(request.user, RN.objects.all()).filter(pk=pk).first()
                 if obj:
                     obj.delete()  # default policy = SOFT_DELETE_CASCADE → trash
             else:
-                obj = RequestMain.objects.filter(pk=pk).first()
+                obj = visible_requests_for(request.user, RequestMain.objects.all()).filter(pk=pk).first()
                 if obj:
                     try:
                         _cancel(obj, request.user,
@@ -1125,7 +1183,7 @@ class RequestMainAdmin(
         _obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
         if denied is not None:
             return denied
-        approve_wniosek_action(object_id)
+        approve_wniosek_action(object_id, user=request.user)
         messages.success(request, _("Application created."))
         return redirect("admin:zetom_requestmain_change", object_id)
 

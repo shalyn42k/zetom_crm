@@ -78,6 +78,15 @@ def _harden_user_form(form, request, target=None):
             if target is not None and target.pk == request.user.pk:
                 role_field.disabled = True
 
+    # claude — otp_exempt is a mandatory-2FA kill switch (Enforce2FAMiddleware
+    # skips anyone with profile.otp_exempt=True). It was never gated at all —
+    # any account holding plain `edit_users` (not even `edit_roles`) could
+    # flip it on themselves or anyone else via this same form, permanently
+    # opting out of 2FA. Same permission `role` already requires here.
+    otp_field = form.fields.get("otp_exempt")
+    if otp_field is not None and not user_has_perm(request.user, "edit_roles"):
+        otp_field.disabled = True
+
     return form
 
 
@@ -119,8 +128,22 @@ class UserEditView(RBACRequiredMixin, View):
 
     required_perm = "edit_users"
 
+    # claude — was missing entirely: this form exposes username/email/
+    # new_password1/new_password2 (CustomUserChangeForm, forms.py) and
+    # _harden_user_form only ever disabled is_superuser/role, never these —
+    # so any account holding the single permission `edit_users` (not even
+    # `edit_roles`, let alone superuser) could open /users/<pk>/edit/ for a
+    # real superuser and set their password/email directly. Full account
+    # takeover. Same guard UserDeactivateView._guard already applies below
+    # (target is superuser and actor isn't → forbidden); that view got it,
+    # this one never did.
+    def _forbidden_target(self, request, user):
+        return user.is_superuser and not request.user.is_superuser
+
     def get(self, request, pk):
         user = get_object_or_404(User, pk=pk)
+        if self._forbidden_target(request, user):
+            raise PermissionDenied
         profile = UserProfile.objects.get(user=user)
 
         form = _harden_user_form(
@@ -136,6 +159,8 @@ class UserEditView(RBACRequiredMixin, View):
 
     def post(self, request, pk):
         user = get_object_or_404(User, pk=pk)
+        if self._forbidden_target(request, user):
+            raise PermissionDenied
         profile = UserProfile.objects.get(user=user)
 
         form = _harden_user_form(

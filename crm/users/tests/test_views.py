@@ -15,10 +15,12 @@
 #     select_related("userprofile") при related_name="profile" и падал с
 #     FieldError на каждом запросе. Обход с моком менеджера убран.
 #
-#   БАГ 2 — forms.py CustomUserCreateForm.save():
-#     UserProfile.objects.create() конфликтует с сигналом create_user_profile,
-#     который уже создал профиль при user.save(). → IntegrityError.
-#     Обход: отключаем сигнал через post_save.disconnect() на время теста.
+#   БАГ 2 — ИСПРАВЛЕН (claude): forms.py CustomUserCreateForm.save()
+#     вызывал UserProfile.objects.create(), которое конфликтовало с
+#     сигналом create_user_profile (уже создающим профиль при user.save())
+#     → IntegrityError на каждое реальное создание юзера. Теперь
+#     update_or_create — идемпотентно независимо от того, успел сигнал
+#     создать профиль или нет.
 #
 # claude — все вьюшки этого модуля теперь за RBAC-гейтом, поэтому тесты
 # логинятся под юзером с нужными правами. Проверки самого гейта (аноним,
@@ -26,12 +28,10 @@
 # ──────────────────────────────────────────────────────────────────────────────
 
 from django.contrib.auth import get_user_model
-from django.db.models.signals import post_save
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from crm.users.models import Permission, Role, UserProfile
-from crm.users.signals_profile import create_user_profile
 
 User = get_user_model()
 
@@ -93,9 +93,6 @@ class UserViewsTests(TestCase):
         self.assertIn("form", response.context)
 
     def test_user_create_post_valid_creates_user_and_redirects(self):
-        # БАГ: форма вызывает UserProfile.objects.create(), но сигнал уже создал
-        # профиль при user.save(). Отключаем сигнал на время этого теста.
-        # fetch_redirect_response=False — не заходим на /users/ (там другой баг).
         post_data = {
             "username": "brandnew",
             "email": "brandnew@test.com",
@@ -107,15 +104,17 @@ class UserViewsTests(TestCase):
             "departments": [],
             "job_title": "Тестер",
         }
-        post_save.disconnect(create_user_profile, sender=User)
-        try:
-            response = self.client.post(reverse("user_create"), data=post_data)
-            self.assertRedirects(
-                response, reverse("user_list"), fetch_redirect_response=False
-            )
-            self.assertTrue(User.objects.filter(username="brandnew").exists())
-        finally:
-            post_save.connect(create_user_profile, sender=User)
+        response = self.client.post(reverse("user_create"), data=post_data)
+        self.assertRedirects(
+            response, reverse("user_list"), fetch_redirect_response=False
+        )
+        user = User.objects.get(username="brandnew")
+        # signals_profile's post_save handler races CustomUserCreateForm.save()
+        # to create the profile first — either way there must be exactly one,
+        # carrying the role/departments/job_title the form actually submitted.
+        self.assertEqual(UserProfile.objects.filter(user=user).count(), 1)
+        self.assertEqual(user.profile.role, self.role)
+        self.assertEqual(user.profile.job_title, "Тестер")
 
     def test_user_create_post_invalid_rerenders_with_errors(self):
         response = self.client.post(reverse("user_create"), data={
@@ -333,3 +332,56 @@ class UsersUIAccessTests(TestCase):
 
         self.victim.profile.refresh_from_db()
         self.assertNotEqual(self.victim.profile.role, admin_role)
+
+    # claude — was a full account takeover: UserEditView had no guard
+    # against the target being a superuser (unlike UserDeactivateView,
+    # which already refused this). _harden_user_form only ever disabled
+    # is_superuser/role — username/email/new_password1/new_password2 were
+    # wide open, so plain edit_users could set a superuser's password.
+    def test_edit_users_cannot_reach_a_superuser_target(self):
+        root = User.objects.create_superuser(
+            username="root", email="root@test.com", password="orig-pw",
+        )
+        self.plain.profile.extra_permissions.set(
+            Permission.objects.filter(code__in=["view_users", "edit_users"])
+        )
+        self.client.force_login(self.plain)
+
+        get_response = self.client.get(reverse("user_edit", args=[root.pk]))
+        self.assertEqual(get_response.status_code, 403)
+
+        post_response = self.client.post(reverse("user_edit", args=[root.pk]), data={
+            "username": "root",
+            "email": "pwned@test.com",
+            "first_name": "",
+            "last_name": "",
+            "new_password1": "TakenOver1!",
+            "new_password2": "TakenOver1!",
+        })
+        self.assertEqual(post_response.status_code, 403)
+
+        root.refresh_from_db()
+        self.assertEqual(root.email, "root@test.com")
+        self.assertTrue(root.check_password("orig-pw"))
+
+    # claude — otp_exempt (Enforce2FAMiddleware's mandatory-2FA kill switch)
+    # was never gated: plain edit_users (no edit_roles) could flip it on
+    # for themselves or anyone else through the same form used above.
+    def test_edit_users_cannot_toggle_otp_exempt(self):
+        self.plain.profile.extra_permissions.set(
+            Permission.objects.filter(code__in=["view_users", "edit_users"])
+        )
+        self.client.force_login(self.plain)
+
+        self.client.post(reverse("user_edit", args=[self.victim.pk]), data={
+            "username": "victim",
+            "email": "victim@test.com",
+            "first_name": "",
+            "last_name": "",
+            "otp_exempt": "on",
+            "new_password1": "",
+            "new_password2": "",
+        })
+
+        self.victim.profile.refresh_from_db()
+        self.assertFalse(self.victim.profile.otp_exempt)
