@@ -42,20 +42,27 @@ def bump_new_to_in_progress(obj, old_status, change, user):
 # open up manual new->done from the UI — its author appears to have
 # deliberately forbidden that).
 #
+# claude — Fix-round: only called from request_service.py's
+# approve_zlecenie_action (the "Create order" button on the RequestMain
+# page) now, not from a per-document chain button — that one (and its
+# Zlecenie->Wniosek counterpart) was removed by explicit request, since a
+# single Oferta/Zlecenie can have more than one Zlecenie/Wniosek filed
+# against it and a button living ON one specific Oferta implied a 1:1 link
+# that doesn't hold. The RequestMain-page path was kept as asked — it
+# doesn't target one specific linked document, it just closes out
+# everything not already done when the next stage is approved from there.
+#
 # Intentionally NOT recorded in StatusHistory: that table is RequestMain-
 # scoped (StatusHistory.request is a FK to RequestMain only, no FK to child
 # docs) and its old_status/new_status columns are typed with RequestStatus,
 # not the child-doc Status enum. change_status — the normal path for every
 # other child-doc transition — writes no StatusHistory row either, so this
-# doesn't skip an existing convention. Attaching a row to oferta.from_main
-# would show up in the *parent request's* history as "new -> done", which
-# never happened to the request itself — a false audit trail, worse than none.
+# doesn't skip an existing convention.
 @transaction.atomic
 def close_oferta_on_zlecenie(oferta, user):
-    """Auto-close an Oferta when a Zlecenie is created from it.
+    """Auto-close an Oferta when a Zlecenie is approved for its request.
 
-    No-op if the offer is already done, cancelled, or deleted — creating a
-    Zlecenie from a closed offer shouldn't resurrect or double-close it.
+    No-op if the offer is already done, cancelled, or deleted.
     """
     if oferta.status in (Status.done, RequestStatus.cancelled, RequestStatus.deleted):
         return
@@ -65,6 +72,46 @@ def close_oferta_on_zlecenie(oferta, user):
 
     if oferta.from_main_id:
         update_parent(oferta.from_main)
+
+
+# claude — same contract as close_oferta_on_zlecenie above, one hop later:
+# only called from request_service.py's approve_wniosek_action now.
+@transaction.atomic
+def close_zlecenie_on_wniosek(zlecenie, user):
+    """Auto-close a Zlecenie when a Wniosek is approved for its request.
+
+    No-op if the order is already done, cancelled, or deleted.
+    """
+    if zlecenie.status in (Status.done, RequestStatus.cancelled, RequestStatus.deleted):
+        return
+
+    zlecenie.status = Status.done
+    zlecenie.save(update_fields=["status"])
+
+    if zlecenie.from_main_id:
+        update_parent(zlecenie.from_main)
+
+
+# claude — "Mark as done" button on Oferta/Zlecenie/Wniosek change forms.
+# Status editing is deliberately locked out of those admin forms entirely
+# (see ChildSaveModelTests — "status" isn't a form field). This is the only
+# way to close a document that isn't covered by the request-level
+# close_*_on_* hooks above — most notably Wniosek, which nothing is ever
+# created from, so it never gets an auto-close hook at all.
+@transaction.atomic
+def mark_child_done(obj, user):
+    """Manually mark an Oferta/Zlecenie/Wniosek as done.
+
+    No-op if already done, cancelled, or deleted.
+    """
+    if obj.status in (Status.done, RequestStatus.cancelled, RequestStatus.deleted):
+        return
+
+    obj.status = Status.done
+    obj.save(update_fields=["status"])
+
+    if obj.from_main_id:
+        update_parent(obj.from_main)
 
 
 @transaction.atomic

@@ -3,7 +3,7 @@ from itertools import chain
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
-from crm.status_manager.models import StatusHistory
+from crm.status_manager.models import ChildDocumentDeletion, StatusHistory
 from crm.status_manager.services.statuses import RequestStatus, Status
 
 
@@ -100,6 +100,28 @@ def cancel_request(request_obj, user, reason):
         reason=reason,
         changed_by=user,
     )
+
+
+def delete_child_document(obj, user, reason):
+    """Hard-delete an Oferta/Zlecenie/Wniosek, logging why.
+
+    Unlike RequestMain, child documents have no soft-delete status to flip —
+    the row is actually removed, so the reason is captured on
+    ChildDocumentDeletion (the only record left once obj is gone) rather
+    than on the object itself.
+    """
+    with transaction.atomic():
+        parent = obj.from_main
+        ChildDocumentDeletion.objects.create(
+            document_type=type(obj).__name__,
+            document_repr=str(obj),
+            from_main=parent,
+            reason=reason,
+            deleted_by=user,
+        )
+        obj.delete()
+        if parent:
+            update_parent(parent)
 
 
 def delete_request(request_obj, user, reason):

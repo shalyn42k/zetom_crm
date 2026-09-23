@@ -13,7 +13,11 @@ company_card.css.
 
 {% block extrastyle %}
   {{ block.super }}
-  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}">
+  {% comment %}
+  claude — Fix-round: cache-busted like company_card.html's own link, see
+  that template's comment.
+  {% endcomment %}
+  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}?v={% now "U" %}">
 {% endblock extrastyle %}
 
 {% block content %}

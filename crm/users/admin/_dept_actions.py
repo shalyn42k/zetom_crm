@@ -237,7 +237,10 @@ class DepartmentActionsMixin:
         if request.method != "POST":
             return redirect("admin:auth_user_change", object_id)
         if not self._can_grant_head(request):
-            return HttpResponseBadRequest("Only admins can grant head status")
+            # claude — was HttpResponseBadRequest (400): a permission
+            # denial, same as every other _can_*(request) check in this
+            # file, which all return 403.
+            return HttpResponseForbidden("Only admins can grant head status")
         user = get_object_or_404(User, pk=object_id)
         if dept_code not in DepartmentsVariants.values:
             return HttpResponseBadRequest("Invalid department code")
@@ -254,7 +257,7 @@ class DepartmentActionsMixin:
         if request.method != "POST":
             return redirect("admin:auth_user_change", object_id)
         if not self._can_grant_head(request):
-            return HttpResponseBadRequest("Only admins can revoke head status")
+            return HttpResponseForbidden("Only admins can revoke head status")
         user = get_object_or_404(User, pk=object_id)
         if dept_code not in DepartmentsVariants.values:
             return HttpResponseBadRequest("Invalid department code")
@@ -264,7 +267,15 @@ class DepartmentActionsMixin:
             profile.save(update_fields=["head_of_departments"])
         return self._render_dept_tab(request, user)
 
+    # claude — unlike every other action in this mixin, this one had no
+    # permission check at all (only admin_view's is_staff), so any staff
+    # account could pull the department roster — names, roles, is_head —
+    # for an arbitrary user id without view_users. Same perm that gates
+    # seeing this user's admin page (and this tab) at all — see
+    # has_view_permission in user.py.
     def search_departments_action(self, request, object_id):
+        if not user_has_perm(request.user, "view_users"):
+            return HttpResponseForbidden("Missing view_users permission")
         user = get_object_or_404(User, pk=object_id)
         query = (request.GET.get("q") or "").strip().lower()
         ctx = self._build_dept_context(request, user)

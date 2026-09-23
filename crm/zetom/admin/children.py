@@ -1,38 +1,48 @@
 """Child documents — Oferta / Zlecenie / Wniosek admins.
 
-Each shares the same shape: from_main is readonly (assigned by parent's
-oferta_action / zlecenie_action / wniosek_action), and save_model is
-delegated to save_child_with_status which respects the FSM transitions
-defined in status_manager.
+Each shares the same shape: from_main is readonly (assigned by the
+RequestMain-level approve_* actions in requestmain.py/request_service.py),
+and save_model is delegated to save_child_with_status which respects the
+FSM transitions defined in status_manager.
 
-# claude — also carries the "create the next document" actions for the
-# Oferta -> Zlecenie -> Wniosek soft chain (Task 11): zlecenie_action on
-# OfertaAdmin, wniosek_action on ZlecenieAdmin. Same shape as the
-# RequestMain -> child actions in requestmain.py, one link deeper.
+# claude — Fix-round: the per-document "create the next document" chain
+# buttons (Oferta -> Zlecenie -> Wniosek, Task 11 — zlecenie_action on
+# OfertaAdmin, wniosek_action on ZlecenieAdmin) were removed by request: a
+# Zlecenie can have more than one Wniosek filed against it (and an Oferta
+# more than one Zlecenie), so a button living ON one specific document,
+# implying a 1:1 next-document link, didn't fit. The equivalent
+# RequestMain-page buttons ("Create order"/"Create application" in
+# requestmain.py, backed by request_service.py) were kept — they don't
+# target one specific document, and still auto-close the prior stage the
+# same way they always did (close_oferta_on_zlecenie /
+# close_zlecenie_on_wniosek, now living in status_orchestration.py, called
+# only from request_service.py). MarkDoneActionMixin below is the only
+# manual close available on these forms themselves.
 """
 from django.contrib import admin, messages
+from django.db import transaction
 from django.http import HttpResponseForbidden
-from django.shortcuts import redirect
-from django.urls import path
+from django.shortcuts import redirect, render
+from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 
 from crm.status_manager.services.status_service import (
-    save_child_with_status, update_parent,
+    delete_child_document, save_child_with_status, update_parent,
 )
 from crm.users.utils import user_has_perm
 from crm.zetom.forms import AddOferta, AddWniosek, AddZlecenie
 from crm.zetom.models import Oferta, Wniosek, Zlecenie
 from crm.zetom.services.status_orchestration import (
-    bump_new_to_in_progress, close_oferta_on_zlecenie,
+    bump_new_to_in_progress, mark_child_done,
 )
 
-from .base import BaseRequestAdmin
+from .base import BaseRequestAdmin, ReasonForm
 
 
-# claude — permission gate for the create-next-document actions below.
-# Returns (obj, None) on success, or (None, HttpResponseForbidden) when the
-# caller should bail out. 403 (not a redirect+message) matches the pattern
-# already used for POST-action gates guarded by a role permission — see
+# claude — permission gate for the mark-done action below. Returns
+# (obj, None) on success, or (None, HttpResponseForbidden) when the caller
+# should bail out. 403 (not a redirect+message) matches the pattern already
+# used for POST-action gates guarded by a role permission — see
 # requestmain_mail._get_obj_for_mail / base._get_obj_for_step_note.
 def _get_child_for_action(admin_instance, request, object_id, perm):
     if not user_has_perm(request.user, perm):
@@ -45,29 +55,82 @@ def _get_child_for_action(admin_instance, request, object_id, perm):
     return obj, None
 
 
-# claude — creates the next chain document (Zlecenie from Oferta, Wniosek
-# from Zlecenie). Inherits the contact snapshot from the parent document
-# (not RequestMain) and always copies from_main — a document without it
-# silently disappears from _step_note_targets and from visibility filtering.
-def _create_next_document(model, parent, **extra):
-    child = model.objects.create(
-        from_main=parent.from_main,
-        first_name=parent.first_name,
-        last_name=parent.last_name,
-        phone=parent.phone,
-        email=parent.email,
-        company_name=parent.company_name,
-        company_nip=parent.company_nip,
-        departments=list(parent.departments or []),
-        source=parent.source,
-        **extra,
-    )
-    child.assigned_to.set(parent.assigned_to.all())
-    return child
+# claude — child documents are hard-deleted (no soft-delete status to flip,
+# unlike RequestMain), so the only place to capture "why" is at delete time.
+# Mirrors RequestMainAdmin.delete_view (requestmain.py): single-object
+# delete shows a reason form before actually deleting; bulk delete (list-
+# page "Delete selected" action) has no per-object form to hang a reason
+# on, so it falls back to a generic label, same as RequestMain's bulk path.
+class ChildDeleteReasonMixin:
+    def delete_view(self, request, object_id, extra_context=None):
+        obj = self.get_object(request, object_id)
+        if obj is None or not self.has_delete_permission(request, obj):
+            return super().delete_view(request, object_id, extra_context)
+
+        opts = self.model._meta
+        if request.method == "POST":
+            reason = (request.POST.get("reason") or "").strip()
+            if reason:
+                delete_child_document(obj, request.user, reason)
+                messages.success(request, _("Document deleted."))
+                return redirect(f"admin:{opts.app_label}_{opts.model_name}_changelist")
+            messages.error(request, _("Reason is required."))
+
+        form = ReasonForm()
+        return render(
+            request,
+            "admin/zetom/shared/reason_form.html",
+            {
+                "form": form,
+                "obj": obj,
+                "cancel_url": reverse(
+                    f"admin:{opts.app_label}_{opts.model_name}_change", args=[obj.pk]
+                ),
+                **self.admin_site.each_context(request),
+            },
+        )
+
+    @transaction.atomic
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            delete_child_document(obj, request.user, reason=_("Deleted via admin (bulk)"))
+
+
+# claude — "Mark as done" button, shared by all three child-doc admins.
+# Status editing is deliberately locked out of these forms entirely (see
+# save_child_with_status: "status" isn't a form field). Oferta/Zlecenie can
+# still get auto-closed from the RequestMain page (see the module
+# docstring), but Wniosek never does — nothing is ever created from it —
+# so this button is the only way to close one from its own change form.
+class MarkDoneActionMixin:
+    def get_urls(self):
+        urls = super().get_urls()
+        opts = self.model._meta
+        custom = [
+            path(
+                "<path:object_id>/mark-done/",
+                self.admin_site.admin_view(self.mark_done_action),
+                name=f"{opts.app_label}_{opts.model_name}_mark_done",
+            ),
+        ]
+        return custom + urls
+
+    def mark_done_action(self, request, object_id):
+        opts = self.model._meta
+        change_url = f"admin:{opts.app_label}_{opts.model_name}_change"
+        if request.method != "POST":
+            return redirect(change_url, object_id)
+        obj, denied = _get_child_for_action(self, request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+
+        mark_child_done(obj, request.user)
+        messages.success(request, _("Marked as done."))
+        return redirect(change_url, object_id)
 
 
 @admin.register(Oferta)
-class OfertaAdmin(BaseRequestAdmin):
+class OfertaAdmin(ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
     actions = []
     form = AddOferta
     change_form_template = "admin/zetom/oferta/change_form.html"
@@ -99,46 +162,9 @@ class OfertaAdmin(BaseRequestAdmin):
             # claude — любая правка new-дока авто-двигает new -> in_progress
             bump_new_to_in_progress(obj, old_status, change, request.user)
 
-    # claude — "Create order from this offer" button (Task 11).
-    def get_urls(self):
-        urls = super().get_urls()
-        custom = [
-            path(
-                "<path:object_id>/zlecenie/",
-                self.admin_site.admin_view(self.zlecenie_action),
-                name="zetom_oferta_zlecenie_action",
-            ),
-        ]
-        return custom + urls
-
-    def zlecenie_action(self, request, object_id):
-        if request.method != "POST":
-            return redirect("admin:zetom_oferta_change", object_id)
-        obj, denied = _get_child_for_action(self, request, object_id, "edit_requests")
-        if denied is not None:
-            return denied
-
-        zlecenie = _create_next_document(Zlecenie, obj, from_oferta=obj, price=0)
-        # claude — creating an order from an offer closes the offer, even
-        # though it may be `new`/`in_progress` and can't reach `done` through
-        # the manual FSM (see close_oferta_on_zlecenie for why).
-        close_oferta_on_zlecenie(obj, request.user)
-        # claude — Fix-round: the parent cascade must NOT be left to
-        # close_oferta_on_zlecenie. That helper returns early when the offer
-        # is already done/cancelled/deleted, so update_parent never ran and a
-        # parent sitting at `closed` stayed `closed` after gaining a fresh
-        # `new` Zlecenie. The new child changes the parent's picture no matter
-        # what the offer's own status was, so recompute unconditionally — same
-        # contract as wniosek_action below. update_parent is idempotent and
-        # already self-guards cancelled/deleted parents.
-        if obj.from_main_id:
-            update_parent(obj.from_main)
-        messages.success(request, _("Order created."))
-        return redirect("admin:zetom_zlecenie_change", zlecenie.pk)
-
 
 @admin.register(Zlecenie)
-class ZlecenieAdmin(BaseRequestAdmin):
+class ZlecenieAdmin(ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
     actions = []
     form = AddZlecenie
     change_form_template = "admin/zetom/zlecenie/change_form.html"
@@ -171,37 +197,9 @@ class ZlecenieAdmin(BaseRequestAdmin):
             # claude — любая правка new-дока авто-двигает new -> in_progress
             bump_new_to_in_progress(obj, old_status, change, request.user)
 
-    # claude — "Create application from this order" button (Task 11). No
-    # auto-close here: unlike Oferta -> Zlecenie, a Wniosek being created
-    # from a Zlecenie does not change the order's status — deliberate, per
-    # spec §3.2 (no symmetric auto-close rule for this hop).
-    def get_urls(self):
-        urls = super().get_urls()
-        custom = [
-            path(
-                "<path:object_id>/wniosek/",
-                self.admin_site.admin_view(self.wniosek_action),
-                name="zetom_zlecenie_wniosek_action",
-            ),
-        ]
-        return custom + urls
-
-    def wniosek_action(self, request, object_id):
-        if request.method != "POST":
-            return redirect("admin:zetom_zlecenie_change", object_id)
-        obj, denied = _get_child_for_action(self, request, object_id, "edit_requests")
-        if denied is not None:
-            return denied
-
-        wniosek = _create_next_document(Wniosek, obj, from_zlecenie=obj)
-        if obj.from_main_id:
-            update_parent(obj.from_main)
-        messages.success(request, _("Application created."))
-        return redirect("admin:zetom_wniosek_change", wniosek.pk)
-
 
 @admin.register(Wniosek)
-class WniosekAdmin(BaseRequestAdmin):
+class WniosekAdmin(ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
     actions = []
     form = AddWniosek
     change_form_template = "admin/zetom/wniosek/change_form.html"

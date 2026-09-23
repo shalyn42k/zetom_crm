@@ -1,0 +1,25 @@
+{% extends "admin/base_site.html" %}
+{% load i18n crispy_forms_tags %}
+
+{% block content %}
+<div id="content-main">
+    <h2>{{ obj }}</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {% if new_status %}<input type="hidden" name="new_status" value="{{ new_status }}">{% endif %}
+        {{ form|crispy }}
+
+        <div class="flex gap-2 mt-4">
+            <button type="submit"
+                    class="font-medium inline-flex items-center px-3 py-2 bg-blue-600 text-white">
+                {% trans "Confirm" %}
+            </button>
+            <a href="{{ cancel_url }}"
+               class="font-medium inline-flex items-center px-3 py-2 border border-gray-200 text-gray-700">
+                {% trans "Cancel" %}
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock content %}

@@ -84,11 +84,20 @@ class CustomUserCreateForm(forms.ModelForm):
 
         if commit:
             user.save()
-            UserProfile.objects.create(
+            # claude — was UserProfile.objects.create(...): user.save() above
+            # fires the post_save signal (signals_profile.create_user_profile),
+            # which already creates a default-role profile for a brand-new
+            # user before this line runs — .create() then hits the OneToOne's
+            # unique constraint and raises IntegrityError on every real
+            # signup. update_or_create is idempotent regardless of whether
+            # the signal got there first.
+            UserProfile.objects.update_or_create(
                 user=user,
-                role=self.cleaned_data["role"],
-                departments=self.cleaned_data.get("departments") or [],
-                job_title=self.cleaned_data.get("job_title") or None,
+                defaults={
+                    "role": self.cleaned_data["role"],
+                    "departments": self.cleaned_data.get("departments") or [],
+                    "job_title": self.cleaned_data.get("job_title") or None,
+                },
             )
 
         return user

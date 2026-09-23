@@ -1,23 +1,78 @@
 {% extends "admin/change_form.html" %}
-{% load i18n %}
+{% load i18n static %}
+
+{% comment %}
+claude — Fix-round: company_card.css (via BaseRequestAdmin.Media) had no
+cache-busting, unlike every other admin stylesheet in this project (see
+unfold/layouts/skeleton.html's custom_admin.css) — a bare static URL that
+browsers can hold onto across edits. Reloaded here explicitly so a CSS
+change to it is guaranteed visible on next load; harmless to load twice,
+and this copy — always fresh — wins any tie against a stale cached first
+copy by source order.
+{% endcomment %}
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}?v={% now "U" %}">
+{% endblock extrastyle %}
 
 {% block content %}
   {{ block.super }}
-  {% include "admin/zetom/shared/step_notes_modal.html" %}
   {% comment %}
-  claude — Task 11: "create the next document" for the Oferta -> Zlecenie
-  soft chain. Own form (not formaction inside the main edit form — the
-  default admin form tag is already closed by block.super at this point).
-  Closes the offer as a side effect; see close_oferta_on_zlecenie.
+  claude — Fix-round 2: hides the modal's own right-aligned trigger row so
+  "Step notes" can sit in the same button row as Mark as done instead of
+  floating alone above it — same step_notes_hide_inline_trigger pattern
+  person_card.html/company_card.html already use for their own
+  custom-positioned trigger.
+  {% endcomment %}
+  {% include "admin/zetom/shared/step_notes_modal.html" with step_notes_hide_inline_trigger=True %}
+  {% comment %}
+  claude — Fix-round 3: the "Create order from this offer" chain button
+  (Task 11), living on this one specific Oferta, was removed by explicit
+  request — a request can have more than one Zlecenie against a single
+  Oferta, so a button implying "this Oferta's one next document" didn't
+  fit. A new Zlecenie for this request is still created from the parent
+  RequestMain's own change form ("Create order" button there, wired to
+  approve_zlecenie_action) — from_main is readonly on this admin's own add
+  form, so that's the only path that actually links it. That RequestMain
+  path still auto-closes this Oferta (and every other not-yet-done Oferta
+  on the request) when it runs, same as before; "Mark as done" below is
+  only for closing it by hand ahead of that, or if nobody ever creates a
+  Zlecenie for this request at all.
   {% endcomment %}
   {% if original.pk %}
-    <div class="rm-doc-chain">
-      <form method="post" action="{% url 'admin:zetom_oferta_zlecenie_action' original.pk %}">
+    {% comment %}
+    claude — .rm-doc-chain has no CSS rule anywhere (requestmain_detail.css,
+    where its rm-* siblings live, isn't loaded on this page either); inline
+    flex here so the buttons below sit in one wrapping row instead of
+    stacking full-width, same ad-hoc-inline-style approach
+    step_notes_modal.html already uses for its own out-of-.cc-stage wrapper.
+    {% endcomment %}
+    <div class="rm-doc-chain" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">
+      {% comment %}
+      claude — plain onclick, not an Alpine @click: this button sits
+      outside the modal's own x-data scope (a sibling, not a descendant),
+      so Alpine directives here wouldn't bind. window.dispatchEvent is the
+      same raw call company_card.html's own dodajKontakt() uses to open
+      this modal from outside its scope.
+      {% endcomment %}
+      <button type="button" class="cc-action-btn"
+        onclick="window.dispatchEvent(new CustomEvent('open-step-notes'))">
+        {% trans "Step notes" %}
+      </button>
+      {% comment %}
+      claude — Fix-round: status editing is locked out of this form
+      entirely (see save_child_with_status). This is the only way to close
+      this Oferta from its own page — the RequestMain page's "Create
+      order" button still auto-closes it too, see the note above.
+      {% endcomment %}
+      {% if original.status != "done" %}
+      <form method="post" action="{% url 'admin:zetom_oferta_mark_done' original.pk %}">
         {% csrf_token %}
-        <button type="submit" class="rm-btn rm-btn--primary rm-btn--sm">
-          {% trans "Create order from this offer" %}
+        <button type="submit" class="cc-action-btn cc-action-btn--accent">
+          {% trans "Mark as done" %}
         </button>
       </form>
+      {% endif %}
     </div>
   {% endif %}
 {% endblock content %}
