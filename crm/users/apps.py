@@ -1,5 +1,3 @@
-print("APPS.PY LOADED")
-
 from django.apps import AppConfig
 
 
@@ -10,7 +8,6 @@ class UsersConfig(AppConfig):
     verbose_name = "users"
 
     def ready(self):
-        print("READY() WORKS")
         import crm.users.signals
         import crm.users.signals_profile
         _install_avatar_url()
