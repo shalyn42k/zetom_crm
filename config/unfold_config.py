@@ -123,7 +123,7 @@ UNFOLD = {
             # claude — Inbox without a group, on top. No permission gate —
             # каждый staff юзер имеет inbox (в т.ч. system-нотификации).
             {
-                "title": "Inbox",
+                "title": _("Inbox"),
                 "collapsible": False,
                 "items": [
                     {
@@ -136,7 +136,7 @@ UNFOLD = {
 
             # claude — рабочие сущности в порядке workflow: Null -> Main -> документы
             {
-                "title": "Requests",
+                "title": _("Requests"),
                 "collapsible": True,
                 "items": [
                     {
