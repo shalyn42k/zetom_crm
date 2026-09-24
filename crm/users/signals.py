@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission as DjangoPermission
 from django.contrib.contenttypes.models import ContentType
@@ -8,8 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from crm.users.models import Permission, Role
 
 User = get_user_model()
-
-print("RBAC SIGNALS LOADED")
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_migrate)
@@ -18,15 +19,12 @@ def create_rbac_defaults(sender, **kwargs):
     if sender.name != "crm.users":
         return
 
-    print("RBAC SIGNAL RUNNING FOR USERS")
-
     # Проверяем, что таблицы существуют
     try:
         Permission.objects.exists()
         Role.objects.exists()
         User.objects.exists()
     except Exception:
-        print("RBAC: tables are not created yet — skipping")
         return
 
     # claude — permission-каталог. Каждый код должен иметь гейт в коде;
@@ -199,10 +197,10 @@ def create_rbac_defaults(sender, **kwargs):
             try:
                 ct = ContentType.objects.get(app_label=app_label, model=model_name)
             except ContentType.DoesNotExist:
-                print(f"WARNING: ContentType not found for {app_label}.{model_name}")
+                logger.warning(
+                    "RBAC: ContentType not found for %s.%s", app_label, model_name
+                )
                 continue
 
             perms = DjangoPermission.objects.filter(content_type=ct)
             user.user_permissions.add(*perms)
-
-    print("RBAC DEFAULT ROLES & PERMISSIONS CREATED")

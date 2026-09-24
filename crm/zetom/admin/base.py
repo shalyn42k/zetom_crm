@@ -87,6 +87,23 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
     Wniosek admins. Wires RBAC permissions and visibility filter."""
 
     # RBAC
+    # claude — Fix-round: without this, Django's default
+    # has_module_permission (used by the app-index view at
+    # /admin/zetom/ and by the built-in app_list, not by Unfold's own
+    # sidebar — that's driven by config/unfold_config.py's own
+    # permission lambdas, unaffected) falls back to
+    # request.user.has_perm(...) against django.contrib.auth's native
+    # permission system, which this project's RBAC never populates
+    # (roles/permissions live in crm.users.models.Role/Permission
+    # instead). Every non-superuser therefore had has_module_permission
+    # = False for every zetom model, and /admin/zetom/ — what the
+    # "Zetom CRM" breadcrumb at the top of every request page links to
+    # — 404'd for them, even though the individual changelists
+    # (gated by has_view_permission below, which IS RBAC-aware) opened
+    # fine.
+    def has_module_permission(self, request):
+        return user_has_perm(request.user, "view_requests")
+
     def has_view_permission(self, request, obj=None):
         return user_has_perm(request.user, "view_requests")
 

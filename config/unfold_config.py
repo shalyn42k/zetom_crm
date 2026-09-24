@@ -19,14 +19,19 @@ UNFOLD = {
     ],
 
 # дропдаун снизу
+    # claude — Fix-round: was reverse("admin:auth_user_change", args=[pk]),
+    # the raw Django admin User page — that requires view_users/edit_users,
+    # which only admin-ish roles hold (see crm/users/signals.py's default
+    # permission catalogue). A specialist (the default role, most users)
+    # clicking their own "View profile" in this dropdown landed on a 403.
+    # user_profile_edit ("/users/me/", crm/users/urls.py) is the app's own
+    # self-service page — no separate permission needed, already used the
+    # same way by templates/unfold/helpers/userlinks.html's profile link.
     "ACCOUNT": {
         "navigation": [
             {
                 "title": _("View profile"),
-                "link": lambda request: reverse(
-                    "admin:auth_user_change",
-                    args=[request.user.pk],
-                ),
+                "link": lambda request: reverse("user_profile_edit"),
             },
         ],
     },
@@ -118,7 +123,7 @@ UNFOLD = {
             # claude — Inbox without a group, on top. No permission gate —
             # каждый staff юзер имеет inbox (в т.ч. system-нотификации).
             {
-                "title": "Inbox",
+                "title": _("Inbox"),
                 "collapsible": False,
                 "items": [
                     {
@@ -131,7 +136,7 @@ UNFOLD = {
 
             # claude — рабочие сущности в порядке workflow: Null -> Main -> документы
             {
-                "title": "Requests",
+                "title": _("Requests"),
                 "collapsible": True,
                 "items": [
                     {
