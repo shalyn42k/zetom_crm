@@ -16,6 +16,7 @@ from crm.clients.models import Client, Company, CompanyPersonLink, SupplierType
 from crm.clients.validators import normalize_nip, validate_nip
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
+from crm.zetom.services.visibility import visible_requests_for
 from crm.zetom.models import (
     Oferta, OfertaClientLink, RequestClientLink, RequestMain, Wniosek,
     WniosekClientLink, Zlecenie, ZlecenieClientLink,
@@ -529,8 +530,14 @@ def _req_result(obj, type_key, badge, match=None) -> dict:
 
 # claude — keep RequestMain queries clear of dead requests; the child docs
 # (Oferta/Zlecenie/Wniosek) have no request-level lifecycle status to skip.
-def _live_qs(model):
-    qs = model.objects.all()
+# claude — Fix-round: was `model.objects.all()`, completely unscoped by
+# department/assignment visibility — request_suggest/request_search only
+# ever checked view_clients, never view_requests, so any user who could
+# see the client picker (e.g. view_clients granted alone via
+# extra_permissions, without view_requests) could enumerate every other
+# department's requests/orders/applications by name through this picker.
+def _live_qs(model, user):
+    qs = visible_requests_for(user, model.objects.all())
     if model is RequestMain:
         qs = qs.exclude(status__in=[RequestStatus.cancelled, RequestStatus.deleted])
     return qs
@@ -571,7 +578,14 @@ def _suggest_q(phone, email, nip, name_tokens):
 # claude
 @login_required
 def request_suggest(request):
-    if not user_has_perm(request.user, "view_clients"):
+    # claude — Fix-round: this reads and returns RequestMain/Oferta/
+    # Zlecenie/Wniosek rows (pk, type, name), so it needs view_requests
+    # too, not just view_clients — see _live_qs for the matching
+    # visibility-scoping fix.
+    if not (
+        user_has_perm(request.user, "view_clients")
+        and user_has_perm(request.user, "view_requests")
+    ):
         return JsonResponse({"suggested": [], "recent": []}, status=403)
 
     models = _models_for_kind(request.GET.get("kind", ""))
@@ -589,7 +603,7 @@ def request_suggest(request):
     seen = set()
     if q is not None:
         for model, _link, type_key, badge in models:
-            rows = _live_qs(model).filter(q).order_by("-created_at")[:3]
+            rows = _live_qs(model, request.user).filter(q).order_by("-created_at")[:3]
             for obj in rows:
                 seen.add((type_key, obj.pk))
                 suggested.append(_req_result(
@@ -599,7 +613,7 @@ def request_suggest(request):
 
     recent = []
     for model, _link, type_key, badge in models:
-        rows = _live_qs(model).order_by("-created_at")[:2 + len(seen)]
+        rows = _live_qs(model, request.user).order_by("-created_at")[:2 + len(seen)]
         added = 0
         for obj in rows:
             if (type_key, obj.pk) in seen:
@@ -615,7 +629,11 @@ def request_suggest(request):
 # claude
 @login_required
 def request_search(request):
-    if not user_has_perm(request.user, "view_clients"):
+    # claude — Fix-round: same view_requests gap as request_suggest above.
+    if not (
+        user_has_perm(request.user, "view_clients")
+        and user_has_perm(request.user, "view_requests")
+    ):
         return JsonResponse({"results": [], "total": 0}, status=403)
 
     models = _models_for_kind(request.GET.get("kind", ""))
@@ -639,7 +657,7 @@ def request_search(request):
     total = 0
     results = []
     for model, _link, type_key, badge in models:
-        matched = _live_qs(model).filter(query)
+        matched = _live_qs(model, request.user).filter(query)
         total += matched.count()
         for obj in matched.order_by("-pk")[:limit]:
             results.append(_req_result(obj, type_key, badge))
@@ -650,7 +668,7 @@ def request_search(request):
 # claude — resolve the optional "Powiąż zgłoszenie" selection into the request
 # object to attach. Returns (row_or_None, error): None/None means the user
 # simply didn't pick anything, which is the normal case.
-def _resolve_request_pick(kind: str, req_type: str, req_pk: str):
+def _resolve_request_pick(kind: str, req_type: str, req_pk: str, user):
     if not req_pk:
         return None, None
     row = next(
@@ -661,7 +679,7 @@ def _resolve_request_pick(kind: str, req_type: str, req_pk: str):
         # only RequestMain carries the Company FK.
         return None, gettext("Tego zgłoszenia nie można powiązać z tym rodzajem klienta.")
     model = row[0]
-    obj = _live_qs(model).filter(pk=req_pk).first()
+    obj = _live_qs(model, user).filter(pk=req_pk).first()
     if obj is None:
         return None, gettext("Nie znaleziono wybranego zgłoszenia.")
     return (obj, row[1]), None
@@ -684,6 +702,7 @@ def client_create(request):
 
     pick, error = _resolve_request_pick(
         kind, request.POST.get("req_type", ""), request.POST.get("req_pk", "").strip(),
+        request.user,
     )
     if error:
         return JsonResponse({"ok": False, "error": error}, status=400)
