@@ -1,6 +1,6 @@
 {% extends "admin/base.html" %}
 
-{% load static i18n log %}
+{% load static i18n log admin_dashboard %}
 
 {% block extrahead %}
     {{ block.super }}
@@ -154,15 +154,15 @@
             align-items: center;
             justify-content: space-between;
             width: 100%;
-            border-color: rgba(217, 119, 6, 0.4);
-            background: rgba(120, 53, 15, 0.28);
-            color: #fde68a;
+            border-color: rgba(34, 197, 94, 0.42);
+            background: rgba(20, 83, 45, 0.3);
+            color: #bbf7d0;
         }
 
         .crm-dashboard__flow-link:hover {
-            border-color: rgba(217, 119, 6, 0.7);
-            background: rgba(180, 83, 9, 0.32);
-            color: #fff7ed;
+            border-color: rgba(34, 197, 94, 0.78);
+            background: rgba(22, 101, 52, 0.42);
+            color: #f0fdf4;
         }
 
         .crm-dashboard__flow-count {
@@ -173,9 +173,100 @@
             height: 22px;
             padding: 0 6px;
             border-radius: 999px;
-            background: rgba(217, 119, 6, 0.35);
+            background: rgba(34, 197, 94, 0.35);
             font-size: 12px;
             font-weight: 700;
+        }
+
+        .crm-dashboard__personal {
+            min-height: 0;
+        }
+
+        .crm-dashboard__personal-list {
+            display: grid;
+            gap: 8px;
+            max-height: min(300px, 38vh);
+            margin-top: 14px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .crm-dashboard__personal-dropdown {
+            margin-top: 14px;
+        }
+
+        .crm-dashboard__personal-dropdown summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 40px;
+            padding: 0 12px;
+            border: 1px solid rgba(34, 197, 94, 0.38);
+            border-radius: 10px;
+            background: rgba(20, 83, 45, 0.22);
+            color: #bbf7d0;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            list-style: none;
+        }
+
+        .crm-dashboard__personal-dropdown summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .crm-dashboard__personal-dropdown summary::after {
+            content: "▾";
+            color: #86efac;
+            font-size: 16px;
+        }
+
+        .crm-dashboard__personal-dropdown[open] summary::after {
+            content: "▴";
+        }
+
+        .crm-dashboard__personal-dropdown summary span {
+            margin-left: auto;
+            margin-right: 10px;
+            color: #f0fdf4;
+        }
+
+        .crm-dashboard__personal-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 42px;
+            padding: 9px 11px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 10px;
+            background: rgba(2, 6, 23, 0.36);
+            color: #e2e8f0;
+            text-decoration: none;
+        }
+
+        .crm-dashboard__personal-item:hover {
+            border-color: rgba(34, 197, 94, 0.62);
+            background: rgba(34, 197, 94, 0.12);
+            color: #fff;
+        }
+
+        .crm-dashboard__personal-meta {
+            color: rgba(226, 232, 240, 0.68);
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .crm-dashboard__personal-empty {
+            margin: 14px 0 0;
+            color: rgba(226, 232, 240, 0.72);
+            font-size: 13px;
+        }
+
+        .crm-dashboard__client-workspace--nested {
+            margin-top: 18px;
+            padding: 18px 0 0;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
         }
 
         .crm-dashboard__client-workspace {
@@ -587,6 +678,7 @@
     {% has_crm_perm user "view_email_log" as can_view_email_log %}
     {% unread_inapp_count user as inbox_count %}
     {% dashboard_summary user as dashboard %}
+    {% dashboard_personal_requests user as personal_requests %}
     {% get_admin_log 3 as admin_log for_user user %}
 
     <div class="crm-dashboard">
@@ -631,7 +723,6 @@
                     <section class="crm-dashboard__panel crm-dashboard__request-flow">
                         <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Request flow" %}</h2>
                         <div class="crm-dashboard__link-row">
-                            <a href="{% url 'admin:zetom_requestnull_changelist' %}" class="crm-dashboard__flow-link">{% translate "Validation" %} <span class="crm-dashboard__flow-count">{{ dashboard.validation }}</span></a>
                             <a href="{% url 'admin:zetom_requestmain_changelist' %}" class="crm-dashboard__flow-link">{% translate "Information" %} <span class="crm-dashboard__flow-count">{{ dashboard.active_requests }}</span></a>
                             <a href="{% url 'admin:zetom_zlecenie_changelist' %}" class="crm-dashboard__flow-link">{% translate "Orders" %} <span class="crm-dashboard__flow-count">{{ dashboard.orders }}</span></a>
                             <a href="{% url 'admin:zetom_wniosek_changelist' %}" class="crm-dashboard__flow-link">{% translate "Applications" %} <span class="crm-dashboard__flow-count">{{ dashboard.applications }}</span></a>
@@ -647,19 +738,45 @@
                 {% endif %}
             </main>
 
-            {% if can_view_clients %}
-                <section class="crm-dashboard__panel crm-dashboard__client-workspace">
-                    <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Client workspace" %}</h2>
-                    <div class="crm-dashboard__link-row">
-                        <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__text-link">{% translate "Clients" %}</a>
-                        {# claude — the stock Company changelist was replaced by the Klienci list; link its firms filter instead #}
-                        <a href="{% url 'admin:clients_client_changelist' %}?rodzaj=firmy" class="crm-dashboard__text-link">{% translate "Companies" %}</a>
+            {% if can_view_requests %}
+                <section class="crm-dashboard__panel crm-dashboard__personal">
+                    <div class="crm-dashboard__section-header">
+                        <div>
+                            <p class="crm-dashboard__section-eyebrow">{% translate "My work" %}</p>
+                            <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "My tasks / My requests" %}</h2>
+                        </div>
+                        <span class="crm-dashboard__workspace-badge">{{ personal_requests|length }}</span>
                     </div>
-                    <div class="crm-dashboard__client-actions">
-                        {% if can_view_requests %}
-                            <a href="{% url 'admin:zetom_requestmain_add' %}" class="crm-dashboard__button crm-dashboard__button--primary">{% translate "Create request" %}</a>
-                        {% endif %}
-                    </div>
+                    {% if personal_requests %}
+                        <details class="crm-dashboard__personal-dropdown">
+                            <summary>{% translate "Show my requests" %}<span>{{ personal_requests|length }}</span></summary>
+                            <div class="crm-dashboard__personal-list">
+                                {% for item in personal_requests %}
+                                    <a href="{{ item.url }}" class="crm-dashboard__personal-item">
+                                        <strong>{{ item.name }}</strong>
+                                        <span class="crm-dashboard__personal-meta">{% translate "Open request" %}</span>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </details>
+                    {% else %}
+                        <p class="crm-dashboard__personal-empty">{% translate "No requests are assigned to you yet." %}</p>
+                    {% endif %}
+                    {% if can_view_clients %}
+                        <section class="crm-dashboard__client-workspace crm-dashboard__client-workspace--nested">
+                            <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Client workspace" %}</h2>
+                            <div class="crm-dashboard__link-row">
+                                <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__text-link">{% translate "Clients" %}</a>
+                                {# claude — the stock Company changelist was replaced by the Klienci list; link its firms filter instead #}
+                                <a href="{% url 'admin:clients_client_changelist' %}?rodzaj=firmy" class="crm-dashboard__text-link">{% translate "Companies" %}</a>
+                            </div>
+                            <div class="crm-dashboard__client-actions">
+                                {% if can_view_requests %}
+                                    <a href="{% url 'admin:zetom_requestmain_add' %}" class="crm-dashboard__button crm-dashboard__button--primary">{% translate "Create request" %}</a>
+                                {% endif %}
+                            </div>
+                        </section>
+                    {% endif %}
                 </section>
             {% endif %}
 
