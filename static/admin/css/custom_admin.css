@@ -714,3 +714,26 @@ select:focus {
         width: 100%;
     }
 }
+
+/* claude — Fix-round: unfold/helpers/theme_switch.html (stock vendor
+   markup, not overridden in this project — templates/unfold/helpers/ has
+   no theme_switch.html of its own) lays out "Light/Dark/System" as three
+   equal-grow flex items in a fixed-width dropdown row. Measured live: the
+   "System" link's own content (icon + label, each item's px-2 padding
+   and the icon's mr-2 gap) doesn't fit its one-third share, so it
+   overflows the row by ~13px past the rounded border — not a margin
+   issue (cancelling the item's -mr-1 utility alone made no difference,
+   confirmed via computed style), the content itself is just too wide.
+   Trimming each item's own horizontal padding and icon gap frees enough
+   room for all three to fit without touching font/icon size. Scoped by
+   the row's own distinctive Tailwind class combo (border-b + gap-1 +
+   mb-1 + pb-1 together) rather than patching the vendor template, which
+   `pip install -U django-unfold` would overwrite on the next upgrade
+   anyway. */
+.border-b.gap-1.mb-1.pb-1 > a {
+    padding-left: 4px;
+    padding-right: 4px;
+}
+.border-b.gap-1.mb-1.pb-1 > a .material-symbols-outlined {
+    margin-right: 4px;
+}

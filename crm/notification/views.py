@@ -16,6 +16,7 @@ from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
 
 # Local imports
@@ -112,10 +113,10 @@ def inbox(request):
 
     now = timezone.now()
     bucket_labels = {
-        "today": "Today",
-        "yesterday": "Yesterday",
-        "earlier_week": "Earlier this week",
-        "older": "Older",
+        "today": _("Today"),
+        "yesterday": _("Yesterday"),
+        "earlier_week": _("Earlier this week"),
+        "older": _("Older"),
     }
     # Build a flat list of dicts; the template walks it once and emits a
     # day-group header whenever the bucket changes. Pagination is done on
@@ -184,7 +185,7 @@ def inbox(request):
         ],
         "total_count": total,
         "unread_count_total": unread,
-        "title": "Notifications",
+        "title": _("Notifications"),
     })
     return render(request, "notification/inbox.html", context)
 
