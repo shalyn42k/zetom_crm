@@ -94,8 +94,22 @@
         .crm-dashboard__kpi-square {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            grid-template-rows: repeat(2, minmax(0, 1fr));
             gap: 8px;
+        }
+
+        .crm-dashboard__kpi-square .crm-dashboard__stat {
+            min-height: 88px;
+        }
+
+        .crm-dashboard__kpi-flow {
+            grid-column: 1 / -1;
+            margin-top: 6px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .crm-dashboard__kpi-flow .crm-dashboard__link-row {
+            margin-top: 10px;
         }
 
         .crm-dashboard__stat {
@@ -186,7 +200,7 @@
             display: grid;
             gap: 8px;
             max-height: min(300px, 38vh);
-            margin-top: 14px;
+            margin-top: 10px;
             overflow-y: auto;
             padding-right: 4px;
         }
@@ -261,6 +275,319 @@
             margin: 14px 0 0;
             color: rgba(226, 232, 240, 0.72);
             font-size: 13px;
+        }
+
+        .crm-dashboard__personal-tools {
+            display: grid;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .crm-dashboard__personal-search,
+        .crm-dashboard__personal-select {
+            width: 100%;
+            min-height: 36px;
+            padding: 0 12px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            border-radius: 10px;
+            background: rgba(2, 6, 23, 0.5);
+            color: #f8fafc;
+            font-size: 13px;
+        }
+
+        .crm-dashboard__personal-search:focus,
+        .crm-dashboard__personal-select:focus {
+            outline: none;
+            border-color: rgba(34, 197, 94, 0.66);
+        }
+
+        .crm-dashboard__personal-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .crm-dashboard__personal-chip {
+            min-height: 30px;
+            padding: 0 12px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.36);
+            color: #e2e8f0;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color .16s ease, border-color .16s ease;
+        }
+
+        .crm-dashboard__personal-chip:hover {
+            border-color: rgba(34, 197, 94, 0.66);
+        }
+
+        .crm-dashboard__personal-chip.is-active {
+            border-color: rgba(34, 197, 94, 0.6);
+            background: rgba(34, 197, 94, 0.22);
+            color: #fff;
+        }
+
+        .crm-dashboard__personal-select {
+            flex: 1 1 120px;
+            min-height: 30px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__personal-item {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 4px;
+        }
+
+        .crm-dashboard__personal-item-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .crm-dashboard__personal-item-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .crm-dashboard__personal-item-line {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px 6px;
+            color: rgba(226, 232, 240, 0.75);
+            font-size: 12px;
+        }
+
+        .crm-dashboard__personal-item-line .material-symbols-outlined {
+            font-size: 14px;
+            color: #86efac;
+            flex: 0 0 auto;
+        }
+
+        .crm-dashboard__status-badge {
+            flex: 0 0 auto;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            color: #cbd5e1;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            white-space: nowrap;
+        }
+
+        .crm-dashboard__status-badge--active {
+            border-color: rgba(34, 197, 94, 0.6);
+            background: rgba(34, 197, 94, 0.18);
+            color: #bbf7d0;
+        }
+
+        .crm-dashboard__status-badge--open {
+            border-color: rgba(59, 130, 246, 0.6);
+            background: rgba(59, 130, 246, 0.16);
+            color: #bfdbfe;
+        }
+
+        .crm-dashboard__status-badge--closed,
+        .crm-dashboard__status-badge--inactive {
+            border-color: rgba(148, 163, 184, 0.45);
+            background: rgba(148, 163, 184, 0.12);
+            color: #cbd5e1;
+        }
+
+        .crm-dashboard__status-badge--cancelled,
+        .crm-dashboard__status-badge--deleted {
+            border-color: rgba(239, 68, 68, 0.55);
+            background: rgba(239, 68, 68, 0.14);
+            color: #fecaca;
+        }
+
+        .crm-dashboard__personal-reminder {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: #fde68a;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__personal-reminder .material-symbols-outlined {
+            color: #fbbf24;
+        }
+
+        .crm-dashboard__personal .is-hidden {
+            display: none;
+        }
+
+        .crm-dashboard__week {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .crm-dashboard__week-range {
+            margin: 0;
+            color: rgba(226, 232, 240, 0.66);
+            font-size: 12px;
+        }
+
+        .crm-dashboard__week-total {
+            padding: 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.14), transparent 60%),
+                rgba(2, 6, 23, 0.4);
+        }
+
+        .crm-dashboard__week-total strong {
+            display: block;
+            color: #f8fafc;
+            font-size: 2rem;
+            line-height: 1.1;
+        }
+
+        .crm-dashboard__week-total span {
+            color: rgba(226, 232, 240, 0.78);
+            font-size: 13px;
+        }
+
+        .crm-dashboard__week-days {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 6px;
+            align-items: end;
+        }
+
+        .crm-dashboard__week-day {
+            display: grid;
+            gap: 4px;
+            justify-items: center;
+            min-width: 0;
+        }
+
+        .crm-dashboard__week-track {
+            position: relative;
+            width: 100%;
+            height: 74px;
+            border-radius: 8px;
+            background: rgba(2, 6, 23, 0.45);
+            border: 1px solid rgba(148, 163, 184, 0.14);
+        }
+
+        .crm-dashboard__week-bar {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            min-height: 3px;
+            border-radius: 8px;
+            background: linear-gradient(180deg, rgba(34, 197, 94, 0.75), rgba(20, 83, 45, 0.55));
+        }
+
+        .crm-dashboard__week-day--today .crm-dashboard__week-track {
+            border-color: rgba(34, 197, 94, 0.55);
+        }
+
+        .crm-dashboard__week-count {
+            color: #bbf7d0;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__week-label {
+            color: rgba(226, 232, 240, 0.66);
+            font-size: 11px;
+        }
+
+        .crm-dashboard__week-day--today .crm-dashboard__week-label {
+            color: #9df2b7;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__week-stats {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .crm-dashboard__week-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(2, 6, 23, 0.36);
+            min-height: 46px;
+        }
+
+        .crm-dashboard__week-stat .material-symbols-outlined {
+            font-size: 18px;
+            color: #9df2b7;
+        }
+
+        .crm-dashboard__week-stat strong {
+            color: #f8fafc;
+            font-size: 15px;
+        }
+
+        .crm-dashboard__week-stat span {
+            color: rgba(226, 232, 240, 0.72);
+            font-size: 12px;
+        }
+
+        .crm-dashboard__personal-list,
+        .crm-dashboard__main,
+        .crm-dashboard__aside,
+        .crm-dashboard__client-workspace,
+        .crm-dashboard__panel--aside .crm-dashboard__activity-list {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(34, 197, 94, 0.38) rgba(2, 6, 23, 0.35);
+        }
+
+        .crm-dashboard__personal-list::-webkit-scrollbar,
+        .crm-dashboard__main::-webkit-scrollbar,
+        .crm-dashboard__aside::-webkit-scrollbar,
+        .crm-dashboard__client-workspace::-webkit-scrollbar,
+        .crm-dashboard__panel--aside .crm-dashboard__activity-list::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .crm-dashboard__personal-list::-webkit-scrollbar-track,
+        .crm-dashboard__main::-webkit-scrollbar-track,
+        .crm-dashboard__aside::-webkit-scrollbar-track,
+        .crm-dashboard__client-workspace::-webkit-scrollbar-track,
+        .crm-dashboard__panel--aside .crm-dashboard__activity-list::-webkit-scrollbar-track {
+            background: rgba(2, 6, 23, 0.35);
+            border-radius: 999px;
+        }
+
+        .crm-dashboard__personal-list::-webkit-scrollbar-thumb,
+        .crm-dashboard__main::-webkit-scrollbar-thumb,
+        .crm-dashboard__aside::-webkit-scrollbar-thumb,
+        .crm-dashboard__client-workspace::-webkit-scrollbar-thumb,
+        .crm-dashboard__panel--aside .crm-dashboard__activity-list::-webkit-scrollbar-thumb {
+            background: rgba(34, 197, 94, 0.32);
+            border-radius: 999px;
+            border: 2px solid rgba(2, 6, 23, 0.35);
+        }
+
+        .crm-dashboard__personal-list::-webkit-scrollbar-thumb:hover,
+        .crm-dashboard__main::-webkit-scrollbar-thumb:hover,
+        .crm-dashboard__aside::-webkit-scrollbar-thumb:hover,
+        .crm-dashboard__client-workspace::-webkit-scrollbar-thumb:hover,
+        .crm-dashboard__panel--aside .crm-dashboard__activity-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 197, 94, 0.55);
         }
 
         .crm-dashboard__client-workspace--nested {
@@ -679,6 +1006,7 @@
     {% unread_inapp_count user as inbox_count %}
     {% dashboard_summary user as dashboard %}
     {% dashboard_personal_requests user as personal_requests %}
+    {% dashboard_weekly_stats user as weekly %}
     {% get_admin_log 3 as admin_log for_user user %}
 
     <div class="crm-dashboard">
@@ -704,31 +1032,32 @@
                             <strong class="crm-dashboard__stat-value">{{ dashboard.validation }}</strong>
                             <span class="crm-dashboard__stat-note">{% translate "New requests to check" %}</span>
                         </a>
-                        <a href="{% url 'admin:zetom_requestmain_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
-                            <span class="crm-dashboard__stat-label">{% translate "Active requests" %}</span>
-                            <strong class="crm-dashboard__stat-value">{{ dashboard.active_requests }}</strong>
-                            <span class="crm-dashboard__stat-note">{% translate "Requests in progress" %}</span>
-                        </a>
+                        <div class="crm-dashboard__request-flow crm-dashboard__kpi-flow">
+                            <h2 class="crm-dashboard__stat-label">{% translate "Request flow" %}</h2>
+                            <div class="crm-dashboard__link-row">
+                                <a href="{% url 'admin:zetom_requestmain_changelist' %}" class="crm-dashboard__flow-link">{% translate "Information" %} <span class="crm-dashboard__flow-count">{{ dashboard.active_requests }}</span></a>
+                                <a href="{% url 'admin:zetom_oferta_changelist' %}" class="crm-dashboard__flow-link">{% translate "Offers" %} <span class="crm-dashboard__flow-count">{{ dashboard.offers }}</span></a>
+                                <a href="{% url 'admin:zetom_zlecenie_changelist' %}" class="crm-dashboard__flow-link">{% translate "Orders" %} <span class="crm-dashboard__flow-count">{{ dashboard.orders }}</span></a>
+                                <a href="{% url 'admin:zetom_wniosek_changelist' %}" class="crm-dashboard__flow-link">{% translate "Applications" %} <span class="crm-dashboard__flow-count">{{ dashboard.applications }}</span></a>
+                            </div>
+                        </div>
                     {% endif %}
                     {% if can_view_clients %}
-                        <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
-                            <span class="crm-dashboard__stat-label">{% translate "Clients" %}</span>
-                            <strong class="crm-dashboard__stat-value">{{ dashboard.clients }}</strong>
-                            <span class="crm-dashboard__stat-note">{% translate "Customer records" %}</span>
-                        </a>
+                        <section class="crm-dashboard__client-workspace crm-dashboard__kpi-flow">
+                            <h2 class="crm-dashboard__stat-label">{% translate "Client workspace" %}</h2>
+                            <div class="crm-dashboard__link-row">
+                                <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__text-link">{% translate "Clients" %}</a>
+                                {# claude — the stock Company changelist was replaced by the Klienci list; link its firms filter instead #}
+                                <a href="{% url 'admin:clients_client_changelist' %}?rodzaj=firmy" class="crm-dashboard__text-link">{% translate "Companies" %}</a>
+                            </div>
+                            <div class="crm-dashboard__client-actions">
+                                {% if can_view_requests %}
+                                    <a href="{% url 'admin:zetom_requestmain_add' %}" class="crm-dashboard__button crm-dashboard__button--primary">{% translate "Create request" %}</a>
+                                {% endif %}
+                            </div>
+                        </section>
                     {% endif %}
                 </section>
-
-                {% if can_view_requests %}
-                    <section class="crm-dashboard__panel crm-dashboard__request-flow">
-                        <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Request flow" %}</h2>
-                        <div class="crm-dashboard__link-row">
-                            <a href="{% url 'admin:zetom_requestmain_changelist' %}" class="crm-dashboard__flow-link">{% translate "Information" %} <span class="crm-dashboard__flow-count">{{ dashboard.active_requests }}</span></a>
-                            <a href="{% url 'admin:zetom_zlecenie_changelist' %}" class="crm-dashboard__flow-link">{% translate "Orders" %} <span class="crm-dashboard__flow-count">{{ dashboard.orders }}</span></a>
-                            <a href="{% url 'admin:zetom_wniosek_changelist' %}" class="crm-dashboard__flow-link">{% translate "Applications" %} <span class="crm-dashboard__flow-count">{{ dashboard.applications }}</span></a>
-                        </div>
-                    </section>
-                {% endif %}
 
                 {% if not can_view_requests and not can_view_clients %}
                     {% trans "You don’t have permission to view or edit anything." as error_message %}
@@ -739,7 +1068,7 @@
             </main>
 
             {% if can_view_requests %}
-                <section class="crm-dashboard__panel crm-dashboard__personal">
+                <section class="crm-dashboard__panel crm-dashboard__personal" data-personal-root>
                     <div class="crm-dashboard__section-header">
                         <div>
                             <p class="crm-dashboard__section-eyebrow">{% translate "My work" %}</p>
@@ -748,32 +1077,96 @@
                         <span class="crm-dashboard__workspace-badge">{{ personal_requests|length }}</span>
                     </div>
                     {% if personal_requests %}
-                        <details class="crm-dashboard__personal-dropdown">
+                        {% personal_request_statuses personal_requests as personal_statuses %}
+                        <details class="crm-dashboard__personal-dropdown" open>
                             <summary>{% translate "Show my requests" %}<span>{{ personal_requests|length }}</span></summary>
+                            <div class="crm-dashboard__personal-tools">
+                                <input type="search" class="crm-dashboard__personal-search" data-personal-search
+                                       placeholder='{% translate "Search by name, company, phone…" %}'>
+                                <div class="crm-dashboard__personal-filters">
+                                    <button type="button" class="crm-dashboard__personal-chip is-active" data-personal-filter="all">{% translate "All" %}</button>
+                                    <button type="button" class="crm-dashboard__personal-chip" data-personal-filter="assigned">{% translate "Assigned to me" %}</button>
+                                    <button type="button" class="crm-dashboard__personal-chip" data-personal-filter="reminder">{% translate "Reminders" %}</button>
+                                    <select class="crm-dashboard__personal-select" data-personal-status>
+                                        <option value="">{% translate "All statuses" %}</option>
+                                        {% for code, label in personal_statuses %}
+                                            <option value="{{ code }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
                             <div class="crm-dashboard__personal-list">
                                 {% for item in personal_requests %}
-                                    <a href="{{ item.url }}" class="crm-dashboard__personal-item">
-                                        <strong>{{ item.name }}</strong>
-                                        <span class="crm-dashboard__personal-meta">{% translate "Open request" %}</span>
+                                    <a href="{{ item.url }}" class="crm-dashboard__personal-item"
+                                       data-personal-item
+                                       data-search="{{ item.search }}"
+                                       data-status="{{ item.status }}"
+                                       data-assigned="{{ item.is_assigned|yesno:'1,0' }}"
+                                       data-reminder="{{ item.has_reminder|yesno:'1,0' }}">
+                                        <span class="crm-dashboard__personal-item-head">
+                                            <strong class="crm-dashboard__personal-item-name">{{ item.name }}</strong>
+                                            <span class="crm-dashboard__status-badge crm-dashboard__status-badge--{{ item.status }}">{{ item.status_label }}</span>
+                                        </span>
+                                        {% if item.company %}
+                                            <span class="crm-dashboard__personal-item-line">
+                                                <span class="material-symbols-outlined">business</span>{{ item.company }}
+                                            </span>
+                                        {% endif %}
+                                        <span class="crm-dashboard__personal-item-line">
+                                            <span class="material-symbols-outlined">call</span>{{ item.phone }}
+                                            {% if item.email %}<span class="material-symbols-outlined">mail</span>{{ item.email }}{% endif %}
+                                        </span>
+                                        <span class="crm-dashboard__personal-item-line">
+                                            <span class="material-symbols-outlined">schedule</span>{{ item.updated_at|date:"d M Y, H:i" }}
+                                            · {{ item.source_label }}
+                                            {% if item.has_reminder %}
+                                                <span class="crm-dashboard__personal-reminder"><span class="material-symbols-outlined">alarm</span>{% translate "Reminder" %}</span>
+                                            {% endif %}
+                                        </span>
                                     </a>
                                 {% endfor %}
                             </div>
+                            <p class="crm-dashboard__personal-empty is-hidden" data-personal-empty-filtered>{% translate "Nothing matches the current search or filters." %}</p>
                         </details>
                     {% else %}
                         <p class="crm-dashboard__personal-empty">{% translate "No requests are assigned to you yet." %}</p>
                     {% endif %}
-                    {% if can_view_clients %}
-                        <section class="crm-dashboard__client-workspace crm-dashboard__client-workspace--nested">
-                            <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Client workspace" %}</h2>
-                            <div class="crm-dashboard__link-row">
-                                <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__text-link">{% translate "Clients" %}</a>
-                                {# claude — the stock Company changelist was replaced by the Klienci list; link its firms filter instead #}
-                                <a href="{% url 'admin:clients_client_changelist' %}?rodzaj=firmy" class="crm-dashboard__text-link">{% translate "Companies" %}</a>
+                    {% if weekly.has_data %}
+                        <section class="crm-dashboard__week" data-weekly>
+                            <div>
+                                <p class="crm-dashboard__section-eyebrow">{% translate "This week" %}</p>
+                                <p class="crm-dashboard__week-range">{{ weekly.week_start|date:"d M" }} – {{ weekly.week_end|date:"d M" }}</p>
                             </div>
-                            <div class="crm-dashboard__client-actions">
-                                {% if can_view_requests %}
-                                    <a href="{% url 'admin:zetom_requestmain_add' %}" class="crm-dashboard__button crm-dashboard__button--primary">{% translate "Create request" %}</a>
-                                {% endif %}
+                            <div class="crm-dashboard__week-total">
+                                <strong>{{ weekly.updated }}</strong>
+                                <span>{{ weekly.updated|plural_ru:"заявка,заявки,заявок" }} {% translate "updated this week" %}</span>
+                            </div>
+                            <div class="crm-dashboard__week-days">
+                                {% for day in weekly.days %}
+                                    <div class="crm-dashboard__week-day{% if day.is_today %} crm-dashboard__week-day--today{% endif %}">
+                                        <span class="crm-dashboard__week-count">{% if day.count %}{{ day.count }}{% endif %}</span>
+                                        <div class="crm-dashboard__week-track">
+                                            <div class="crm-dashboard__week-bar" style="height: {{ day.percent }}%"></div>
+                                        </div>
+                                        <span class="crm-dashboard__week-label">{{ day.label }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="crm-dashboard__week-stats">
+                                <div class="crm-dashboard__week-stat">
+                                    <span class="material-symbols-outlined">edit_note</span>
+                                    <div>
+                                        <strong>{{ weekly.notes }}</strong>
+                                        <span>{% translate "Notes written" %}</span>
+                                    </div>
+                                </div>
+                                <div class="crm-dashboard__week-stat">
+                                    <span class="material-symbols-outlined">alarm</span>
+                                    <div>
+                                        <strong>{{ weekly.reminders }}</strong>
+                                        <span>{% translate "Reminders set" %}</span>
+                                    </div>
+                                </div>
                             </div>
                         </section>
                     {% endif %}
@@ -830,4 +1223,68 @@
             </aside>
         </div>
     </div>
+    <script>
+        (function () {
+            const root = document.querySelector("[data-personal-root]");
+            if (!root) {
+                return;
+            }
+            const searchInput = root.querySelector("[data-personal-search]");
+            const statusSelect = root.querySelector("[data-personal-status]");
+            const chips = root.querySelectorAll("[data-personal-filter]");
+            const items = root.querySelectorAll("[data-personal-item]");
+            const emptyFiltered = root.querySelector("[data-personal-empty-filtered]");
+            const dropdown = root.querySelector(".crm-dashboard__personal-dropdown");
+            const weekly = root.querySelector("[data-weekly]");
+            let activeFilter = "all";
+
+            function syncWeekly() {
+                if (weekly && dropdown) {
+                    weekly.classList.toggle("is-hidden", dropdown.open);
+                }
+            }
+            if (dropdown) {
+                dropdown.addEventListener("toggle", syncWeekly);
+                syncWeekly();
+            }
+
+            function applyFilters() {
+                const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+                const status = statusSelect ? statusSelect.value : "";
+                let visibleCount = 0;
+                items.forEach((item) => {
+                    const matchesQuery = !query || item.dataset.search.indexOf(query) !== -1;
+                    const matchesStatus = !status || item.dataset.status === status;
+                    let matchesChip = true;
+                    if (activeFilter === "assigned") {
+                        matchesChip = item.dataset.assigned === "1";
+                    } else if (activeFilter === "reminder") {
+                        matchesChip = item.dataset.reminder === "1";
+                    }
+                    const visible = matchesQuery && matchesStatus && matchesChip;
+                    item.classList.toggle("is-hidden", !visible);
+                    if (visible) {
+                        visibleCount += 1;
+                    }
+                });
+                if (emptyFiltered) {
+                    emptyFiltered.classList.toggle("is-hidden", visibleCount !== 0);
+                }
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener("input", applyFilters);
+            }
+            if (statusSelect) {
+                statusSelect.addEventListener("change", applyFilters);
+            }
+            chips.forEach((chip) => {
+                chip.addEventListener("click", () => {
+                    activeFilter = chip.dataset.personalFilter;
+                    chips.forEach((other) => other.classList.toggle("is-active", other === chip));
+                    applyFilters();
+                });
+            });
+        })();
+    </script>
 {% endblock content %}
