@@ -185,6 +185,12 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
         # editable, или как disabled-readonly. Без `edit_roles` юзер видит
         # текущее состояние, но не может его поменять.
         extra_context["can_edit_roles"] = user_has_perm(request.user, "edit_roles")
+        # claude — same self-edit lock as `role` (get_form, role_field.disabled
+        # above): without this, a user holding `edit_roles` could grant
+        # THEMSELVES any individual permission through this same tab — the
+        # role field was already guarded against self-edit, extra_permissions
+        # wasn't.
+        extra_context["editing_self"] = obj is not None and obj.pk == request.user.pk
 
         return super().change_view(request, object_id, form_url, extra_context)
 
@@ -292,7 +298,11 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
         # claude — вкладка permissions: пишем ТОЛЬКО индивидуальные права.
         # Роль и job_title не трогаем — это другая вкладка.
         if request.GET.get("tab") == "permissions":
-            if can_edit_roles:
+            # claude — defence-in-depth, mirrors the role self-edit guard
+            # above: even with edit_roles, editing your OWN extra_permissions
+            # (e.g. via a crafted POST) is ignored — self-escalation must go
+            # through another admin, same as self role changes.
+            if can_edit_roles and obj.pk != request.user.pk:
                 selected = request.POST.getlist("extra_permissions")
                 profile.extra_permissions.set(selected)
             return

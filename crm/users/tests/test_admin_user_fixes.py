@@ -71,6 +71,62 @@ class SuperuserTargetChangePermissionTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
 
+class ExtraPermissionsSelfEscalationTests(TestCase):
+    """A user holding `edit_roles` could grant THEMSELVES any individual
+    permission through the Permissions tab — the `role` field already
+    guards against self-edit (role_field.disabled when obj.pk ==
+    request.user.pk), extra_permissions didn't."""
+
+    def setUp(self):
+        self.plain = User.objects.create_user(
+            "plain", "plain@zetom.pl", "pass12345", is_staff=True,
+        )
+        _grant(self.plain, "edit_roles", "edit_users", "view_users")
+        self.client.force_login(self.plain)
+        self.target_perm = Permission.objects.exclude(
+            code__in=["edit_roles", "edit_users", "view_users"],
+        ).first()
+
+    def _post_permissions_tab(self, user, extra_permission_ids):
+        url = reverse("admin:auth_user_change", args=[user.pk]) + "?tab=permissions"
+        return self.client.post(url, data={
+            "username": user.username,
+            "email": user.email,
+            "first_name": "",
+            "last_name": "",
+            "extra_permissions": [str(pk) for pk in extra_permission_ids],
+        })
+
+    def test_cannot_grant_self_extra_permission(self):
+        self.assertNotIn(
+            self.target_perm, self.plain.profile.extra_permissions.all(),
+        )
+        self._post_permissions_tab(self.plain, [self.target_perm.pk])
+        self.plain.profile.refresh_from_db()
+        self.assertNotIn(
+            self.target_perm, self.plain.profile.extra_permissions.all(),
+        )
+
+    def test_cannot_use_tab_to_strip_own_existing_extra_permission(self):
+        # same guard, opposite direction: self-POSTing an empty list must
+        # not revoke a permission either — self-edit is fully locked, not
+        # just one-way.
+        self.plain.profile.extra_permissions.add(self.target_perm)
+        self._post_permissions_tab(self.plain, [])
+        self.plain.profile.refresh_from_db()
+        self.assertIn(
+            self.target_perm, self.plain.profile.extra_permissions.all(),
+        )
+
+    def test_can_still_grant_extra_permission_to_someone_else(self):
+        other = User.objects.create_user(
+            "other", "other@zetom.pl", "pass12345", is_staff=True,
+        )
+        self._post_permissions_tab(other, [self.target_perm.pk])
+        other.profile.refresh_from_db()
+        self.assertIn(self.target_perm, other.profile.extra_permissions.all())
+
+
 class AddFormDepartmentsAppliedTests(TestCase):
     def setUp(self):
         self.admin_role = Role.objects.get(code="admin")
