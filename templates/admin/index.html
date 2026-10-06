@@ -156,7 +156,13 @@
         }
 
         .crm-dashboard__main {
-            align-content: start;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .crm-dashboard__main > .crm-dashboard__panel {
+            flex: 1 1 auto;
+            min-height: 0;
         }
 
         .crm-dashboard__request-flow .crm-dashboard__link-row {
@@ -193,6 +199,8 @@
         }
 
         .crm-dashboard__personal {
+            display: flex;
+            flex-direction: column;
             min-height: 0;
         }
 
@@ -429,120 +437,172 @@
 
         .crm-dashboard__week {
             display: flex;
+            flex: 1 1 auto;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
             margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+            min-height: 0;
+        }
+
+        .crm-dashboard__week-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px;
         }
 
         .crm-dashboard__week-range {
             margin: 0;
-            color: rgba(226, 232, 240, 0.66);
+            color: rgba(226, 232, 240, 0.6);
             font-size: 12px;
+            white-space: nowrap;
         }
 
-        .crm-dashboard__week-total {
-            padding: 14px;
-            border-radius: 14px;
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.14), transparent 60%),
-                rgba(2, 6, 23, 0.4);
+        .crm-dashboard__week-hero {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .crm-dashboard__week-total strong {
-            display: block;
+        .crm-dashboard__week-hero-num {
             color: #f8fafc;
-            font-size: 2rem;
-            line-height: 1.1;
+            font-size: 2.1rem;
+            font-weight: 800;
+            line-height: 1;
         }
 
-        .crm-dashboard__week-total span {
-            color: rgba(226, 232, 240, 0.78);
+        .crm-dashboard__week-hero-meta {
+            display: grid;
+            gap: 2px;
+        }
+
+        .crm-dashboard__week-hero-label {
+            color: rgba(226, 232, 240, 0.88);
             font-size: 13px;
+            font-weight: 700;
         }
 
-        .crm-dashboard__week-days {
-            display: grid;
-            grid-template-columns: repeat(7, minmax(0, 1fr));
-            gap: 6px;
-            align-items: end;
+        .crm-dashboard__week-hero-prev {
+            color: rgba(226, 232, 240, 0.55);
+            font-size: 11px;
         }
 
-        .crm-dashboard__week-day {
+        .crm-dashboard__week-delta {
+            margin-left: auto;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .crm-dashboard__week-delta--up {
+            border: 1px solid rgba(34, 197, 94, 0.55);
+            background: rgba(34, 197, 94, 0.16);
+            color: #86efac;
+        }
+
+        .crm-dashboard__week-delta--down {
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.12);
+            color: #fca5a5;
+        }
+
+        .crm-dashboard__week-delta--flat {
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            background: rgba(148, 163, 184, 0.1);
+            color: #cbd5e1;
+        }
+
+        .crm-dashboard__week-chart {
+            display: flex;
+            flex: 1 1 auto;
+            align-items: stretch;
+            gap: 8px;
+            min-height: 90px;
+            max-height: 150px;
+            padding-top: 6px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+        }
+
+        .crm-dashboard__week-col {
             display: grid;
+            grid-template-rows: 16px minmax(0, 1fr) auto;
             gap: 4px;
-            justify-items: center;
+            flex: 1 1 0;
             min-width: 0;
         }
 
-        .crm-dashboard__week-track {
-            position: relative;
-            width: 100%;
-            height: 74px;
-            border-radius: 8px;
-            background: rgba(2, 6, 23, 0.45);
-            border: 1px solid rgba(148, 163, 184, 0.14);
-        }
-
-        .crm-dashboard__week-bar {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            min-height: 3px;
-            border-radius: 8px;
-            background: linear-gradient(180deg, rgba(34, 197, 94, 0.75), rgba(20, 83, 45, 0.55));
-        }
-
-        .crm-dashboard__week-day--today .crm-dashboard__week-track {
-            border-color: rgba(34, 197, 94, 0.55);
-        }
-
-        .crm-dashboard__week-count {
+        .crm-dashboard__week-val {
             color: #bbf7d0;
             font-size: 11px;
             font-weight: 700;
+            text-align: center;
+            line-height: 16px;
         }
 
-        .crm-dashboard__week-label {
-            color: rgba(226, 232, 240, 0.66);
+        .crm-dashboard__week-barbox {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            min-height: 0;
+        }
+
+        .crm-dashboard__week-bar {
+            width: 72%;
+            min-height: 4px;
+            border-radius: 6px 6px 2px 2px;
+            background: linear-gradient(180deg, rgba(74, 222, 128, 0.85), rgba(20, 83, 45, 0.6));
+            transition: filter .16s ease;
+        }
+
+        .crm-dashboard__week-bar--empty {
+            background: rgba(148, 163, 184, 0.18);
+        }
+
+        .crm-dashboard__week-col:hover .crm-dashboard__week-bar {
+            filter: brightness(1.18);
+        }
+
+        .crm-dashboard__week-col--today .crm-dashboard__week-bar {
+            background: linear-gradient(180deg, #4ade80, rgba(34, 197, 94, 0.65));
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.35);
+        }
+
+        .crm-dashboard__week-daylabel {
+            color: rgba(226, 232, 240, 0.6);
             font-size: 11px;
+            text-align: center;
         }
 
-        .crm-dashboard__week-day--today .crm-dashboard__week-label {
+        .crm-dashboard__week-col--today .crm-dashboard__week-daylabel {
             color: #9df2b7;
             font-weight: 700;
         }
 
-        .crm-dashboard__week-stats {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
-        }
-
-        .crm-dashboard__week-stat {
+        .crm-dashboard__week-footer {
             display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(148, 163, 184, 0.22);
-            background: rgba(2, 6, 23, 0.36);
-            min-height: 46px;
+            flex-wrap: wrap;
+            gap: 6px 16px;
         }
 
-        .crm-dashboard__week-stat .material-symbols-outlined {
-            font-size: 18px;
+        .crm-dashboard__week-foot {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(226, 232, 240, 0.78);
+            font-size: 12px;
+        }
+
+        .crm-dashboard__week-foot .material-symbols-outlined {
+            font-size: 16px;
             color: #9df2b7;
         }
 
-        .crm-dashboard__week-stat strong {
+        .crm-dashboard__week-foot strong {
             color: #f8fafc;
-            font-size: 15px;
-        }
-
-        .crm-dashboard__week-stat span {
-            color: rgba(226, 232, 240, 0.72);
-            font-size: 12px;
         }
 
         .crm-dashboard__personal-list,
@@ -1133,40 +1193,50 @@
                     {% endif %}
                     {% if weekly.has_data %}
                         <section class="crm-dashboard__week" data-weekly>
-                            <div>
+                            <div class="crm-dashboard__week-head">
                                 <p class="crm-dashboard__section-eyebrow">{% translate "This week" %}</p>
                                 <p class="crm-dashboard__week-range">{{ weekly.week_start|date:"d M" }} – {{ weekly.week_end|date:"d M" }}</p>
                             </div>
-                            <div class="crm-dashboard__week-total">
-                                <strong>{{ weekly.updated }}</strong>
-                                <span>{{ weekly.updated|plural_ru:"заявка,заявки,заявок" }} {% translate "updated this week" %}</span>
+                            <div class="crm-dashboard__week-hero">
+                                <strong class="crm-dashboard__week-hero-num">{{ weekly.updated }}</strong>
+                                <div class="crm-dashboard__week-hero-meta">
+                                    <span class="crm-dashboard__week-hero-label">{% translate "Requests updated" %}</span>
+                                    <span class="crm-dashboard__week-hero-prev">{{ weekly.updated_prev }} {% translate "last week" %}</span>
+                                </div>
+                                {% if weekly.delta_dir == "up" %}
+                                    <span class="crm-dashboard__week-delta crm-dashboard__week-delta--up">▲ +{{ weekly.delta_abs }}</span>
+                                {% elif weekly.delta_dir == "down" %}
+                                    <span class="crm-dashboard__week-delta crm-dashboard__week-delta--down">▼ −{{ weekly.delta_abs }}</span>
+                                {% else %}
+                                    <span class="crm-dashboard__week-delta crm-dashboard__week-delta--flat">±0</span>
+                                {% endif %}
                             </div>
-                            <div class="crm-dashboard__week-days">
+                            <div class="crm-dashboard__week-chart">
                                 {% for day in weekly.days %}
-                                    <div class="crm-dashboard__week-day{% if day.is_today %} crm-dashboard__week-day--today{% endif %}">
-                                        <span class="crm-dashboard__week-count">{% if day.count %}{{ day.count }}{% endif %}</span>
-                                        <div class="crm-dashboard__week-track">
-                                            <div class="crm-dashboard__week-bar" style="height: {{ day.percent }}%"></div>
+                                    <div class="crm-dashboard__week-col{% if day.is_today %} crm-dashboard__week-col--today{% endif %}">
+                                        <span class="crm-dashboard__week-val">{% if day.count %}{{ day.count }}{% endif %}</span>
+                                        <div class="crm-dashboard__week-barbox">
+                                            <div class="crm-dashboard__week-bar{% if not day.count %} crm-dashboard__week-bar--empty{% endif %}" style="height: {{ day.percent }}%"></div>
                                         </div>
-                                        <span class="crm-dashboard__week-label">{{ day.label }}</span>
+                                        <span class="crm-dashboard__week-daylabel">{{ day.label }}</span>
                                     </div>
                                 {% endfor %}
                             </div>
-                            <div class="crm-dashboard__week-stats">
-                                <div class="crm-dashboard__week-stat">
+                            <div class="crm-dashboard__week-footer">
+                                <span class="crm-dashboard__week-foot">
                                     <span class="material-symbols-outlined">edit_note</span>
-                                    <div>
-                                        <strong>{{ weekly.notes }}</strong>
-                                        <span>{% translate "Notes written" %}</span>
-                                    </div>
-                                </div>
-                                <div class="crm-dashboard__week-stat">
+                                    <strong>{{ weekly.notes }}</strong> {% translate "notes" %}
+                                </span>
+                                <span class="crm-dashboard__week-foot">
                                     <span class="material-symbols-outlined">alarm</span>
-                                    <div>
-                                        <strong>{{ weekly.reminders }}</strong>
-                                        <span>{% translate "Reminders set" %}</span>
-                                    </div>
-                                </div>
+                                    <strong>{{ weekly.reminders }}</strong> {% translate "reminders" %}
+                                </span>
+                                {% if weekly.best %}
+                                    <span class="crm-dashboard__week-foot">
+                                        <span class="material-symbols-outlined">bolt</span>
+                                        {% translate "Peak" %}: {{ weekly.best.label }} · <strong>{{ weekly.best.count }}</strong>
+                                    </span>
+                                {% endif %}
                             </div>
                         </section>
                     {% endif %}

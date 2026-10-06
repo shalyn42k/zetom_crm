@@ -160,6 +160,10 @@ def dashboard_weekly_stats(user):
     updated = visible_main.filter(
         updated_at__date__gte=week_start, updated_at__date__lt=week_end
     ).count()
+    updated_prev = visible_main.filter(
+        updated_at__date__gte=week_start - timedelta(days=7),
+        updated_at__date__lt=week_start,
+    ).count()
 
     notes_qs = StepNote.objects.filter(
         author=user,
@@ -199,27 +203,24 @@ def dashboard_weekly_stats(user):
         for index, count in enumerate(day_counts)
     ]
 
+    delta = updated - updated_prev
+    best = None
+    if max_count:
+        best = {
+            "label": day_names[day_counts.index(max_count)],
+            "count": max_count,
+        }
+
     return {
         "has_data": True,
         "week_start": week_start,
         "week_end": week_end - timedelta(days=1),
         "updated": updated,
+        "updated_prev": updated_prev,
+        "delta_abs": abs(delta),
+        "delta_dir": "up" if delta > 0 else ("down" if delta < 0 else "flat"),
         "notes": notes,
         "reminders": reminders,
         "days": days,
+        "best": best,
     }
-
-
-@register.filter
-def plural_ru(value, forms="заявка,заявки,заявок"):
-    """Pick the correct Slavic plural form: plural_ru: 'one,few,many'."""
-    try:
-        number = abs(int(value))
-    except (TypeError, ValueError):
-        number = 0
-    one, few, many = forms.split(",")
-    if number % 10 == 1 and number % 100 != 11:
-        return one
-    if 2 <= number % 10 <= 4 and not 12 <= number % 100 <= 14:
-        return few
-    return many
