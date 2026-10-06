@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-24 18:47+0200\n"
+"POT-Creation-Date: 2026-10-06 16:14+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -35,7 +35,7 @@ msgid "View profile"
 msgstr ""
 
 #: config/unfold_config.py:126 config/unfold_config.py:130
-#: templates/admin/index.html:605
+#: templates/admin/index.html:1085
 msgid "Inbox"
 msgstr ""
 
@@ -47,26 +47,27 @@ msgstr ""
 
 #: config/unfold_config.py:143
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:106
-#: templates/admin/index.html:611 templates/admin/index.html:634
+#: templates/admin/index.html:1091
 msgid "Validation"
 msgstr ""
 
 #: config/unfold_config.py:151 crm/zetom/models.py:147 crm/zetom/models.py:148
-#: templates/admin/index.html:635
+#: templates/admin/index.html:1098
 msgid "Information"
 msgstr ""
 
 #: config/unfold_config.py:159 crm/clients/admin.py:234 crm/zetom/models.py:168
+#: templates/admin/index.html:1099
 msgid "Offers"
 msgstr ""
 
 #: config/unfold_config.py:167 crm/clients/admin.py:239 crm/zetom/models.py:201
-#: templates/admin/index.html:636
+#: templates/admin/index.html:1100
 msgid "Orders"
 msgstr ""
 
 #: config/unfold_config.py:175 crm/clients/admin.py:244 crm/zetom/models.py:230
-#: templates/admin/index.html:637
+#: templates/admin/index.html:1101
 msgid "Applications"
 msgstr ""
 
@@ -85,7 +86,7 @@ msgstr ""
 #: config/unfold_config.py:211 config/unfold_config.py:215
 #: crm/clients/admin.py:640 crm/clients/models.py:29 crm/users/admin/user.py:45
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:127
-#: templates/admin/index.html:623 templates/admin/index.html:654
+#: templates/admin/index.html:1109
 msgid "Clients"
 msgstr ""
 
@@ -392,7 +393,7 @@ msgstr "Comments"
 msgid "Company"
 msgstr ""
 
-#: crm/clients/models.py:94 templates/admin/index.html:656
+#: crm/clients/models.py:94 templates/admin/index.html:1111
 msgid "Companies"
 msgstr "Companies"
 
@@ -1212,7 +1213,7 @@ msgid "Notifications"
 msgstr ""
 
 #: crm/notification/templates/notification/inbox.html:4
-#: templates/admin/index.html:574
+#: templates/admin/index.html:1052
 msgid "Django site admin"
 msgstr ""
 
@@ -1234,6 +1235,7 @@ msgid "Filter"
 msgstr ""
 
 #: crm/notification/templates/notification/inbox.html:214
+#: templates/admin/index.html:1147
 msgid "All"
 msgstr ""
 
@@ -1560,7 +1562,7 @@ msgstr ""
 
 #: crm/status_manager/services/statuses.py:18
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/history_card.html:56
-#: templates/admin/index.html:689
+#: templates/admin/index.html:1269
 msgid "Deleted"
 msgstr ""
 
@@ -2338,6 +2340,34 @@ msgstr ""
 msgid "No file chosen"
 msgstr ""
 
+#: crm/users/templatetags/admin_dashboard.py:193
+msgid "Mon"
+msgstr ""
+
+#: crm/users/templatetags/admin_dashboard.py:193
+msgid "Tue"
+msgstr ""
+
+#: crm/users/templatetags/admin_dashboard.py:193
+msgid "Wed"
+msgstr ""
+
+#: crm/users/templatetags/admin_dashboard.py:193
+msgid "Thu"
+msgstr ""
+
+#: crm/users/templatetags/admin_dashboard.py:193
+msgid "Fri"
+msgstr ""
+
+#: crm/users/templatetags/admin_dashboard.py:193
+msgid "Sat"
+msgstr ""
+
+#: crm/users/templatetags/admin_dashboard.py:193
+msgid "Sun"
+msgstr ""
+
 #: crm/users/views.py:120
 msgid "User created."
 msgstr ""
@@ -2894,6 +2924,7 @@ msgstr "Contact"
 
 #: crm/zetom/models.py:376
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:79
+#: templates/admin/index.html:1183
 msgid "Reminder"
 msgstr "Reminder"
 
@@ -3484,7 +3515,7 @@ msgid "Field changes"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/history_card.html:54
-#: templates/admin/index.html:685
+#: templates/admin/index.html:1265
 #, fuzzy
 #| msgid "Created at"
 msgid "Created"
@@ -3894,77 +3925,131 @@ msgstr ""
 msgid "Expand row"
 msgstr ""
 
-#: templates/admin/index.html:594
+#: templates/admin/index.html:1074
 msgid "Signed in as"
 msgstr ""
 
-#: templates/admin/index.html:597
+#: templates/admin/index.html:1077
 msgid "No department"
 msgstr ""
 
-#: templates/admin/index.html:607
+#: templates/admin/index.html:1087
 msgid "Needs your attention"
 msgstr ""
 
-#: templates/admin/index.html:613
+#: templates/admin/index.html:1093
 msgid "New requests to check"
 msgstr ""
 
-#: templates/admin/index.html:616
-msgid "Active requests"
-msgstr ""
-
-#: templates/admin/index.html:618
-msgid "Requests in progress"
-msgstr ""
-
-#: templates/admin/index.html:625
-msgid "Customer records"
-msgstr ""
-
-#: templates/admin/index.html:632
+#: templates/admin/index.html:1096
 msgid "Request flow"
 msgstr ""
 
-#: templates/admin/index.html:643
-msgid "You don’t have permission to view or edit anything."
-msgstr ""
-
-#: templates/admin/index.html:652
+#: templates/admin/index.html:1107
 #, fuzzy
 #| msgid "Client #%(pk)s"
 msgid "Client workspace"
 msgstr "Klient #%(pk)s"
 
-#: templates/admin/index.html:660
+#: templates/admin/index.html:1115
 #, fuzzy
 #| msgid "Created at"
 msgid "Create request"
 msgstr "Created at"
 
-#: templates/admin/index.html:668
+#: templates/admin/index.html:1123
+msgid "You don’t have permission to view or edit anything."
+msgstr ""
+
+#: templates/admin/index.html:1134
+msgid "My work"
+msgstr ""
+
+#: templates/admin/index.html:1135
+msgid "My tasks / My requests"
+msgstr ""
+
+#: templates/admin/index.html:1142
+msgid "Show my requests"
+msgstr ""
+
+#: templates/admin/index.html:1145
+msgid "Search by name, company, phone…"
+msgstr ""
+
+#: templates/admin/index.html:1148
+msgid "Assigned to me"
+msgstr ""
+
+#: templates/admin/index.html:1149
+#, fuzzy
+#| msgid "Reminder"
+msgid "Reminders"
+msgstr "Reminder"
+
+#: templates/admin/index.html:1151
+msgid "All statuses"
+msgstr ""
+
+#: templates/admin/index.html:1189
+msgid "Nothing matches the current search or filters."
+msgstr ""
+
+#: templates/admin/index.html:1192
+msgid "No requests are assigned to you yet."
+msgstr ""
+
+#: templates/admin/index.html:1197
+msgid "This week"
+msgstr ""
+
+#: templates/admin/index.html:1203
+msgid "Requests updated"
+msgstr ""
+
+#: templates/admin/index.html:1204
+msgid "last week"
+msgstr ""
+
+#: templates/admin/index.html:1228
+#, fuzzy
+#| msgid "Step notes"
+msgid "notes"
+msgstr "Work log"
+
+#: templates/admin/index.html:1232
+#, fuzzy
+#| msgid "Reminder"
+msgid "reminders"
+msgstr "Reminder"
+
+#: templates/admin/index.html:1237
+msgid "Peak"
+msgstr ""
+
+#: templates/admin/index.html:1248
 msgid "Recent activity"
 msgstr ""
 
-#: templates/admin/index.html:669
+#: templates/admin/index.html:1249
 msgid "Latest changes"
 msgstr ""
 
-#: templates/admin/index.html:680
+#: templates/admin/index.html:1260
 msgid "Unknown content"
 msgstr ""
 
-#: templates/admin/index.html:687
+#: templates/admin/index.html:1267
 #, fuzzy
 #| msgid "Updated at"
 msgid "Updated"
 msgstr "Updated at"
 
-#: templates/admin/index.html:705
+#: templates/admin/index.html:1285
 msgid "No recent actions yet."
 msgstr ""
 
-#: templates/admin/index.html:709
+#: templates/admin/index.html:1289
 msgid "Open full activity log"
 msgstr ""
 
