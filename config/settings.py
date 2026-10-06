@@ -51,6 +51,14 @@ ADMIN_URL = os.getenv("ADMIN_URL", "admin/")
 if not ADMIN_URL.endswith("/"):
     ADMIN_URL += "/"
 
+# claude — unset before this, so Django's built-in default
+# (/accounts/profile/, which this project doesn't have) 404'd for anyone
+# landing on the login page without a `?next=` param (e.g. a bookmarked or
+# typed-in login URL). The normal flow always carries `next=` already, but
+# this is the sane fallback for when it doesn't.
+LOGIN_REDIRECT_URL = "/" + ADMIN_URL
+LOGIN_URL = "/" + ADMIN_URL + "login/"
+
 # claude — дефолтный размер страницы для всех changelist'ов (Django admin + Unfold)
 # и кастомного inbox-paginator'а. Применяется через monkey-patch
 # `django.contrib.admin.ModelAdmin.list_per_page` в NotificationConfig.ready().

@@ -385,3 +385,25 @@ class UsersUIAccessTests(TestCase):
 
         self.victim.profile.refresh_from_db()
         self.assertFalse(self.victim.profile.otp_exempt)
+
+
+# claude — LOGIN_REDIRECT_URL/LOGIN_URL weren't set at all, so Django's
+# built-in default (/accounts/profile/, which this project doesn't have)
+# 404'd for anyone landing on the login page without a `?next=` (e.g. a
+# bookmarked or typed-in login URL).
+class LoginRedirectDefaultsTests(TestCase):
+    def test_logging_in_without_next_lands_on_admin_not_a_404(self):
+        from django.conf import settings
+
+        user = User.objects.create_user(
+            username="plain_login", password="pass12345", is_staff=True,
+        )
+        user.profile.otp_exempt = True
+        user.profile.save()
+
+        response = self.client.post(
+            "/" + settings.ADMIN_URL + "login/",
+            {"username": "plain_login", "password": "pass12345"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/" + settings.ADMIN_URL)
