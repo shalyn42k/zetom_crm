@@ -185,3 +185,29 @@ class ApproveChildActionTests(TestCase):
         approve_wniosek_action(self.main.pk)
         approve_wniosek_action(self.main.pk)
         self.assertEqual(Wniosek.objects.filter(from_main=self.main).count(), 2)
+
+    # claude — from_oferta/from_zlecenie existed on the model but were never
+    # set anywhere, so an order never recorded which offer it grew out of.
+    def test_approve_zlecenie_records_from_oferta(self):
+        oferta = approve_oferta_action(self.main.pk)
+        zlec = approve_zlecenie_action(self.main.pk)
+        self.assertEqual(zlec.from_oferta, oferta)
+
+    def test_approve_zlecenie_with_no_oferta_leaves_from_oferta_null(self):
+        zlec = approve_zlecenie_action(self.main.pk)
+        self.assertIsNone(zlec.from_oferta)
+
+    def test_approve_zlecenie_links_most_recent_oferta(self):
+        approve_oferta_action(self.main.pk)
+        latest_oferta = approve_oferta_action(self.main.pk)
+        zlec = approve_zlecenie_action(self.main.pk)
+        self.assertEqual(zlec.from_oferta, latest_oferta)
+
+    def test_approve_wniosek_records_from_zlecenie(self):
+        zlec = approve_zlecenie_action(self.main.pk)
+        wn = approve_wniosek_action(self.main.pk)
+        self.assertEqual(wn.from_zlecenie, zlec)
+
+    def test_approve_wniosek_with_no_zlecenie_leaves_from_zlecenie_null(self):
+        wn = approve_wniosek_action(self.main.pk)
+        self.assertIsNone(wn.from_zlecenie)
