@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-06 16:14+0200\n"
+"POT-Creation-Date: 2026-10-06 17:17+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,11 +18,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: config/settings.py:264
+#: config/settings.py:272
 msgid "English"
 msgstr ""
 
-#: config/settings.py:265
+#: config/settings.py:273
 msgid "Polish"
 msgstr ""
 
@@ -191,8 +191,8 @@ msgstr ""
 #: crm/zetom/admin/requestmain_mail.py:64
 #: crm/zetom/admin/requestmain_resolve_review.py:115
 #: crm/zetom/admin/requestmain_review.py:66
-#: crm/zetom/admin/requestnull_validate.py:417
-#: crm/zetom/admin/requestnull_validate.py:426
+#: crm/zetom/admin/requestnull_validate.py:434
+#: crm/zetom/admin/requestnull_validate.py:443
 msgid "You don't have permission for this action."
 msgstr ""
 
@@ -285,8 +285,8 @@ msgstr ""
 #: crm/clients/models.py:17 crm/clients/models.py:87
 #: crm/users/templates/users/user_detail.html:11
 #: crm/users/templates/users/user_list.html:20
-#: crm/zetom/admin/requestnull_validate.py:149 crm/zetom/models.py:36
-#: crm/zetom/models.py:54 crm/zetom/models.py:384
+#: crm/zetom/admin/requestnull_validate.py:149 crm/zetom/forms.py:51
+#: crm/zetom/models.py:36 crm/zetom/models.py:54 crm/zetom/models.py:384
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:97
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:87
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:300
@@ -295,7 +295,7 @@ msgstr ""
 msgid "Email"
 msgstr "Email"
 
-#: crm/clients/models.py:20
+#: crm/clients/models.py:20 crm/zetom/forms.py:116
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:105
 msgid "Address"
 msgstr ""
@@ -373,7 +373,7 @@ msgid "Street"
 msgstr "Street"
 
 #: crm/clients/models.py:86 crm/zetom/admin/requestnull_validate.py:140
-#: crm/zetom/models.py:35 crm/zetom/models.py:52
+#: crm/zetom/forms.py:39 crm/zetom/models.py:35 crm/zetom/models.py:52
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:101
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:91
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:299
@@ -1527,6 +1527,10 @@ msgstr ""
 msgid "Invalid status transition."
 msgstr ""
 
+#: crm/status_manager/services/status_service.py:87
+msgid "Automatic transition based on child document statuses."
+msgstr ""
+
 #: crm/status_manager/services/statuses.py:6
 msgid "New"
 msgstr ""
@@ -1544,7 +1548,7 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
-#: crm/status_manager/services/statuses.py:13 crm/users/admin/user.py:355
+#: crm/status_manager/services/statuses.py:13 crm/users/admin/user.py:365
 #: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:63
 #: crm/users/templates/users/user_list.html:42
 msgid "Active"
@@ -1579,7 +1583,7 @@ msgstr ""
 msgid "Permissions"
 msgstr ""
 
-#: crm/users/admin/user.py:46 crm/users/admin/user.py:345 crm/users/forms.py:34
+#: crm/users/admin/user.py:46 crm/users/admin/user.py:355 crm/users/forms.py:34
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:31
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:24
 #: crm/users/templates/users/user_detail.html:15 crm/zetom/admin/base.py:79
@@ -1603,64 +1607,64 @@ msgstr ""
 msgid "Access"
 msgstr ""
 
-#: crm/users/admin/user.py:220 crm/zetom/models.py:40 crm/zetom/models.py:387
+#: crm/users/admin/user.py:226 crm/zetom/models.py:40 crm/zetom/models.py:387
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:96
 msgid "Other"
 msgstr "Other"
 
-#: crm/users/admin/user.py:336 crm/users/forms.py:28 crm/users/forms.py:111
+#: crm/users/admin/user.py:346 crm/users/forms.py:28 crm/users/forms.py:111
 #: crm/users/templates/users/user_detail.html:14
 #: crm/users/templates/users/user_list.html:21
 msgid "Role"
 msgstr ""
 
-#: crm/users/admin/user.py:349 crm/users/forms.py:40 crm/users/forms.py:117
+#: crm/users/admin/user.py:359 crm/users/forms.py:40 crm/users/forms.py:117
 msgid "Job title"
 msgstr ""
 
-#: crm/users/admin/user.py:479
+#: crm/users/admin/user.py:489
 #, python-format
 msgid "%(name)s was deactivated and signed out."
 msgstr ""
 
-#: crm/users/admin/user.py:484
+#: crm/users/admin/user.py:494
 #, python-format
 msgid "%(name)s can log in again."
 msgstr ""
 
-#: crm/users/admin/user.py:497
+#: crm/users/admin/user.py:507
 msgid "Reset 2FA (delete OTP devices)"
 msgstr ""
 
-#: crm/users/admin/user.py:500 crm/users/admin/user.py:531
+#: crm/users/admin/user.py:510 crm/users/admin/user.py:541
 msgid "No permission."
 msgstr ""
 
-#: crm/users/admin/user.py:512
+#: crm/users/admin/user.py:522
 #, python-format
 msgid "2FA reset for %(n)s user(s). They will set it up again on next login."
 msgstr ""
 
-#: crm/users/admin/user.py:518
+#: crm/users/admin/user.py:528
 msgid "Deactivate selected users"
 msgstr ""
 
-#: crm/users/admin/user.py:522
+#: crm/users/admin/user.py:532
 msgid "Reactivate selected users"
 msgstr ""
 
-#: crm/users/admin/user.py:548
+#: crm/users/admin/user.py:558
 #, python-format
 msgid "Reactivated %(n)s user(s)."
 msgstr ""
 
-#: crm/users/admin/user.py:552
+#: crm/users/admin/user.py:562
 #, python-format
 msgid ""
 "Deactivated %(n)s user(s). Their sessions and trusted browsers were revoked."
 msgstr ""
 
-#: crm/users/admin/user.py:558
+#: crm/users/admin/user.py:568
 #, python-format
 msgid "Skipped %(n)s (yourself or a superuser)."
 msgstr ""
@@ -2088,15 +2092,15 @@ msgstr ""
 msgid "Permission is seeded but no code checks it yet."
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:176
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:178
 msgid "From role"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:179
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:181
 msgid "Not implemented"
 msgstr ""
 
-#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:188
+#: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:190
 msgid "No permissions available."
 msgstr ""
 
@@ -2319,8 +2323,8 @@ msgstr ""
 
 #: crm/users/templates/users/user_list.html:48
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:33
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:71
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:109
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:73
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:113
 msgid "View"
 msgstr ""
 
@@ -2419,13 +2423,13 @@ msgstr ""
 
 #: crm/zetom/admin/base.py:292 crm/zetom/models.py:200
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:196
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:56
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:58
 msgid "Order"
 msgstr ""
 
 #: crm/zetom/admin/base.py:294 crm/zetom/models.py:229
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:210
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:94
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:98
 msgid "Application"
 msgstr ""
 
@@ -2706,7 +2710,7 @@ msgstr ""
 msgid "optional · acceptable empty"
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:165
+#: crm/zetom/admin/requestnull_validate.py:165 crm/zetom/forms.py:71
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:109
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:95
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:246
@@ -2755,52 +2759,58 @@ msgstr ""
 msgid "Several candidates match — review the badges before linking."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:290
+#: crm/zetom/admin/requestnull_validate.py:300
 msgid "Cancelled as duplicate from the Validation Window."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:307
+#: crm/zetom/admin/requestnull_validate.py:317
 msgid "Request discarded as spam (moved to Cancelled)."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:313
+#: crm/zetom/admin/requestnull_validate.py:323
 msgid "This request was moved to trash as a duplicate."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:324
+#: crm/zetom/admin/requestnull_validate.py:341
 #, python-format
 msgid "%(n)d duplicate(s) moved to trash / cancelled."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:337
+#: crm/zetom/admin/requestnull_validate.py:354
 msgid "Duplicate target not found."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:347
+#: crm/zetom/admin/requestnull_validate.py:364
 #, python-format
 msgid "Existing request #%(id)d cancelled as duplicate."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:352
+#: crm/zetom/admin/requestnull_validate.py:369
 #, python-format
 msgid "Existing validation request #%(id)d moved to trash."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:367
+#: crm/zetom/admin/requestnull_validate.py:384
 msgid "Existing request updated with this data; this request was removed."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:378
+#: crm/zetom/admin/requestnull_validate.py:395
 msgid "This request was updated from the existing duplicate."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:457
+#: crm/zetom/admin/requestnull_validate.py:474
 msgid "Request approved and promoted."
 msgstr ""
 
-#: crm/zetom/admin/requestnull_validate.py:482
+#: crm/zetom/admin/requestnull_validate.py:499
 #, python-format
 msgid "Validation Window — RequestNull #%(id)d"
+msgstr ""
+
+#: crm/zetom/forms.py:46 crm/zetom/models.py:53
+#: crm/zetom/templates/admin/zetom/requestnull/validate.html:297
+#: crm/zetom/templates/zetom/email_template.html:138
+msgid "Company name"
 msgstr ""
 
 #: crm/zetom/models.py:26
@@ -2850,12 +2860,6 @@ msgstr "Source"
 #: crm/zetom/models.py:49
 msgid "Updated at"
 msgstr "Updated at"
-
-#: crm/zetom/models.py:53
-#: crm/zetom/templates/admin/zetom/requestnull/validate.html:297
-#: crm/zetom/templates/zetom/email_template.html:138
-msgid "Company name"
-msgstr ""
 
 #: crm/zetom/models.py:103 crm/zetom/models.py:104
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:49
@@ -3381,26 +3385,26 @@ msgid "No departments assigned yet."
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:28
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:66
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:104
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:68
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:108
 msgid "Not created"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:39
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:40
 msgid "Create new offer"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:47
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:85
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:123
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:49
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:89
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:129
 msgid "Create"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:77
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:80
 msgid "Create new order"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:115
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:120
 msgid "Create new application"
 msgstr ""
 

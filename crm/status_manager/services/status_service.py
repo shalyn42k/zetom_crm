@@ -43,6 +43,8 @@ def change_status(child, new_status, reason, user):
 def update_parent(parent):
     if parent.status in (RequestStatus.cancelled, RequestStatus.deleted):
         return
+
+    old_status = parent.status
     children = list(
         chain(
             parent.oferta_set.all(),
@@ -52,27 +54,39 @@ def update_parent(parent):
     )
 
     if not children:
-        parent.status = RequestStatus.active
-        parent.save()
-        return
-
-    oferta = parent.oferta_set.exists()
-    zlecenie = parent.zlecenie_set.exists()
-    wniosek = parent.wniosek_set.exists()
-    all_children = oferta and zlecenie and wniosek
-
-    all_done = all(c.status == Status.done for c in children)
-
-    if all_children and all_done:
-        parent.status = RequestStatus.closed
+        new_status = RequestStatus.active
     else:
-        has_active = any(c.status in (Status.in_progress, Status.waiting) for c in children)
-        if has_active:
-            parent.status = RequestStatus.open
-        else:
-            parent.status = RequestStatus.active
+        oferta = parent.oferta_set.exists()
+        zlecenie = parent.zlecenie_set.exists()
+        wniosek = parent.wniosek_set.exists()
+        all_children = oferta and zlecenie and wniosek
 
+        all_done = all(c.status == Status.done for c in children)
+
+        if all_children and all_done:
+            new_status = RequestStatus.closed
+        else:
+            has_active = any(c.status in (Status.in_progress, Status.waiting) for c in children)
+            new_status = RequestStatus.open if has_active else RequestStatus.active
+
+    parent.status = new_status
     parent.save()
+
+    # claude — update_parent drives every active<->open<->closed transition
+    # (fired from child create/status-change signals), but used to never
+    # log to the dedicated StatusHistory audit model — only the manual
+    # Cancel action did. The RequestMain "Historia" panel renders
+    # status_history, so it showed nothing for the vast majority of real
+    # status changes. changed_by=None since this path has no request user
+    # (signals, bulk orchestration) — it's a system-driven transition.
+    if new_status != old_status:
+        StatusHistory.objects.create(
+            request=parent,
+            old_status=old_status,
+            new_status=new_status,
+            reason=_("Automatic transition based on child document statuses."),
+            changed_by=None,
+        )
 
 
 def save_child_with_status(request, obj, form, change, messages_module):
