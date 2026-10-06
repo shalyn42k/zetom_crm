@@ -107,6 +107,70 @@ class ValidationWindowVisibilityTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class ValidationWindowDupeTargetVisibilityTests(TestCase):
+    """RequestNull's duplicate-panel ops (delete_existing/update_existing/
+    update_current/delete_all_dupes) resolve a TARGET by raw pk — a
+    different RequestMain/RequestNull than the `rn` the view itself is
+    scoped to. Before the fix, _resolve_dupe_target looked that target up
+    with .objects.filter(pk=pk) directly, so a specialist with edit_requests
+    (every specialist, by default) could cancel/overwrite a department-
+    hidden RequestMain just by knowing its id — the same bug class already
+    fixed in requestmain.py's dup_request_action."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.specialist = User.objects.create_user(
+            username="specialist_dupe_vis", password="x", is_staff=True,
+        )
+
+    def setUp(self):
+        self.client.force_login(self.specialist)
+        self.rn = RequestNull.objects.create(**BASE)
+        self.rn.assigned_to.add(self.specialist)  # own lead — visible
+
+    def _url(self):
+        return reverse("admin:zetom_requestnull_validate", args=[self.rn.pk])
+
+    def test_delete_existing_main_does_not_touch_hidden_request(self):
+        hidden_main = RequestMain.objects.create(**BASE)  # not assigned to us
+        response = self.client.post(
+            self._url(), {"__action": f"delete_existing:main:{hidden_main.pk}"},
+        )
+        self.assertEqual(response.status_code, 302)
+        hidden_main.refresh_from_db()
+        self.assertNotEqual(hidden_main.status, RequestStatus.cancelled)
+
+    def test_update_existing_does_not_overwrite_hidden_request(self):
+        hidden_data = {**BASE, "company_name": "Original"}
+        hidden_main = RequestMain.objects.create(**hidden_data)
+        response = self.client.post(
+            self._url(), {"__action": f"update_existing:main:{hidden_main.pk}"},
+        )
+        self.assertEqual(response.status_code, 302)
+        hidden_main.refresh_from_db()
+        self.assertEqual(hidden_main.company_name, "Original")
+        # our own lead must survive too — update_existing normally deletes it
+        self.assertTrue(RequestNull.objects.filter(pk=self.rn.pk).exists())
+
+    def test_update_current_does_not_pull_from_hidden_request(self):
+        hidden_data = {**BASE, "company_name": "Secret"}
+        hidden_main = RequestMain.objects.create(**hidden_data)
+        response = self.client.post(
+            self._url(), {"__action": f"update_current:main:{hidden_main.pk}"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.rn.refresh_from_db()
+        self.assertNotEqual(self.rn.company_name, "Secret")
+
+    def test_delete_all_dupes_skips_hidden_duplicates(self):
+        # same phone/email as self.rn → find_request_duplicates() surfaces it
+        # as a candidate even though it's department-hidden.
+        hidden_main = RequestMain.objects.create(**BASE)
+        self.client.post(self._url(), {"__action": "delete_all_dupes"})
+        hidden_main.refresh_from_db()
+        self.assertNotEqual(hidden_main.status, RequestStatus.cancelled)
+
+
 class DupRequestActionPermissionTests(SpecialistNoPermMixin, TestCase):
     def setUp(self):
         super().setUp()
