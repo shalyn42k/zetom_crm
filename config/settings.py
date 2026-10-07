@@ -273,7 +273,14 @@ LANGUAGES = (
     ("pl", _("Polish")),
 )
 
-LOCALE_PATHS = [BASE_DIR / "locale"]
+# claude — locale_overrides/ holds hand-maintained translations for strings
+# owned by third-party packages that ship no locale/ of their own (currently
+# django-unfold's sidebar search). Kept separate from locale/ so
+# `makemessages --no-obsolete` (which only scans our own source, never
+# .venv) can't prune these on its next run. Listed first so a future
+# first-party translation of the same msgid in locale/ would win (Django
+# merges LOCALE_PATHS catalogs in reverse order — see docs).
+LOCALE_PATHS = [BASE_DIR / "locale_overrides", BASE_DIR / "locale"]
 
 # настройка дефолтного региона для библиотеки для валидации телефонов
 PHONENUMBER_DEFAULT_REGION = "PL"
