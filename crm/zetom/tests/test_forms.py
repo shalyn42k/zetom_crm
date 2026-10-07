@@ -19,17 +19,14 @@
 
 from decimal import Decimal
 
+from django import forms as django_forms
 from django.test import TestCase
+from django.utils import translation
 
 from crm.zetom.forms import (
-    AddOferta,
-    AddRequestFormMain,
-    AddRequestFormNull,
-    AddWniosek,
-    AddZlecenie,
+    AddOferta, AddRequestFormMain, AddRequestFormNull, AddWniosek, AddZlecenie,
 )
-from crm.zetom.models import RequestMain, RequestSource
-
+from crm.zetom.models import RequestMain, RequestNull, RequestSource
 
 # ─────────────────────────── AddRequestFormNull ───────────────────────────────
 
@@ -158,6 +155,48 @@ class AddRequestFormMainTests(TestCase):
         form = AddRequestFormMain(data={**self.VALID, "email": "bad"})
         self.assertFalse(form.is_valid())
         self.assertIn("email", form.errors)
+
+    def test_survives_missing_first_last_name_fields(self):
+        # claude — reproduces what Django admin does for a view-only user
+        # (e.g. the "auditor" role): ModelAdmin.get_form() builds the form
+        # via modelform_factory with a `fields` list that drops editable
+        # fields, so first_name/last_name aren't in self.fields at all.
+        # __init__ used to do self.fields["first_name"]... unconditionally
+        # and 500'd with a KeyError — the read-only role couldn't open a
+        # single RequestMain.
+        RestrictedForm = django_forms.modelform_factory(
+            RequestMain, form=AddRequestFormMain,
+            fields=["phone", "email", "company_nip", "address", "message", "source"],
+        )
+        form = RestrictedForm()  # must not raise
+        self.assertNotIn("first_name", form.fields)
+        self.assertNotIn("last_name", form.fields)
+
+    def test_labels_are_translated_in_polish(self):
+        # claude — phone/email/message/address were redeclared as plain form
+        # fields with no label=, shadowing the model's already-translated
+        # verbose_name, so they rendered in English under the PL interface.
+        form = AddRequestFormMain()
+        with translation.override("pl"):
+            self.assertEqual(str(form.fields["phone"].label), "Telefon")
+            self.assertEqual(str(form.fields["email"].label), "E-mail")
+            self.assertEqual(str(form.fields["message"].label), "Wiadomość")
+            self.assertEqual(str(form.fields["address"].label), "Adres")
+
+
+class AddRequestFormNullFieldGuardTests(TestCase):
+    def test_survives_missing_first_last_name_fields(self):
+        # claude — same guard as AddRequestFormMain above; this path is
+        # currently dead code (RequestNullAdmin redirects to the Validation
+        # Window before Django's generic change form renders), but it would
+        # crash the same way if that redirect is ever removed.
+        RestrictedForm = django_forms.modelform_factory(
+            RequestNull, form=AddRequestFormNull,
+            fields=["phone", "email", "message"],
+        )
+        form = RestrictedForm()  # must not raise
+        self.assertNotIn("first_name", form.fields)
+        self.assertNotIn("last_name", form.fields)
 
 
 # ─────────────────────────── AddOferta / AddZlecenie / AddWniosek ─────────────

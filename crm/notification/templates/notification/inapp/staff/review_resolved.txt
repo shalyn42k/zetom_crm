@@ -1,11 +1,26 @@
-{% load i18n %}{% comment %}Inapp-уведомление специалисту: его запрос на проверку разрешён.
+{% load i18n notification_labels %}{% comment %}Inapp-уведомление специалисту: его запрос на проверку разрешён.
+   decision идёт через review_decision_label при рендере (не переводится
+   в payload при создании) — та же причина, что у request_status_label в
+   request_status_changed.txt: читатель видит уведомление на своём
+   активном языке, а не на том, что был активен в момент решения.
    Контекст рендера (из Notification.payload):
        request_id     — pk RequestMain
        request_label  — короткая строка-заголовок
        resolver_name  — имя/username ревьюера
-       decision       — "approved" | "rejected"
+       decision       — "approved" | "rejected" (raw code)
        note           — комментарий ревьюера (может быть пустой)
-   Первая строка — title.{% endcomment %}{% blocktrans %}Review on {{ request_label }}: {{ decision }}{% endblocktrans %}
+   Первая строка — title.
+   claude — body rephrased from "{{ resolver_name }} {{ decision }} your
+   review request." to a colon+label structure (same shape as the title
+   line above): the old phrasing reused decision as a past-tense VERB,
+   which only works because English approved/rejected are identical in
+   adjective and verb form — Polish needs a different, gender-agreeing
+   word for the verb ("zatwierdził"/"zatwierdziła") than for the label
+   ("Zatwierdzone"), and resolver gender isn't tracked anywhere here, so a
+   single label substitution can't produce a grammatically correct verb
+   form in Polish. Restructuring around a label-only sentence sidesteps
+   that instead of guessing a gender.
+   {% endcomment %}{% blocktrans with decision_label=decision|review_decision_label %}Review on {{ request_label }}: {{ decision_label }}{% endblocktrans %}
 
-{% blocktrans %}{{ resolver_name }} {{ decision }} your review request.{% endblocktrans %}
+{% blocktrans with decision_label=decision|review_decision_label %}Decision by {{ resolver_name }} on your review request: {{ decision_label }}{% endblocktrans %}
 {% if note %}{{ note }}{% endif %}

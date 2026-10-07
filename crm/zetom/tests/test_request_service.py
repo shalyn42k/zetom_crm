@@ -16,11 +16,11 @@ from django.http import Http404
 from django.test import TestCase
 
 from crm.status_manager.services.statuses import Status
-from crm.zetom.models import Oferta, RequestMain, RequestNull, Wniosek, Zlecenie
+from crm.zetom.models import (
+    Oferta, RequestMain, RequestNull, Wniosek, Zlecenie,
+)
 from crm.zetom.services.request_service import (
-    approve_null_action,
-    approve_oferta_action,
-    approve_wniosek_action,
+    approve_null_action, approve_oferta_action, approve_wniosek_action,
     approve_zlecenie_action,
 )
 
@@ -150,12 +150,64 @@ class ApproveChildActionTests(TestCase):
         oferta.refresh_from_db()
         self.assertEqual(oferta.status, Status.done)
 
-    def test_approve_zlecenie_does_not_touch_oferta_in_other_statuses(self):
-        # Только waiting -> done. new/in_progress оферты не трогаем.
+    def test_approve_zlecenie_closes_oferta_in_other_statuses_too(self):
+        # new/in_progress ofertas get force-closed too, not just waiting —
+        # opening a zlecenie always supersedes every not-yet-done oferta.
         oferta = approve_oferta_action(self.main.pk)
         self.assertEqual(oferta.status, Status.new)
 
         approve_zlecenie_action(self.main.pk)
 
         oferta.refresh_from_db()
-        self.assertEqual(oferta.status, Status.new)
+        self.assertEqual(oferta.status, Status.done)
+
+    def test_approve_wniosek_closes_open_zlecenie(self):
+        zlec = approve_zlecenie_action(self.main.pk)
+        zlec.status = Status.waiting
+        zlec.save()
+
+        approve_wniosek_action(self.main.pk)
+
+        zlec.refresh_from_db()
+        self.assertEqual(zlec.status, Status.done)
+
+    # claude — but a request can still have more than one Zlecenie/Wniosek —
+    # close_oferta_on_zlecenie/close_zlecenie_on_wniosek only no-op on an
+    # already-done sibling, they don't block creating further documents.
+    def test_approve_zlecenie_allows_multiple_per_request(self):
+        approve_oferta_action(self.main.pk)
+        approve_zlecenie_action(self.main.pk)
+        approve_zlecenie_action(self.main.pk)
+        self.assertEqual(Zlecenie.objects.filter(from_main=self.main).count(), 2)
+
+    def test_approve_wniosek_allows_multiple_per_request(self):
+        approve_zlecenie_action(self.main.pk)
+        approve_wniosek_action(self.main.pk)
+        approve_wniosek_action(self.main.pk)
+        self.assertEqual(Wniosek.objects.filter(from_main=self.main).count(), 2)
+
+    # claude — from_oferta/from_zlecenie existed on the model but were never
+    # set anywhere, so an order never recorded which offer it grew out of.
+    def test_approve_zlecenie_records_from_oferta(self):
+        oferta = approve_oferta_action(self.main.pk)
+        zlec = approve_zlecenie_action(self.main.pk)
+        self.assertEqual(zlec.from_oferta, oferta)
+
+    def test_approve_zlecenie_with_no_oferta_leaves_from_oferta_null(self):
+        zlec = approve_zlecenie_action(self.main.pk)
+        self.assertIsNone(zlec.from_oferta)
+
+    def test_approve_zlecenie_links_most_recent_oferta(self):
+        approve_oferta_action(self.main.pk)
+        latest_oferta = approve_oferta_action(self.main.pk)
+        zlec = approve_zlecenie_action(self.main.pk)
+        self.assertEqual(zlec.from_oferta, latest_oferta)
+
+    def test_approve_wniosek_records_from_zlecenie(self):
+        zlec = approve_zlecenie_action(self.main.pk)
+        wn = approve_wniosek_action(self.main.pk)
+        self.assertEqual(wn.from_zlecenie, zlec)
+
+    def test_approve_wniosek_with_no_zlecenie_leaves_from_zlecenie_null(self):
+        wn = approve_wniosek_action(self.main.pk)
+        self.assertIsNone(wn.from_zlecenie)

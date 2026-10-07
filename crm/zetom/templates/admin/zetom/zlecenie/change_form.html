@@ -1,21 +1,44 @@
 {% extends "admin/change_form.html" %}
-{% load i18n %}
+{% load i18n static %}
+
+{% comment %}
+claude — Fix-round: cache-busted reload of company_card.css, same reason
+as oferta/change_form.html's copy of this comment.
+{% endcomment %}
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}?v={% now "U" %}">
+{% endblock extrastyle %}
 
 {% block content %}
   {{ block.super }}
-  {% include "admin/zetom/shared/step_notes_modal.html" %}
+  {% include "admin/zetom/shared/step_notes_modal.html" with step_notes_hide_inline_trigger=True %}
   {% comment %}
-  claude — Task 11: "create the next document" for the Zlecenie -> Wniosek
-  soft chain. No auto-close on this hop (deliberate — spec §3.2).
+  claude — Fix-round: the "Create application from this order" chain
+  button (Task 11), living on this one specific Zlecenie, was removed by
+  explicit request — one Zlecenie can have more than one Wniosek filed
+  against it, so a button implying "this Zlecenie's one next document"
+  didn't fit. A new Wniosek is still created from the parent RequestMain's
+  own change form ("Create application" button there, wired to
+  approve_wniosek_action), which still auto-closes this Zlecenie (and
+  every other not-yet-done Zlecenie on the request) when it runs, same as
+  before; "Mark as done" below is only for closing it by hand ahead of
+  that, or if nobody ever creates a Wniosek for this request at all.
   {% endcomment %}
   {% if original.pk %}
-    <div class="rm-doc-chain">
-      <form method="post" action="{% url 'admin:zetom_zlecenie_wniosek_action' original.pk %}">
+    <div class="rm-doc-chain" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">
+      <button type="button" class="cc-action-btn"
+        onclick="window.dispatchEvent(new CustomEvent('open-step-notes'))">
+        {% trans "Step notes" %}
+      </button>
+      {% if original.status != "done" %}
+      <form method="post" action="{% url 'admin:zetom_zlecenie_mark_done' original.pk %}">
         {% csrf_token %}
-        <button type="submit" class="rm-btn rm-btn--primary rm-btn--sm">
-          {% trans "Create application from this order" %}
+        <button type="submit" class="cc-action-btn cc-action-btn--accent">
+          {% trans "Mark as done" %}
         </button>
       </form>
+      {% endif %}
     </div>
   {% endif %}
 {% endblock content %}

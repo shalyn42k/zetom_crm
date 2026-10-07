@@ -14,10 +14,8 @@ company_card.css.
 {% block extrastyle %}
   {{ block.super }}
   {% comment %}
-  claude — Task 4 fix-round (visual-tokens-unification): cache-buster to
-  match tokens.css/custom_admin.css in skeleton.html — without it browsers
-  served stale company_card.css across deploys (caught via a stale
-  screenshot during this task's own verification).
+  claude — Fix-round: cache-busted like company_card.html's own link, see
+  that template's comment.
   {% endcomment %}
   <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}?v={% now "U" %}">
 {% endblock extrastyle %}

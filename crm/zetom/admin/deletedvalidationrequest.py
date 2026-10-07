@@ -29,8 +29,10 @@ class DeletedValidationRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
     change_form_template = "admin/zetom/deletedvalidationrequest/change_form.html"
     list_display = ("created_at", "company_name", "display_departments", "source")
     list_filter = ("source",)
+    # claude — see cancelledrequest.py's identical fix: raw "departments"
+    # rendered as literal codes, display_departments shows translated labels.
     readonly_fields = (
-        "first_name", "last_name", "phone", "departments", "assigned_to",
+        "first_name", "last_name", "phone", "display_departments", "assigned_to",
         "company_name", "company_nip", "email", "message", "source",
     )
     fields = readonly_fields

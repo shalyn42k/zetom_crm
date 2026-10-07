@@ -1,13 +1,16 @@
 # Django imports
 from django.apps import AppConfig
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
 
 
 class NotificationConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "crm.notification"
     label = "notification"
-    verbose_name = "notifications"
+    # claude — see crm/users/apps.py's identical fix: plain string, not
+    # wrapped in gettext, so Unfold's breadcrumb rendered it in English.
+    verbose_name = _("Notifications")
 
     # claude
     def ready(self):

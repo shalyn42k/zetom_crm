@@ -132,8 +132,8 @@
                 <span class="rm-user__meta">
                   <span class="rm-user__name">{{ u.get_full_name|default:u.username }}</span>
                   <span class="rm-user__sub">
-                    {% if u.profile.role %}{{ u.profile.role.name }}{% endif %}
-                    {% if u.profile.departments %} · {{ u.profile.departments|join:", " }}{% endif %}
+                    {% if u.profile.role %}{% trans u.profile.role.name %}{% endif %}
+                    {% if u.profile.departments %} · {{ u.profile.departments_summary }}{% endif %}
                   </span>
                 </span>
               </li>

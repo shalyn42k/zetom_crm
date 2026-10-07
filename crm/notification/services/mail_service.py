@@ -13,6 +13,7 @@ import logging
 from django.conf import settings
 from django.core.mail import EmailMessage, get_connection
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 # Local imports
 from crm.notification.models import EmailNotification, EmailStatus
@@ -69,7 +70,13 @@ def _send(*, recipients, subject, body, template_name="", payload=None, actor=No
                 subject=subject,
                 payload=payload or {},
                 status=EmailStatus.FAILED,
-                status_reason=f"Connection failed: {connection_error}",
+                # claude — "Connection failed:" is our own text, translated;
+                # the exception text after it (e.g. "[Errno 111] Connection
+                # refused") comes straight from the OS/socket layer, not
+                # Django's i18n — same category as a stack trace, not
+                # meaningfully translatable without a brittle per-exception
+                # message-mapping table.
+                status_reason=f"{_('Connection failed:')} {connection_error}",
             )
             records.append(record)
         return records
@@ -102,7 +109,7 @@ def _send(*, recipients, subject, body, template_name="", payload=None, actor=No
                 subject=subject,
                 payload=payload or {},
                 status=EmailStatus.FAILED,
-                status_reason=f"Connection failed: {open_error}",
+                status_reason=f"{_('Connection failed:')} {open_error}",
             )
             records.append(record)
         return records
@@ -128,7 +135,7 @@ def _send(*, recipients, subject, body, template_name="", payload=None, actor=No
                 msg.send(fail_silently=False)
             except Exception as exc:
                 record.status = EmailStatus.FAILED
-                record.status_reason = str(exc)
+                record.status_reason = f"{_('Send failed:')} {exc}"
                 record.save(update_fields=["status", "status_reason"])
                 logger.exception(
                     "notification.mail: failed to send to %s. "

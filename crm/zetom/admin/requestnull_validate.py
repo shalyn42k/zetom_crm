@@ -32,6 +32,7 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
@@ -43,12 +44,14 @@ from crm.notification.services.notification_service import (
 )
 from crm.status_manager.services.status_service import cancel_request
 from crm.status_manager.services.statuses import RequestStatus
+from crm.users.utils import user_has_perm
 from crm.zetom.models import (
     DepartmentsVariants, RequestClientLink, RequestMain, RequestNull,
 )
 from crm.zetom.services.duplicate_matcher import find_candidates
 from crm.zetom.services.request_duplicate_finder import find_request_duplicates
 from crm.zetom.services.request_service import approve_null_action
+from crm.zetom.services.visibility import visible_requests_for
 
 # ---------------------------------------------------------------------------
 # Form
@@ -73,10 +76,12 @@ class ValidationWindowForm(forms.Form):
     new_email = forms.EmailField(required=False)
 
     departments = forms.MultipleChoiceField(
+        label=_("Departments"),
         choices=DepartmentsVariants.choices,
         required=True,
     )
     owners = forms.ModelMultipleChoiceField(
+        label=_("Owners"),
         queryset=User.objects.none(),  # populated in __init__
         required=True,
     )
@@ -263,13 +268,23 @@ def _copy_request_fields(src, dst) -> None:
         setattr(dst, fld, getattr(src, fld))
 
 
-def _resolve_dupe_target(kind: str, raw_pk: str):
+def _resolve_dupe_target(kind: str, raw_pk: str, user):
+    """Resolve a duplicate-panel target by id, scoped to what `user` can see.
+
+    Mirrors requestmain.py's dup_request_action: find_request_duplicates()
+    itself searches the whole DB on purpose (cross-department duplicate
+    detection is useful to show), but ACTING on a result (cancel/overwrite)
+    must be scoped the same way every other mutating admin action is —
+    otherwise a department-hidden RequestMain/RequestNull is still reachable
+    and mutable just by knowing/guessing its pk.
+    """
     try:
         pk = int(raw_pk)
     except (TypeError, ValueError):
         return None
     model = RequestMain if kind == "main" else RequestNull
-    return model.objects.filter(pk=pk).first()
+    qs = visible_requests_for(user, model.objects.all())
+    return qs.filter(pk=pk).first()
 
 
 def _soft_delete_request_dupe(target, user) -> None:
@@ -313,7 +328,14 @@ def _dispatch_dupe_op(request, rn: RequestNull, action: str):
     # Soft-delete EVERY duplicate of this request in one click.
     if action == "delete_all_dupes":
         with transaction.atomic():
-            dupes = find_request_duplicates(rn)
+            # claude — find_request_duplicates searches the whole DB (by
+            # design, for display), but acting on its results must be scoped
+            # the same as every single-target op below, else a department-
+            # hidden duplicate gets cancelled/trashed just by showing up here.
+            dupes = [
+                d for d in find_request_duplicates(rn)
+                if _resolve_dupe_target(d.kind, str(d.obj.pk), request.user) is not None
+            ]
             for d in dupes:
                 _soft_delete_request_dupe(d.obj, request.user)
         messages.success(
@@ -329,7 +351,7 @@ def _dispatch_dupe_op(request, rn: RequestNull, action: str):
     if op not in ("delete_existing", "update_existing", "update_current"):
         return None
 
-    target = _resolve_dupe_target(kind, raw_pk)
+    target = _resolve_dupe_target(kind, raw_pk, request.user)
     if target is None:
         messages.error(request, _("Duplicate target not found."))
         return redirect("admin:zetom_requestnull_validate", rn.pk)
@@ -397,8 +419,31 @@ class ValidationWindowMixin:
         ]
         return custom + urls
 
+    # claude — this view had NO permission check at all: the URL is only
+    # wrapped in admin_site.admin_view (is_staff/is_active), and
+    # RequestNullAdmin.change_view (requestnull.py) just redirects here
+    # without going through Django's own has_view_or_change_permission
+    # gate, so any staff account — regardless of RBAC role — could read
+    # lead PII and approve/merge/delete duplicates via POST. Mirrors the
+    # perm split every other custom admin view in this app uses: view for
+    # GET, edit for the POST mutations (approve + duplicate ops).
+    # get_queryset (not RequestNull.objects) also applies the same
+    # department-visibility filter as the changelist, closing the gap
+    # where a filtered-out object was still reachable by pk directly.
     def validation_window_view(self, request, object_id):
-        rn = get_object_or_404(RequestNull, pk=object_id)
+        if not user_has_perm(request.user, "view_requests"):
+            return HttpResponseForbidden(
+                _("You don't have permission for this action.")
+            )
+        rn = get_object_or_404(
+            visible_requests_for(request.user, RequestNull.objects.all()),
+            pk=object_id,
+        )
+
+        if request.method == "POST" and not user_has_perm(request.user, "edit_requests"):
+            return HttpResponseForbidden(
+                _("You don't have permission for this action.")
+            )
 
         # Duplicate-management ops fire from the possible-duplicate panel.
         # Each is encoded in one __action value so a single button carries both

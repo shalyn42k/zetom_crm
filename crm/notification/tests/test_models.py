@@ -20,10 +20,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from crm.notification.models import (
-    EmailNotification,
-    EmailStatus,
-    Notification,
-    NotificationKind,
+    EmailNotification, EmailStatus, Notification, NotificationKind,
 )
 
 User = get_user_model()
@@ -96,7 +93,9 @@ class EmailNotificationModelTests(TestCase):
             status=EmailStatus.SENT,
         )
         result = str(obj)
-        self.assertIn("SENT", result)
+        # claude — was the raw EmailStatus code ("SENT"); __str__ now uses
+        # get_status_display() so this translates with the active locale.
+        self.assertIn("Sent", result)
         self.assertIn("Check this", result)
         self.assertIn("check@test.com", result)
 

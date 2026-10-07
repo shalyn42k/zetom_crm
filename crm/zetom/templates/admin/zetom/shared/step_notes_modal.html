@@ -29,7 +29,20 @@ user actually filled in on submit.
   so a class here would need its own unscoped rule anyway.
   {% endcomment %}
   <div style="display:flex;justify-content:flex-end;margin:0 0 .75rem">
-    <button type="button" class="rm-btn rm-btn--primary rm-btn--sm" @click="open = true">
+    {% comment %}
+    claude — Fix-round: rm-btn/rm-btn--primary/rm-btn--sm are only styled
+    by static/zetom/css/requestmain_detail.css, loaded solely on the
+    RequestMain page's own change_form.html (extrastyle block) — not via
+    BaseRequestAdmin.Media, which is what Oferta/Zlecenie/Wniosek/
+    RequestNull actually share. On those pages this button had no border
+    or background at all (plain unstyled text). cc-action-btn is a new,
+    dedicated class styled in company_card.css (loaded everywhere this
+    modal is) so the button reads the same regardless of which admin page
+    it's on; rm-btn classes are kept alongside it so the RequestMain page
+    (which still loads requestmain_detail.css too) keeps its existing look
+    unchanged.
+    {% endcomment %}
+    <button type="button" class="rm-btn rm-btn--primary rm-btn--sm cc-action-btn" @click="open = true">
       {% trans "Step notes" %}
     </button>
   </div>

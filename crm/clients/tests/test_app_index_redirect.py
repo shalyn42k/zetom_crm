@@ -2,6 +2,7 @@
 # registered models. Unfold links it from the breadcrumbs on every clients
 # screen, so "back" from a card landed users on a three-way choice instead of
 # the list. Redirected to the unified Klienci list (config/urls.py).
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -15,7 +16,7 @@ class AppIndexRedirectTest(TestCase):
         self.client.force_login(self.user)
 
     def test_app_index_redirects_to_list(self):
-        resp = self.client.get("/admin/clients/", HTTP_HOST="127.0.0.1")
+        resp = self.client.get(f"/{settings.ADMIN_URL}clients/", HTTP_HOST="127.0.0.1")
         self.assertRedirects(
             resp, reverse("admin:clients_client_changelist"), fetch_redirect_response=False,
         )
@@ -39,7 +40,7 @@ class AppIndexRedirectTest(TestCase):
     # Klienci list replaced; Unfold links it from the breadcrumbs, so the URL
     # itself has to redirect, not just the two links we control.
     def test_company_changelist_redirects_to_the_firms_filter(self):
-        resp = self.client.get("/admin/clients/company/", HTTP_HOST="127.0.0.1")
+        resp = self.client.get(f"/{settings.ADMIN_URL}clients/company/", HTTP_HOST="127.0.0.1")
         self.assertRedirects(
             resp,
             reverse("admin:clients_client_changelist") + "?rodzaj=firmy",
@@ -56,7 +57,7 @@ class AppIndexRedirectTest(TestCase):
         for url in pages:
             with self.subTest(url=url):
                 body = self.client.get(url, HTTP_HOST="127.0.0.1").content.decode()
-                self.assertNotIn('href="/admin/clients/company/"', body)
+                self.assertNotIn(f'href="/{settings.ADMIN_URL}clients/company/"', body)
 
     # claude — Unfold's header_title builds the "Clients › Companies › …" chain
     # from `opts`, so the designed pages leave it out of their context: the
@@ -74,4 +75,4 @@ class AppIndexRedirectTest(TestCase):
         for url in pages:
             with self.subTest(url=url):
                 body = self.client.get(url, HTTP_HOST="127.0.0.1").content.decode()
-                self.assertNotIn('href="/admin/clients/"', body)
+                self.assertNotIn(f'href="/{settings.ADMIN_URL}clients/"', body)

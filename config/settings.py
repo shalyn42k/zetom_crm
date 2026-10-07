@@ -15,6 +15,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 
 import os
+import sys
 from pathlib import Path
 
 from django.utils.translation import gettext_lazy as _
@@ -38,6 +39,25 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
 ]
+
+# claude — путь до Django admin, вынесен в переменную окружения, чтобы на
+# проде можно было сменить с угадываемого "admin/" на случайную строку
+# (security through obscurity — не замена нормальной auth/2FA/rate-limit
+# защиты, но убирает самый дешёвый вектор: automated-сканеры и боты бьют
+# по /admin/ вообще не разбирая, что за сайт). Должен заканчиваться "/".
+# Используется в config/urls.py, crm/users/middleware.py (Enforce2FAMiddleware)
+# и config/unfold_config.py (ссылка на Activity Log).
+ADMIN_URL = os.getenv("ADMIN_URL", "admin/")
+if not ADMIN_URL.endswith("/"):
+    ADMIN_URL += "/"
+
+# claude — unset before this, so Django's built-in default
+# (/accounts/profile/, which this project doesn't have) 404'd for anyone
+# landing on the login page without a `?next=` param (e.g. a bookmarked or
+# typed-in login URL). The normal flow always carries `next=` already, but
+# this is the sane fallback for when it doesn't.
+LOGIN_REDIRECT_URL = "/" + ADMIN_URL
+LOGIN_URL = "/" + ADMIN_URL + "login/"
 
 # claude — дефолтный размер страницы для всех changelist'ов (Django admin + Unfold)
 # и кастомного inbox-paginator'а. Применяется через monkey-patch
@@ -77,9 +97,13 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    # HSTS — после первого успешного запуска по HTTPS можно поднять до года:
-    # SECURE_HSTS_SECONDS = 31536000
-    # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    # HSTS — прод уже подтверждённо работает по HTTPS (проверено вживую,
+    # 2026-09), поэтому включаем. Начинаем с часа, а не сразу с года: если
+    # что-то со связкой Cloudflare/HTTPS всё же сломается, браузеры быстро
+    # забудут HSTS вместо годового залипания на https для всех, кто уже
+    # заходил. Через пару недель без проблем можно поднять до 31536000.
+    SECURE_HSTS_SECONDS = 3600
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
 # Application definition
 
@@ -103,6 +127,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
+    "axes",  # брутфорс-защита логина (см. AXES_* ниже)
     "crm.users.apps.UsersConfig",
     "crm.status_manager",
     "crm.zetom.apps.ZetomConfig",
@@ -127,7 +152,34 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.middleware.locale.LocaleMiddleware",  # для переводов от unfold
+    "axes.middleware.AxesMiddleware",  # обязательно последним (см. доки django-axes)
 ]
+
+# claude — AxesStandaloneBackend первым, иначе он не встревает раньше
+# стандартной проверки пароля и лок не срабатывает. ModelBackend вторым —
+# без него отваливается обычный логин (django-axes сам не проверяет пароль,
+# только считает попытки и блокирует).
+# Тот же приём, что уже есть в crm/users/middleware.py (_RUNNING_TESTS):
+# AxesBackend требует объект request в authenticate(), а self.client.login()
+# в тестах Django его не передаёт — уронило 2 существующих теста
+# (test_user_deactivation) с AxesBackendRequestParameterRequired. На
+# реальном сайте (runserver/gunicorn) request всегда есть, байпас не нужен.
+if "test" in sys.argv:
+    AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
+else:
+    AUTHENTICATION_BACKENDS = [
+        "axes.backends.AxesStandaloneBackend",
+        "django.contrib.auth.backends.ModelBackend",
+    ]
+
+# claude — брутфорс на /admin/login/ был подтверждён вживую (2026-09):
+# 10 подряд неверных попыток без единой блокировки. Лочим по паре
+# username+IP (не по одному IP — иначе один сосед в NAT/офисе может
+# залочить всех) на FAILURE_LIMIT попыток, снимается через COOLOFF_TIME.
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1  # часов
+AXES_LOCKOUT_PARAMETERS = ["username", "ip_address"]
+AXES_RESET_COOL_OFF_ON_FAILURE_DURING_LOCKOUT = False
 
 ROOT_URLCONF = "config.urls"
 
@@ -221,7 +273,14 @@ LANGUAGES = (
     ("pl", _("Polish")),
 )
 
-LOCALE_PATHS = [BASE_DIR / "locale"]
+# claude — locale_overrides/ holds hand-maintained translations for strings
+# owned by third-party packages that ship no locale/ of their own (currently
+# django-unfold's sidebar search). Kept separate from locale/ so
+# `makemessages --no-obsolete` (which only scans our own source, never
+# .venv) can't prune these on its next run. Listed first so a future
+# first-party translation of the same msgid in locale/ would win (Django
+# merges LOCALE_PATHS catalogs in reverse order — see docs).
+LOCALE_PATHS = [BASE_DIR / "locale_overrides", BASE_DIR / "locale"]
 
 # настройка дефолтного региона для библиотеки для валидации телефонов
 PHONENUMBER_DEFAULT_REGION = "PL"

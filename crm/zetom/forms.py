@@ -1,5 +1,6 @@
 # Django imports
 from django import forms
+from django.utils.translation import gettext_lazy as _
 # Other imports
 from phonenumber_field.formfields import PhoneNumberField
 
@@ -23,6 +24,7 @@ from crm.zetom.models import (
 # which is exactly what ArrayField stores — no widget/data-shape mismatch.
 def _departments_field():
     return forms.TypedMultipleChoiceField(
+        label=_("Departments"),
         choices=DepartmentsVariants.choices,
         required=False,
         coerce=str,
@@ -35,21 +37,25 @@ class TemplateForm(forms.ModelForm):
     client = ClientField()
 
     phone = PhoneNumberField(
+        label=_("Phone"),
         region="PL",
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "Phone"}),
+        widget=forms.TextInput(attrs={"placeholder": "+48 501 600 300"}),
     )
 
     company_name = forms.CharField(
+        label=_("Company name"),
         required=False, widget=forms.TextInput(attrs={"placeholder": "Zetom"})
     )
 
     email = forms.EmailField(
+        label=_("Email"),
         required=True, widget=forms.TextInput(attrs={"placeholder": "email@gmail.com"})
     )
 
     # claude
     company_nip = forms.CharField(
+        label=_("Company NIP"),
         required=False,
         max_length=20,
         validators=[validate_nip],
@@ -64,10 +70,11 @@ class TemplateForm(forms.ModelForm):
         return normalize_nip(value)
 
     message = forms.CharField(
+        label=_("Message"),
         required=False,
         widget=forms.Textarea(
             attrs={
-                "placeholder": "Long and very interesting note for noting your long and intresting text"
+                "placeholder": "Dodatkowe informacje lub uwagi dotyczące zgłoszenia"
             }
         ),
     )
@@ -95,14 +102,20 @@ class AddRequestFormNull(TemplateForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields.pop("company_nip", None)
-        self.fields["first_name"].required = True
-        self.fields["last_name"].required = True
-        self.fields["first_name"].widget.attrs.setdefault("placeholder", "John")
-        self.fields["last_name"].widget.attrs.setdefault("placeholder", "Johnson")
+        # claude — Django admin drops editable fields from self.fields for a
+        # view-only user (no change permission), so these keys don't always
+        # exist; unconditional access 500'd for e.g. the read-only auditor role.
+        if "first_name" in self.fields:
+            self.fields["first_name"].required = True
+            self.fields["first_name"].widget.attrs.setdefault("placeholder", "Jan")
+        if "last_name" in self.fields:
+            self.fields["last_name"].required = True
+            self.fields["last_name"].widget.attrs.setdefault("placeholder", "Kowalski")
 
 
 class AddRequestFormMain(TemplateForm):
     address = forms.CharField(
+        label=_("Address"),
         required=False,
         widget=forms.Textarea(
             attrs={
@@ -129,20 +142,24 @@ class AddRequestFormMain(TemplateForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["first_name"].widget.attrs.setdefault("placeholder", "John")
-        self.fields["last_name"].widget.attrs.setdefault("placeholder", "Johnson")
+        if "first_name" in self.fields:
+            self.fields["first_name"].widget.attrs.setdefault("placeholder", "Jan")
+        if "last_name" in self.fields:
+            self.fields["last_name"].widget.attrs.setdefault("placeholder", "Kowalski")
 
 
 class AddOferta(TemplateForm):
     departments = _departments_field()
     price = forms.DecimalField(
+        label=_("Price"),
         required=False, widget=forms.NumberInput(attrs={"placeholder": "0"})
     )
     notes = forms.CharField(
+        label=_("Notes"),
         required=False,
         widget=forms.Textarea(
             attrs={
-                "placeholder": "Long and very interesting note for noting your long and intresting text",
+                "placeholder": "Dodatkowe informacje lub uwagi dotyczące zgłoszenia",
             }
         ),
     )
@@ -166,13 +183,15 @@ class AddOferta(TemplateForm):
 class AddZlecenie(TemplateForm):
     departments = _departments_field()
     price = forms.DecimalField(
+        label=_("Price"),
         required=False, widget=forms.NumberInput(attrs={"placeholder": "0"})
     )
     notes = forms.CharField(
+        label=_("Notes"),
         required=False,
         widget=forms.Textarea(
             attrs={
-                "placeholder": "Long and very interesting note for noting your long and intresting text",
+                "placeholder": "Dodatkowe informacje lub uwagi dotyczące zgłoszenia",
             }
         ),
     )
@@ -196,10 +215,11 @@ class AddZlecenie(TemplateForm):
 class AddWniosek(TemplateForm):
     departments = _departments_field()
     notes = forms.CharField(
+        label=_("Notes"),
         required=False,
         widget=forms.Textarea(
             attrs={
-                "placeholder": "Long and very interesting note for noting your long and intresting text",
+                "placeholder": "Dodatkowe informacje lub uwagi dotyczące zgłoszenia",
             }
         ),
     )

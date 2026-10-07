@@ -154,14 +154,16 @@
                   {% comment %}claude — checkbox disabled когда:
                      • право пришло из роли (always-on),
                      • ИЛИ у текущего юзера нет permission `edit_roles`
-                       (он видит галки read-only, менять не может).
+                       (он видит галки read-only, менять не может),
+                     • ИЛИ это собственный профиль (self-escalation guard,
+                       тот же принцип что у поля `role`).
                   {% endcomment %}
                   {% if item.from_role %}
                     <input type="checkbox" checked disabled aria-label="{% trans item.perm.name %} ({{ from_role_label }})">
                   {% else %}
                     <input type="checkbox" name="extra_permissions" value="{{ item.perm.id }}"
                            {% if item.extra %}checked{% endif %}
-                           {% if not can_edit_roles %}disabled{% endif %}>
+                           {% if not can_edit_roles or editing_self %}disabled{% endif %}>
                   {% endif %}
                   <span class="up-perm__meta">
                     <span class="up-perm__name">{% trans item.perm.name %}</span>

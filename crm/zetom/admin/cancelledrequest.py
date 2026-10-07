@@ -17,12 +17,16 @@ class CancelledRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
     change_form_template = "admin/zetom/cancelledrequest/change_form.html"
     list_display = ("created_at", "company_name", "display_departments", "source")
     list_filter = ("source",)
+    # claude — display_departments (DepartmentsDisplayMixin) renders the
+    # ArrayField as translated labels; the raw "departments" field here
+    # rendered as literal codes ("DEPARTMENT_0, DEPARTMENT_1, ...") despite
+    # the mixin's own docstring saying it's meant for readonly_fields too.
     readonly_fields = (
-        "status", "first_name", "last_name", "phone", "departments", "assigned_to",
+        "status", "first_name", "last_name", "phone", "display_departments", "assigned_to",
         "company_name", "company_nip", "email", "address", "message", "source",
     )
     fields = (
-        "status", "first_name", "last_name", "phone", "departments", "assigned_to",
+        "status", "first_name", "last_name", "phone", "display_departments", "assigned_to",
         "company_name", "company_nip", "email", "address", "message", "source",
     )
 

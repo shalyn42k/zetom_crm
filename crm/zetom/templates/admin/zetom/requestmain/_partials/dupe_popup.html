@@ -102,7 +102,7 @@ popup_departments / popup_owners) and submits the real add form.
                 <input type="checkbox" name="popup_owners" value="{{ u.pk }}">
                 <span class="oav">{{ u.first_name|slice:":1"|upper }}{{ u.last_name|slice:":1"|upper }}</span>
                 <span class="oname">{{ u.get_full_name|default:u.username }}</span>
-                {% if u.profile.role %}<span class="orole">{{ u.profile.role.code }}</span>{% endif %}
+                {% if u.profile.role %}<span class="orole">{% trans u.profile.role.name %}</span>{% endif %}
                 <span class="ock"><svg viewBox="0 0 24 24"><use href="#rmi-check"/></svg></span>
               </label>
             {% empty %}

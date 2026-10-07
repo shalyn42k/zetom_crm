@@ -35,6 +35,7 @@
                   formaction='{% url "admin:zetom_requestmain_oferta_action" original.pk %}'
                   formmethod="post"
                   formnovalidate
+                  onclick="this.disabled=true"
                   class="rm-btn rm-btn--primary rm-btn--sm"
                   aria-label='{% trans "Create new offer" %}'>+</button>
         </div>
@@ -43,6 +44,7 @@
                 formaction='{% url "admin:zetom_requestmain_oferta_action" original.pk %}'
                 formmethod="post"
                 formnovalidate
+                onclick="this.disabled=true"
                 class="rm-btn rm-btn--primary rm-btn--sm">
           {% trans "Create" %}
         </button>
@@ -73,6 +75,7 @@
                   formaction='{% url "admin:zetom_requestmain_zlecenie_action" original.pk %}'
                   formmethod="post"
                   formnovalidate
+                  onclick="this.disabled=true"
                   class="rm-btn rm-btn--primary rm-btn--sm"
                   aria-label='{% trans "Create new order" %}'>+</button>
         </div>
@@ -81,6 +84,7 @@
                 formaction='{% url "admin:zetom_requestmain_zlecenie_action" original.pk %}'
                 formmethod="post"
                 formnovalidate
+                onclick="this.disabled=true"
                 class="rm-btn rm-btn--primary rm-btn--sm">
           {% trans "Create" %}
         </button>
@@ -111,6 +115,7 @@
                   formaction='{% url "admin:zetom_requestmain_wniosek_action" original.pk %}'
                   formmethod="post"
                   formnovalidate
+                  onclick="this.disabled=true"
                   class="rm-btn rm-btn--primary rm-btn--sm"
                   aria-label='{% trans "Create new application" %}'>+</button>
         </div>
@@ -119,6 +124,7 @@
                 formaction='{% url "admin:zetom_requestmain_wniosek_action" original.pk %}'
                 formmethod="post"
                 formnovalidate
+                onclick="this.disabled=true"
                 class="rm-btn rm-btn--primary rm-btn--sm">
           {% trans "Create" %}
         </button>

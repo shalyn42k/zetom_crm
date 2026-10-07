@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission as DjangoPermission
 from django.contrib.contenttypes.models import ContentType
@@ -8,8 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from crm.users.models import Permission, Role
 
 User = get_user_model()
-
-print("RBAC SIGNALS LOADED")
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_migrate)
@@ -18,15 +19,12 @@ def create_rbac_defaults(sender, **kwargs):
     if sender.name != "crm.users":
         return
 
-    print("RBAC SIGNAL RUNNING FOR USERS")
-
     # Проверяем, что таблицы существуют
     try:
         Permission.objects.exists()
         Role.objects.exists()
         User.objects.exists()
     except Exception:
-        print("RBAC: tables are not created yet — skipping")
         return
 
     # claude — permission-каталог. Каждый код должен иметь гейт в коде;
@@ -69,9 +67,18 @@ def create_rbac_defaults(sender, **kwargs):
     ]
 
     # Создание permissions
+    # claude — update_or_create (not get_or_create): with get_or_create,
+    # `defaults` only applied on INSERT, so renaming a permission's display
+    # text here (e.g. "Edit users" -> "Edit users (profile fields)") never
+    # reached rows already in the DB — they kept the old name forever, and
+    # since that old string wasn't a msgid anywhere anymore, {% trans %}
+    # had nothing to translate and it rendered in raw English regardless of
+    # locale. update_or_create keeps every row's name/category in sync with
+    # permissions_data on every post_migrate run, matching how roles_data
+    # below should behave too.
     perm_objects = {}
     for code, name in permissions_data:
-        perm, _created = Permission.objects.get_or_create(
+        perm, _created = Permission.objects.update_or_create(
             code=code,
             defaults={
                 "name": name,
@@ -153,8 +160,10 @@ def create_rbac_defaults(sender, **kwargs):
     }
 
     # Создание ролей
+    # claude — update_or_create, same reasoning as permissions above: a role
+    # renamed in roles_data must actually reach rows already in the DB.
     for code, data in roles_data.items():
-        role, _created = Role.objects.get_or_create(
+        role, _created = Role.objects.update_or_create(
             code=code,
             defaults={"name": data["name"]}
         )
@@ -199,10 +208,10 @@ def create_rbac_defaults(sender, **kwargs):
             try:
                 ct = ContentType.objects.get(app_label=app_label, model=model_name)
             except ContentType.DoesNotExist:
-                print(f"WARNING: ContentType not found for {app_label}.{model_name}")
+                logger.warning(
+                    "RBAC: ContentType not found for %s.%s", app_label, model_name
+                )
                 continue
 
             perms = DjangoPermission.objects.filter(content_type=ct)
             user.user_permissions.add(*perms)
-
-    print("RBAC DEFAULT ROLES & PERMISSIONS CREATED")
