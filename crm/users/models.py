@@ -16,6 +16,14 @@ class Permission(models.Model):
     # claude — категории прав для группировки в UI и логике RBAC
     category = models.CharField(max_length=100, default="system", verbose_name=_("Category"))
 
+    class Meta:
+        # claude — neither model had a Meta, so Django auto-generated
+        # verbose_name/verbose_name_plural from the class name (plain
+        # strings, no gettext) — e.g. the Roles list page's "N Roles"
+        # counter rendered in English regardless of active locale.
+        verbose_name = _("Permission")
+        verbose_name_plural = _("Permissions")
+
     def __str__(self):
         return self.name
 
@@ -24,6 +32,10 @@ class Role(models.Model):
     code = models.CharField(max_length=50, unique=True, verbose_name=_("Code"))
     name = models.CharField(max_length=100, verbose_name=_("Name"))
     permissions = models.ManyToManyField(Permission, blank=True, verbose_name=_("Permissions"))
+
+    class Meta:
+        verbose_name = _("Role")
+        verbose_name_plural = _("Roles")
 
     def __str__(self):
         return self.name

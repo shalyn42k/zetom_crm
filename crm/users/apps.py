@@ -1,11 +1,15 @@
 from django.apps import AppConfig
+from django.utils.translation import gettext_lazy as _
 
 
 class UsersConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "crm.users"
     label = "users"
-    verbose_name = "users"
+    # claude — plain string, not wrapped in gettext: Unfold's breadcrumb
+    # (header_title tag) uses app_config.verbose_name as its first segment,
+    # so "Users" rendered in English regardless of active locale.
+    verbose_name = _("Users")
 
     def ready(self):
         import crm.users.signals
