@@ -31,5 +31,17 @@ def visible_requests_for(user, qs):
 
         return qs.filter(personal).distinct()
 
-    # admin, department_head, auditor, all_seeing — на демо видят всё
+    # claude — per DOCS/rbac.md §7.3: dep_head раньше видел/редактировал ВСЕ
+    # отделы, не только свой (ничем не отличался от auditor по видимости).
+    # Сужаем до head_of_departments + личные назначения (как у specialist),
+    # чтобы dep_head не был слеп на Req, назначенный лично ему вне его отделов.
+    if profile.is_role("department_head"):
+        personal = Q(assigned_to=user)
+        if profile.head_of_departments:
+            return qs.filter(
+                personal | Q(departments__overlap=profile.head_of_departments)
+            ).distinct()
+        return qs.filter(personal).distinct()
+
+    # admin, auditor, all_seeing — на демо видят всё
     return qs

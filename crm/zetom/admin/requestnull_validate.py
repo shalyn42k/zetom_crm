@@ -266,13 +266,23 @@ def _copy_request_fields(src, dst) -> None:
         setattr(dst, fld, getattr(src, fld))
 
 
-def _resolve_dupe_target(kind: str, raw_pk: str):
+def _resolve_dupe_target(kind: str, raw_pk: str, user):
+    """Resolve a duplicate-panel target by id, scoped to what `user` can see.
+
+    Mirrors requestmain.py's dup_request_action: find_request_duplicates()
+    itself searches the whole DB on purpose (cross-department duplicate
+    detection is useful to show), but ACTING on a result (cancel/overwrite)
+    must be scoped the same way every other mutating admin action is —
+    otherwise a department-hidden RequestMain/RequestNull is still reachable
+    and mutable just by knowing/guessing its pk.
+    """
     try:
         pk = int(raw_pk)
     except (TypeError, ValueError):
         return None
     model = RequestMain if kind == "main" else RequestNull
-    return model.objects.filter(pk=pk).first()
+    qs = visible_requests_for(user, model.objects.all())
+    return qs.filter(pk=pk).first()
 
 
 def _soft_delete_request_dupe(target, user) -> None:
@@ -316,7 +326,14 @@ def _dispatch_dupe_op(request, rn: RequestNull, action: str):
     # Soft-delete EVERY duplicate of this request in one click.
     if action == "delete_all_dupes":
         with transaction.atomic():
-            dupes = find_request_duplicates(rn)
+            # claude — find_request_duplicates searches the whole DB (by
+            # design, for display), but acting on its results must be scoped
+            # the same as every single-target op below, else a department-
+            # hidden duplicate gets cancelled/trashed just by showing up here.
+            dupes = [
+                d for d in find_request_duplicates(rn)
+                if _resolve_dupe_target(d.kind, str(d.obj.pk), request.user) is not None
+            ]
             for d in dupes:
                 _soft_delete_request_dupe(d.obj, request.user)
         messages.success(
@@ -332,7 +349,7 @@ def _dispatch_dupe_op(request, rn: RequestNull, action: str):
     if op not in ("delete_existing", "update_existing", "update_current"):
         return None
 
-    target = _resolve_dupe_target(kind, raw_pk)
+    target = _resolve_dupe_target(kind, raw_pk, request.user)
     if target is None:
         messages.error(request, _("Duplicate target not found."))
         return redirect("admin:zetom_requestnull_validate", rn.pk)

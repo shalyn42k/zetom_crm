@@ -197,16 +197,9 @@
 | `add_department_action`, `remove_department_action`, `promote_department_action`, `demote_department_action` | `edit_users` |
 | `grant_head_department_action`, `revoke_head_department_action` | `grant_head` (заменить хардкодный `_can_grant_head` на проверку через `user_has_perm`) |
 
-### 7.3. Починить видимость для department_head
+### 7.3. ~~Починить видимость для department_head~~ — сделано
 
-[crm/zetom/services/visibility.py:34](../crm/zetom/services/visibility.py#L34) — сейчас admin, dep_head, auditor, all_seeing видят все Req. Для dep_head нужно сузить:
-
-```
-elif profile.is_role("department_head") and profile.head_of_departments:
-    return qs.filter(departments__overlap=profile.head_of_departments).distinct()
-```
-
-(точная форма — на усмотрение разраба). Иначе head ничем не отличается от auditor по видимости.
+[crm/zetom/services/visibility.py](../crm/zetom/services/visibility.py) теперь сужает dep_head до `head_of_departments` + личных назначений (`assigned_to`), той же формы, что и у specialist. admin/auditor/all_seeing по-прежнему видят всё.
 
 ### 7.4. Решить судьбу мёртвых permissions
 

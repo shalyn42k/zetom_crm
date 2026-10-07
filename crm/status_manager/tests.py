@@ -18,9 +18,13 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from crm.status_manager.models import StatusHistory
-from crm.status_manager.services.statuses import RequestStatus
+from crm.status_manager.services.status_service import update_parent
+from crm.status_manager.services.statuses import RequestStatus, Status
 from crm.zetom.models import RequestMain
-from crm.zetom.services.status_orchestration import ReasonRequired, apply_status_change
+from crm.zetom.services.request_service import approve_oferta_action
+from crm.zetom.services.status_orchestration import (
+    ReasonRequired, apply_status_change, mark_child_done,
+)
 
 User = get_user_model()
 
@@ -120,3 +124,55 @@ class ApplyStatusChangeTests(TestCase):
         apply_status_change(self.main, self.user, RequestStatus.cancelled, reason="client withdrew")
         with self.assertRaises(ValueError):
             apply_status_change(self.main, self.user, RequestStatus.cancelled, reason="again")
+
+
+# ─────────────────────────── update_parent / StatusHistory ────────────────────
+
+class UpdateParentStatusHistoryTests(TestCase):
+    """update_parent() drives every active<->open<->closed transition, but
+    used to never log to StatusHistory — only the manual Cancel action did.
+    The RequestMain 'Historia' panel renders status_history, so it showed
+    nothing for the vast majority of real status changes."""
+
+    def test_creating_first_child_logs_active_to_open_or_stays_logged_once(self):
+        main = RequestMain.objects.create(**BASE_DATA)
+        self.assertEqual(StatusHistory.objects.filter(request=main).count(), 0)
+
+        oferta = approve_oferta_action(main.pk)  # status=new -> parent stays active
+        main.refresh_from_db()
+        self.assertEqual(main.status, RequestStatus.active)
+        # no transition happened (active -> active) -> no history row
+        self.assertEqual(StatusHistory.objects.filter(request=main).count(), 0)
+
+        mark_child_done(oferta, user=None)  # done oferta, no zlecenie/wniosek yet
+        self.assertEqual(StatusHistory.objects.filter(request=main).count(), 0)
+
+    def test_logs_transition_to_open_when_a_child_becomes_active(self):
+        main = RequestMain.objects.create(**BASE_DATA)
+        oferta = approve_oferta_action(main.pk)
+        oferta.status = Status.in_progress
+        oferta.save()
+
+        update_parent(main)
+
+        main.refresh_from_db()
+        self.assertEqual(main.status, RequestStatus.open)
+        entry = StatusHistory.objects.get(request=main)
+        self.assertEqual(entry.old_status, RequestStatus.active)
+        self.assertEqual(entry.new_status, RequestStatus.open)
+        self.assertIsNone(entry.changed_by)
+
+    def test_does_not_log_when_status_is_unchanged(self):
+        main = RequestMain.objects.create(**BASE_DATA)
+        update_parent(main)  # no children -> stays active -> active
+        self.assertEqual(StatusHistory.objects.filter(request=main).count(), 0)
+
+    def test_does_not_log_for_a_cancelled_request(self):
+        user = User.objects.create_user(username="manager2", password="x")
+        main = RequestMain.objects.create(**BASE_DATA)
+        apply_status_change(main, user, RequestStatus.cancelled, reason="x")
+        StatusHistory.objects.filter(request=main).delete()  # isolate update_parent
+
+        update_parent(main)
+
+        self.assertEqual(StatusHistory.objects.filter(request=main).count(), 0)
