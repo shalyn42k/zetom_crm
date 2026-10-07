@@ -86,6 +86,13 @@ class ChildDeleteReasonMixin:
                 "cancel_url": reverse(
                     f"admin:{opts.app_label}_{opts.model_name}_change", args=[obj.pk]
                 ),
+                # claude — see RequestMainAdmin.cancel_view's identical fix:
+                # without opts/original, Unfold's header falls back to a
+                # generic "Welcome {username}" instead of the normal
+                # breadcrumb trail every other page shows.
+                "opts": opts,
+                "original": obj,
+                "title": _("Delete document"),
                 **self.admin_site.each_context(request),
             },
         )

@@ -381,7 +381,7 @@
                 {% for u in review_default_locked %}
                   <li class="rm-recipient rm-recipient--locked">
                     <span class="rm-recipient__name">{{ u.get_full_name|default:u.username }}</span>
-                    {% if u.profile.role %}<span class="rm-recipient__role">{{ u.profile.role.name }}</span>{% endif %}
+                    {% if u.profile.role %}<span class="rm-recipient__role">{% trans u.profile.role.name %}</span>{% endif %}
                     <span class="rm-badge rm-badge--owner">{% trans "Owner" %}</span>
                   </li>
                 {% endfor %}
@@ -396,7 +396,7 @@
                 <label class="rm-checkbox">
                   <input type="checkbox" name="recipient_ids" value="{{ u.pk }}" checked>
                   <span class="rm-recipient__name">{{ u.get_full_name|default:u.username }}</span>
-                  {% if u.profile.role %}<span class="rm-recipient__role">{{ u.profile.role.name }}</span>{% endif %}
+                  {% if u.profile.role %}<span class="rm-recipient__role">{% trans u.profile.role.name %}</span>{% endif %}
                 </label>
               {% endfor %}
             </fieldset>
@@ -409,7 +409,7 @@
                 <label class="rm-checkbox">
                   <input type="checkbox" name="recipient_ids" value="{{ u.pk }}">
                   <span class="rm-recipient__name">{{ u.get_full_name|default:u.username }}</span>
-                  {% if u.profile.role %}<span class="rm-recipient__role">{{ u.profile.role.name }}</span>{% endif %}
+                  {% if u.profile.role %}<span class="rm-recipient__role">{% trans u.profile.role.name %}</span>{% endif %}
                 </label>
               {% endfor %}
             </fieldset>

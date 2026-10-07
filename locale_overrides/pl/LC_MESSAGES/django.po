@@ -30,3 +30,21 @@ msgstr "Filtruj elementy nawigacji"
 #. django-unfold: admin/login.html — subtitle above the site name on login
 msgid "Welcome back to"
 msgstr "Witaj ponownie w"
+
+#. django-unfold: unfold/helpers/empty_results.html — empty changelist state
+msgid "No results found"
+msgstr "Nie znaleziono wyników"
+
+#. django-unfold: unfold/helpers/empty_results.html
+msgid "This page yielded into no results. Create a new item or reset your filters."
+msgstr "Ta strona nie zwróciła żadnych wyników. Utwórz nowy element lub zresetuj filtry."
+
+#. django-unfold: unfold/helpers/empty_results.html
+msgid "Reset filters"
+msgstr "Zresetuj filtry"
+
+#. django-unfold: unfold/templatetags/unfold.py header_title() fallback —
+#. shown when a custom admin view's context has no opts/object/content_title
+#. (ours should always supply one, this just covers any we missed).
+msgid "Welcome"
+msgstr "Witaj"

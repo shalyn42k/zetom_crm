@@ -49,8 +49,12 @@ class RequestTemplate(SafeDeleteModel):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated at"))
-    first_name = models.CharField(max_length=50, blank=True, null=True)
-    last_name = models.CharField(max_length=50, blank=True, null=True)
+    first_name = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name=_("First name"),
+    )
+    last_name = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name=_("Last name"),
+    )
     phone = PhoneNumberField(null=False, blank=False, verbose_name=_("Phone"))
     company_name = models.CharField(max_length=50, blank=True, null=True, verbose_name=_("Company name"))
     email = models.EmailField(max_length=100, null=False, blank=False, verbose_name=_("Email"))
@@ -63,7 +67,7 @@ class RequestTemplate(SafeDeleteModel):
         null=True,
         verbose_name=_("Company NIP"),
     )
-    message = models.TextField(null=True, blank=True)
+    message = models.TextField(null=True, blank=True, verbose_name=_("Message"))
     departments = ArrayField(
         models.CharField(max_length=30, choices=DepartmentsVariants.choices),
         default=list,
@@ -113,7 +117,9 @@ class RequestMain(RequestTemplate):
     from_null = models.OneToOneField(
         RequestNull, on_delete=models.SET_NULL, null=True, blank=True
     )
-    address = models.CharField(max_length=228, null=True, blank=True)
+    address = models.CharField(
+        max_length=228, null=True, blank=True, verbose_name=_("Address"),
+    )
     # claude — per-Req флаг "owner". owners ⊆ assigned_to поддерживается на
     # уровне UI/admin-actions (set_owner доступен только для assigned юзеров,
     # unassign снимает owner-флаг). Подробности в memory:

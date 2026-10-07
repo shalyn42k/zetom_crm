@@ -1,25 +1,23 @@
 {% extends "admin/base_site.html" %}
-{% load i18n crispy_forms_tags %}
+{% load i18n crispy_forms_tags unfold %}
 
 {% block content %}
-<div id="content-main">
-    <h2>{{ obj }}</h2>
+<div id="content-main" class="px-4">
+    {% component "unfold/components/card.html" with title=obj %}
+        <form method="post">
+            {% csrf_token %}
+            {% if new_status %}<input type="hidden" name="new_status" value="{{ new_status }}">{% endif %}
+            {{ form|crispy }}
 
-    <form method="post">
-        {% csrf_token %}
-        {% if new_status %}<input type="hidden" name="new_status" value="{{ new_status }}">{% endif %}
-        {{ form|crispy }}
-
-        <div class="flex gap-2 mt-4">
-            <button type="submit"
-                    class="font-medium inline-flex items-center px-3 py-2 bg-blue-600 text-white">
-                {% trans "Confirm" %}
-            </button>
-            <a href="{{ cancel_url }}"
-               class="font-medium inline-flex items-center px-3 py-2 border border-gray-200 text-gray-700">
-                {% trans "Cancel" %}
-            </a>
-        </div>
-    </form>
+            <div class="flex gap-3 mt-6">
+                {% component "unfold/components/button.html" with submit=1 variant="primary" %}
+                    {% trans "Confirm" %}
+                {% endcomponent %}
+                {% component "unfold/components/button.html" with href=cancel_url variant="default" %}
+                    {% trans "Cancel" %}
+                {% endcomponent %}
+            </div>
+        </form>
+    {% endcomponent %}
 </div>
 {% endblock content %}

@@ -34,8 +34,8 @@
                       а не "userprofile": обе колонки молча рендерились
                       пустыми (шаблоны не падают на несуществующем атрибуте).
                     {% endcomment %}
-                    <td>{{ u.profile.role }}</td>
-                    <td>{{ u.profile.departments|join:", " }}</td>
+                    <td>{% if u.profile.role %}{% trans u.profile.role.name %}{% endif %}</td>
+                    <td>{{ u.profile.departments_summary }}</td>
                     <td>
                         {% if u.is_active %}
                             <span class="text-green-400">{% trans "Active" %}</span>
