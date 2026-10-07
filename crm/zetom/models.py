@@ -44,7 +44,9 @@ class RequestSource(models.TextChoices):
 class RequestTemplate(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE
     source = models.CharField(choices=RequestSource.choices, default=RequestSource.OTHER, null=False, blank=False, verbose_name=_("Source"))
-    assigned_to = models.ManyToManyField(User, blank=True, related_name="+")
+    assigned_to = models.ManyToManyField(
+        User, blank=True, related_name="+", verbose_name=_("Assigned to"),
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated at"))
     first_name = models.CharField(max_length=50, blank=True, null=True)
@@ -59,12 +61,14 @@ class RequestTemplate(SafeDeleteModel):
         validators=[validate_nip],
         blank=True,
         null=True,
+        verbose_name=_("Company NIP"),
     )
     message = models.TextField(null=True, blank=True)
     departments = ArrayField(
         models.CharField(max_length=30, choices=DepartmentsVariants.choices),
         default=list,
         blank=True,
+        verbose_name=_("Departments"),
     )
     # Unified timeline notes ("what was done" + note body) used across
     # RequestMain and child documents.
@@ -153,8 +157,8 @@ class Oferta(RequestTemplate):
     from_main = models.ForeignKey(
         RequestMain, on_delete=models.CASCADE, null=True, blank=True, verbose_name=_("From main")
     )
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    notes = models.TextField(null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Price"))
+    notes = models.TextField(null=True, blank=True, verbose_name=_("Notes"))
     # claude
     clients = models.ManyToManyField(
         "clients.Client",
@@ -185,8 +189,8 @@ class Zlecenie(RequestTemplate):
         related_name="zlecenia",
         verbose_name=_("From offer"),
     )
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    notes = models.TextField(null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Price"))
+    notes = models.TextField(null=True, blank=True, verbose_name=_("Notes"))
     deadline = models.DateField(null=True, blank=True)
     # claude
     clients = models.ManyToManyField(
@@ -215,7 +219,7 @@ class Wniosek(RequestTemplate):
         related_name="wnioski",
         verbose_name=_("From order"),
     )
-    notes = models.TextField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True, verbose_name=_("Notes"))
     application_number = models.CharField(max_length=20, null=True, blank=True)
     # claude
     clients = models.ManyToManyField(

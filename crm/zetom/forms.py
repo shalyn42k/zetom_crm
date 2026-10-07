@@ -24,6 +24,7 @@ from crm.zetom.models import (
 # which is exactly what ArrayField stores — no widget/data-shape mismatch.
 def _departments_field():
     return forms.TypedMultipleChoiceField(
+        label=_("Departments"),
         choices=DepartmentsVariants.choices,
         required=False,
         coerce=str,
@@ -54,6 +55,7 @@ class TemplateForm(forms.ModelForm):
 
     # claude
     company_nip = forms.CharField(
+        label=_("Company NIP"),
         required=False,
         max_length=20,
         validators=[validate_nip],
@@ -149,9 +151,11 @@ class AddRequestFormMain(TemplateForm):
 class AddOferta(TemplateForm):
     departments = _departments_field()
     price = forms.DecimalField(
+        label=_("Price"),
         required=False, widget=forms.NumberInput(attrs={"placeholder": "0"})
     )
     notes = forms.CharField(
+        label=_("Notes"),
         required=False,
         widget=forms.Textarea(
             attrs={
@@ -179,9 +183,11 @@ class AddOferta(TemplateForm):
 class AddZlecenie(TemplateForm):
     departments = _departments_field()
     price = forms.DecimalField(
+        label=_("Price"),
         required=False, widget=forms.NumberInput(attrs={"placeholder": "0"})
     )
     notes = forms.CharField(
+        label=_("Notes"),
         required=False,
         widget=forms.Textarea(
             attrs={
@@ -209,6 +215,7 @@ class AddZlecenie(TemplateForm):
 class AddWniosek(TemplateForm):
     departments = _departments_field()
     notes = forms.CharField(
+        label=_("Notes"),
         required=False,
         widget=forms.Textarea(
             attrs={
