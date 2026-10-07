@@ -164,7 +164,13 @@ selection is deferred and written only on Approve.
                   <input type="checkbox" name="owners" value="{{ u.pk }}" {% if u.pk|stringformat:"s" in selected_owner_ids %}checked{% endif %}>
                   <span class="oav">{{ u.first_name|slice:":1"|upper }}{{ u.last_name|slice:":1"|upper }}</span>
                   <span class="oname">{{ u.get_full_name|default:u.username }}</span>
-                  <span class="orole">{% if u.profile.role %}{{ u.profile.role.code }}{% else %}—{% endif %}</span>
+                  {% comment %}claude — was role.code (the raw DB identifier,
+                     e.g. "specialist"/"department_head" — always English by
+                     definition). role.name is the catalog label meant for
+                     display, translated the same way {% trans role.name %}
+                     is used everywhere else in this project.
+                  {% endcomment %}
+                  <span class="orole">{% if u.profile.role %}{% trans u.profile.role.name %}{% else %}—{% endif %}</span>
                   <span class="ocheck"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg></span>
                 </label>
               {% empty %}
@@ -175,7 +181,13 @@ selection is deferred and written only on Approve.
 
           <div class="role-hint">
             <span class="rh-t">{% trans "Per-Req role ladder" %}</span>
-            <div class="row"><code>admin</code><span>›</span><code>dep_head</code><span>›</span><code class="cur">owner</code><span>›</span><code>specialist</code></div>
+            {% comment %}claude — these were plain literal text, the one spot
+               on this page {% trans %} never reached (the header right above
+               did). Short informal labels, not real Role.code values (the
+               actual code is "department_head", not "dep_head") — translated
+               like the rest of the UI, not left as untranslatable jargon.
+            {% endcomment %}
+            <div class="row"><code>{% trans "admin" %}</code><span>›</span><code>{% trans "dep. head" %}</code><span>›</span><code class="cur">{% trans "owner" %}</code><span>›</span><code>{% trans "specialist" %}</code></div>
           </div>
         </div>
       </div>
@@ -268,9 +280,9 @@ selection is deferred and written only on Approve.
                   <span class="cli-id mono">C-{{ c.client.pk|stringformat:"04d" }}</span>
                 </div>
                 <div class="cli-fields">
-                  {% if c.client.phone %}<div class="cli-f"><span class="k">phone</span><span class="v mono">{% if c.highlights.phone %}<span class="hl">{{ c.client.phone }}</span>{% else %}{{ c.client.phone }}{% endif %}</span></div>{% endif %}
-                  {% if c.client.email %}<div class="cli-f"><span class="k">email</span><span class="v mono">{% if c.highlights.email %}<span class="hl">{{ c.client.email }}</span>{% else %}{{ c.client.email }}{% endif %}</span></div>{% endif %}
-                  {% if c.client.company_nip %}<div class="cli-f"><span class="k">nip</span><span class="v mono">{{ c.client.company_nip }}</span></div>{% endif %}
+                  {% if c.client.phone %}<div class="cli-f"><span class="k">{% trans "phone" %}</span><span class="v mono">{% if c.highlights.phone %}<span class="hl">{{ c.client.phone }}</span>{% else %}{{ c.client.phone }}{% endif %}</span></div>{% endif %}
+                  {% if c.client.email %}<div class="cli-f"><span class="k">{% trans "email" %}</span><span class="v mono">{% if c.highlights.email %}<span class="hl">{{ c.client.email }}</span>{% else %}{{ c.client.email }}{% endif %}</span></div>{% endif %}
+                  {% if c.client.company_nip %}<div class="cli-f"><span class="k">{% trans "nip" %}</span><span class="v mono">{{ c.client.company_nip }}</span></div>{% endif %}
                 </div>
                 <div class="match-row">{% for b in c.badges %}<span class="mb {{ b.kind }}">{{ b.label }}</span>{% endfor %}</div>
               </div>

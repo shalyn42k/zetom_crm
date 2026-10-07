@@ -26,3 +26,7 @@ msgstr "Szukaj aplikacji i modeli..."
 #. django-unfold: unfold/helpers/search.html — same search input's aria-label
 msgid "Filter navigation items"
 msgstr "Filtruj elementy nawigacji"
+
+#. django-unfold: admin/login.html — subtitle above the site name on login
+msgid "Welcome back to"
+msgstr "Witaj ponownie w"
