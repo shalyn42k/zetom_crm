@@ -90,6 +90,29 @@
     var currentEditingClientId = null;
     var currentEditingSaveUrl  = null;
 
+    // claude — Task: the search-select + Create-from-request form (and the
+    // Suggested matches block) now live inside a modal instead of directly
+    // on the card face — see client_card.html's header comment. The fields
+    // themselves (select/linkBtn/createBtn/suggestions, looked up above)
+    // keep their ids, so every fetch/DOM-update path below is untouched;
+    // only opening/closing the wrapper is new.
+    var linkOpenBtn     = document.getElementById("rm-link-client-open");
+    var linkModal       = document.getElementById("rm-link-client-modal");
+    var linkModalOverlay = document.getElementById("rm-link-modal-overlay");
+    var linkModalClose  = document.getElementById("rm-link-modal-close");
+
+    function openLinkModal() {
+      if (linkModal) linkModal.hidden = false;
+    }
+
+    function closeLinkModal() {
+      if (linkModal) linkModal.hidden = true;
+    }
+
+    if (linkOpenBtn) linkOpenBtn.addEventListener("click", openLinkModal);
+    if (linkModalOverlay) linkModalOverlay.addEventListener("click", closeLinkModal);
+    if (linkModalClose) linkModalClose.addEventListener("click", closeLinkModal);
+
     function hideEmpty() {
       if (empty) empty.hidden = true;
       if (suggestions) suggestions.style.display = "none";
@@ -167,6 +190,12 @@
               else list.appendChild(row);
               hideEmpty();
               btn.closest(".rm-suggestion-row").remove();
+              // claude — Task: the status banner lives on the card face now
+              // (outside the modal, so an unlink triggered without ever
+              // opening the modal still shows it) — close the modal on
+              // success so that banner is actually visible instead of
+              // sitting behind the still-open overlay.
+              closeLinkModal();
               showStatus(status, "Linked.", true);
             }
           });
@@ -183,11 +212,12 @@
           .then(function (r) { return r.json(); })
           .then(function (d) {
             if (d.ok) {
-              if (!d.created) { showStatus(status, "Already linked.", true); return; }
+              if (!d.created) { closeLinkModal(); showStatus(status, "Already linked.", true); return; }
               var row = buildLinkedRow(d, card);
               if (empty) list.insertBefore(row, empty);
               else list.appendChild(row);
               hideEmpty();
+              closeLinkModal();
               showStatus(status, "Linked.", true);
             } else {
               showStatus(status, "Error.", false);
@@ -207,6 +237,7 @@
               if (empty) list.insertBefore(row, empty);
               else list.appendChild(row);
               hideEmpty();
+              closeLinkModal();
               showStatus(status, "Created and linked.", true);
               createBtn.disabled = true;
             } else {

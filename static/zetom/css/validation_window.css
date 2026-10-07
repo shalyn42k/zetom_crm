@@ -1,31 +1,38 @@
 /* Validation Window (redesign) — 3 zones + two review modals.
    Loaded after Unfold in {% block extrastyle %} so component rules win.
    Dark mode is driven by html.dark (Unfold convention). */
+/* claude — Task 5 (visual-tokens-unification): this used to redeclare
+   --color-primary-500/600/700 (Unfold's own primary-* scale — not a
+   tokens.css role at all, and unused anywhere else in this file) plus
+   --green/--green-bright/--red/--amber/--blue/--purple/--slate/--shadow-sm/
+   --shadow-lg on :root and html.dark, shadowing static/css/tokens.css the
+   same way company_card.css and client_pages.css did before their Task 4
+   migration (see the header comments there). All of those are deleted
+   outright, not aliased, so this file consumes the global roles instead of
+   always winning the cascade. --vw-bg/--vw-bg-2/--vw-bg-3/--vw-surface/
+   --vw-border/--vw-border-2/--vw-text/--vw-text-2/--vw-text-3/
+   --vw-input-bg/--green-dim have no counterpart in tokens.css, so they
+   stay — expressed via roles instead of hand-copied hex, resolving
+   per-theme automatically through the roles they reference (one block, no
+   html.dark split needed for those). --r-sm/--r-md/--r-lg/--r-xl are
+   radii, out of scope for a colour migration, left as-is. */
 :root{
-  --color-primary-500:#22c55e;--color-primary-600:#16a34a;--color-primary-700:#15803d;
-  --vw-bg:#ffffff;--vw-bg-2:#fafaf9;--vw-bg-3:#f5f5f4;--vw-surface:#ffffff;
-  --vw-border:#e7e5e4;--vw-border-2:#d6d3d1;--vw-text:#1c1917;--vw-text-2:#57534e;--vw-text-3:#78716c;--vw-input-bg:#ffffff;
-  --green:#16a34a;--green-bright:#22c55e;--green-dim:#15803d;
-  --red:#dc2626;--red-bg:rgba(220,38,38,.08);
-  --amber:#d97706;--amber-bg:rgba(245,158,11,.10);
-  --blue:#2563eb;--blue-bg:rgba(59,130,246,.10);
-  --purple:#7c3aed;--purple-bg:rgba(124,58,237,.10);
-  --slate:#64748b;--slate-bg:rgba(100,116,139,.10);
-  --shadow-sm:0 1px 2px rgba(0,0,0,.04);
-  --shadow-lg:0 20px 40px rgba(0,0,0,.10),0 4px 10px rgba(0,0,0,.06);
+  --vw-bg:var(--surface);--vw-bg-2:var(--surface-soft);--vw-bg-3:var(--surface-soft);--vw-surface:var(--surface-soft);
+  --vw-border:var(--border);--vw-border-2:var(--border-strong);--vw-text:var(--text);--vw-text-2:var(--text-muted);--vw-text-3:var(--text-subtle);--vw-input-bg:var(--input-bg);
+  --green-dim:color-mix(in srgb,var(--green) 80%,black);
+  --red-bg:color-mix(in srgb,var(--red) 8%,transparent);
+  --amber-bg:color-mix(in srgb,var(--amber) 10%,transparent);
+  --blue-bg:color-mix(in srgb,var(--blue) 10%,transparent);
+  --purple-bg:color-mix(in srgb,var(--purple) 10%,transparent);
+  --slate-bg:color-mix(in srgb,var(--slate) 10%,transparent);
   --r-sm:5px;--r-md:7px;--r-lg:10px;--r-xl:14px;
 }
 html.dark{
-  --vw-bg:#0f1419;--vw-bg-2:#151b22;--vw-bg-3:#1c232c;--vw-surface:#1a2028;
-  --vw-border:#2a3442;--vw-border-2:#3a4656;--vw-text:#e5e7eb;--vw-text-2:#9ca3af;--vw-text-3:#6b7280;--vw-input-bg:#11161c;
-  --green:#22c55e;--green-bright:#4ade80;--green-dim:#16a34a;
-  --red:#ef4444;--red-bg:rgba(239,68,68,.12);
-  --amber:#f59e0b;--amber-bg:rgba(245,158,11,.14);
-  --blue:#3b82f6;--blue-bg:rgba(59,130,246,.14);
-  --purple:#8b5cf6;--purple-bg:rgba(139,92,246,.14);
-  --slate:#94a3b8;--slate-bg:rgba(148,163,184,.12);
-  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
-  --shadow-lg:0 24px 50px rgba(0,0,0,.6),0 4px 12px rgba(0,0,0,.4);
+  --red-bg:color-mix(in srgb,var(--red) 12%,transparent);
+  --amber-bg:color-mix(in srgb,var(--amber) 14%,transparent);
+  --blue-bg:color-mix(in srgb,var(--blue) 14%,transparent);
+  --purple-bg:color-mix(in srgb,var(--purple) 14%,transparent);
+  --slate-bg:color-mix(in srgb,var(--slate) 12%,transparent);
 }
 .vw-stage *,.vw-stage *::before,.vw-stage *::after,
 .vw-modal-scrim *,.vw-modal-scrim *::before,.vw-modal-scrim *::after{box-sizing:border-box}
@@ -117,12 +124,12 @@ html.dark{
 .orow:hover{background:var(--vw-bg-2)}
 .orow.on{background:color-mix(in srgb,var(--green) 7%,var(--vw-bg-2))}
 .orow input{position:absolute;opacity:0;pointer-events:none}
-.oav{width:26px;height:26px;border-radius:50%;color:#fff;font-weight:600;font-size:10.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#475569}
+.oav{width:26px;height:26px;border-radius:50%;color:white;font-weight:600;font-size:10.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--slate)}
 .orow .oname{font-weight:500;color:var(--vw-text)}
 .orow .orole{margin-left:auto;font-size:10.5px;color:var(--vw-text-3);font-family:'JetBrains Mono',monospace;padding:1px 6px;border:1px solid var(--vw-border);border-radius:100px}
 .orow .ocheck{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--vw-border-2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.orow.on .ocheck{background:var(--green);border-color:var(--green);color:#fff}
-.orow .ocheck svg{width:11px;height:11px;stroke:#fff;stroke-width:3;display:none}
+.orow.on .ocheck{background:var(--green);border-color:var(--green);color:white}
+.orow .ocheck svg{width:11px;height:11px;stroke:white;stroke-width:3;display:none}
 .orow.on .ocheck svg{display:block}
 .role-hint{padding:9px 10px;background:var(--vw-bg-2);border:1px solid var(--vw-border);border-radius:7px;display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--vw-text-3);line-height:1.5}
 .role-hint .rh-t{font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;color:var(--vw-text-3);font-family:'JetBrains Mono',monospace}
@@ -140,16 +147,22 @@ html.dark .vw-footbar{box-shadow:0 -4px 14px rgba(0,0,0,.3)}
 .vw-btn:hover{background:var(--vw-bg-3)}
 .vw-btn.ghost{background:transparent;border-color:transparent;color:var(--vw-text-2)}
 .vw-btn.ghost:hover{background:var(--vw-bg-3);color:var(--vw-text)}
-.vw-btn.primary{background:var(--green);border-color:var(--green);color:#fff;padding:8px 18px;font-weight:600}
+.vw-btn.primary{background:var(--green);border-color:var(--green);color:white;padding:8px 18px;font-weight:600}
 .vw-btn.primary:hover{background:var(--green-dim)}
 .vw-btn.primary:disabled{opacity:.5;cursor:not-allowed}
 .vw-btn.danger-ghost{color:var(--red);border-color:var(--vw-border)}
 .vw-btn.danger-ghost:hover{background:var(--red-bg);border-color:color-mix(in srgb,var(--red) 35%,var(--vw-border))}
-.vw-btn.danger{background:var(--red);border-color:var(--red);color:#fff}
+.vw-btn.danger{background:var(--red);border-color:var(--red);color:white}
 .vw-btn.danger:hover{filter:brightness(1.08)}
 
 /* ============ MODALS ============ */
-.vw-modal-scrim{position:fixed;inset:0;background:rgba(8,11,15,.6);backdrop-filter:blur(2px);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:48px 20px;overflow-y:auto;color:var(--vw-text)}
+/* claude — fix round: scrim background was a hardcoded near-black rgba()
+   triple, a literal the old hex-only invariant never caught (same
+   "hardcoded pixels in a different notation" bug email_form.css had).
+   Converged onto a pure-black rgba() — the one non-hex literal the
+   invariant still allows — same as client_pages.css's .cl-modal-backdrop
+   scrim. */
+.vw-modal-scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:48px 20px;overflow-y:auto;color:var(--vw-text)}
 .vw-modal-scrim.open{display:flex}
 .vw-modal{width:100%;max-width:760px;background:var(--vw-surface);border:1px solid var(--vw-border-2);border-radius:var(--r-xl);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;max-height:calc(100vh - 96px);overflow:hidden}
 .vw-modal .modal-h{padding:16px 20px;border-bottom:1px solid var(--vw-border);display:flex;align-items:center;gap:12px}
@@ -192,7 +205,7 @@ html.dark .vw-footbar{box-shadow:0 -4px 14px rgba(0,0,0,.3)}
 .dup-score .n strong{color:var(--vw-text);font-size:14px}
 .dup-score .bar{width:70px;height:5px;border-radius:100px;background:var(--vw-bg-3);overflow:hidden;border:1px solid var(--vw-border)}
 .dup-score .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green-dim),var(--green-bright))}
-.dup-score.weak .bar i{background:linear-gradient(90deg,var(--amber),#fbbf24)}
+.dup-score.weak .bar i{background:linear-gradient(90deg,var(--amber),color-mix(in srgb,var(--amber) 65%,white))}
 .dup-btns{display:flex;gap:5px}
 .mbtn{padding:5px 9px;border-radius:6px;border:1px solid var(--vw-border-2);background:var(--vw-surface);color:var(--vw-text-2);font-size:11px;font-weight:500;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
 .mbtn:hover{background:var(--vw-bg-3);color:var(--vw-text)}
@@ -207,8 +220,8 @@ html.dark .vw-footbar{box-shadow:0 -4px 14px rgba(0,0,0,.3)}
 .cli.on{border-color:var(--green);background:linear-gradient(180deg,color-mix(in srgb,var(--green) 6%,var(--vw-surface)),var(--vw-surface));box-shadow:0 0 0 1px var(--green) inset}
 .cli input{position:absolute;opacity:0;pointer-events:none}
 .cbx{width:18px;height:18px;border-radius:5px;border:2px solid var(--vw-border-2);background:var(--vw-input-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:all .12s}
-.cli.on .cbx{border-color:var(--green);background:var(--green);color:#fff}
-.cbx svg{width:12px;height:12px;stroke:#fff;stroke-width:3;display:none}
+.cli.on .cbx{border-color:var(--green);background:var(--green);color:white}
+.cbx svg{width:12px;height:12px;stroke:white;stroke-width:3;display:none}
 .cli.on .cbx svg{display:block}
 .cli-main{min-width:0;display:flex;flex-direction:column;gap:7px}
 .cli-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap}

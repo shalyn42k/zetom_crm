@@ -12,7 +12,10 @@ from crm.clients.models import Client, Company
 from crm.notification.utils import unread_count
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
-from crm.zetom.models import DepartmentsVariants, Oferta, RequestMain, RequestNull, StepNote, Wniosek, Zlecenie
+from crm.zetom.models import (
+    DepartmentsVariants, Oferta, RequestMain, RequestNull, StepNote, Wniosek,
+    Zlecenie,
+)
 from crm.zetom.services.visibility import visible_requests_for
 
 register = template.Library()

@@ -1,0 +1,174 @@
+/* claude
+   Visual token layer — the single source of truth for colour in this
+   project (see docs/superpowers/specs/2026-08-25-visual-tokens-unification-
+   design.md §4.1). Loaded globally, before every other stylesheet, via
+   templates/unfold/layouts/skeleton.html.
+
+   THIS IS THE ONLY FILE IN THE PROJECT ALLOWED TO CONTAIN HEX COLOUR
+   LITERALS. Everywhere else, colour comes from one of the custom
+   properties defined here (`static/zetom/css/test_visual_tokens.py`'s
+   `test_no_raw_hex_outside_tokens` enforces this file-by-file as each
+   stylesheet migrates onto these tokens).
+
+   Two kinds of tokens live here:
+
+   1. Semantic roles (--surface, --border, --text, ...) — these are NOT
+      literals. They resolve to Unfold's own `--color-base-*` /
+      `--color-primary-*` scale (confirmed present on every admin page —
+      base hue is a cool neutral, primary hue is green). Riding on
+      Unfold's scale means our tokens automatically follow any palette
+      change Unfold ships, instead of drifting like the hand-copied hex
+      values in the nine legacy stylesheets this refactor replaces.
+
+   2. Status colours (--green, --red, --amber, --blue, --purple, --slate)
+      — these DO need literals: Unfold's palette has no notion of
+      "success" or "danger", so there is nothing to ride on. Each is a
+      light/dark PAIR (not a flat value — a flat value would look wrong
+      in one of the two themes), copied verbatim from the values that
+      `requestmain_detail.css`, `client_pages.css` and
+      `validation_window.css` already agreed on before they drifted
+      apart from `company_card.css`.
+
+   Dark mode is `html.dark` (the class Unfold puts on <html>), never
+   `data-theme="dark"`.
+
+   claude — Task 7 fix-round (root cause): Unfold only injects its
+   `--color-base-*`/`--color-primary-*` custom properties inside a
+   ModelAdmin changeform's rendered DOM. Any page outside that (confirmed:
+   /zetom/email/, rendered by a bare `render()` call, not a ModelAdmin
+   view) never gets those properties defined at all, so every role above
+   was resolving to nothing there — not "the wrong colour", literally an
+   empty computed value, which cascades to "no background", "no border",
+   etc. for anything consuming a role.
+
+   Fixed by giving every role a fallback via var()'s second argument:
+   `var(--color-base-900, #101828)`. This prefers Unfold's live scale
+   wherever it exists (unchanged behaviour on every admin page — the
+   fallback never wins there) and stands on its own where it doesn't. This
+   is the one place simple var()-fallback hex literals for the Unfold
+   scale are allowed, for the same reason the rest of this file's literals
+   are: there is nothing further upstream to ride on.
+
+   Fallback values were computed, not eyeballed, from the oklch(L% C H)
+   triples in config/unfold_config.py's COLORS table (base + primary
+   scales) via the standard OKLab → linear sRGB matrices from Björn
+   Ottosson's "A perceptual color space for image processing" (the same
+   math the CSS Color 4 oklch() spec itself is built on):
+     l_ = L + 0.3963377774·a + 0.2158037573·b
+     m_ = L − 0.1055613458·a − 0.0638541728·b
+     s_ = L − 0.0894841775·a − 1.2914855480·b   (a,b = C·cos H, C·sin H)
+     l,m,s = l_³, m_³, s_³
+     r = 4.0767416621·l − 3.3077115913·m + 0.2309699292·s
+     g = −1.2684380046·l + 2.6097574011·m − 0.3413193965·s
+     b = −0.0041960863·l − 0.7034186147·m + 1.7076147010·s
+   then the sRGB EOTF (piecewise 12.92 / 1.055·x^(1/2.4)−0.055) converts
+   linear r,g,b to 0–255 channels. Two of the primary-scale steps
+   (primary-500/600, the deep-green end) fall slightly outside the sRGB
+   gamut at full chroma; those were gamut-mapped by binary-searching the
+   largest in-gamut chroma at the same L and H (holding lightness and hue
+   fixed, reducing only chroma) — the same axis CSS Color 4's own gamut-
+   mapping algorithm reduces first — rather than naively clipping each
+   channel to [0,1], which would shift the hue. base-* needed no mapping;
+   every base step landed in-gamut already. The base scale's resulting
+   hexes land within a few least-significant-bits of Tailwind's own
+   published gray-* hex swatches at the same steps — expected, since
+   Unfold's base scale numbers are Tailwind's, and a sanity check that the
+   matrices above are the standard ones, not a wrong or transposed set.
+
+   claude — controller ruling, Task 4 second fix-round
+   (visual-tokens-unification): --green-bright added here as a role,
+   overriding this task's original "produce no new roles" constraint.
+   Task 4's migration first aliased company_card.css's --green-bright onto
+   plain --green, which was accepted in principle (no role invention from a
+   single task) but then measured, via a cache-bypassed screenshot, to
+   visibly shift the person card's dark-theme "Active" badge — the person
+   card is the spec's fixed reference and must not change. --green-bright is
+   a genuine third contrast tier (text-on-tint in dark mode) that recurs
+   across company_card.css and at least three more legacy stylesheets
+   (validation_window.css, requestmain_detail.css, client_pages.css) still
+   to be migrated in Tasks 5/6 — deferring the role would just repeat this
+   same collapse on each of them. The values below are exactly what
+   company_card.css carried pre-migration, not a new design: note that in
+   the LIGHT theme --green-bright coincides with --green (#16a34a) — the
+   app never had a brighter light-mode tier, only a brighter dark-mode one.
+   Do not "fix" that asymmetry into a matching light value; it reproduces
+   how the reference card already looked. The other legacy files currently
+   carry a drifted #22c55e for this name in dark mode — they converge onto
+   #4ade80 here when their migration tasks touch them.
+*/
+
+:root {
+  /* Semantic roles — light (Unfold base-* / primary-* scale) */
+  --surface: var(--color-base-50, #f9fafb);
+  --surface-soft: var(--color-base-100, #f3f4f6);
+  /* claude — Task 7 addition 1: a third surface tier, one inset step past
+     --surface-soft, restoring what requestmain_detail.css's --bg-3 used to
+     be before migration collapsed it onto --bg-2/--surface-soft (see that
+     file's .rm-scrim comment). This deliberately shares its value with
+     --border, in both themes. That is safe: the bug this project actually
+     hit was an element's background equalling *its own* border (border
+     disappears). Here an inset fill matches the *parent* card's border
+     colour, not its own — an ordinary "recessed" look, not a vanishing
+     border. Elements using --surface-inset (e.g. .dup-score .bar) still
+     carry their own 1px var(--border) outline, which remains visible
+     against --surface-soft, the colour of the card around them. */
+  --surface-inset: var(--color-base-200, #e5e7eb);
+  --border: var(--color-base-200, #e5e7eb);
+  --border-strong: var(--color-base-300, #d1d5dc);
+  --text: var(--color-base-900, #101828);
+  --text-muted: var(--color-base-600, #4a5565);
+  --text-subtle: var(--color-base-500, #6a7282);
+  --input-bg: var(--color-base-50, #f9fafb);
+  --input-border: var(--color-base-300, #d1d5dc);
+  --accent: var(--color-primary-600, #00791e);
+
+  /* Status colours — light */
+  --green: #16a34a;
+  --green-bright: #16a34a;
+  --red: #dc2626;
+  --amber: #d97706;
+  --blue: #2563eb;
+  --purple: #7c3aed;
+  --slate: #64748b;
+
+  /* Shadows — light (theme-dependent, so also redeclared under html.dark) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, .06), 0 1px 2px rgba(0, 0, 0, .03);
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, .10), 0 4px 10px rgba(0, 0, 0, .06);
+
+  /* Radii — theme-independent, defined once */
+  --r-sm: 5px;
+  --r-md: 7px;
+  --r-lg: 10px;
+}
+
+html.dark {
+  /* Semantic roles — dark (Unfold base-* / primary-* scale) */
+  --surface: var(--color-base-900, #101828);
+  --surface-soft: var(--color-base-800, #1e2939);
+  /* claude — see the :root comment above: --surface-inset intentionally
+     shares its value with --border here too. */
+  --surface-inset: var(--color-base-700, #364153);
+  --border: var(--color-base-700, #364153);
+  --border-strong: var(--color-base-600, #4a5565);
+  --text: var(--color-base-100, #f3f4f6);
+  --text-muted: var(--color-base-300, #d1d5dc);
+  --text-subtle: var(--color-base-400, #99a1af);
+  --input-bg: var(--color-base-900, #101828);
+  --input-border: var(--color-base-700, #364153);
+  --accent: var(--color-primary-400, #30bd44);
+
+  /* Status colours — dark */
+  --green: #22c55e;
+  --green-bright: #4ade80;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --blue: #3b82f6;
+  --purple: #8b5cf6;
+  --slate: #94a3b8;
+
+  /* Shadows — dark */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, .3);
+  --shadow-lg: 0 24px 50px rgba(0, 0, 0, .6), 0 4px 12px rgba(0, 0, 0, .4);
+}

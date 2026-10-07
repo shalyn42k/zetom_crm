@@ -17,7 +17,12 @@ ChangeList object never exists here) — this template does not use `cl`.
 
 {% block extrastyle %}
   {{ block.super }}
-  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}">
+  {% comment %}
+  claude — Task 4 fix-round (visual-tokens-unification): cache-buster to
+  match tokens.css/custom_admin.css in skeleton.html — see person_card.html
+  for the rationale.
+  {% endcomment %}
+  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}?v={% now "U" %}">
 {% endblock extrastyle %}
 
 {% block content %}

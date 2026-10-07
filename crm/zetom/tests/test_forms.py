@@ -24,14 +24,9 @@ from django.test import TestCase
 from django.utils import translation
 
 from crm.zetom.forms import (
-    AddOferta,
-    AddRequestFormMain,
-    AddRequestFormNull,
-    AddWniosek,
-    AddZlecenie,
+    AddOferta, AddRequestFormMain, AddRequestFormNull, AddWniosek, AddZlecenie,
 )
 from crm.zetom.models import RequestMain, RequestNull, RequestSource
-
 
 # ─────────────────────────── AddRequestFormNull ───────────────────────────────
 

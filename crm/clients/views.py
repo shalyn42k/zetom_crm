@@ -16,7 +16,6 @@ from crm.clients.models import Client, Company, CompanyPersonLink, SupplierType
 from crm.clients.validators import normalize_nip, validate_nip
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
-from crm.zetom.services.visibility import visible_requests_for
 from crm.zetom.models import (
     Oferta, OfertaClientLink, RequestClientLink, RequestMain, Wniosek,
     WniosekClientLink, Zlecenie, ZlecenieClientLink,
@@ -26,6 +25,7 @@ from crm.zetom.models import (
 from crm.zetom.services.duplicate_matcher import (
     _email_domain, _norm, _phone_str,
 )
+from crm.zetom.services.visibility import visible_requests_for
 
 
 # claude — /admin/clients/company/ is the stock Django changelist for Company:

@@ -20,10 +20,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from crm.notification.models import (
-    EmailNotification,
-    EmailStatus,
-    Notification,
-    NotificationKind,
+    EmailNotification, EmailStatus, Notification, NotificationKind,
 )
 
 User = get_user_model()

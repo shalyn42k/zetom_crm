@@ -16,9 +16,7 @@ from safedelete.config import HARD_DELETE
 
 from crm.status_manager.models import ChildDocumentDeletion
 from crm.status_manager.services.statuses import RequestStatus, Status
-from crm.zetom.models import (
-    Oferta, RequestMain, Wniosek, Zlecenie,
-)
+from crm.zetom.models import Oferta, RequestMain, Wniosek, Zlecenie
 
 User = get_user_model()
 

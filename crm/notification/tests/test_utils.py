@@ -32,7 +32,9 @@ from django.test import TestCase
 from django.utils import translation
 
 from crm.notification.models import Notification, NotificationKind
-from crm.notification.utils import render_notification, split_subject_body, unread_count
+from crm.notification.utils import (
+    render_notification, split_subject_body, unread_count,
+)
 
 User = get_user_model()
 

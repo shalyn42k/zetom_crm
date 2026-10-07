@@ -4,8 +4,9 @@ from django.shortcuts import get_object_or_404
 
 from crm.status_manager.services.status_service import update_parent
 # Zetom app imports
-from crm.zetom.models import (Oferta, RequestMain, RequestNull, RequestSource,
-                              Wniosek, Zlecenie)
+from crm.zetom.models import (
+    Oferta, RequestMain, RequestNull, RequestSource, Wniosek, Zlecenie,
+)
 from crm.zetom.services.status_orchestration import (
     close_oferta_on_zlecenie, close_zlecenie_on_wniosek,
 )
