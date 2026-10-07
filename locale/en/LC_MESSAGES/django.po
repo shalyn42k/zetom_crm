@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-07 11:41+0200\n"
+"POT-Creation-Date: 2026-10-07 13:22+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1151,6 +1151,32 @@ msgstr ""
 msgid "Please wait, the page will refresh when it's done."
 msgstr ""
 
+#: crm/notification/templates/notification/inapp/staff/followup_due.txt:9
+#, python-format
+msgid "Follow-up due: %(target_label)s"
+msgstr ""
+
+#: crm/notification/templates/notification/inapp/staff/followup_due.txt:10
+#, fuzzy, python-format
+#| msgid "Next client contact at (optional)"
+msgid "Next client contact: %(next_contact_at)s"
+msgstr "Next contact (optional)"
+
+#: crm/notification/templates/notification/inapp/staff/followup_due.txt:12
+#, python-format
+msgid "Action: %(note_action)s"
+msgstr ""
+
+#: crm/notification/templates/notification/inapp/staff/followup_due.txt:13
+#, python-format
+msgid "Author: %(author)s"
+msgstr ""
+
+#: crm/notification/templates/notification/inapp/staff/followup_due.txt:14
+#, python-format
+msgid "Note: %(note_text)s"
+msgstr ""
+
 #: crm/notification/templates/notification/inapp/staff/request_assigned.txt:7
 #, python-format
 msgid "You were assigned to %(request_label)s"
@@ -1205,6 +1231,17 @@ msgstr ""
 #: crm/notification/templates/notification/inapp/staff/review_resolved.txt:11
 #, python-format
 msgid "%(resolver_name)s %(decision)s your review request."
+msgstr ""
+
+#: crm/notification/templates/notification/inapp/staff/stale_request.txt:8
+#, python-format
+msgid "Unhandled request: %(request_label)s"
+msgstr ""
+
+#: crm/notification/templates/notification/inapp/staff/stale_request.txt:9
+#, python-format
+msgid ""
+"Open since %(created_at)s (%(days_open)s days) — no one has picked it up yet."
 msgstr ""
 
 #: crm/notification/templates/notification/inbox.html:4
