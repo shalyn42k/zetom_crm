@@ -372,7 +372,7 @@ selection is deferred and written only on Approve.
     document.querySelectorAll('#vwCliList .cli').forEach(function(l){l.classList.toggle('on',l.querySelector('input').checked);});
     var n=document.querySelectorAll('#vwCliList input:checked').length;
     var creating=document.getElementById('vwCreateNew').checked;
-    var label=(creating?(n+' + new'):(n))+' {% trans "selected" %}';
+    var label=(creating?(n+' {% trans "+ new" %}'):(n))+' {% trans "selected" %}';
     document.getElementById('vwCliSelectedTxt').textContent=label;
     document.getElementById('vwCliFootCount').textContent=creating?(n+'+1'):n;
     document.getElementById('vwPipCli').textContent=(creating?(n+1):n)+' {% trans "clients linked" %}';

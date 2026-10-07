@@ -12,7 +12,7 @@ from django.contrib.auth.models import User
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import path, reverse
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from crm.notification.models import Notification
@@ -480,7 +480,7 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
         obj = get_object_or_404(User, pk=object_id)
 
         if not self._can_toggle_active(request, obj):
-            return HttpResponseForbidden("Permission denied")
+            return HttpResponseForbidden(gettext("Permission denied"))
 
         if obj.is_active:
             deactivate_user(obj, actor=request.user)

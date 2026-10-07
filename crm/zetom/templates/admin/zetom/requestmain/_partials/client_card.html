@@ -31,13 +31,31 @@ ever been opened) keep finding #id_client / #rm-linker-btn / #rm-create-btn
 regardless of modal state. Verified by exercising the modal + link/unlink/
 create/suggest flows in a live browser, not just by reading the markup.
 {% endcomment %}
+{# claude — data-t-* carry translated UI strings for requestmain_client_link.js (the project has no JS catalog) #}
 <section class="rm-card rm-client-card" aria-labelledby="rm-client-heading" id="client-card"
          data-link-url="{% if original.pk %}{% url 'admin:zetom_requestmain_link_client_json' original.pk 0 %}{% endif %}"
          data-unlink-url="{% if original.pk %}{% url 'admin:zetom_requestmain_unlink_client_json' original.pk 0 %}{% endif %}"
          data-create-url="{% if original.pk %}{% url 'admin:zetom_requestmain_create_client_json' original.pk %}{% endif %}"
          data-edit-url="{% if original.pk %}{% url 'admin:zetom_requestmain_edit_client_json' original.pk 0 %}{% endif %}"
          data-save-url="{% if original.pk %}{% url 'admin:zetom_requestmain_save_client_json' original.pk 0 %}{% endif %}"
-         data-pk="{{ original.pk|default:'' }}">
+         data-pk="{{ original.pk|default:'' }}"
+         data-t-linked="{% trans 'Linked.' %}"
+         data-t-unlinked="{% trans 'Unlinked.' %}"
+         data-t-already-linked="{% trans 'Already linked.' %}"
+         data-t-created-linked="{% trans 'Created and linked.' %}"
+         data-t-client-updated="{% trans 'Client updated.' %}"
+         data-t-error="{% trans 'Error.' %}"
+         data-t-error-loading="{% trans 'Error loading client data' %}"
+         data-t-error-saving="{% trans 'Error saving client:' %}"
+         data-t-unknown-error="{% trans 'Unknown error' %}"
+         data-t-edit="{% trans 'Edit' %}"
+         data-t-unlink="{% trans 'Unlink' %}"
+         data-t-company="{% trans 'Company' %}"
+         data-t-first-name="{% trans 'First name' %}"
+         data-t-last-name="{% trans 'Last name' %}"
+         data-t-phone="{% trans 'Phone' %}"
+         data-t-email="{% trans 'Email' %}"
+         data-t-address="{% trans 'Address' %}">
 
   <header class="rm-card__header">
     <h2 id="rm-client-heading" class="rm-card__title">{% trans "Client" %}</h2>

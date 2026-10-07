@@ -29,6 +29,13 @@
     return fetch(url, { method: "POST", body: fd }).then(function (r) { return r.json(); });
   }
 
+  // claude — translated UI strings come from data-t-* on #rm-dupe-check
+  // (rendered with {% trans %} in dupe_popup.html); the English literal is
+  // only a fallback.
+  function t(key, fallback) {
+    return (anchor && anchor.dataset[key]) || fallback;
+  }
+
   function el(tag, cls) { var e = document.createElement(tag); if (cls) e.className = cls; return e; }
 
   function mb(b) {
@@ -62,7 +69,7 @@
       var nm = el("span", "dup-name"); nm.textContent = name; top.appendChild(nm);
       if (it.company_name) { var co = el("span", "dup-co"); co.textContent = it.company_name; top.appendChild(co); }
       if (it.url) {
-        var a = el("a", "dup-open"); a.href = it.url; a.target = "_blank"; a.title = "Open in new tab";
+        var a = el("a", "dup-open"); a.href = it.url; a.target = "_blank"; a.title = t("tOpenNewTab", "Open in new tab");
         a.innerHTML = '<svg class="i i-sm"><use href="#rmi-external"/></svg>';
         top.appendChild(a);
       }
@@ -80,8 +87,9 @@
       var btns = el("div", "dup-btns");
 
       var pull = el("button", "mbtn"); pull.type = "button";
-      pull.title = "Copy this record's fields into the form";
-      pull.innerHTML = '<svg viewBox="0 0 24 24"><use href="#rmi-arrow-l"/></svg>pull';
+      pull.title = t("tPullTitle", "Copy this record's fields into the form");
+      pull.innerHTML = '<svg viewBox="0 0 24 24"><use href="#rmi-arrow-l"/></svg>';
+      pull.appendChild(document.createTextNode(t("tPull", "pull")));
       pull.addEventListener("click", function () {
         var map = { first_name: "id_first_name", last_name: "id_last_name",
                     phone: "id_phone", email: "id_email", company_name: "id_company_name" };
@@ -94,8 +102,11 @@
       btns.appendChild(pull);
 
       var del = el("button", "mbtn del"); del.type = "button";
-      del.title = it.type === "main" ? "Cancel this existing request" : "Soft-delete this record";
-      del.innerHTML = '<svg viewBox="0 0 24 24"><use href="#rmi-trash"/></svg>del';
+      del.title = it.type === "main"
+        ? t("tCancelRequest", "Cancel this existing request")
+        : t("tSoftDelete", "Soft-delete this record");
+      del.innerHTML = '<svg viewBox="0 0 24 24"><use href="#rmi-trash"/></svg>';
+      del.appendChild(document.createTextNode(t("tDel", "del")));
       del.addEventListener("click", function () {
         if (!confirm(del.title + "?")) return;
         postForm(dupActionUrl, [["action", "delete_existing:" + it.type + ":" + it.pk]])
@@ -104,7 +115,7 @@
       btns.appendChild(del);
 
       var dismiss = el("button", "mbtn icon"); dismiss.type = "button";
-      dismiss.title = "Dismiss row (keep record)";
+      dismiss.title = t("tDismiss", "Dismiss row (keep record)");
       dismiss.innerHTML = '<svg viewBox="0 0 24 24"><use href="#rmi-x"/></svg>';
       dismiss.addEventListener("click", function () { li.remove(); afterDupeRemoved(); });
       btns.appendChild(dismiss);
@@ -154,7 +165,9 @@
         return '<div class="cli-f"><span class="k">' + k + '</span><span class="v mono">'
           + (on ? '<span class="hl">' + v + '</span>' : v) + '</span></div>';
       }
-      fields.innerHTML = f("phone", it.phone, hl.phone) + f("email", it.email, hl.email) + f("nip", it.company_nip, hl.company_nip);
+      fields.innerHTML = f(t("tPhone", "phone"), it.phone, hl.phone)
+        + f(t("tEmail", "email"), it.email, hl.email)
+        + f("NIP", it.company_nip, hl.company_nip);
       main.appendChild(fields);
 
       var badges = el("div", "match-row");
@@ -175,8 +188,11 @@
     var dupes = document.querySelectorAll("#rm-dupe-list .dup").length;
     var n = document.querySelectorAll("#rm-popup-clients .cli input:checked").length;
     var creating = document.getElementById("popup_create_new").checked;
-    var cl = n + " client" + (n === 1 ? "" : "s") + (creating ? " + new" : "");
-    document.getElementById("rm-foot-sum").textContent = dupes + " dupes · " + cl;
+    // claude — "Label: N" instead of "N clients": Polish has three plural
+    // forms, which a single data-t-* string can't express.
+    var cl = t("tClients", "Clients") + ": " + n + (creating ? " " + t("tPlusNew", "+ new") : "");
+    document.getElementById("rm-foot-sum").textContent =
+      t("tDuplicates", "Duplicates") + ": " + dupes + " · " + cl;
   }
 
   // ---- collect + submit ----
@@ -276,7 +292,7 @@
     document.getElementById("rm-dupe-delete-all").addEventListener("click", function () {
       var rows = [].slice.call(document.querySelectorAll("#rm-dupe-list .dup"));
       if (!rows.length) return;
-      if (!confirm("Move all duplicates to trash / cancel them? This can be undone.")) return;
+      if (!confirm(t("tConfirmDeleteAll", "Move all duplicates to trash / cancel them? This can be undone."))) return;
       var pairs = [["action", "delete_all_dupes"]];
       rows.forEach(function (r) { pairs.push(["targets", r.dataset.kind + ":" + r.dataset.pk]); });
       postForm(dupActionUrl, pairs).then(function (d) {
@@ -319,7 +335,7 @@
           open();
         })
         .catch(function () {
-          alert("Network error — could not check for duplicates. Check connection and try again.");
+          alert(t("tNetworkError", "Network error — could not check for duplicates. Check connection and try again."));
         });
     });
   });

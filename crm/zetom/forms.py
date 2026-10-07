@@ -74,7 +74,7 @@ class TemplateForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(
             attrs={
-                "placeholder": "Dodatkowe informacje lub uwagi dotyczące zgłoszenia"
+                "placeholder": _("Additional information or notes about the request")
             }
         ),
     )
@@ -159,7 +159,7 @@ class AddOferta(TemplateForm):
         required=False,
         widget=forms.Textarea(
             attrs={
-                "placeholder": "Dodatkowe informacje lub uwagi dotyczące zgłoszenia",
+                "placeholder": _("Additional information or notes about the request"),
             }
         ),
     )
@@ -191,7 +191,7 @@ class AddZlecenie(TemplateForm):
         required=False,
         widget=forms.Textarea(
             attrs={
-                "placeholder": "Dodatkowe informacje lub uwagi dotyczące zgłoszenia",
+                "placeholder": _("Additional information or notes about the request"),
             }
         ),
     )
@@ -219,7 +219,7 @@ class AddWniosek(TemplateForm):
         required=False,
         widget=forms.Textarea(
             attrs={
-                "placeholder": "Dodatkowe informacje lub uwagi dotyczące zgłoszenia",
+                "placeholder": _("Additional information or notes about the request"),
             }
         ),
     )
