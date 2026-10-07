@@ -76,10 +76,12 @@ class ValidationWindowForm(forms.Form):
     new_email = forms.EmailField(required=False)
 
     departments = forms.MultipleChoiceField(
+        label=_("Departments"),
         choices=DepartmentsVariants.choices,
         required=True,
     )
     owners = forms.ModelMultipleChoiceField(
+        label=_("Owners"),
         queryset=User.objects.none(),  # populated in __init__
         required=True,
     )

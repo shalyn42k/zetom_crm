@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html, format_html_join
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from crm.users.models import Role
@@ -15,7 +15,19 @@ class AdminRole(UnfoldModelAdmin):
     # (has_change_permission is False; rows aren't even links, see
     # get_list_display_links below). permissions_display renders each
     # role's Permission set right in the row.
-    list_display = ("code", "name", "permissions_display")
+    #
+    # claude — "name" (plain field in list_display) swapped for
+    # name_display: Django admin renders a raw list_display field value
+    # as-is, with no translation step, so Role.name (English text stored
+    # in the DB, same drift issue the RBAC-sync fix just addressed)
+    # rendered in English regardless of the active UI language. Same root
+    # cause fixed for permissions_display below.
+    #
+    # claude — dropped "code" from the list per request: the raw internal
+    # identifier ("admin", "department_head", ...) isn't meaningful to the
+    # people who actually read this page, name_display already carries the
+    # human-readable name.
+    list_display = ("name_display", "permissions_display")
 
     def has_view_permission(self, request, obj=None):
         return user_has_perm(request.user, "view_roles")
@@ -37,6 +49,10 @@ class AdminRole(UnfoldModelAdmin):
         # permissions_display below.
         return super().get_queryset(request).prefetch_related("permissions")
 
+    @admin.display(description=_("Name"), ordering="name")
+    def name_display(self, obj):
+        return gettext(obj.name)
+
     # claude — Fix-round: first attempt styled the chips with an explicit
     # light-mode background + a `dark:!bg-...` Tailwind class for dark
     # mode. Dropped that — Tailwind's CSS here is a precompiled bundle
@@ -51,7 +67,10 @@ class AdminRole(UnfoldModelAdmin):
     # branch to get wrong.
     @admin.display(description=_("Permissions"))
     def permissions_display(self, obj):
-        names = sorted(p.name for p in obj.permissions.all())
+        # claude — p.name is plain DB text (English); format_html is Python
+        # code, not a template, so it never ran through {% trans %} and
+        # these chips rendered in English regardless of active locale.
+        names = sorted(gettext(p.name) for p in obj.permissions.all())
         if not names:
             return "—"
         return format_html(

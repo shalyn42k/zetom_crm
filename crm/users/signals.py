@@ -67,9 +67,18 @@ def create_rbac_defaults(sender, **kwargs):
     ]
 
     # Создание permissions
+    # claude — update_or_create (not get_or_create): with get_or_create,
+    # `defaults` only applied on INSERT, so renaming a permission's display
+    # text here (e.g. "Edit users" -> "Edit users (profile fields)") never
+    # reached rows already in the DB — they kept the old name forever, and
+    # since that old string wasn't a msgid anywhere anymore, {% trans %}
+    # had nothing to translate and it rendered in raw English regardless of
+    # locale. update_or_create keeps every row's name/category in sync with
+    # permissions_data on every post_migrate run, matching how roles_data
+    # below should behave too.
     perm_objects = {}
     for code, name in permissions_data:
-        perm, _created = Permission.objects.get_or_create(
+        perm, _created = Permission.objects.update_or_create(
             code=code,
             defaults={
                 "name": name,
@@ -151,8 +160,10 @@ def create_rbac_defaults(sender, **kwargs):
     }
 
     # Создание ролей
+    # claude — update_or_create, same reasoning as permissions above: a role
+    # renamed in roles_data must actually reach rows already in the DB.
     for code, data in roles_data.items():
-        role, _created = Role.objects.get_or_create(
+        role, _created = Role.objects.update_or_create(
             code=code,
             defaults={"name": data["name"]}
         )

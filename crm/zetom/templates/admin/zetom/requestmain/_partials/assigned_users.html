@@ -38,8 +38,8 @@
             {% if u.pk in owner_ids %}<span class="rm-badge rm-badge--owner">{% trans "Owner" %}</span>{% endif %}
           </span>
           <span class="rm-user__sub">
-            {% if u.profile.role %}{{ u.profile.role.name }}{% endif %}
-            {% if u.profile.departments %} · {{ u.profile.departments|join:", " }}{% endif %}
+            {% if u.profile.role %}{% trans u.profile.role.name %}{% endif %}
+            {% if u.profile.departments %} · {{ u.profile.departments_summary }}{% endif %}
           </span>
         </span>
 

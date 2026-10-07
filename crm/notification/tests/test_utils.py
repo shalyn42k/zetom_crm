@@ -27,7 +27,9 @@
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
+from django.template.loader import render_to_string
 from django.test import TestCase
+from django.utils import translation
 
 from crm.notification.models import Notification, NotificationKind
 from crm.notification.utils import render_notification, split_subject_body, unread_count
@@ -183,3 +185,104 @@ class RenderNotificationTests(TestCase):
         render_notification(notif)
         # payload=None → render_notification передаёт {} в render_to_string
         mock_render.assert_called_once_with("t.txt", {})
+
+
+# ──────────────── stale_request.txt / followup_due.txt localization ───────────
+# claude — these two inapp templates were the only ones in this directory with
+# no {% load i18n %}/{% blocktrans %} at all (every sibling template already
+# had it), so they always rendered in raw English regardless of the active
+# UI language — found by clicking through the inbox as a PL-locale user.
+
+
+class StaleRequestTemplateTranslationTests(TestCase):
+    TEMPLATE = "notification/inapp/staff/stale_request.txt"
+    CONTEXT = {
+        "request_label": "REQ-2026-0042 — Acme",
+        "created_at": "2026-09-20 16:32",
+        "days_open": 3,
+    }
+
+    def test_renders_in_english_by_default(self):
+        rendered = render_to_string(self.TEMPLATE, self.CONTEXT)
+        self.assertIn("Unhandled request: REQ-2026-0042 — Acme", rendered)
+        self.assertIn("no one has picked it up yet", rendered)
+
+    def test_renders_in_polish_when_active(self):
+        with translation.override("pl"):
+            rendered = render_to_string(self.TEMPLATE, self.CONTEXT)
+        self.assertNotIn("Unhandled request", rendered)
+        self.assertNotIn("no one has picked it up yet", rendered)
+
+
+class FollowupDueTemplateTranslationTests(TestCase):
+    TEMPLATE = "notification/inapp/staff/followup_due.txt"
+    CONTEXT = {
+        "target_label": "REQ-2026-0042 — Acme",
+        "next_contact_at": "2026-09-26 15:46",
+        "note_action": "Called client",
+        "author": "LITOVKO IVAN",
+        "note_text": "Needs a callback",
+    }
+
+    def test_renders_in_english_by_default(self):
+        rendered = render_to_string(self.TEMPLATE, self.CONTEXT)
+        self.assertIn("Follow-up due: REQ-2026-0042 — Acme", rendered)
+        self.assertIn("Next client contact: 2026-09-26 15:46", rendered)
+        self.assertIn("Action: Called client", rendered)
+        self.assertIn("Author: LITOVKO IVAN", rendered)
+        self.assertIn("Note: Needs a callback", rendered)
+
+    def test_renders_in_polish_when_active(self):
+        with translation.override("pl"):
+            rendered = render_to_string(self.TEMPLATE, self.CONTEXT)
+        self.assertNotIn("Follow-up due", rendered)
+        self.assertNotIn("Next client contact", rendered)
+        self.assertNotIn("Action:", rendered)
+        self.assertNotIn("Author:", rendered)
+        self.assertNotIn("Note:", rendered)
+        # variables still interpolate correctly
+        self.assertIn("REQ-2026-0042 — Acme", rendered)
+        self.assertIn("LITOVKO IVAN", rendered)
+        self.assertIn("Needs a callback", rendered)
+
+    def test_optional_fields_omitted_when_empty(self):
+        context = {**self.CONTEXT, "note_action": "", "note_text": ""}
+        rendered = render_to_string(self.TEMPLATE, context)
+        self.assertNotIn("Action:", rendered)
+        self.assertNotIn("Note:", rendered)
+
+
+# ──────────────── review_resolved.txt localization ─────────────────────────
+# claude — "decision" is a raw code ("approved"/"rejected") in the payload;
+# the template used to quote it directly, so an otherwise-Polish sentence
+# ("Jan ... Twoją prośbę o weryfikację.") had a raw English word in the
+# middle. Resolved via review_decision_label at render time, same reasoning
+# as request_status_label — see test_status_change_signal.py.
+
+
+class ReviewResolvedTemplateTranslationTests(TestCase):
+    TEMPLATE = "notification/inapp/staff/review_resolved.txt"
+    CONTEXT = {
+        "request_label": "REQ-2026-0042 — Acme",
+        "resolver_name": "Jan Kowalski",
+        "decision": "approved",
+        "note": "",
+    }
+
+    def test_renders_in_english_by_default(self):
+        rendered = render_to_string(self.TEMPLATE, self.CONTEXT)
+        self.assertIn("Approved", rendered)
+
+    def test_renders_in_polish_when_active(self):
+        with translation.override("pl"):
+            rendered = render_to_string(self.TEMPLATE, self.CONTEXT)
+        self.assertNotIn("approved", rendered)
+        self.assertNotIn("Approved", rendered)
+        self.assertIn("Zatwierdzone", rendered)
+
+    def test_rejected_decision_also_translates(self):
+        context = {**self.CONTEXT, "decision": "rejected"}
+        with translation.override("pl"):
+            rendered = render_to_string(self.TEMPLATE, context)
+        self.assertNotIn("rejected", rendered)
+        self.assertIn("Odrzucone", rendered)

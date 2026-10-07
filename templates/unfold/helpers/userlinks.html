@@ -32,13 +32,22 @@
                 <span class="font-semibold text-font-important-light dark:text-font-important-dark truncate">
                     {{ request.user.get_full_name|default:request.user.get_username }}
                 </span>
-                {% with subtitle=request.user.profile.job_title|default:request.user.profile.role %}
-                    {% if subtitle %}
-                        <span class="mt-1 text-xs text-font-subtle-light dark:text-font-subtle-dark truncate">
-                            {{ subtitle }}
-                        </span>
-                    {% endif %}
-                {% endwith %}
+                {% comment %}claude — job_title is free-text user input, shown
+                   as-is; role.name is a fixed catalog label stored in English
+                   in the DB (LANGUAGE_CODE at post_migrate seed time) and
+                   must go through {% trans %} at render time to show in the
+                   active UI language — plain {{ subtitle }} on a Role object
+                   rendered its English name regardless of locale.
+                {% endcomment %}
+                {% if request.user.profile.job_title %}
+                    <span class="mt-1 text-xs text-font-subtle-light dark:text-font-subtle-dark truncate">
+                        {{ request.user.profile.job_title }}
+                    </span>
+                {% elif request.user.profile.role %}
+                    <span class="mt-1 text-xs text-font-subtle-light dark:text-font-subtle-dark truncate">
+                        {% trans request.user.profile.role.name %}
+                    </span>
+                {% endif %}
             </span>
 
             {% include "unfold/helpers/avatar.html" with user=request.user circle=True %}

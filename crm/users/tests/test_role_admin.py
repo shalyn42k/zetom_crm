@@ -38,3 +38,18 @@ class RoleAdminPermissionsDisplayTests(TestCase):
         self.assertContains(response, "Empty")
         # the row itself is present and doesn't 500 on an empty M2M
         self.assertEqual(response.status_code, 200)
+
+    # claude — role.name/permission.name are plain DB text (English); the
+    # list used {{ obj.name }} / format_html directly with no translation
+    # step, so this page rendered in English regardless of active locale
+    # (found on /users/role/ — "All Seeing", "View clients" etc. stayed
+    # English while the column headers around them were Polish).
+    def test_role_name_is_translated_in_polish(self):
+        response = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="pl")
+        self.assertContains(response, "Specjalista")
+        self.assertNotContains(response, ">Specialist<")
+
+    def test_permission_names_are_translated_in_polish(self):
+        response = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE="pl")
+        self.assertContains(response, "Przeglądaj klientów")
+        self.assertNotContains(response, "View clients")

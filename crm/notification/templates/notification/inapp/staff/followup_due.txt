@@ -1,6 +1,13 @@
-Follow-up due: {{ target_label }}
-Next client contact: {{ next_contact_at }}
+{% load i18n %}{% comment %}Inapp-уведомление стаффу: подошёл срок follow-up по StepNote (kind=reminder).
+   Контекст рендера (из Notification.payload):
+       target_label    — короткая строка-заголовок связанного объекта
+       next_contact_at — дата/время следующего контакта с клиентом
+       note_action     — поле "что сделано" StepNote (может быть пустым)
+       author          — автор заметки
+       note_text       — текст заметки (может быть пустым)
+   Первая строка — title уведомления.{% endcomment %}{% blocktrans %}Follow-up due: {{ target_label }}{% endblocktrans %}
+{% blocktrans %}Next client contact: {{ next_contact_at }}{% endblocktrans %}
 
-{% if note_action %}Action: {{ note_action }}
-{% endif %}Author: {{ author }}
-{% if note_text %}Note: {{ note_text }}{% endif %}
+{% if note_action %}{% blocktrans %}Action: {{ note_action }}{% endblocktrans %}
+{% endif %}{% blocktrans %}Author: {{ author }}{% endblocktrans %}
+{% if note_text %}{% blocktrans %}Note: {{ note_text }}{% endblocktrans %}{% endif %}

@@ -44,10 +44,18 @@ class EmailNotification(models.Model):
     sent_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Sent at"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
 
+    class Meta:
+        verbose_name = _("Email notification")
+        verbose_name_plural = _("Email notifications")
+
     # claude
     def __str__(self):
         when = self.created_at.strftime("%Y-%m-%d %H:%M") if self.created_at else "—"
-        return f"[{self.status}] {self.subject or '(no subject)'} → {self.recipient_email} · {when}"
+        # claude — was self.status (the raw EmailStatus code, e.g. "FAILED"),
+        # not its translated label; get_status_display() resolves through
+        # the choices' _() labels at render time.
+        subject = self.subject or str(_("(no subject)"))
+        return f"[{self.get_status_display()}] {subject} → {self.recipient_email} · {when}"
 
 
 class Notification(models.Model):
@@ -87,6 +95,8 @@ class Notification(models.Model):
 
     # claude
     class Meta:
+        verbose_name = _("Notification")
+        verbose_name_plural = _("Notifications")
         indexes = [
             models.Index(fields=["recipient", "is_read"]),
             models.Index(fields=["recipient", "-created_at"]),

@@ -272,6 +272,14 @@ class RequestMainAdmin(
             {
                 "form": form,
                 "obj": obj,
+                # claude — see cancel_view's identical fix below: without
+                # opts/original, Unfold's header falls back to a generic
+                # "Welcome {username}" instead of the normal breadcrumb
+                # trail, and the page reads as disconnected from the rest
+                # of the app.
+                "opts": self.model._meta,
+                "original": obj,
+                "title": _("Delete request"),
                 **self.admin_site.each_context(request),
             },
         )
@@ -1108,6 +1116,9 @@ class RequestMainAdmin(
                 "form": form,
                 "obj": obj,
                 "new_status": new_status,
+                "opts": self.model._meta,
+                "original": obj,
+                "title": _("Reason required"),
                 **self.admin_site.each_context(request),
             })
         except ValueError as e:
@@ -1151,6 +1162,10 @@ class RequestMainAdmin(
             {
                 "form": form,
                 "obj": obj,
+                # claude — see delete_view's identical fix above.
+                "opts": self.model._meta,
+                "original": obj,
+                "title": _("Cancel request"),
                 **self.admin_site.each_context(request),
             },
         )
