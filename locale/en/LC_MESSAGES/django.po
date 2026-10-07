@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-07 16:06+0200\n"
+"POT-Creation-Date: 2026-10-07 16:14+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -158,7 +158,9 @@ msgstr "Kind"
 msgid "What was done"
 msgstr "What was done"
 
-#: crm/clients/admin.py:169 crm/zetom/admin/base.py:51 crm/zetom/models.py:409
+#: crm/clients/admin.py:169 crm/notification/admin.py:31
+#: crm/notification/admin.py:38 crm/zetom/admin/base.py:51
+#: crm/zetom/models.py:409
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:158
 msgid "Note"
 msgstr "Note"
@@ -1033,24 +1035,122 @@ msgstr "Enter a first or last name."
 msgid "To zgłoszenie jest już powiązane z inną firmą."
 msgstr "This request is already linked to another company."
 
-#: crm/notification/admin.py:84
+#: crm/notification/admin.py:22
+msgid "Request ID"
+msgstr ""
+
+#: crm/notification/admin.py:23 crm/zetom/admin/base.py:288
+#: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:42
+#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:57
+msgid "Request"
+msgstr ""
+
+#: crm/notification/admin.py:24
+msgid "Old status"
+msgstr ""
+
+#: crm/notification/admin.py:25
+msgid "New status"
+msgstr ""
+
+#: crm/notification/admin.py:26 crm/notification/models.py:32
+#: crm/notification/models.py:74
+msgid "Actor"
+msgstr ""
+
+#: crm/notification/admin.py:27
+msgid "Stage"
+msgstr ""
+
+#: crm/notification/admin.py:28
+msgid "Target"
+msgstr ""
+
+#: crm/notification/admin.py:29
+#, fuzzy
+#| msgid "Next client contact at"
+msgid "Next contact at"
+msgstr "Next contact"
+
+#: crm/notification/admin.py:30
+msgid "Action"
+msgstr ""
+
+#: crm/notification/admin.py:32 crm/zetom/models.py:405
+msgid "Author"
+msgstr "Author"
+
+#: crm/notification/admin.py:33 crm/notification/models.py:45
+#: crm/notification/models.py:94 crm/zetom/models.py:50 crm/zetom/models.py:407
+msgid "Created at"
+msgstr "Created at"
+
+#: crm/notification/admin.py:34
+msgid "Days open"
+msgstr ""
+
+#: crm/notification/admin.py:35 crm/zetom/models.py:46
+msgid "Source"
+msgstr "Source"
+
+#: crm/notification/admin.py:36
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:120
+msgid "Document"
+msgstr ""
+
+#: crm/notification/admin.py:37
+msgid "Requester"
+msgstr ""
+
+#: crm/notification/admin.py:39
+msgid "Resolver"
+msgstr ""
+
+#: crm/notification/admin.py:40
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:320
+msgid "Decision"
+msgstr ""
+
+#: crm/notification/admin.py:43 crm/status_manager/services/statuses.py:6
+msgid "New"
+msgstr ""
+
+#: crm/notification/admin.py:43
+#, fuzzy
+#| msgid "Updated at"
+msgid "Validated"
+msgstr "Updated at"
+
+#: crm/notification/admin.py:44
+#: crm/notification/templatetags/notification_labels.py:19
+#: crm/zetom/admin/requestmain_resolve_review.py:29
+msgid "Approved"
+msgstr ""
+
+#: crm/notification/admin.py:44
+#: crm/notification/templatetags/notification_labels.py:20
+#: crm/zetom/admin/requestmain_resolve_review.py:30
+msgid "Rejected"
+msgstr ""
+
+#: crm/notification/admin.py:142
 msgid "Title"
 msgstr ""
 
-#: crm/notification/admin.py:90
+#: crm/notification/admin.py:148
 msgid "Rendered"
 msgstr ""
 
-#: crm/notification/admin.py:100 crm/notification/admin.py:168
+#: crm/notification/admin.py:158 crm/notification/admin.py:226
 #: crm/notification/models.py:36 crm/notification/models.py:80
 msgid "Payload"
 msgstr ""
 
-#: crm/notification/admin.py:113
+#: crm/notification/admin.py:171
 msgid "About"
 msgstr ""
 
-#: crm/notification/admin.py:122
+#: crm/notification/admin.py:180
 msgid "no longer exists"
 msgstr ""
 
@@ -1097,10 +1197,6 @@ msgstr ""
 msgid "Recipient email"
 msgstr ""
 
-#: crm/notification/models.py:32 crm/notification/models.py:74
-msgid "Actor"
-msgstr ""
-
 #: crm/notification/models.py:34 crm/notification/models.py:77
 msgid "Template name"
 msgstr ""
@@ -1122,11 +1218,6 @@ msgstr ""
 #: crm/notification/models.py:44
 msgid "Sent at"
 msgstr ""
-
-#: crm/notification/models.py:45 crm/notification/models.py:94
-#: crm/zetom/models.py:50 crm/zetom/models.py:407
-msgid "Created at"
-msgstr "Created at"
 
 #: crm/notification/models.py:48
 msgid "Email notification"
@@ -1569,16 +1660,6 @@ msgstr ""
 msgid "After this email is sent, the order status in CRM changes to \\"
 msgstr ""
 
-#: crm/notification/templatetags/notification_labels.py:19
-#: crm/zetom/admin/requestmain_resolve_review.py:29
-msgid "Approved"
-msgstr ""
-
-#: crm/notification/templatetags/notification_labels.py:20
-#: crm/zetom/admin/requestmain_resolve_review.py:30
-msgid "Rejected"
-msgstr ""
-
 #: crm/notification/views.py:116
 msgid "Today"
 msgstr ""
@@ -1601,10 +1682,6 @@ msgstr ""
 
 #: crm/status_manager/services/status_service.py:87
 msgid "Automatic transition based on child document statuses."
-msgstr ""
-
-#: crm/status_manager/services/statuses.py:6
-msgid "New"
 msgstr ""
 
 #: crm/status_manager/services/statuses.py:7
@@ -2487,12 +2564,6 @@ msgstr ""
 msgid "Request not found."
 msgstr ""
 
-#: crm/zetom/admin/base.py:288
-#: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:42
-#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:57
-msgid "Request"
-msgstr ""
-
 #: crm/zetom/admin/base.py:290 crm/zetom/models.py:177
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:182
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:18
@@ -2960,10 +3031,6 @@ msgstr ""
 msgid "Manual"
 msgstr ""
 
-#: crm/zetom/models.py:46
-msgid "Source"
-msgstr "Source"
-
 #: crm/zetom/models.py:48
 msgid "Assigned to"
 msgstr ""
@@ -3057,10 +3124,6 @@ msgstr "Meeting"
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:95
 msgid "Chat"
 msgstr "Chat"
-
-#: crm/zetom/models.py:405
-msgid "Author"
-msgstr "Author"
 
 #: crm/zetom/models.py:418
 msgid "Reminder sent at"
@@ -3273,10 +3336,6 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:120
-msgid "Document"
-msgstr ""
-
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:126
 msgid "Free message"
 msgstr ""
@@ -3349,10 +3408,6 @@ msgstr ""
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:316
 msgid ""
 "Notification will be sent in-app to the specialist who requested this review."
-msgstr ""
-
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:320
-msgid "Decision"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:324

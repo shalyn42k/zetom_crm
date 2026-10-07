@@ -8,7 +8,62 @@ from unfold.admin import ModelAdmin
 
 from crm.notification.models import EmailNotification, Notification
 from crm.notification.utils import render_notification
+from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
+from crm.zetom.models import RequestSource
+
+# claude — key labels for the raw payload dump below (_pretty_json). Every
+# distinct key any payload={...} call site in the project uses (signals.py,
+# notification_service.py, followup_reminders.py, stale_request_reminders.py,
+# request_restore.py, requestmain_review.py, requestmain_resolve_review.py) —
+# add a new key here whenever a new one of those is introduced, else it just
+# falls back to showing its raw Python name (not wrong, just untranslated).
+_PAYLOAD_KEY_LABELS = {
+    "request_id": _("Request ID"),
+    "request_label": _("Request"),
+    "old_status": _("Old status"),
+    "new_status": _("New status"),
+    "actor_name": _("Actor"),
+    "stage": _("Stage"),
+    "target_label": _("Target"),
+    "next_contact_at": _("Next contact at"),
+    "note_action": _("Action"),
+    "note_text": _("Note"),
+    "author": _("Author"),
+    "created_at": _("Created at"),
+    "days_open": _("Days open"),
+    "source": _("Source"),
+    "document_label": _("Document"),
+    "requester_name": _("Requester"),
+    "note": _("Note"),
+    "resolver_name": _("Resolver"),
+    "decision": _("Decision"),
+}
+
+_STAGE_LABELS = {"new": _("New"), "validated": _("Validated")}
+_DECISION_LABELS = {"approved": _("Approved"), "rejected": _("Rejected")}
+
+
+def _payload_display_value(key, value):
+    """Translate known status-like payload values; pass everything else
+    through unchanged (names, ids, free text are already display-ready)."""
+    if value is None:
+        return "—"
+    if key in ("old_status", "new_status"):
+        try:
+            return RequestStatus(value).label
+        except ValueError:
+            return value
+    if key == "source":
+        try:
+            return RequestSource(value).label
+        except ValueError:
+            return value
+    if key == "stage":
+        return _STAGE_LABELS.get(value, value)
+    if key == "decision":
+        return _DECISION_LABELS.get(value, value)
+    return value
 
 
 # claude — было json.dumps в <pre>: technically readable, but reads as raw
@@ -32,7 +87,10 @@ def _pretty_json(value):
             "<div style='display:flex;gap:8px;padding:2px 0'>"
             "<span style='color:var(--font-subtle-light, #71717a);min-width:11ch'>{}</span>"
             "<span>{}</span></div>",
-            ((k, "—" if v is None else v) for k, v in sorted(value.items())),
+            (
+                (_PAYLOAD_KEY_LABELS.get(k, k), _payload_display_value(k, v))
+                for k, v in sorted(value.items())
+            ),
         )
         return format_html("<div>{}</div>", rows)
     text = json.dumps(value, indent=2, ensure_ascii=False, sort_keys=True)
