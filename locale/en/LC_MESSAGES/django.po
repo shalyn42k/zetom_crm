@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-07 14:37+0200\n"
+"POT-Creation-Date: 2026-10-07 16:06+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1226,15 +1226,15 @@ msgstr ""
 msgid "%(actor_name)s restored this lead to the Validation Window."
 msgstr ""
 
-#: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:10
+#: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:14
 #, python-format
 msgid "Request %(request_label)s: status changed"
 msgstr ""
 
-#: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:12
+#: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:16
 #, python-format
 msgid ""
-"%(actor_name)s changed status from \"%(old_status)s\" to \"%(new_status)s\"."
+"%(actor_name)s changed status from \"%(old_label)s\" to \"%(new_label)s\"."
 msgstr ""
 
 #: crm/notification/templates/notification/inapp/staff/review_requested.txt:9
@@ -1252,14 +1252,15 @@ msgstr ""
 msgid "(no comment provided)"
 msgstr ""
 
-#: crm/notification/templates/notification/inapp/staff/review_resolved.txt:9
+#: crm/notification/templates/notification/inapp/staff/review_resolved.txt:24
 #, python-format
-msgid "Review on %(request_label)s: %(decision)s"
+msgid "Review on %(request_label)s: %(decision_label)s"
 msgstr ""
 
-#: crm/notification/templates/notification/inapp/staff/review_resolved.txt:11
+#: crm/notification/templates/notification/inapp/staff/review_resolved.txt:26
 #, python-format
-msgid "%(resolver_name)s %(decision)s your review request."
+msgid ""
+"Decision by %(resolver_name)s on your review request: %(decision_label)s"
 msgstr ""
 
 #: crm/notification/templates/notification/inapp/staff/stale_request.txt:8
@@ -1566,6 +1567,16 @@ msgstr ""
 
 #: crm/notification/templates/notification/mail/zlecenie_staff.txt:24
 msgid "After this email is sent, the order status in CRM changes to \\"
+msgstr ""
+
+#: crm/notification/templatetags/notification_labels.py:19
+#: crm/zetom/admin/requestmain_resolve_review.py:29
+msgid "Approved"
+msgstr ""
+
+#: crm/notification/templatetags/notification_labels.py:20
+#: crm/zetom/admin/requestmain_resolve_review.py:30
+msgid "Rejected"
 msgstr ""
 
 #: crm/notification/views.py:116
@@ -2717,14 +2728,6 @@ msgstr ""
 
 #: crm/zetom/admin/requestmain_mail.py:120
 msgid "Mail sent to client."
-msgstr ""
-
-#: crm/zetom/admin/requestmain_resolve_review.py:29
-msgid "Approved"
-msgstr ""
-
-#: crm/zetom/admin/requestmain_resolve_review.py:30
-msgid "Rejected"
 msgstr ""
 
 #: crm/zetom/admin/requestmain_resolve_review.py:120

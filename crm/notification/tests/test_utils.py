@@ -250,3 +250,39 @@ class FollowupDueTemplateTranslationTests(TestCase):
         rendered = render_to_string(self.TEMPLATE, context)
         self.assertNotIn("Action:", rendered)
         self.assertNotIn("Note:", rendered)
+
+
+# ──────────────── review_resolved.txt localization ─────────────────────────
+# claude — "decision" is a raw code ("approved"/"rejected") in the payload;
+# the template used to quote it directly, so an otherwise-Polish sentence
+# ("Jan ... Twoją prośbę o weryfikację.") had a raw English word in the
+# middle. Resolved via review_decision_label at render time, same reasoning
+# as request_status_label — see test_status_change_signal.py.
+
+
+class ReviewResolvedTemplateTranslationTests(TestCase):
+    TEMPLATE = "notification/inapp/staff/review_resolved.txt"
+    CONTEXT = {
+        "request_label": "REQ-2026-0042 — Acme",
+        "resolver_name": "Jan Kowalski",
+        "decision": "approved",
+        "note": "",
+    }
+
+    def test_renders_in_english_by_default(self):
+        rendered = render_to_string(self.TEMPLATE, self.CONTEXT)
+        self.assertIn("Approved", rendered)
+
+    def test_renders_in_polish_when_active(self):
+        with translation.override("pl"):
+            rendered = render_to_string(self.TEMPLATE, self.CONTEXT)
+        self.assertNotIn("approved", rendered)
+        self.assertNotIn("Approved", rendered)
+        self.assertIn("Zatwierdzone", rendered)
+
+    def test_rejected_decision_also_translates(self):
+        context = {**self.CONTEXT, "decision": "rejected"}
+        with translation.override("pl"):
+            rendered = render_to_string(self.TEMPLATE, context)
+        self.assertNotIn("rejected", rendered)
+        self.assertIn("Odrzucone", rendered)

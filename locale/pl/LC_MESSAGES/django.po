@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-07 14:37+0200\n"
+"POT-Creation-Date: 2026-10-07 16:06+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1229,17 +1229,17 @@ msgstr "Zgłoszenie %(request_label)s przywrócone"
 msgid "%(actor_name)s restored this lead to the Validation Window."
 msgstr "%(actor_name)s przywrócił(a) to zgłoszenie do okna walidacji."
 
-#: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:10
+#: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:14
 #, python-format
 msgid "Request %(request_label)s: status changed"
 msgstr "Zlecenie %(request_label)s: zmiana statusu"
 
-#: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:12
+#: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:16
 #, python-format
 msgid ""
-"%(actor_name)s changed status from \"%(old_status)s\" to \"%(new_status)s\"."
+"%(actor_name)s changed status from \"%(old_label)s\" to \"%(new_label)s\"."
 msgstr ""
-"%(actor_name)s zmienił/a status z \"%(old_status)s\" na \"%(new_status)s\"."
+"%(actor_name)s zmienił/a status z \"%(old_label)s\" na \"%(new_label)s\"."
 
 #: crm/notification/templates/notification/inapp/staff/review_requested.txt:9
 #, python-format
@@ -1256,15 +1256,18 @@ msgstr "Dokument: %(document_label)s"
 msgid "(no comment provided)"
 msgstr "(brak komentarza)"
 
-#: crm/notification/templates/notification/inapp/staff/review_resolved.txt:9
+#: crm/notification/templates/notification/inapp/staff/review_resolved.txt:24
 #, python-format
-msgid "Review on %(request_label)s: %(decision)s"
-msgstr "Weryfikacja %(request_label)s: %(decision)s"
+msgid "Review on %(request_label)s: %(decision_label)s"
+msgstr "Weryfikacja %(request_label)s: %(decision_label)s"
 
-#: crm/notification/templates/notification/inapp/staff/review_resolved.txt:11
+#: crm/notification/templates/notification/inapp/staff/review_resolved.txt:26
 #, python-format
-msgid "%(resolver_name)s %(decision)s your review request."
-msgstr "%(resolver_name)s %(decision)s Twoją prośbę o weryfikację."
+msgid ""
+"Decision by %(resolver_name)s on your review request: %(decision_label)s"
+msgstr ""
+"Decyzja %(resolver_name)s w sprawie Twojej prośby o weryfikację: "
+"%(decision_label)s"
 
 #: crm/notification/templates/notification/inapp/staff/stale_request.txt:8
 #, python-format
@@ -1576,6 +1579,16 @@ msgstr "Termin:"
 #: crm/notification/templates/notification/mail/zlecenie_staff.txt:24
 msgid "After this email is sent, the order status in CRM changes to \\"
 msgstr "Po wysłaniu tej wiadomości status zlecenia w CRM zmienia się na \\"
+
+#: crm/notification/templatetags/notification_labels.py:19
+#: crm/zetom/admin/requestmain_resolve_review.py:29
+msgid "Approved"
+msgstr "Zatwierdzone"
+
+#: crm/notification/templatetags/notification_labels.py:20
+#: crm/zetom/admin/requestmain_resolve_review.py:30
+msgid "Rejected"
+msgstr "Odrzucone"
 
 #: crm/notification/views.py:116
 msgid "Today"
@@ -2763,14 +2776,6 @@ msgstr "Temat i treść są wymagane."
 #: crm/zetom/admin/requestmain_mail.py:120
 msgid "Mail sent to client."
 msgstr "Wiadomość wysłana do klienta."
-
-#: crm/zetom/admin/requestmain_resolve_review.py:29
-msgid "Approved"
-msgstr "Zatwierdzone"
-
-#: crm/zetom/admin/requestmain_resolve_review.py:30
-msgid "Rejected"
-msgstr "Odrzucone"
 
 #: crm/zetom/admin/requestmain_resolve_review.py:120
 msgid "Could not resolve review."
