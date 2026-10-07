@@ -39,7 +39,7 @@ class TemplateForm(forms.ModelForm):
         label=_("Phone"),
         region="PL",
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "Phone"}),
+        widget=forms.TextInput(attrs={"placeholder": "+48 501 600 300"}),
     )
 
     company_name = forms.CharField(
@@ -72,7 +72,7 @@ class TemplateForm(forms.ModelForm):
         required=False,
         widget=forms.Textarea(
             attrs={
-                "placeholder": "Long and very interesting note for noting your long and intresting text"
+                "placeholder": "Dodatkowe informacje lub uwagi dotyczące zgłoszenia"
             }
         ),
     )
@@ -105,10 +105,10 @@ class AddRequestFormNull(TemplateForm):
         # exist; unconditional access 500'd for e.g. the read-only auditor role.
         if "first_name" in self.fields:
             self.fields["first_name"].required = True
-            self.fields["first_name"].widget.attrs.setdefault("placeholder", "John")
+            self.fields["first_name"].widget.attrs.setdefault("placeholder", "Jan")
         if "last_name" in self.fields:
             self.fields["last_name"].required = True
-            self.fields["last_name"].widget.attrs.setdefault("placeholder", "Johnson")
+            self.fields["last_name"].widget.attrs.setdefault("placeholder", "Kowalski")
 
 
 class AddRequestFormMain(TemplateForm):
@@ -141,9 +141,9 @@ class AddRequestFormMain(TemplateForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if "first_name" in self.fields:
-            self.fields["first_name"].widget.attrs.setdefault("placeholder", "John")
+            self.fields["first_name"].widget.attrs.setdefault("placeholder", "Jan")
         if "last_name" in self.fields:
-            self.fields["last_name"].widget.attrs.setdefault("placeholder", "Johnson")
+            self.fields["last_name"].widget.attrs.setdefault("placeholder", "Kowalski")
 
 
 class AddOferta(TemplateForm):
@@ -155,7 +155,7 @@ class AddOferta(TemplateForm):
         required=False,
         widget=forms.Textarea(
             attrs={
-                "placeholder": "Long and very interesting note for noting your long and intresting text",
+                "placeholder": "Dodatkowe informacje lub uwagi dotyczące zgłoszenia",
             }
         ),
     )
@@ -185,7 +185,7 @@ class AddZlecenie(TemplateForm):
         required=False,
         widget=forms.Textarea(
             attrs={
-                "placeholder": "Long and very interesting note for noting your long and intresting text",
+                "placeholder": "Dodatkowe informacje lub uwagi dotyczące zgłoszenia",
             }
         ),
     )
@@ -212,7 +212,7 @@ class AddWniosek(TemplateForm):
         required=False,
         widget=forms.Textarea(
             attrs={
-                "placeholder": "Long and very interesting note for noting your long and intresting text",
+                "placeholder": "Dodatkowe informacje lub uwagi dotyczące zgłoszenia",
             }
         ),
     )
