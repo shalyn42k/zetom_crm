@@ -492,3 +492,78 @@ msgstr "Data"
 #. django-unfold: unfold/widgets.py
 msgid "Select currency"
 msgstr "Wybierz walutę"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Locked Out"
+msgstr "Zablokowany"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Clean up expired attempts"
+msgstr "Usuń wygasłe próby"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Not set"
+msgstr "Nie ustawiono"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Attempt Remaining"
+msgstr "Pozostałe próby"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "User Agent"
+msgstr "User Agent"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "HTTP Accept"
+msgstr "HTTP Accept"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Access lock out"
+msgstr "Blokada dostępu"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "access failure"
+msgstr "nieudane logowanie"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "access failures"
+msgstr "nieudane logowania"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Access Attempt"
+msgstr "Próba dostępu"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Expires At"
+msgstr "Wygasa"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "The time when access attempt expires and is no longer valid."
+msgstr "Czas, po którym próba dostępu wygasa i przestaje być ważna."
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "access attempt expiration"
+msgstr "wygaśnięcie próby dostępu"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "access attempt expirations"
+msgstr "wygaśnięcia prób dostępu"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Session key hash (sha256)"
+msgstr "Skrót klucza sesji (sha256)"

@@ -197,7 +197,7 @@ class Zlecenie(RequestTemplate):
     )
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Price"))
     notes = models.TextField(null=True, blank=True, verbose_name=_("Notes"))
-    deadline = models.DateField(null=True, blank=True)
+    deadline = models.DateField(null=True, blank=True, verbose_name=_("Deadline"))
     # claude
     clients = models.ManyToManyField(
         "clients.Client",
@@ -226,7 +226,7 @@ class Wniosek(RequestTemplate):
         verbose_name=_("From order"),
     )
     notes = models.TextField(null=True, blank=True, verbose_name=_("Notes"))
-    application_number = models.CharField(max_length=20, null=True, blank=True)
+    application_number = models.CharField(max_length=20, null=True, blank=True, verbose_name=_("Application number"))
     # claude
     clients = models.ManyToManyField(
         "clients.Client",

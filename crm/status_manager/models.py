@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from crm.status_manager.services.statuses import RequestStatus
 
@@ -21,6 +22,9 @@ class StatusHistory(models.Model):
 
     class Meta:
         ordering = ["-changed_at"]
+        # claude — translatable names for the admin log / content types
+        verbose_name = _("Status history entry")
+        verbose_name_plural = _("Status history")
 
 
 class ChildDocumentDeletion(models.Model):
@@ -48,3 +52,5 @@ class ChildDocumentDeletion(models.Model):
 
     class Meta:
         ordering = ["-deleted_at"]
+        verbose_name = _("Child document deletion")
+        verbose_name_plural = _("Child document deletions")
