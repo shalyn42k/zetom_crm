@@ -26,7 +26,21 @@ popup_departments / popup_owners) and submits the real add form.
 <div id="rm-dupe-check"
      data-url="{% url 'admin:zetom_requestmain_check_duplicates' %}"
      data-dup-action-url="{% url 'admin:zetom_requestmain_dup_request_action' %}"
-     data-form-id="{{ opts.model_name }}_form"></div>
+     data-form-id="{{ opts.model_name }}_form"
+     data-t-open-new-tab="{% trans 'Open in new tab' %}"
+     data-t-pull-title="{% trans "Copy this record's fields into the form" %}"
+     data-t-pull="{% trans 'pull' %}"
+     data-t-cancel-request="{% trans 'Cancel this existing request' %}"
+     data-t-soft-delete="{% trans 'Soft-delete this record' %}"
+     data-t-del="{% trans 'del' %}"
+     data-t-dismiss="{% trans 'Dismiss row (keep record)' %}"
+     data-t-phone="{% trans 'phone' %}"
+     data-t-email="{% trans 'email' %}"
+     data-t-duplicates="{% trans 'Duplicates' %}"
+     data-t-clients="{% trans 'Clients' %}"
+     data-t-plus-new="{% trans '+ new' %}"
+     data-t-confirm-delete-all="{% trans 'Move all duplicates to trash / cancel them? This can be undone.' %}"
+     data-t-network-error="{% trans 'Network error — could not check for duplicates. Check connection and try again.' %}"></div>
 
 <div class="rm-scrim" id="rm-dupe-modal" role="dialog" aria-modal="true" aria-labelledby="rm-dupe-title">
   <div class="rm-modal">

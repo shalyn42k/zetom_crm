@@ -36,8 +36,11 @@ msgid "No results found"
 msgstr "Nie znaleziono wyników"
 
 #. django-unfold: unfold/helpers/empty_results.html
-msgid "This page yielded into no results. Create a new item or reset your filters."
-msgstr "Ta strona nie zwróciła żadnych wyników. Utwórz nowy element lub zresetuj filtry."
+msgid ""
+"This page yielded into no results. Create a new item or reset your filters."
+msgstr ""
+"Ta strona nie zwróciła żadnych wyników. Utwórz nowy element lub zresetuj "
+"filtry."
 
 #. django-unfold: unfold/helpers/empty_results.html
 msgid "Reset filters"
@@ -48,3 +51,519 @@ msgstr "Zresetuj filtry"
 #. (ours should always supply one, this just covers any we missed).
 msgid "Welcome"
 msgstr "Witaj"
+
+#. django-unfold: unfold/admin.py
+msgid "Select record"
+msgstr "Zaznacz rekord"
+
+#. django-unfold: unfold/admin.py
+msgid "Select action"
+msgstr "Wybierz akcję"
+
+#. django-unfold: unfold/contrib/filters/forms.py
+msgid "From"
+msgstr "Od"
+
+#. django-unfold: unfold/contrib/filters/forms.py
+msgid "To"
+msgstr "Do"
+
+#. django-unfold: unfold/contrib/filters/forms.py
+msgid "Date from"
+msgstr "Data od"
+
+#. django-unfold: unfold/contrib/filters/forms.py
+msgid "Date to"
+msgstr "Data do"
+
+#. django-unfold:
+#. unfold/contrib/filters/templates/unfold/filters/filters_numeric_slider.html
+msgid "Not enough data."
+msgstr "Za mało danych."
+
+#. django-unfold: unfold/contrib/forms/templates/unfold/forms/array.html
+msgid "Add new item"
+msgstr "Dodaj nowy element"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Paragraph"
+msgstr "Akapit"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Underlined"
+msgstr "Podkreślenie"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Bold"
+msgstr "Pogrubienie"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Italic"
+msgstr "Kursywa"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Strike"
+msgstr "Przekreślenie"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Heading"
+msgstr "Nagłówek"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Quote"
+msgstr "Cytat"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Unordered list"
+msgstr "Lista punktowana"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Ordered list"
+msgstr "Lista numerowana"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Indent increase"
+msgstr "Zwiększ wcięcie"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Indent decrease"
+msgstr "Zmniejsz wcięcie"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Undo"
+msgstr "Cofnij"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Redo"
+msgstr "Ponów"
+
+#. django-unfold:
+#. unfold/contrib/forms/templates/unfold/forms/helpers/toolbar.html
+msgid "Enter an URL"
+msgstr "Wpisz adres URL"
+
+#. django-unfold:
+#. unfold/contrib/guardian/templates/admin/guardian/model/change_form.html
+msgid "Object permissions"
+msgstr "Uprawnienia obiektu"
+
+#. django-unfold:
+#. unfold/contrib/guardian/templates/admin/guardian/model/obj_perms_manage_group.html
+msgid "Group"
+msgstr "Grupa"
+
+#. django-unfold:
+#. unfold/contrib/guardian/templates/unfold/guardian/group_form.html
+msgid "Group permissions"
+msgstr "Uprawnienia grupy"
+
+#. django-unfold:
+#. unfold/contrib/guardian/templates/unfold/guardian/group_form.html
+msgid "Manage group"
+msgstr "Zarządzaj grupą"
+
+#. django-unfold:
+#. unfold/contrib/guardian/templates/unfold/guardian/user_form.html
+msgid "User permissions"
+msgstr "Uprawnienia użytkownika"
+
+#. django-unfold:
+#. unfold/contrib/guardian/templates/unfold/guardian/user_form.html
+msgid "Manage user"
+msgstr "Zarządzaj użytkownikiem"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/change_form.html
+msgid "Export"
+msgstr "Eksport"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/change_list_import_item.html
+msgid "Import"
+msgstr "Import"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/export.html
+msgid ""
+"\n"
+"                    Export %(len)s selected item.\n"
+"                "
+msgid_plural ""
+"\n"
+"                    Export %(len)s selected items.\n"
+"                "
+msgstr[0] ""
+"\n"
+"                    Eksportuj %(len)s zaznaczony element.\n"
+"                "
+msgstr[1] ""
+"\n"
+"                    Eksportuj %(len)s zaznaczone elementy.\n"
+"                "
+msgstr[2] ""
+"\n"
+"                    Eksportuj %(len)s zaznaczonych elementów.\n"
+"                "
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/export.html
+msgid "This exporter will export the following fields"
+msgstr "Ten eksporter wyeksportuje następujące pola"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/export.html
+msgid "Submit"
+msgstr "Wyślij"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/import_confirm.html
+msgid ""
+"Below is a preview of data to be imported. If you are satisfied with the "
+"results, click 'Confirm import'"
+msgstr ""
+"Poniżej podgląd danych do zaimportowania. Jeśli wyniki są poprawne, kliknij "
+"„Potwierdź import”"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/import_confirm.html
+msgid "Confirm import"
+msgstr "Potwierdź import"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/import_errors.html
+msgid "Line number"
+msgstr "Numer wiersza"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/import_preview.html
+msgid "Skipped"
+msgstr "Pominięte"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/import_preview.html
+msgid "Update"
+msgstr "Aktualizacja"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/import_validation.html
+msgid "Some rows failed to validate"
+msgstr "Niektóre wiersze nie przeszły walidacji"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/import_validation.html
+msgid ""
+"Please correct these errors in your data where possible, then reupload it "
+"using the form above."
+msgstr ""
+"Popraw te błędy w danych, jeśli to możliwe, a następnie prześlij je ponownie"
+" za pomocą formularza powyżej."
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/import_validation.html
+msgid "Row"
+msgstr "Wiersz"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/import_validation.html
+msgid "Errors"
+msgstr "Błędy"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/import_validation.html
+msgid "Non field specific"
+msgstr "Niezwiązane z polem"
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/resource_fields_list.html
+msgid "This exporter will export the following fields: "
+msgstr "Ten eksporter wyeksportuje następujące pola: "
+
+#. django-unfold:
+#. unfold/contrib/import_export/templates/admin/import_export/resource_fields_list.html
+msgid "This importer will import the following fields: "
+msgstr "Ten importer zaimportuje następujące pola: "
+
+#. django-unfold: unfold/contrib/inlines/admin.py
+msgid "%(class_name)s %(instance)s"
+msgstr "%(class_name)s %(instance)s"
+
+#. django-unfold:
+#. unfold/contrib/simple_history/templates/simple_history/object_history.html
+msgid ""
+"Choose a date from the list below to revert to a previous version of this "
+"object"
+msgstr ""
+"Wybierz datę z listy poniżej, aby przywrócić poprzednią wersję tego obiektu"
+
+#. django-unfold:
+#. unfold/contrib/simple_history/templates/simple_history/object_history_form.html
+msgid "Press the 'Change History' button below to edit the history."
+msgstr "Kliknij przycisk „Zmień historię” poniżej, aby edytować historię."
+
+#. django-unfold:
+#. unfold/contrib/simple_history/templates/simple_history/object_history_list.html
+msgid "Change reason"
+msgstr "Powód zmiany"
+
+#. django-unfold:
+#. unfold/contrib/simple_history/templates/simple_history/object_history_list.html
+msgid "Changes"
+msgstr "Zmiany"
+
+#. django-unfold: unfold/forms.py
+msgid "Select action to run"
+msgstr "Wybierz akcję do wykonania"
+
+#. django-unfold: unfold/forms.py
+msgid ""
+"Raw passwords are not stored, so there is no way to see this user’s "
+"password, but you can change the password using <a href=\"{}\" class=\"text-"
+"primary-600 dark:text-primary-500\">this form</a>."
+msgstr ""
+"Hasła nie są przechowywane w postaci jawnej, więc nie da się zobaczyć hasła "
+"tego użytkownika, ale możesz je zmienić za pomocą <a href=\"{}\" "
+"class=\"text-primary-600 dark:text-primary-500\">tego formularza</a>."
+
+#. django-unfold: unfold/mixins/base_model_admin.py
+msgid "Select value"
+msgstr "Wybierz wartość"
+
+#. django-unfold: unfold/mixins/dataset_model_admin.py
+msgid "Dataset not found. No action performed."
+msgstr "Nie znaleziono zbioru danych. Nie wykonano żadnej akcji."
+
+#. django-unfold: unfold/mixins/nested_inlines_model_admin.py
+msgid "You can not create nested object without parent"
+msgstr "Nie można utworzyć obiektu zagnieżdżonego bez obiektu nadrzędnego"
+
+#. django-unfold: unfold/templates/admin/actions.html
+msgid "Run"
+msgstr "Uruchom"
+
+#. django-unfold: unfold/templates/admin/auth/user/add_form.html
+msgid "After you've created a user, you’ll be able to edit more user options."
+msgstr "Po utworzeniu użytkownika będzie można edytować więcej jego ustawień."
+
+#. django-unfold: unfold/templates/admin/login.html
+msgid "Forgotten your password or username?"
+msgstr "Nie pamiętasz hasła lub nazwy użytkownika?"
+
+#. django-unfold: unfold/templates/registration/logged_out.html
+msgid "You have been successfully logged out from the administration"
+msgstr "Wylogowano z panelu administracyjnego"
+
+#. django-unfold: unfold/templates/unfold/components/table.html
+msgid "No data"
+msgstr "Brak danych"
+
+#. django-unfold: unfold/templates/unfold/helpers/actions_row.html
+msgid "More actions"
+msgstr "Więcej akcji"
+
+#. django-unfold: unfold/templates/unfold/helpers/app_list.html
+msgid "All applications"
+msgstr "Wszystkie aplikacje"
+
+#. django-unfold: unfold/templates/unfold/helpers/boolean.html
+msgid "True"
+msgstr "Tak"
+
+#. django-unfold: unfold/templates/unfold/helpers/boolean.html
+msgid "False"
+msgstr "Nie"
+
+#. django-unfold:
+#. unfold/templates/unfold/helpers/change_list_filter_actions.html
+msgid "Apply Filters"
+msgstr "Zastosuj filtry"
+
+#. django-unfold: unfold/templates/unfold/helpers/change_list_headers.html
+msgid "Select all rows"
+msgstr "Zaznacz wszystkie wiersze"
+
+#. django-unfold: unfold/templates/unfold/helpers/command_history.html
+msgid "Recent searches"
+msgstr "Ostatnie wyszukiwania"
+
+#. django-unfold: unfold/templates/unfold/helpers/command_history.html
+msgid "No recent searches"
+msgstr "Brak ostatnich wyszukiwań"
+
+#. django-unfold: unfold/templates/unfold/helpers/command_results.html
+msgid "No results matching your query"
+msgstr "Brak wyników pasujących do zapytania"
+
+#. django-unfold: unfold/templates/unfold/helpers/command_results.html
+msgid "Loading more results..."
+msgstr "Ładowanie kolejnych wyników..."
+
+#. django-unfold: unfold/templates/unfold/helpers/command_results.html
+msgid ""
+"\n"
+"                Found %(counter)s result in %(time)s seconds\n"
+"            "
+msgid_plural ""
+"\n"
+"                Found %(counter)s results in %(time)s seconds\n"
+"            "
+msgstr[0] ""
+"\n"
+"                Znaleziono %(counter)s wynik w %(time)s s\n"
+"            "
+msgstr[1] ""
+"\n"
+"                Znaleziono %(counter)s wyniki w %(time)s s\n"
+"            "
+msgstr[2] ""
+"\n"
+"                Znaleziono %(counter)s wyników w %(time)s s\n"
+"            "
+
+#. django-unfold: unfold/templates/unfold/helpers/display_header.html
+msgid "Record picture"
+msgstr "Zdjęcie rekordu"
+
+#. django-unfold:
+#. unfold/templates/unfold/helpers/edit_inline/inline_delete_undo.html
+msgid "This item will be deleted."
+msgstr "Ten element zostanie usunięty."
+
+#. django-unfold:
+#. unfold/templates/unfold/helpers/edit_inline/inline_delete_undo.html
+msgid "Click to cancel"
+msgstr "Kliknij, aby anulować"
+
+#. django-unfold:
+#. unfold/templates/unfold/helpers/field_readonly_value_file.html
+msgid "Image preview"
+msgstr "Podgląd obrazu"
+
+#. django-unfold:
+#. unfold/templates/unfold/helpers/field_readonly_value_file.html
+msgid "Click to download"
+msgstr "Kliknij, aby pobrać"
+
+#. django-unfold: unfold/templates/unfold/helpers/header_back_button.html
+msgid "Go back"
+msgstr "Wróć"
+
+#. django-unfold: unfold/templates/unfold/helpers/pagination_infinite.html
+msgid "Previous"
+msgstr "Poprzednia"
+
+#. django-unfold: unfold/templates/unfold/helpers/tab_items.html
+msgid "General"
+msgstr "Ogólne"
+
+#. django-unfold: unfold/templates/unfold/helpers/theme_switch.html
+msgid "System"
+msgstr "Systemowy"
+
+#. django-unfold: unfold/templates/unfold/widgets/clearable_file_input.html
+msgid "Choose file to upload"
+msgstr "Wybierz plik do przesłania"
+
+#. django-unfold: unfold/templates/unfold/widgets/password_toggle.html
+msgid "Toggle password visibility"
+msgstr "Pokaż/ukryj hasło"
+
+#. django-unfold:
+#. unfold/templates/unfold_crispy/layout/table_inline_formset.html
+msgid "Add row"
+msgstr "Dodaj wiersz"
+
+#. django-unfold: unfold/widgets.py
+msgid "Date"
+msgstr "Data"
+
+#. django-unfold: unfold/widgets.py
+msgid "Select currency"
+msgstr "Wybierz walutę"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Locked Out"
+msgstr "Zablokowany"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Clean up expired attempts"
+msgstr "Usuń wygasłe próby"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Not set"
+msgstr "Nie ustawiono"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Attempt Remaining"
+msgstr "Pozostałe próby"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "User Agent"
+msgstr "User Agent"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "HTTP Accept"
+msgstr "HTTP Accept"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Access lock out"
+msgstr "Blokada dostępu"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "access failure"
+msgstr "nieudane logowanie"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "access failures"
+msgstr "nieudane logowania"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Access Attempt"
+msgstr "Próba dostępu"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Expires At"
+msgstr "Wygasa"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "The time when access attempt expires and is no longer valid."
+msgstr "Czas, po którym próba dostępu wygasa i przestaje być ważna."
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "access attempt expiration"
+msgstr "wygaśnięcie próby dostępu"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "access attempt expirations"
+msgstr "wygaśnięcia prób dostępu"
+
+#. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
+#. catalog
+msgid "Session key hash (sha256)"
+msgstr "Skrót klucza sesji (sha256)"

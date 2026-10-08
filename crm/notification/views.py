@@ -16,7 +16,7 @@ from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 from django.views.decorators.http import require_POST
 
 # Local imports
@@ -90,7 +90,7 @@ def inbox(request):
     # `view_inbox` (см. crm/users/signals.py) — дополнительный гейт, чтобы
     # админ мог отозвать inbox у конкретной роли через extra_permissions.
     if not user_has_perm(request.user, "view_inbox"):
-        return HttpResponseForbidden("You don't have permission to view the inbox.")
+        return HttpResponseForbidden(gettext("You don't have permission to view the inbox."))
 
     filter_value = request.GET.get("filter", "all")
     if filter_value not in ("all", "unread"):
@@ -207,7 +207,7 @@ def mark_read(request, pk):
     """
     notification = get_object_or_404(Notification, pk=pk)
     if notification.recipient_id != request.user.id:
-        return HttpResponseForbidden("Not your notification.")
+        return HttpResponseForbidden(gettext("Not your notification."))
 
     # claude — для REVIEW_REQUEST ни pin-чекмарка, ни клика по заголовку с
     # `?back=inbox` не должно "съедать" нотификацию: dep_head обязан попасть

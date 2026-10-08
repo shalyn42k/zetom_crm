@@ -119,7 +119,7 @@
             <div class="form-group">
                 <label for="id_first_name">{% trans "First name" %}</label>
                 <input type="text" id="id_first_name" name="first_name" required
-                       placeholder="John"
+                       placeholder="{% trans "John" %}"
                        value="{{ form.first_name.value|default:'' }}">
                 {{ form.first_name.errors }}
             </div>
@@ -127,7 +127,7 @@
             <div class="form-group">
                 <label for="id_last_name">{% trans "Last name" %}</label>
                 <input type="text" id="id_last_name" name="last_name" required
-                       placeholder="Johnson"
+                       placeholder="{% trans "Johnson" %}"
                        value="{{ form.last_name.value|default:'' }}">
                 {{ form.last_name.errors }}
             </div>

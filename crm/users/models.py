@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 
 from crm.zetom.models import DepartmentsVariants
 
@@ -24,8 +24,11 @@ class Permission(models.Model):
         verbose_name = _("Permission")
         verbose_name_plural = _("Permissions")
 
+    # claude — name is stored in English (seeded by users.signals with _()
+    # msgids); translate on display so admin widgets/titles/lists that call
+    # str(obj) follow the active locale, like {% trans perm.name %} does.
     def __str__(self):
-        return self.name
+        return gettext(self.name)
 
 
 class Role(models.Model):
@@ -37,12 +40,13 @@ class Role(models.Model):
         verbose_name = _("Role")
         verbose_name_plural = _("Roles")
 
+    # claude — same as Permission.__str__: translate the seeded English name.
     def __str__(self):
-        return self.name
+        return gettext(self.name)
 
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile", verbose_name=_("User"))
     # tymir — заменил одиночное `department` (CharField) на `departments` (ArrayField)
     # и завёл `main_departments` для отметки primary-отделов (просто "основные
     # отделы юзера", НЕ headship). Headship хранится отдельно в `head_of_departments`
@@ -52,26 +56,30 @@ class UserProfile(models.Model):
         models.CharField(max_length=30, choices=DepartmentsVariants.choices),
         default=list,
         blank=True,
+        verbose_name=_("Main departments"),
     )
     # claude
     head_of_departments = ArrayField(
         models.CharField(max_length=30, choices=DepartmentsVariants.choices),
         default=list,
         blank=True,
+        verbose_name=_("Head of departments"),
     )
     departments = ArrayField(
         models.CharField(max_length=30, choices=DepartmentsVariants.choices),
         default=list,
         blank=True,
+        verbose_name=_("Departments"),
     )
-    job_title = models.CharField(max_length=100, null=True, blank=True)
-    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True)
+    job_title = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("Job title"))
+    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, verbose_name=_("Role"))
     # claude — индивидуальные права поверх role.permissions (аддитивно).
     # Заменяет прежний «общий Role(code=custom)», который один на всех.
     extra_permissions = models.ManyToManyField(
         Permission,
         blank=True,
         related_name="extra_users",
+        verbose_name=_("Extra permissions"),
     )
     # claude — 2FA обязателен всем (crm.users.middleware) КРОМЕ юзеров с этим
     # флагом. Единственная ручка для админа отключить 2FA конкретному человеку.
@@ -89,6 +97,12 @@ class UserProfile(models.Model):
         blank=True,
         verbose_name=_("Avatar"),
     )
+
+    # claude — no Meta before: Django derived "user profile(s)" from the
+    # class name as a plain, untranslatable string.
+    class Meta:
+        verbose_name = _("User profile")
+        verbose_name_plural = _("User profiles")
 
     def __str__(self):
         return f"{self.user.username} - {self.role}"

@@ -17,6 +17,14 @@
     return fetch(url, { method: "POST", body: fd });
   }
 
+  // claude — translated UI strings come from data-t-* on #client-card
+  // (rendered with {% trans %} in client_card.html); the English literal is
+  // only a fallback for a card rendered without them.
+  function t(key, fallback) {
+    var card = document.getElementById("client-card");
+    return (card && card.dataset[key]) || fallback;
+  }
+
   function showStatus(el, msg, ok) {
     if (!el) return;
     el.textContent = msg;
@@ -33,15 +41,15 @@
     row.innerHTML =
       '<a class="rm-linked-name" href="/admin/clients/client/' + cl.pk + '/change/" target="_blank">' + cl.label + "</a>" +
       (cl.nip ? '<span class="rm-linked-nip mono">NIP ' + cl.nip + "</span>" : "") +
-      '<button type="button" class="rm-linked-edit js-edit-client" data-client="' + cl.pk + '" title="Edit">\u270e</button>' +
-      '<button type="button" class="rm-linked-x js-unlink-client" data-client="' + cl.pk + '" data-url="' + unlinkBase + '" title="Unlink">\u00d7</button>';
+      '<button type="button" class="rm-linked-edit js-edit-client" data-client="' + cl.pk + '" title="' + escapeHtml(t("tEdit", "Edit")) + '">\u270e</button>' +
+      '<button type="button" class="rm-linked-x js-unlink-client" data-client="' + cl.pk + '" data-url="' + unlinkBase + '" title="' + escapeHtml(t("tUnlink", "Unlink")) + '">\u00d7</button>';
     return row;
   }
 
   function buildEditFormHtml(data) {
     function field(label, name, type, value) {
       return '<div class="rm-form-group">' +
-        '<label class="rm-label">' + label + '</label>' +
+        '<label class="rm-label">' + escapeHtml(label) + '</label>' +
         '<input type="' + type + '" name="' + name + '" value="' + escapeHtml(value) + '" class="rm-form-input">' +
         '</div>';
     }
@@ -52,16 +60,16 @@
       var txt = data.company_name || "";
       if (data.company_nip) txt += (txt ? " · " : "") + "NIP " + data.company_nip;
       return '<div class="rm-form-group">' +
-        '<label class="rm-label">Firma</label>' +
+        '<label class="rm-label">' + escapeHtml(t("tCompany", "Company")) + '</label>' +
         '<div class="rm-form-ro">' + escapeHtml(txt) + '</div>' +
         '</div>';
     }
-    return field("First name", "first_name", "text", data.first_name) +
-      field("Last name", "last_name", "text", data.last_name) +
+    return field(t("tFirstName", "First name"), "first_name", "text", data.first_name) +
+      field(t("tLastName", "Last name"), "last_name", "text", data.last_name) +
       companyRow() +
-      field("Phone", "phone", "text", data.phone) +
-      field("Email", "email", "email", data.email) +
-      field("Address", "address", "text", data.address);
+      field(t("tPhone", "Phone"), "phone", "text", data.phone) +
+      field(t("tEmail", "Email"), "email", "email", data.email) +
+      field(t("tAddress", "Address"), "address", "text", data.address);
   }
 
   function escapeHtml(text) {
@@ -145,7 +153,7 @@
               modalBody.innerHTML = buildEditFormHtml(d);
               if (modal) modal.hidden = false;
             } else {
-              alert("Error loading client data");
+              alert(t("tErrorLoading", "Error loading client data"));
             }
           });
       });
@@ -168,7 +176,7 @@
               if (row) row.remove();
               var remaining = list.querySelectorAll(".rm-linked-row");
               if (!remaining.length && empty) empty.hidden = false;
-              showStatus(status, "Unlinked.", true);
+              showStatus(status, t("tUnlinked", "Unlinked."), true);
             }
           });
       });
@@ -196,7 +204,7 @@
               // success so that banner is actually visible instead of
               // sitting behind the still-open overlay.
               closeLinkModal();
-              showStatus(status, "Linked.", true);
+              showStatus(status, t("tLinked", "Linked."), true);
             }
           });
       });
@@ -212,15 +220,15 @@
           .then(function (r) { return r.json(); })
           .then(function (d) {
             if (d.ok) {
-              if (!d.created) { closeLinkModal(); showStatus(status, "Already linked.", true); return; }
+              if (!d.created) { closeLinkModal(); showStatus(status, t("tAlreadyLinked", "Already linked."), true); return; }
               var row = buildLinkedRow(d, card);
               if (empty) list.insertBefore(row, empty);
               else list.appendChild(row);
               hideEmpty();
               closeLinkModal();
-              showStatus(status, "Linked.", true);
+              showStatus(status, t("tLinked", "Linked."), true);
             } else {
-              showStatus(status, "Error.", false);
+              showStatus(status, t("tError", "Error."), false);
             }
           });
       });
@@ -238,10 +246,10 @@
               else list.appendChild(row);
               hideEmpty();
               closeLinkModal();
-              showStatus(status, "Created and linked.", true);
+              showStatus(status, t("tCreatedLinked", "Created and linked."), true);
               createBtn.disabled = true;
             } else {
-              showStatus(status, "Error.", false);
+              showStatus(status, t("tError", "Error."), false);
             }
           });
       });
@@ -285,9 +293,9 @@
                 if (el) el.value = fieldMap[id] || "";
               });
               closeModal();
-              showStatus(status, "Client updated.", true);
+              showStatus(status, t("tClientUpdated", "Client updated."), true);
             } else {
-              alert("Error saving client: " + (d.error || "Unknown error"));
+              alert(t("tErrorSaving", "Error saving client:") + " " + (d.error || t("tUnknownError", "Unknown error")));
             }
           });
       });

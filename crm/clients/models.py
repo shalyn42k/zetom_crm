@@ -15,7 +15,7 @@ class Client(models.Model):
     last_name = models.CharField(_("Last name"), max_length=100, blank=True, null=True)
 
     email = models.EmailField(_("Email"), blank=True, null=True)
-    phone = PhoneNumberField(null=True, blank=True)
+    phone = PhoneNumberField(_("Phone"), null=True, blank=True)
 
     address = models.TextField(_("Address"), blank=True, null=True)
 

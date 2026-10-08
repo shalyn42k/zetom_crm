@@ -596,7 +596,7 @@ class RequestMainAdmin(
             return JsonResponse({"ok": False, "error": "permission"}, status=403)
         cl = Client.objects.filter(pk=client_id).first()
         if not cl:
-            return JsonResponse({"ok": False, "error": "not found"}, status=404)
+            return JsonResponse({"ok": False, "error": _("not found")}, status=404)
         _, created = RequestClientLink.objects.get_or_create(
             request=obj, client=cl, defaults={"linked_by": request.user}
         )
@@ -642,7 +642,7 @@ class RequestMainAdmin(
             return JsonResponse({"ok": False, "error": "permission"}, status=403)
         cl = Client.objects.filter(pk=client_id).first()
         if not cl:
-            return JsonResponse({"ok": False, "error": "not found"}, status=404)
+            return JsonResponse({"ok": False, "error": _("not found")}, status=404)
         # claude — phase 3c: person fields are editable; company_name/company_nip
         # are read-only, derived from the linked Company (edit them on the
         # Company card, not here).
@@ -668,7 +668,7 @@ class RequestMainAdmin(
             return JsonResponse({"ok": False, "error": "permission"}, status=403)
         cl = Client.objects.filter(pk=client_id).first()
         if not cl:
-            return JsonResponse({"ok": False, "error": "not found"}, status=404)
+            return JsonResponse({"ok": False, "error": _("not found")}, status=404)
         
         # claude — phase 3c: person-only save. Company (name/NIP) belongs to the
         # linked Company and is not edited here.
@@ -784,7 +784,7 @@ class RequestMainAdmin(
     # can't be reached by id either.
     def dup_request_action(self, request):
         if request.method != "POST":
-            return JsonResponse({"ok": False, "error": "POST required"}, status=405)
+            return JsonResponse({"ok": False, "error": _("POST required")}, status=405)
         if not user_has_perm(request.user, "edit_requests"):
             return JsonResponse(
                 {"ok": False, "error": "forbidden"}, status=403
@@ -831,18 +831,18 @@ class RequestMainAdmin(
             return JsonResponse({"ok": True, "count": count})
 
         if ":" not in action:
-            return JsonResponse({"ok": False, "error": "bad action"}, status=400)
+            return JsonResponse({"ok": False, "error": _("bad action")}, status=400)
         op, kind, raw_pk = (action.split(":", 2) + ["", ""])[:3]
         try:
             pk = int(raw_pk)
         except ValueError:
-            return JsonResponse({"ok": False, "error": "bad pk"}, status=400)
+            return JsonResponse({"ok": False, "error": _("bad pk")}, status=400)
         if op == "delete_existing":
             err = _soft_delete_existing(kind, pk)
             if err:
                 return JsonResponse({"ok": False, "error": err}, status=400)
             return JsonResponse({"ok": True})
-        return JsonResponse({"ok": False, "error": "unknown op"}, status=400)
+        return JsonResponse({"ok": False, "error": _("unknown op")}, status=400)
 
     # ---------- POST-action gate ----------
 
