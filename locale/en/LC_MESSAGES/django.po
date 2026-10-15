@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-08 08:20+0200\n"
+"POT-Creation-Date: 2026-10-15 12:55+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,64 +26,68 @@ msgstr ""
 msgid "Polish"
 msgstr ""
 
-#: config/unfold_config.py:16
+#: config/unfold_config.py:13
+msgid "Control Panel"
+msgstr ""
+
+#: config/unfold_config.py:19
 msgid "Email Form"
 msgstr ""
 
-#: config/unfold_config.py:33
+#: config/unfold_config.py:36
 msgid "View profile"
 msgstr ""
 
-#: config/unfold_config.py:126 config/unfold_config.py:130
+#: config/unfold_config.py:129 config/unfold_config.py:133
 #: templates/admin/index.html:1085
 msgid "Inbox"
 msgstr ""
 
-#: config/unfold_config.py:139 crm/clients/admin.py:229
+#: config/unfold_config.py:142 crm/clients/admin.py:229
 #: crm/users/admin/user.py:34
 #: crm/users/templates/admin/auth/user/_partials/tab_notifications.html:14
 msgid "Requests"
 msgstr ""
 
-#: config/unfold_config.py:143
+#: config/unfold_config.py:146
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:106
 #: templates/admin/index.html:1091
 msgid "Validation"
 msgstr ""
 
-#: config/unfold_config.py:151 crm/zetom/models.py:157 crm/zetom/models.py:158
+#: config/unfold_config.py:154 crm/zetom/models.py:157 crm/zetom/models.py:158
 #: templates/admin/index.html:1098
 msgid "Information"
 msgstr ""
 
-#: config/unfold_config.py:159 crm/clients/admin.py:234 crm/zetom/models.py:178
+#: config/unfold_config.py:162 crm/clients/admin.py:234 crm/zetom/models.py:178
 #: templates/admin/index.html:1099
 msgid "Offers"
 msgstr ""
 
-#: config/unfold_config.py:167 crm/clients/admin.py:239 crm/zetom/models.py:211
+#: config/unfold_config.py:170 crm/clients/admin.py:239 crm/zetom/models.py:211
 #: templates/admin/index.html:1100
 msgid "Orders"
 msgstr ""
 
-#: config/unfold_config.py:175 crm/clients/admin.py:244 crm/zetom/models.py:240
+#: config/unfold_config.py:178 crm/clients/admin.py:244 crm/zetom/models.py:240
 #: templates/admin/index.html:1101
 msgid "Applications"
 msgstr ""
 
-#: config/unfold_config.py:188
+#: config/unfold_config.py:191
 msgid "Archive"
 msgstr "Archive"
 
-#: config/unfold_config.py:192 crm/status_manager/services/statuses.py:17
+#: config/unfold_config.py:195 crm/status_manager/services/statuses.py:17
 msgid "Cancelled"
 msgstr ""
 
-#: config/unfold_config.py:200
+#: config/unfold_config.py:203
 msgid "Trash"
 msgstr ""
 
-#: config/unfold_config.py:211 config/unfold_config.py:215
+#: config/unfold_config.py:214 config/unfold_config.py:218
 #: crm/clients/admin.py:640 crm/clients/apps.py:12 crm/clients/models.py:29
 #: crm/users/admin/user.py:45
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:40
@@ -92,34 +96,34 @@ msgstr ""
 msgid "Clients"
 msgstr ""
 
-#: config/unfold_config.py:228
+#: config/unfold_config.py:231
 msgid "Users & Access"
 msgstr "Users & Access"
 
-#: config/unfold_config.py:232 crm/users/admin/user.py:32 crm/users/apps.py:12
+#: config/unfold_config.py:235 crm/users/admin/user.py:32 crm/users/apps.py:12
 #: crm/users/templates/users/user_list.html:8
 msgid "Users"
 msgstr ""
 
-#: config/unfold_config.py:240 crm/users/admin/user.py:33
-#: crm/users/models.py:42
+#: config/unfold_config.py:243 crm/users/admin/user.py:33
+#: crm/users/models.py:41
 msgid "Roles"
 msgstr ""
 
-#: config/unfold_config.py:255 crm/notification/models.py:15
+#: config/unfold_config.py:258 crm/notification/models.py:15
 #: templates/unfold/helpers/unauthenticated_header.html:46
 msgid "System"
 msgstr ""
 
-#: config/unfold_config.py:259
+#: config/unfold_config.py:262
 msgid "Activity Log"
 msgstr ""
 
-#: config/unfold_config.py:267
+#: config/unfold_config.py:270
 msgid "Notification log"
 msgstr ""
 
-#: config/unfold_config.py:277
+#: config/unfold_config.py:280
 msgid "Email log"
 msgstr ""
 
@@ -184,15 +188,15 @@ msgstr "Contact date"
 msgid "Next client contact at"
 msgstr "Next contact"
 
-#: crm/clients/admin.py:352 crm/zetom/admin/requestmain.py:938
+#: crm/clients/admin.py:352 crm/zetom/admin/requestmain.py:976
 msgid "Client not found."
 msgstr ""
 
 #: crm/clients/admin.py:355 crm/users/views.py:199 crm/zetom/admin/base.py:161
 #: crm/zetom/admin/children.py:50 crm/zetom/admin/deletedrequest.py:121
 #: crm/zetom/admin/deletedvalidationrequest.py:103
-#: crm/zetom/admin/requestmain.py:719 crm/zetom/admin/requestmain.py:863
-#: crm/zetom/admin/requestmain.py:1058 crm/zetom/admin/requestmain.py:1083
+#: crm/zetom/admin/requestmain.py:757 crm/zetom/admin/requestmain.py:901
+#: crm/zetom/admin/requestmain.py:1096 crm/zetom/admin/requestmain.py:1121
 #: crm/zetom/admin/requestmain_mail.py:64
 #: crm/zetom/admin/requestmain_resolve_review.py:115
 #: crm/zetom/admin/requestmain_review.py:66
@@ -341,8 +345,8 @@ msgstr "Regional"
 msgid "Międzynarodowy"
 msgstr "International"
 
-#: crm/clients/models.py:67 crm/users/admin/role.py:52 crm/users/models.py:15
-#: crm/users/models.py:37
+#: crm/clients/models.py:67 crm/users/admin/role.py:52 crm/users/models.py:14
+#: crm/users/models.py:36
 msgid "Name"
 msgstr "Name"
 
@@ -1221,7 +1225,7 @@ msgid "Subject"
 msgstr ""
 
 #: crm/notification/models.py:41 crm/users/templates/users/user_list.html:23
-#: crm/zetom/admin/base.py:494 crm/zetom/admin/requestmain.py:145
+#: crm/zetom/admin/base.py:494 crm/zetom/admin/requestmain.py:179
 msgid "Status"
 msgstr ""
 
@@ -1467,45 +1471,65 @@ msgstr ""
 msgid "Next page"
 msgstr ""
 
-#: crm/notification/templates/notification/mail/client_in_progress.txt:11
-msgid "your"
+#: crm/notification/templates/notification/mail/client_in_progress.txt:22
+#, python-format
+msgid "%(document_code)s: your offer is now in progress"
 msgstr ""
 
-#: crm/notification/templates/notification/mail/client_in_progress.txt:11
-msgid "is now in progress"
+#: crm/notification/templates/notification/mail/client_in_progress.txt:22
+#, python-format
+msgid "%(document_code)s: your order is now in progress"
 msgstr ""
 
-#: crm/notification/templates/notification/mail/client_in_progress.txt:13
+#: crm/notification/templates/notification/mail/client_in_progress.txt:22
+#, python-format
+msgid "%(document_code)s: your application is now in progress"
+msgstr ""
+
+#: crm/notification/templates/notification/mail/client_in_progress.txt:24
 msgid "Hello"
 msgstr ""
 
-#: crm/notification/templates/notification/mail/client_in_progress.txt:15
-msgid "We're letting you know that your"
+#: crm/notification/templates/notification/mail/client_in_progress.txt:26
+#, python-format
+msgid ""
+"We're letting you know that your offer %(document_code)s has been accepted "
+"and is now in progress."
 msgstr ""
 
-#: crm/notification/templates/notification/mail/client_in_progress.txt:15
-msgid "has been accepted and is now in progress."
+#: crm/notification/templates/notification/mail/client_in_progress.txt:26
+#, python-format
+msgid ""
+"We're letting you know that your order %(document_code)s has been accepted "
+"and is now in progress."
 msgstr ""
 
-#: crm/notification/templates/notification/mail/client_in_progress.txt:16
+#: crm/notification/templates/notification/mail/client_in_progress.txt:26
+#, python-format
+msgid ""
+"We're letting you know that your application %(document_code)s has been "
+"accepted and is now in progress."
+msgstr ""
+
+#: crm/notification/templates/notification/mail/client_in_progress.txt:27
 msgid "Linked to request from"
 msgstr ""
 
-#: crm/notification/templates/notification/mail/client_in_progress.txt:18
+#: crm/notification/templates/notification/mail/client_in_progress.txt:29
 msgid ""
 "We'll get back to you when the status changes or if any details need to be "
 "clarified."
 msgstr ""
 
-#: crm/notification/templates/notification/mail/client_in_progress.txt:19
+#: crm/notification/templates/notification/mail/client_in_progress.txt:30
 msgid "If you have any questions, simply reply to this email."
 msgstr ""
 
-#: crm/notification/templates/notification/mail/client_in_progress.txt:21
+#: crm/notification/templates/notification/mail/client_in_progress.txt:32
 msgid "Kind regards,"
 msgstr ""
 
-#: crm/notification/templates/notification/mail/client_in_progress.txt:22
+#: crm/notification/templates/notification/mail/client_in_progress.txt:33
 msgid "Zetom team"
 msgstr ""
 
@@ -1793,13 +1817,13 @@ msgstr ""
 msgid "Missing view_users permission"
 msgstr ""
 
-#: crm/users/admin/role.py:68 crm/users/models.py:26 crm/users/models.py:38
+#: crm/users/admin/role.py:68 crm/users/models.py:25 crm/users/models.py:37
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:18
 msgid "Permissions"
 msgstr ""
 
 #: crm/users/admin/user.py:46 crm/users/admin/user.py:355 crm/users/forms.py:34
-#: crm/users/models.py:73
+#: crm/users/models.py:72
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:31
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:24
 #: crm/users/templates/users/user_detail.html:15 crm/zetom/admin/base.py:79
@@ -1831,14 +1855,14 @@ msgid "Other"
 msgstr "Other"
 
 #: crm/users/admin/user.py:346 crm/users/forms.py:28 crm/users/forms.py:111
-#: crm/users/models.py:41 crm/users/models.py:76
+#: crm/users/models.py:40 crm/users/models.py:75
 #: crm/users/templates/users/user_detail.html:14
 #: crm/users/templates/users/user_list.html:21
 msgid "Role"
 msgstr ""
 
 #: crm/users/admin/user.py:359 crm/users/forms.py:40 crm/users/forms.py:117
-#: crm/users/models.py:75
+#: crm/users/models.py:74
 msgid "Job title"
 msgstr ""
 
@@ -1909,15 +1933,15 @@ msgstr ""
 msgid "Passwords don't match."
 msgstr ""
 
-#: crm/users/forms.py:122 crm/users/forms.py:245 crm/users/models.py:99
+#: crm/users/forms.py:122 crm/users/forms.py:245 crm/users/models.py:98
 msgid "Avatar"
 msgstr ""
 
-#: crm/users/forms.py:128 crm/users/models.py:89
+#: crm/users/forms.py:128 crm/users/models.py:88
 msgid "2FA exempt"
 msgstr ""
 
-#: crm/users/forms.py:130 crm/users/models.py:90
+#: crm/users/forms.py:130 crm/users/models.py:89
 msgid "If enabled, this user is not required to use two-factor authentication."
 msgstr ""
 
@@ -1937,58 +1961,58 @@ msgstr ""
 msgid "The two password fields didn’t match."
 msgstr ""
 
-#: crm/users/models.py:14 crm/users/models.py:36
+#: crm/users/models.py:13 crm/users/models.py:35
 #: crm/users/templates/users/otp_verify.html:25
 msgid "Code"
 msgstr ""
 
-#: crm/users/models.py:18
+#: crm/users/models.py:17
 msgid "Category"
 msgstr ""
 
-#: crm/users/models.py:25
+#: crm/users/models.py:24
 msgid "Permission"
 msgstr ""
 
-#: crm/users/models.py:50
+#: crm/users/models.py:49
 msgid "User"
 msgstr ""
 
-#: crm/users/models.py:60
+#: crm/users/models.py:59
 msgid "Main departments"
 msgstr ""
 
-#: crm/users/models.py:67
+#: crm/users/models.py:66
 msgid "Head of departments"
 msgstr ""
 
-#: crm/users/models.py:83
+#: crm/users/models.py:82
 msgid "Extra permissions"
 msgstr ""
 
-#: crm/users/models.py:105 crm/users/templates/users/user_detail.html:7
+#: crm/users/models.py:104 crm/users/templates/users/user_detail.html:7
 msgid "User profile"
 msgstr ""
 
-#: crm/users/models.py:106
+#: crm/users/models.py:105
 msgid "User profiles"
 msgstr ""
 
-#: crm/users/models.py:130
+#: crm/users/models.py:129
 msgid ""
 "A department can be marked as main only if the user already belongs to it."
 msgstr ""
 
-#: crm/users/models.py:138
+#: crm/users/models.py:137
 msgid ""
 "A department can be marked as head-of only if the user already belongs to it."
 msgstr ""
 
-#: crm/users/models.py:182
+#: crm/users/models.py:181
 msgid "Trusted device"
 msgstr ""
 
-#: crm/users/models.py:183
+#: crm/users/models.py:182
 msgid "Trusted devices"
 msgstr ""
 
@@ -2261,7 +2285,7 @@ msgstr ""
 
 #: crm/users/templates/admin/auth/user/_partials/tab_notifications.html:32
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:172
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:6
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:18
 msgid "Documents"
 msgstr ""
 
@@ -2567,9 +2591,9 @@ msgid "Department"
 msgstr ""
 
 #: crm/users/templates/users/user_list.html:48
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:33
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:73
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:113
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:45
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:85
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:125
 msgid "View"
 msgstr ""
 
@@ -2647,7 +2671,7 @@ msgstr ""
 
 #: crm/zetom/admin/base.py:159 crm/zetom/admin/deletedrequest.py:126
 #: crm/zetom/admin/deletedvalidationrequest.py:108
-#: crm/zetom/admin/requestmain.py:868 crm/zetom/admin/requestmain.py:883
+#: crm/zetom/admin/requestmain.py:906 crm/zetom/admin/requestmain.py:921
 #: crm/zetom/admin/requestmain_mail.py:69
 #: crm/zetom/admin/requestmain_resolve_review.py:111
 #: crm/zetom/admin/requestmain_review.py:72
@@ -2656,19 +2680,19 @@ msgstr ""
 
 #: crm/zetom/admin/base.py:290 crm/zetom/models.py:177
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:182
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:18
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:30
 msgid "Offer"
 msgstr ""
 
 #: crm/zetom/admin/base.py:292 crm/zetom/models.py:210
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:196
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:58
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:70
 msgid "Order"
 msgstr ""
 
 #: crm/zetom/admin/base.py:294 crm/zetom/models.py:239
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:210
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:98
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:110
 msgid "Application"
 msgstr ""
 
@@ -2693,8 +2717,8 @@ msgstr "Not found."
 msgid "Document deleted."
 msgstr ""
 
-#: crm/zetom/admin/children.py:77 crm/zetom/admin/requestmain.py:266
-#: crm/zetom/admin/requestmain.py:1156
+#: crm/zetom/admin/children.py:77 crm/zetom/admin/requestmain.py:300
+#: crm/zetom/admin/requestmain.py:1194
 msgid "Reason is required."
 msgstr ""
 
@@ -2727,160 +2751,160 @@ msgstr ""
 msgid "Change message"
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:264
+#: crm/zetom/admin/requestmain.py:298
 msgid "Request deleted."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:282
+#: crm/zetom/admin/requestmain.py:316
 msgid "Delete request"
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:599 crm/zetom/admin/requestmain.py:645
-#: crm/zetom/admin/requestmain.py:671
+#: crm/zetom/admin/requestmain.py:637 crm/zetom/admin/requestmain.py:683
+#: crm/zetom/admin/requestmain.py:709
 msgid "not found"
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:787
+#: crm/zetom/admin/requestmain.py:825
 msgid "POST required"
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:812
+#: crm/zetom/admin/requestmain.py:850
 msgid "Cancelled as duplicate from the add form."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:834
+#: crm/zetom/admin/requestmain.py:872
 msgid "bad action"
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:839
+#: crm/zetom/admin/requestmain.py:877
 msgid "bad pk"
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:845
+#: crm/zetom/admin/requestmain.py:883
 msgid "unknown op"
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:898
+#: crm/zetom/admin/requestmain.py:936
 msgid "Invalid department."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:901
+#: crm/zetom/admin/requestmain.py:939
 msgid "Already assigned."
-msgstr ""
-
-#: crm/zetom/admin/requestmain.py:907
-#, python-format
-msgid "Added %(label)s."
-msgstr ""
-
-#: crm/zetom/admin/requestmain.py:921
-#, python-format
-msgid "Removed %(label)s."
 msgstr ""
 
 #: crm/zetom/admin/requestmain.py:945
 #, python-format
+msgid "Added %(label)s."
+msgstr ""
+
+#: crm/zetom/admin/requestmain.py:959
+#, python-format
+msgid "Removed %(label)s."
+msgstr ""
+
+#: crm/zetom/admin/requestmain.py:983
+#, python-format
 msgid "Linked client %(c)s."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:947
+#: crm/zetom/admin/requestmain.py:985
 msgid "Client already linked."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:974
+#: crm/zetom/admin/requestmain.py:1012
 #, python-format
 msgid "Created and linked client %(c)s."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:988
+#: crm/zetom/admin/requestmain.py:1026
 msgid "Client unlinked."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1005
+#: crm/zetom/admin/requestmain.py:1043
 msgid "No user selected."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1010 crm/zetom/admin/requestmain.py:1034
-#: crm/zetom/admin/requestmain.py:1063 crm/zetom/admin/requestmain.py:1088
+#: crm/zetom/admin/requestmain.py:1048 crm/zetom/admin/requestmain.py:1072
+#: crm/zetom/admin/requestmain.py:1101 crm/zetom/admin/requestmain.py:1126
 msgid "User not found."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1014
+#: crm/zetom/admin/requestmain.py:1052
 msgid "You can't assign this user."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1020
+#: crm/zetom/admin/requestmain.py:1058
 #, python-format
 msgid "Assigned %(name)s."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1038
+#: crm/zetom/admin/requestmain.py:1076
 msgid "You can't unassign this user."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1046
+#: crm/zetom/admin/requestmain.py:1084
 #, python-format
 msgid "Removed %(name)s."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1067
+#: crm/zetom/admin/requestmain.py:1105
 msgid "User must be assigned before becoming owner."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1072
+#: crm/zetom/admin/requestmain.py:1110
 #, python-format
 msgid "%(name)s is now an owner."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1093
+#: crm/zetom/admin/requestmain.py:1131
 #, python-format
 msgid "%(name)s is no longer an owner."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1121
+#: crm/zetom/admin/requestmain.py:1159
 msgid "Reason required"
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1130
+#: crm/zetom/admin/requestmain.py:1168
 #, python-format
 msgid "Status changed to %(status)s."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1147
+#: crm/zetom/admin/requestmain.py:1185
 msgid "This request is already cancelled."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1154
+#: crm/zetom/admin/requestmain.py:1192
 msgid "Request cancelled."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1168
+#: crm/zetom/admin/requestmain.py:1206
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:79
 msgid "Cancel request"
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1182
+#: crm/zetom/admin/requestmain.py:1220
 msgid "Offer created."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1192
+#: crm/zetom/admin/requestmain.py:1230
 msgid "Order created."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1202
+#: crm/zetom/admin/requestmain.py:1240
 msgid "Application created."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1215
+#: crm/zetom/admin/requestmain.py:1253
 msgid "No files selected."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1221
+#: crm/zetom/admin/requestmain.py:1259
 #, python-format
 msgid "%(n)d file(s) uploaded."
 msgstr ""
 
-#: crm/zetom/admin/requestmain.py:1234
+#: crm/zetom/admin/requestmain.py:1272
 msgid "Attachment deleted."
 msgstr ""
 
@@ -3081,6 +3105,10 @@ msgstr ""
 msgid "Validation Window — RequestNull #%(id)d"
 msgstr ""
 
+#: crm/zetom/apps.py:16
+msgid "Zetom CRM"
+msgstr ""
+
 #: crm/zetom/forms.py:47 crm/zetom/models.py:59
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:311
 #: crm/zetom/templates/zetom/email_template.html:138
@@ -3260,7 +3288,7 @@ msgstr "Step note"
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:96
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:48
 #: crm/zetom/templates/admin/zetom/wniosek/change_form.html:29
-#: crm/zetom/templates/admin/zetom/zlecenie/change_form.html:33
+#: crm/zetom/templates/admin/zetom/zlecenie/change_form.html:36
 msgid "Step notes"
 msgstr "Work log"
 
@@ -3401,7 +3429,6 @@ msgstr ""
 #: crm/zetom/templates/admin/zetom/oferta/change_form.html:77
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:196
 #: crm/zetom/templates/admin/zetom/wniosek/change_form.html:35
-#: crm/zetom/templates/admin/zetom/zlecenie/change_form.html:39
 msgid "Mark as done"
 msgstr "Mark as done"
 
@@ -3711,27 +3738,27 @@ msgstr ""
 msgid "No departments assigned yet."
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:28
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:68
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:108
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:40
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:80
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:120
 msgid "Not created"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:40
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:52
 msgid "Create new offer"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:49
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:89
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:129
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:61
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:101
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:141
 msgid "Create"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:80
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:92
 msgid "Create new order"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:120
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:132
 msgid "Create new application"
 msgstr ""
 

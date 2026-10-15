@@ -21,9 +21,12 @@ as oferta/change_form.html's copy of this comment.
   didn't fit. A new Wniosek is still created from the parent RequestMain's
   own change form ("Create application" button there, wired to
   approve_wniosek_action), which still auto-closes this Zlecenie (and
-  every other not-yet-done Zlecenie on the request) when it runs, same as
-  before; "Mark as done" below is only for closing it by hand ahead of
-  that, or if nobody ever creates a Wniosek for this request at all.
+  every other not-yet-done Zlecenie on the request) when it runs.
+
+  claude — Fix-round: "Mark as done" (manual close, same button Oferta/
+  Wniosek still have) was removed from here too, by explicit request —
+  unlike those two, a Zlecenie should only reach `done` through that
+  auto-close chain, never by hand from its own form.
   {% endcomment %}
   {% if original.pk %}
     <div class="rm-doc-chain" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">
@@ -31,14 +34,6 @@ as oferta/change_form.html's copy of this comment.
         onclick="window.dispatchEvent(new CustomEvent('open-step-notes'))">
         {% trans "Step notes" %}
       </button>
-      {% if original.status != "done" %}
-      <form method="post" action="{% url 'admin:zetom_zlecenie_mark_done' original.pk %}">
-        {% csrf_token %}
-        <button type="submit" class="cc-action-btn cc-action-btn--accent">
-          {% trans "Mark as done" %}
-        </button>
-      </form>
-      {% endif %}
     </div>
   {% endif %}
 {% endblock content %}

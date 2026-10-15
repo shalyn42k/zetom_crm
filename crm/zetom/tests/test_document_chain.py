@@ -88,8 +88,11 @@ class DocumentChainModelTests(TestCase):
 class MarkDoneActionTests(TestCase):
     """Status editing is locked out of the Oferta/Zlecenie/Wniosek forms
     entirely, and Wniosek has no auto-close hook (nothing is ever created
-    from it) — mark_done_action is the only way any of the three can reach
-    `done` without an auto-close chain event."""
+    from it) — mark_done_action is the only way Oferta/Wniosek can reach
+    `done` without an auto-close chain event. Zlecenie deliberately does
+    NOT have this button (removed by explicit request) — it should only
+    ever close via close_zlecenie_on_wniosek, never by hand; see
+    ZlecenieMarkDoneRemovedTests below."""
 
     @classmethod
     def setUpTestData(cls):
@@ -139,6 +142,42 @@ class MarkDoneActionTests(TestCase):
         self.assertNotContains(
             response, reverse("admin:zetom_wniosek_mark_done", args=[wniosek.pk])
         )
+
+
+class ZlecenieMarkDoneRemovedTests(TestCase):
+    """Zlecenie should only reach `done` through the auto-close chain
+    (close_zlecenie_on_wniosek, fired when a Wniosek is created from the
+    parent RequestMain) — never by hand from its own form, unlike Oferta/
+    Wniosek. The mark-done URL/button were removed by explicit request."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = User.objects.create_superuser(
+            username="admin4", email="a4@a.com", password="x"
+        )
+
+    def setUp(self):
+        self.client.force_login(self.user)
+        self.main = RequestMain.objects.create(**BASE_DATA, company_name="Zetom")
+
+    def test_mark_done_url_does_not_exist_for_zlecenie(self):
+        from django.urls import NoReverseMatch
+
+        with self.assertRaises(NoReverseMatch):
+            reverse("admin:zetom_zlecenie_mark_done", args=[1])
+
+    def test_change_form_does_not_render_mark_done_button(self):
+        zlecenie = Zlecenie.objects.create(**BASE_DATA, from_main=self.main)
+        url = reverse("admin:zetom_zlecenie_change", args=[zlecenie.pk])
+        response = self.client.get(url)
+        self.assertNotContains(response, "Oznacz jako wykonane")
+        self.assertNotContains(response, "Mark as done")
+
+    def test_change_form_still_renders_step_notes_button(self):
+        zlecenie = Zlecenie.objects.create(**BASE_DATA, from_main=self.main)
+        url = reverse("admin:zetom_zlecenie_change", args=[zlecenie.pk])
+        response = self.client.get(url)
+        self.assertContains(response, "open-step-notes")
 
 
 # ───────────────────── Child document delete requires a reason ────────────────

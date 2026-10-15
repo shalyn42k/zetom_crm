@@ -1,4 +1,15 @@
 {% load i18n %}
+{% comment %}claude — Fix-round: the create buttons below had
+onclick="this.disabled=true" as a double-click guard. That synchronously
+disables the element INSIDE its own click handler, which Chromium/Firefox
+then treat as "this control was disabled before the submit default action
+ran" — the click is swallowed and the form is never actually submitted.
+No server request ever fires, so every "Utwórz"/"+" click here was a
+silent no-op (found by clicking through as a specialist: Oferta/Zlecenie/
+Wniosek stayed "Nie utworzono" no matter how many times the button was
+clicked). Deferred the disable one tick via setTimeout so the browser
+dispatches the submit first — same double-click protection, without
+cancelling the very click it's attached to.{% endcomment %}
 {% with docs_count=ofertas|length|add:zlecenia|length|add:wnioski|length %}
 <section class="rm-card rm-card--collapsible" aria-labelledby="rm-docs-heading" id="documents" x-data="{ open: $persist(false).as('rm-documents-{{ request.user.id }}-{{ original.pk }}') }">
   <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
@@ -35,7 +46,7 @@
                   formaction='{% url "admin:zetom_requestmain_oferta_action" original.pk %}'
                   formmethod="post"
                   formnovalidate
-                  onclick="this.disabled=true"
+                  onclick="setTimeout(() => this.disabled = true)"
                   class="rm-btn rm-btn--primary rm-btn--sm"
                   aria-label='{% trans "Create new offer" %}'>+</button>
         </div>
@@ -44,7 +55,7 @@
                 formaction='{% url "admin:zetom_requestmain_oferta_action" original.pk %}'
                 formmethod="post"
                 formnovalidate
-                onclick="this.disabled=true"
+                onclick="setTimeout(() => this.disabled = true)"
                 class="rm-btn rm-btn--primary rm-btn--sm">
           {% trans "Create" %}
         </button>
@@ -75,7 +86,7 @@
                   formaction='{% url "admin:zetom_requestmain_zlecenie_action" original.pk %}'
                   formmethod="post"
                   formnovalidate
-                  onclick="this.disabled=true"
+                  onclick="setTimeout(() => this.disabled = true)"
                   class="rm-btn rm-btn--primary rm-btn--sm"
                   aria-label='{% trans "Create new order" %}'>+</button>
         </div>
@@ -84,7 +95,7 @@
                 formaction='{% url "admin:zetom_requestmain_zlecenie_action" original.pk %}'
                 formmethod="post"
                 formnovalidate
-                onclick="this.disabled=true"
+                onclick="setTimeout(() => this.disabled = true)"
                 class="rm-btn rm-btn--primary rm-btn--sm">
           {% trans "Create" %}
         </button>
@@ -115,7 +126,7 @@
                   formaction='{% url "admin:zetom_requestmain_wniosek_action" original.pk %}'
                   formmethod="post"
                   formnovalidate
-                  onclick="this.disabled=true"
+                  onclick="setTimeout(() => this.disabled = true)"
                   class="rm-btn rm-btn--primary rm-btn--sm"
                   aria-label='{% trans "Create new application" %}'>+</button>
         </div>
@@ -124,7 +135,7 @@
                 formaction='{% url "admin:zetom_requestmain_wniosek_action" original.pk %}'
                 formmethod="post"
                 formnovalidate
-                onclick="this.disabled=true"
+                onclick="setTimeout(() => this.disabled = true)"
                 class="rm-btn rm-btn--primary rm-btn--sm">
           {% trans "Create" %}
         </button>

@@ -516,12 +516,12 @@ msgstr "Pozostałe próby"
 #. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
 #. catalog
 msgid "User Agent"
-msgstr "User Agent"
+msgstr "Przeglądarka użytkownika"
 
 #. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
 #. catalog
 msgid "HTTP Accept"
-msgstr "HTTP Accept"
+msgstr "Nagłówek Accept"
 
 #. django-axes: axes/models.py, axes/admin.py — missing from the bundled pl
 #. catalog

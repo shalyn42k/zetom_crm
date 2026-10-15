@@ -170,8 +170,14 @@ class OfertaAdmin(ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin)
             bump_new_to_in_progress(obj, old_status, change, request.user)
 
 
+# claude — no MarkDoneActionMixin here by explicit request: unlike Oferta/
+# Wniosek, Zlecenie should only ever reach `done` via the auto-close chain
+# (creating a Wniosek from the parent RequestMain closes every not-yet-done
+# Zlecenie on it — see close_zlecenie_on_wniosek). A request that never
+# needs a Wniosek keeps its Zlecenie open rather than getting force-closed
+# by hand from this form.
 @admin.register(Zlecenie)
-class ZlecenieAdmin(ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
+class ZlecenieAdmin(ChildDeleteReasonMixin, BaseRequestAdmin):
     actions = []
     form = AddZlecenie
     change_form_template = "admin/zetom/zlecenie/change_form.html"
