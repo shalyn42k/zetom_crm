@@ -50,6 +50,40 @@ from .requestmain_resolve_review import (
 )
 from .requestmain_review import RequestReviewMixin
 
+# claude — the "Field changes" history card renders django-simple-history
+# diffs verbatim: c.field was the raw model attribute name ("status",
+# "source", "departments", ...) and c.old/c.new were raw stored values —
+# for choice fields that's the internal code ("active", "site",
+# "DEPARTMENT_1"), not its translated label, so the Polish UI showed a mix
+# of translated field labels (from other fixes) next to literally untranslated
+# English/code values. Resolved at render time, same pattern as
+# status_labels.py's request_status_label filter, rather than baked at
+# history-write time (simple_history writes once, at save time, and the
+# viewer's language is only known when the card is rendered).
+_HISTORY_CHOICE_MAPS = {
+    "status": dict(RequestStatus.choices),
+    "source": dict(RequestSource.choices),
+}
+_HISTORY_DEPARTMENT_LABELS = dict(DepartmentsVariants.choices)
+
+
+def _history_field_label(field_name):
+    try:
+        return str(RequestMain._meta.get_field(field_name).verbose_name)
+    except Exception:
+        return field_name
+
+
+def _history_value_label(field_name, value):
+    if value in (None, ""):
+        return value
+    choices = _HISTORY_CHOICE_MAPS.get(field_name)
+    if choices is not None:
+        return str(choices.get(value, value))
+    if field_name == "departments" and isinstance(value, (list, tuple)):
+        return ", ".join(str(_HISTORY_DEPARTMENT_LABELS.get(v, v)) for v in value)
+    return value
+
 
 @admin.register(RequestMain)
 class RequestMainAdmin(
@@ -331,7 +365,11 @@ class RequestMainAdmin(
                 if record.prev_record:
                     delta = record.diff_against(record.prev_record)
                     changes = [
-                        {"field": c.field, "old": c.old, "new": c.new}
+                        {
+                            "field": _history_field_label(c.field),
+                            "old": _history_value_label(c.field, c.old),
+                            "new": _history_value_label(c.field, c.new),
+                        }
                         for c in delta.changes
                     ]
                 field_history.append({

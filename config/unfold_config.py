@@ -7,7 +7,10 @@ from crm.users.utils import user_has_perm
 UNFOLD = {
     "SITE_TITLE": "Zetom CRM",
     "SITE_HEADER": "Zetom CRM",
-    "SITE_SUBHEADER": "Control Panel",
+    # claude — was a plain string, not wrapped in gettext_lazy, unlike every
+    # other label in this file; renders in Unfold's sidebar header on every
+    # authenticated admin page regardless of active language.
+    "SITE_SUBHEADER": _("Control Panel"),
 
 # дропдаун сверху
     "SITE_DROPDOWN": [

@@ -27,11 +27,6 @@ _DOC_PREFIX = {
     "Zlecenie": "ZLC",
     "Wniosek": "WNI",
 }
-_DOC_KIND_LABEL = {
-    "Oferta": "offer",
-    "Zlecenie": "order",
-    "Wniosek": "application",
-}
 
 CLIENT_IN_PROGRESS_TEMPLATE = "notification/mail/client_in_progress.txt"
 
@@ -111,7 +106,18 @@ def send_document_to_client(document):
     rendered = render_to_string(CLIENT_IN_PROGRESS_TEMPLATE, {
         "document": document,
         "parent": parent,
-        "document_kind": _DOC_KIND_LABEL.get(kind, kind.lower()),
+        # claude — was document_kind=_DOC_KIND_LABEL.get(...) (a bare raw
+        # English noun — "offer"/"order"/"application" — substituted
+        # straight into the template), which left client emails reading
+        # "Twoje offer jest teraz w realizacji": Django's {% trans %} has no
+        # way to pick the right possessive pronoun or past-participle
+        # ending (oferta=feminine, zlecenie=neuter, wniosek=masculine) for
+        # a noun dropped in from a variable, so even a perfect catalog
+        # entry for the noun alone can't fix the surrounding grammar. Now
+        # passes the raw kind name and lets the template branch into three
+        # fully independent, correctly-declined sentences instead — see
+        # client_in_progress.txt.
+        "kind": kind,
         "document_code": _document_code(document),
     })
     subject, body = _split_subject_body(rendered)
