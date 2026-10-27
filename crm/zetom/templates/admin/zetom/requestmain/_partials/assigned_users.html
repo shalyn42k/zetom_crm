@@ -19,7 +19,7 @@
 <section class="rm-card rm-card--collapsible" aria-labelledby="rm-users-heading" id="assigned-users" x-data="{ open: $persist(true).as('rm-users-{{ request.user.id }}-{{ original.pk }}') }">
   <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
     <h2 id="rm-users-heading" class="rm-card__title">
-      {% trans "Assigned users" %}
+      {% trans "Team" %}
       <span class="rm-counter">{{ original.assigned_to.count }}</span>
     </h2>
     <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
@@ -105,5 +105,7 @@
       </button>
     </div>
   {% endif %}
+  {# claude — departments used to be a card of their own #}
+  {% include "admin/zetom/requestmain/_partials/departments.html" with embedded=True %}
   </div>
 </section>

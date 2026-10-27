@@ -28,7 +28,7 @@ User = get_user_model()
 
 BASE = {
     "first_name": "Jan", "last_name": "Kowalski", "phone": "+48501600300",
-    "email": "jan@client.pl", "company_name": "Acme", "departments": ["sales"],
+    "email": "jan@client.pl", "company_name": "Acme", "departments": ["DEPARTMENT_0"],
 }
 
 _SIMPLE_STATIC = {
@@ -57,9 +57,9 @@ class SiteSmokeTests(TestCase):
                 email=f"{code}@zetom.pl", first_name="Smoke", last_name=code,
             )
             u.profile.role = Role.objects.get(code=code)
-            u.profile.departments = ["sales"]
+            u.profile.departments = ["DEPARTMENT_0"]
             if code == "department_head":
-                u.profile.head_of_departments = ["sales"]
+                u.profile.head_of_departments = ["DEPARTMENT_0"]
             u.profile.save()
             cls.users[code] = u
         cls.users["superuser"] = User.objects.create_superuser("smoke_root", "root@zetom.pl", "x")

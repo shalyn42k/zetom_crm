@@ -19,7 +19,7 @@ class DocumentWindowTests(TestCase):
         self.user = User.objects.create_user(username="spec", password="x", is_staff=True)
         self.parent = RequestMain.objects.create(**DOC)
         self.oferta = Oferta.objects.create(
-            from_main=self.parent, price="1200.00", notes="Two audits", departments=["sales"], **DOC,
+            from_main=self.parent, price="1200.00", notes="Two audits", departments=["DEPARTMENT_0"], **DOC,
         )
         self.zlecenie = Zlecenie.objects.create(from_main=self.parent, **DOC)
         self.wniosek = Wniosek.objects.create(from_main=self.parent, application_number="W/1/2026", **DOC)
@@ -70,7 +70,7 @@ class DocumentWindowTests(TestCase):
         self.assertEqual(str(self.oferta.price), "1500.00")
         self.assertEqual(self.oferta.notes, "Updated")
         # fields no longer on the form keep their values
-        self.assertEqual(self.oferta.departments, ["sales"])
+        self.assertEqual(self.oferta.departments, ["DEPARTMENT_0"])
         self.assertEqual(list(self.oferta.assigned_to.all()), [self.user])
 
     def test_print_page(self):

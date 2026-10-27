@@ -1,5 +1,5 @@
 {% load i18n humanize %}
-<section class="rm-card rm-card--collapsible" aria-labelledby="rm-history-heading" id="history" x-data="{ open: $persist(false).as('rm-history-{{ request.user.id }}-{{ original.pk }}') }">
+<section class="rm-card rm-card--collapsible" aria-labelledby="rm-history-heading" id="history" x-data="{ open: {% if history_in_modal %}true{% else %}$persist(false).as('rm-history-{{ request.user.id }}-{{ original.pk }}'){% endif %} }">
   <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
     <h2 id="rm-history-heading" class="rm-card__title">
       <svg class="rm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

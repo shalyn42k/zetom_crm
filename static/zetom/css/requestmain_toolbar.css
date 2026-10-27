@@ -1,0 +1,41 @@
+/* claude
+   RequestMain header toolbar — the former Actions card as small buttons
+   (_partials/actions_card.html) — and the history modal. Colours only from
+   static/css/tokens.css roles.
+*/
+#content-main .rm-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.rm-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rm-tbtn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px;
+  font: inherit; font-size: 12.5px; font-weight: 600; line-height: 1.3; white-space: nowrap;
+  color: var(--text); background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--r-md); cursor: pointer; text-decoration: none;
+}
+.rm-tbtn:hover { background: var(--surface-soft); }
+.rm-tbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rm-tbtn--primary { color: white; background: var(--accent); border-color: var(--accent); }
+.rm-tbtn--primary:hover { background: var(--accent); filter: brightness(1.08); }
+.rm-tbtn--attn { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, var(--border)); }
+.rm-tcount {
+  display: inline-block; min-width: 18px; padding: 0 5px; border-radius: 999px; text-align: center;
+  font-size: 11px; font-weight: 700; color: var(--text-muted); background: var(--surface-soft);
+}
+.rm-tmore { position: relative; }
+.rm-tmore > summary { list-style: none; }
+.rm-tmore > summary::-webkit-details-marker { display: none; }
+.rm-tmore__menu {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 190px; padding: 4px;
+  display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-md);
+}
+.rm-tmore__item {
+  display: block; width: 100%; padding: 7px 10px; border: 0; border-radius: var(--r-sm); background: transparent;
+  font: inherit; font-size: 13px; text-align: left; color: var(--text); text-decoration: none; cursor: pointer;
+}
+.rm-tmore__item:hover { background: var(--surface-soft); }
+.rm-tmore__item--danger { color: var(--red); }
+
+.rm-modal__panel--wide { max-width: 760px; }
+.rm-modal__panel--wide > .rm-card { margin: 0; border: 0; box-shadow: none; }
+.rm-modal__close--float { position: absolute; top: 10px; right: 12px; z-index: 2; }
+.rm-team-depts { padding: 4px 16px 12px; border-top: 1px solid var(--border); }

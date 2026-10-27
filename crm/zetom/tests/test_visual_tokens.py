@@ -54,6 +54,7 @@ MIGRATED_FILES = [
     "crm/zetom/static/zetom/css/document_editor.css",
     "crm/notification/static/notification/css/messages.css",
     "crm/zetom/static/zetom/css/step_notes_notify.css",
+    "static/zetom/css/requestmain_toolbar.css",
     "static/zetom/css/requestmain_detail.css",
 ]
 
