@@ -37,6 +37,18 @@ from crm.zetom.services.status_orchestration import (
 )
 
 from .base import BaseRequestAdmin, ReasonForm
+from .document_window import DocumentWindowMixin
+
+# claude — document window fieldsets: the template's own fields first, the
+# client block second, everything inherited from the request collapsed.
+CLIENT_FIELDSET = (
+    _("Client"),
+    {"fields": (("first_name", "last_name"), ("company_name", "company_nip"), ("email", "phone"))},
+)
+DETAILS_FIELDSET = (
+    _("Details"),
+    {"classes": ("collapse",), "fields": ("from_main", "departments", "assigned_to", "source")},
+)
 
 
 # claude — permission gate for the mark-done action below. Returns
@@ -137,27 +149,20 @@ class MarkDoneActionMixin:
 
 
 @admin.register(Oferta)
-class OfertaAdmin(ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
+class OfertaAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
     actions = []
     form = AddOferta
-    change_form_template = "admin/zetom/oferta/change_form.html"
+    can_mark_done = True
     list_display = (
         "from_main", "created_at", "updated_at", "company_name",
         "display_departments", "assignees_display", "colored_status", "source",
     )
     list_filter = ("source",)
     readonly_fields = ("from_main",)
-    fields = (
-        "from_main",
-        "phone",
-        "departments",
-        "assigned_to",
-        "email",
-        "company_name",
-        "company_nip",
-        "price",
-        "notes",
-        "source",
+    fieldsets = (
+        (_("Offer"), {"fields": ("price", "notes")}),
+        CLIENT_FIELDSET,
+        DETAILS_FIELDSET,
     )
     warn_unsaved_form = True
 
@@ -177,28 +182,19 @@ class OfertaAdmin(ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin)
 # needs a Wniosek keeps its Zlecenie open rather than getting force-closed
 # by hand from this form.
 @admin.register(Zlecenie)
-class ZlecenieAdmin(ChildDeleteReasonMixin, BaseRequestAdmin):
+class ZlecenieAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, BaseRequestAdmin):
     actions = []
     form = AddZlecenie
-    change_form_template = "admin/zetom/zlecenie/change_form.html"
     list_display = (
         "from_main", "created_at", "updated_at", "company_name",
         "display_departments", "assignees_display", "colored_status", "source",
     )
     list_filter = ("source",)
     readonly_fields = ("from_main",)
-    fields = (
-        "from_main",
-        "deadline",
-        "phone",
-        "departments",
-        "assigned_to",
-        "email",
-        "company_name",
-        "company_nip",
-        "price",
-        "notes",
-        "source",
+    fieldsets = (
+        (_("Order"), {"fields": (("deadline", "price"), "notes")}),
+        CLIENT_FIELDSET,
+        DETAILS_FIELDSET,
     )
     warn_unsaved_form = True
 
@@ -212,27 +208,20 @@ class ZlecenieAdmin(ChildDeleteReasonMixin, BaseRequestAdmin):
 
 
 @admin.register(Wniosek)
-class WniosekAdmin(ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
+class WniosekAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
     actions = []
     form = AddWniosek
-    change_form_template = "admin/zetom/wniosek/change_form.html"
+    can_mark_done = True
     list_display = (
         "from_main", "created_at", "updated_at", "company_name",
         "display_departments", "assignees_display", "colored_status", "source",
     )
     list_filter = ("source",)
     readonly_fields = ("from_main",)
-    fields = (
-        "from_main",
-        "application_number",
-        "phone",
-        "departments",
-        "assigned_to",
-        "email",
-        "company_name",
-        "company_nip",
-        "notes",
-        "source",
+    fieldsets = (
+        (_("Application"), {"fields": ("application_number", "notes")}),
+        CLIENT_FIELDSET,
+        DETAILS_FIELDSET,
     )
     warn_unsaved_form = True
 

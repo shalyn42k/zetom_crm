@@ -1,0 +1,82 @@
+{% load i18n %}
+{% comment %}
+claude — the document itself (Oferta / Zlecenie / Wniosek), rendered both as
+the live preview on the document window and as the print page. Context from
+admin/document_window.document_context.
+
+Every value the form can change carries data-de-field="<form field name>";
+document_editor.js copies the input's current value in while typing, so the
+preview follows the form before it is saved. data-de-empty is what shows
+when the field is blank.
+{% endcomment %}
+<article class="de-paper de-paper--{{ kind|lower }}">
+  <header class="de-paper__head">
+    <div class="de-paper__brand">ZETOM</div>
+    <div class="de-paper__place">{{ doc_date|date:"d.m.Y" }}</div>
+  </header>
+
+  <h1 class="de-paper__title">
+    {{ doc_title }} <span class="de-paper__code">{{ doc_code }}</span>
+  </h1>
+  {% if kind == "Wniosek" %}
+    <p class="de-paper__line">
+      {% trans "Application number" %}:
+      <strong data-de-field="application_number" data-de-empty="—">{{ doc.application_number|default:"—" }}</strong>
+    </p>
+  {% endif %}
+
+  <section class="de-paper__party">
+    <h2 class="de-paper__label">
+      {% if kind == "Oferta" %}{% trans "Prepared for" %}{% elif kind == "Zlecenie" %}{% trans "Ordering party" %}{% else %}{% trans "Applicant" %}{% endif %}
+    </h2>
+    <p class="de-paper__strong" data-de-field="company_name" data-de-empty="">{{ doc.company_name|default:"" }}</p>
+    <p class="de-paper__line">{% trans "NIP" %}: <span data-de-field="company_nip" data-de-empty="—">{{ doc.company_nip|default:"—" }}</span></p>
+    <p class="de-paper__line">
+      <span data-de-field="first_name" data-de-empty="">{{ doc.first_name|default:"" }}</span>
+      <span data-de-field="last_name" data-de-empty="">{{ doc.last_name|default:"" }}</span>
+    </p>
+    <p class="de-paper__line">
+      <span data-de-field="email" data-de-empty="">{{ doc.email|default:"" }}</span>
+      · <span data-de-field="phone" data-de-empty="">{{ doc.phone|default:"" }}</span>
+    </p>
+  </section>
+
+  <section class="de-paper__body">
+    <p>{% trans "Dear Sir or Madam," %}</p>
+    {% if kind == "Oferta" %}
+      <p>{% trans "In response to your inquiry, we are pleased to present our offer:" %}</p>
+    {% elif kind == "Zlecenie" %}
+      <p>{% trans "We hereby confirm the order with the following scope:" %}</p>
+    {% else %}
+      <p>{% trans "We submit the application with the following content:" %}</p>
+    {% endif %}
+    <div class="de-paper__text" data-de-field="notes" data-de-empty="{% trans 'Content of the document — fill in the field on the left.' %}">{{ doc.notes|default:"" }}</div>
+  </section>
+
+  {% if kind == "Oferta" or kind == "Zlecenie" %}
+    <table class="de-paper__table">
+      <tbody>
+        <tr>
+          <th scope="row">{% if kind == "Oferta" %}{% trans "Offer price (net)" %}{% else %}{% trans "Remuneration (net)" %}{% endif %}</th>
+          <td><span data-de-field="price" data-de-empty="—">{{ doc.price|default:"—" }}</span> PLN</td>
+        </tr>
+        {% if kind == "Zlecenie" %}
+          <tr>
+            <th scope="row">{% trans "Completion deadline" %}</th>
+            <td><span data-de-field="deadline" data-de-empty="—">{{ doc.deadline|date:"d.m.Y"|default:"—" }}</span></td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <footer class="de-paper__sign">
+    {% if kind == "Zlecenie" %}
+      <div class="de-paper__sigbox">{% trans "Ordering party" %}</div>
+      <div class="de-paper__sigbox">{% trans "Contractor" %}<br><strong>{{ signer_name }}</strong></div>
+    {% else %}
+      <div></div>
+      <div class="de-paper__sigbox">{% trans "Kind regards," %}<br><strong>{{ signer_name }}</strong><br>{% trans "Zetom team" %}</div>
+    {% endif %}
+  </footer>
+</article>

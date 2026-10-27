@@ -50,6 +50,9 @@ MIGRATED_FILES = [
     "static/zetom/css/validation_window.css",
     "crm/zetom/static/zetom/css/email_form.css",
     "static/admin/css/notification_badge.css",
+    # claude — document window + messages panel, born on tokens.
+    "crm/zetom/static/zetom/css/document_editor.css",
+    "crm/notification/static/notification/css/messages.css",
     "static/zetom/css/requestmain_detail.css",
 ]
 

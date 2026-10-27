@@ -245,6 +245,7 @@ class RequestMainAdmin(
             obj.save(update_fields=["departments"])
         if owners_raw:
             owner_users = list(User.objects.filter(pk__in=owners_raw, is_active=True))
+            obj._actor = request.user  # claude — skip self in the assignment notification
             obj.assigned_to.set(owner_users)
             obj.owners.set(owner_users)
         for f in request.FILES.getlist("attachments"):
@@ -438,6 +439,12 @@ class RequestMainAdmin(
         context["can_change_request_status"] = user_has_perm(
             request.user, "change_request_status"
         )
+        # claude — "Messages & reminders" panel (same as on the document window).
+        if has_obj:
+            from crm.notification.message_targets import build_composer_context
+            context["composer"] = build_composer_context(
+                request, obj, f"REQ-{obj.created_at.year}-{obj.pk:04d}",
+            )
 
         # claude — контекст для assigned_users.html: per-Req флаги owner +
         # права на управление списком. Список assigned сортируем owners-first,
@@ -635,7 +642,9 @@ class RequestMainAdmin(
         cl = Client.objects.filter(pk=client_id).first()
         if not cl:
             return JsonResponse({"ok": False, "error": _("not found")}, status=404)
-        _, created = RequestClientLink.objects.get_or_create(
+        # claude — was `_, created = …`: binding `_` in this function made the
+        # `_("not found")` above an unbound local → 500 instead of 404.
+        _link, created = RequestClientLink.objects.get_or_create(
             request=obj, client=cl, defaults={"linked_by": request.user}
         )
         company = self._client_company(cl)
@@ -1052,6 +1061,7 @@ class RequestMainAdmin(
             messages.error(request, _("You can't assign this user."))
             return redirect("admin:zetom_requestmain_change", object_id)
 
+        obj._actor = request.user  # claude — skip self in the assignment notification
         obj.assigned_to.add(user)
         messages.success(
             request,

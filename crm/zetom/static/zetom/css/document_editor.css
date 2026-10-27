@@ -1,0 +1,97 @@
+/* claude
+   Document window (Oferta / Zlecenie / Wniosek) — layout, preview paper and
+   the print page. Colours only from static/css/tokens.css roles; the paper
+   itself stays white/black in both themes because it is a printed sheet.
+*/
+
+/* ---- top bar ---------------------------------------------------------- */
+.de-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 16px; padding: 12px 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+.de-bar__id { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.de-bar__code { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: .02em; }
+.de-bar__parent { font-size: 13px; color: var(--text-muted); text-decoration: none; }
+.de-bar__parent:hover { color: var(--accent); text-decoration: underline; }
+.de-bar__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.de-inline { display: inline; margin: 0; }
+
+.de-btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px;
+  font-size: 13px; font-weight: 600; line-height: 1.2; cursor: pointer; text-decoration: none;
+  color: var(--text); background: var(--surface); border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+}
+.de-btn:hover { background: var(--surface-soft); }
+.de-btn--accent { color: white; background: var(--accent); border-color: var(--accent); }
+.de-btn--accent:hover { background: var(--accent); filter: brightness(1.08); }
+
+.de-badge {
+  display: inline-block; padding: 2px 9px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; color: var(--slate);
+  background: color-mix(in srgb, var(--slate) 14%, transparent);
+}
+.de-badge--in_progress { color: var(--blue); background: color-mix(in srgb, var(--blue) 14%, transparent); }
+.de-badge--waiting { color: var(--amber); background: color-mix(in srgb, var(--amber) 14%, transparent); }
+.de-badge--done { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
+
+/* ---- two columns ------------------------------------------------------ */
+.de-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.de-main { min-width: 0; }
+.de-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; position: sticky; top: 16px; }
+@media (max-width: 1180px) {
+  .de-layout { grid-template-columns: minmax(0, 1fr); }
+  .de-side { position: static; }
+}
+
+.de-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm); padding: 14px 16px;
+}
+.de-card__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px; margin-bottom: 10px; }
+.de-card__title { margin: 0; font-size: 15px; font-weight: 700; color: var(--text); }
+.de-card__hint { font-size: 12px; color: var(--text-subtle); }
+
+.de-preview {
+  max-height: 70vh; overflow: auto; padding: 14px;
+  background: var(--surface-inset); border-radius: var(--r-md);
+}
+.de-preview .de-paper { box-shadow: var(--shadow-md); font-size: 12px; }
+
+/* ---- the paper -------------------------------------------------------- */
+.de-paper {
+  max-width: 210mm; margin: 0 auto; padding: 14mm 14mm 12mm;
+  background: white; color: black;
+  font-family: "Inter", system-ui, sans-serif; font-size: 13px; line-height: 1.5;
+}
+.de-paper__head { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 8px; border-bottom: 2px solid black; }
+.de-paper__brand { font-size: 20px; font-weight: 800; letter-spacing: .12em; }
+.de-paper__title { margin: 18px 0 6px; font-size: 1.5em; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.de-paper__code { font-weight: 500; letter-spacing: 0; text-transform: none; }
+.de-paper__party { margin: 14px 0; }
+.de-paper__label { margin: 0 0 2px; font-size: .78em; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; opacity: .65; }
+.de-paper__strong { margin: 0; font-weight: 700; font-size: 1.08em; }
+.de-paper__line { margin: 0; }
+.de-paper__body { margin: 16px 0; }
+.de-paper__body p { margin: 0 0 8px; }
+.de-paper__text { white-space: pre-wrap; min-height: 3em; }
+.de-paper__table { width: 100%; margin: 10px 0; border-collapse: collapse; }
+.de-paper__table th, .de-paper__table td { padding: 6px 8px; border: 1px solid black; text-align: left; }
+.de-paper__table th { width: 55%; font-weight: 600; }
+.de-paper__sign { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 36px; }
+.de-paper__sigbox { padding-top: 28px; border-top: 1px dotted black; text-align: center; font-size: .92em; }
+.de-paper .de-empty { opacity: .45; font-style: italic; }
+
+/* ---- print page ------------------------------------------------------- */
+.de-print { margin: 0; padding: 20px; background: var(--surface-inset); }
+.de-print__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; max-width: 210mm; margin: 0 auto 14px; font: 13px system-ui, sans-serif; color: var(--text-muted); }
+.de-print .de-paper { box-shadow: var(--shadow-md); }
+@media print {
+  @page { size: A4; margin: 0; }
+  .de-print { padding: 0; background: white; }
+  .de-print__bar { display: none; }
+  .de-print .de-paper { box-shadow: none; max-width: none; }
+  .de-paper .de-empty { display: none; }
+}
