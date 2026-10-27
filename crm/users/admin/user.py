@@ -5,6 +5,8 @@ old single-file `admin.py` into this package. New methods added during
 the Departments-tab work are marked with `# claude`; the rest is the
 team's own code.
 """
+import copy
+
 from django.contrib import admin
 from django.contrib.admin.models import LogEntry
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
@@ -118,6 +120,13 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
     # individual extras в tab_permissions.html (см. change_view ниже).
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
+        # claude — the form class is new per call, but its *declared* fields
+        # (role, otp_exempt, …) are the same Field objects every time. The
+        # disabled/queryset tweaks below used to stick to them for the whole
+        # process: once someone without edit_roles opened a user page, "role"
+        # stayed disabled — and silently ignored — for every admin after
+        # them. Copy before touching.
+        form.base_fields = copy.deepcopy(form.base_fields)
         if "is_staff" in form.base_fields:
             form.base_fields["is_staff"].disabled = True
 
