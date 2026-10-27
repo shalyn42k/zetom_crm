@@ -439,12 +439,6 @@ class RequestMainAdmin(
         context["can_change_request_status"] = user_has_perm(
             request.user, "change_request_status"
         )
-        # claude — "Messages & reminders" panel (same as on the document window).
-        if has_obj:
-            from crm.notification.message_targets import build_composer_context
-            context["composer"] = build_composer_context(
-                request, obj, f"REQ-{obj.created_at.year}-{obj.pk:04d}",
-            )
 
         # claude — контекст для assigned_users.html: per-Req флаги owner +
         # права на управление списком. Список assigned сортируем owners-first,

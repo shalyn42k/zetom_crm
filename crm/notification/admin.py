@@ -6,9 +6,7 @@ from django.utils.html import format_html, format_html_join
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 
-from crm.notification.models import (
-    EmailNotification, Notification, ScheduledMessage,
-)
+from crm.notification.models import EmailNotification, Notification
 from crm.notification.utils import render_notification
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
@@ -228,36 +226,3 @@ class EmailNotificationAdmin(ModelAdmin):
     @admin.display(description=_("Payload"))
     def payload_display(self, obj):
         return _pretty_json(obj.payload)
-
-
-# claude — journal of messages/reminders staff wrote (ScheduledMessage).
-# Read-only like the other two logs; cancelling happens from the document
-# window or the own settings page, not here. Same view_email_log gate: whoever
-# may read outgoing email may read the messages that produced it.
-@admin.register(ScheduledMessage)
-class ScheduledMessageAdmin(ModelAdmin):
-    list_display = ("send_at", "status", "audience", "channel", "subject", "author", "recipients_count")
-    list_display_links = ("send_at", "subject")
-    list_filter = ("status", "audience", "channel")
-    search_fields = ("subject", "body", "client_email", "author__username")
-    readonly_fields = (
-        "author", "audience", "channel", "recipient_users", "recipient_roles", "client_email",
-        "subject", "body", "send_at", "status", "status_reason", "sent_at", "recipients_count",
-        "target_content_type", "target_object_id", "created_at",
-    )
-    ordering = ("-send_at",)
-
-    def has_view_permission(self, request, obj=None):
-        return user_has_perm(request.user, "view_email_log")
-
-    def has_module_permission(self, request):
-        return user_has_perm(request.user, "view_email_log")
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False

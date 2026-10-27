@@ -38,7 +38,6 @@ KIND_META = {
     NotificationKind.SYSTEM: {"color": "slate", "icon_class": "k-system", "icon_id": "ki-system"},
     # claude
     NotificationKind.REMINDER: {"color": "amber", "icon_class": "k-reminder", "icon_id": "ki-reminder"},
-    NotificationKind.MESSAGE: {"color": "blue", "icon_class": "k-message", "icon_id": "ki-message"},
 }
 
 

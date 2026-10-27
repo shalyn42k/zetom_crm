@@ -7,7 +7,6 @@ import time
 from django.conf import settings
 
 from crm.notification.services.followup_reminders import process_due_followups
-from crm.notification.services.scheduled_messages import process_due_messages
 from crm.notification.services.stale_request_reminders import (
     process_stale_requests,
 )
@@ -51,13 +50,6 @@ def start_followup_scheduler():
                     logger.info("followup scheduler: stale-request reminders=%s", stale_created)
             except Exception:
                 logger.exception("stale-request reminder scheduler failed")
-            # claude — messages/reminders staff scheduled for a later time.
-            try:
-                messages_sent = process_due_messages()
-                if messages_sent:
-                    logger.info("followup scheduler: scheduled messages sent=%s", messages_sent)
-            except Exception:
-                logger.exception("scheduled message scheduler failed")
             time.sleep(interval)
 
     thread = threading.Thread(

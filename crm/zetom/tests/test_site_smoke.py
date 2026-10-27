@@ -18,8 +18,6 @@ from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 
 from crm.clients.models import Client, Company
-from crm.notification.models import MessageAudience
-from crm.notification.services.scheduled_messages import schedule_message
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.models import Role
 from crm.zetom.models import (
@@ -84,10 +82,6 @@ class SiteSmokeTests(TestCase):
         StepNote.objects.create(
             author=cls.users["specialist"], target=cls.main, kind=StepNote.Kind.REMINDER,
             text="call", next_contact_at=timezone.now() + timezone.timedelta(days=1),
-        )
-        schedule_message(
-            author=cls.users["department_head"], audience=MessageAudience.USERS, subject="Hi",
-            body="text", users=[cls.users["specialist"]], target=cls.oferta,
         )
 
     def _urls(self):

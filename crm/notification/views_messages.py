@@ -1,106 +1,19 @@
 # claude
-"""POST endpoints for the message composer (document window) and the
-notification settings (own page + admin's user tab)."""
+"""Notification settings: the own settings page (any staff user) and the
+save endpoint behind the Notifications tab of the admin user page."""
 from django.contrib import admin, messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import get_user_model
-from django.http import Http404, HttpResponseForbidden
+from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils import formats, timezone
 from django.utils.translation import gettext, gettext_lazy as _
 from django.views.decorators.http import require_POST
 
-from crm.notification import message_targets
-from crm.notification.forms import MessageComposeForm
-from crm.notification.models import (
-    MessageAudience, MessageStatus, ScheduledMessage,
-)
-from crm.notification.services import preferences, scheduled_messages
+from crm.notification.services import preferences
 from crm.users.utils import user_has_perm
 
 User = get_user_model()
-
-_AUDIENCE_PERM = {
-    MessageAudience.CLIENT: "send_client_messages",
-    MessageAudience.USERS: "send_staff_messages",
-    MessageAudience.ROLES: "message_roles",
-}
-
-
-def _target_url(target):
-    opts = target._meta
-    return reverse(f"admin:{opts.app_label}_{opts.model_name}_change", args=[target.pk]) + "#messages"
-
-
-@require_POST
-@staff_member_required
-def compose(request):
-    target = message_targets.resolve_target(request.user, request.POST.get("target"))
-    if target is None:
-        raise Http404
-
-    form = MessageComposeForm(request.POST, user=request.user, target=target)
-    if not form.is_valid():
-        # Re-check the raw audience first: an audience the user may not use
-        # is dropped from the choices, so it shows up as a form error too.
-        audience = request.POST.get("audience")
-        perm = _AUDIENCE_PERM.get(audience)
-        if perm and not user_has_perm(request.user, perm):
-            return HttpResponseForbidden(gettext("You don't have permission for this action."))
-        for field, errors in form.errors.items():
-            label = form.fields[field].label if field in form.fields else ""
-            for error in errors:
-                messages.error(request, f"{label}: {error}" if label else error)
-        return redirect(_target_url(target))
-
-    data = form.cleaned_data
-    message = scheduled_messages.schedule_message(
-        author=request.user,
-        audience=data["audience"],
-        channel=data["channel"],
-        subject=data["subject"],
-        body=data["body"],
-        send_at=data.get("send_at"),
-        users=data.get("users") or (),
-        roles=data.get("roles") or (),
-        client_email=data.get("client_email") or "",
-        target=target,
-    )
-    if message.status == MessageStatus.SENT:
-        messages.success(
-            request,
-            _("Message sent (%(count)s recipient(s)).") % {"count": message.recipients_count},
-        )
-    elif message.status == MessageStatus.PENDING:
-        when = formats.date_format(timezone.localtime(message.send_at), "DATETIME_FORMAT")
-        messages.success(request, _("Message scheduled for %(when)s.") % {"when": when})
-    else:
-        messages.warning(request, _("The message could not be delivered to anyone."))
-    return redirect(_target_url(target))
-
-
-@require_POST
-@staff_member_required
-def cancel(request, pk):
-    message = get_object_or_404(ScheduledMessage, pk=pk)
-    target = message.target
-    # Visibility of the document also gates the cancel: an author who lost
-    # access to the request can no longer touch messages attached to it.
-    if target is not None and message_targets.resolve_target(
-        request.user, message_targets.target_key(target)
-    ) is None:
-        raise Http404
-    if not message_targets.can_cancel(request.user, message):
-        return HttpResponseForbidden(gettext("You don't have permission for this action."))
-
-    if scheduled_messages.cancel_message(message):
-        messages.success(request, _("Scheduled message cancelled."))
-    else:
-        messages.warning(request, _("This message was already sent or cancelled."))
-    if target is not None:
-        return redirect(_target_url(target))
-    return redirect("notification:settings")
 
 
 def _read_preference_values(post, prefix=""):
@@ -112,14 +25,10 @@ def preference_rows(pref):
     labels = {
         "requests": _("Requests"),
         "reminders": _("Reminders"),
-        "messages": _("Messages"),
     }
     rows = []
     for key, fields in preferences.PREFERENCE_GROUPS:
-        items = [
-            (f, pref._meta.get_field(f).verbose_name, getattr(pref, f))
-            for f in fields
-        ]
+        items = [(f, pref._meta.get_field(f).verbose_name, getattr(pref, f)) for f in fields]
         rows.append((key, labels[key], items))
     return rows
 
@@ -132,14 +41,10 @@ def settings_page(request):
         messages.success(request, _("Notification settings saved."))
         return redirect("notification:settings")
 
-    pref = preferences.get_preferences(request.user)
     context = {
         **admin.site.each_context(request),
         "title": _("Notification settings"),
-        "groups": preference_rows(pref),
-        "my_messages": ScheduledMessage.objects.filter(
-            author=request.user, status=MessageStatus.PENDING,
-        ).order_by("send_at")[:20],
+        "groups": preference_rows(preferences.get_preferences(request.user)),
     }
     return render(request, "notification/settings.html", context)
 
@@ -158,5 +63,4 @@ def user_preferences(request, user_id):
 
     preferences.update_preferences(target_user, _read_preference_values(request.POST, prefix="notif_"))
     messages.success(request, _("Notification settings saved."))
-
     return redirect(reverse("admin:auth_user_change", args=[target_user.pk]) + "?tab=notifications")

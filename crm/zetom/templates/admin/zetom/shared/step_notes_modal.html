@@ -1,4 +1,4 @@
-{% load i18n humanize %}
+{% load i18n humanize static %}
 {% comment %}
 Shared "Work log" modal — Task 12 moved this off the old sn-* stylesheet
 onto the clients app's design system (static/clients/css/company_card.css,
@@ -18,7 +18,7 @@ groups' `next_contact_at` / `action` / `text` inputs share the same
 user actually filled in on submit.
 {% endcomment %}
 {% if step_notes_enabled %}
-<div x-data="{ open: false, kind: 'contact' }" @open-step-notes.window="open = true">
+<div x-data="{ open: false, kind: 'contact', notify: 'self' }" @open-step-notes.window="open = true">
   {% if not step_notes_hide_inline_trigger %}
   {% comment %}
   claude — reproduces the old .sn-trigger-wrap rule (display:flex;
@@ -48,6 +48,7 @@ user actually filled in on submit.
   </div>
   {% endif %}
 
+  <link rel="stylesheet" href="{% static 'zetom/css/step_notes_notify.css' %}">
   <div class="cc-stage" style="padding:0">
     <div class="overlay" x-show="open" x-cloak
       @click.self="open = false" @keydown.escape.window="open = false"
@@ -144,16 +145,75 @@ user actually filled in on submit.
               <label for="sn-remind-at">{% trans "Remind at" %}</label>
               <input id="sn-remind-at" type="datetime-local" name="next_contact_at" :disabled="kind !== 'reminder'">
             </div>
+            {% if step_notes_notify %}
+            {% comment %}
+            claude — "Komu przypomnieć": who the reminder goes to at its time.
+            Options come from reminder_targets.allowed_notify (permissions);
+            step_note_create_action re-checks them. Styles: step_notes_notify.css.
+            {% endcomment %}
+            <input type="hidden" name="notify" :value="notify" :disabled="kind !== 'reminder'">
             <div class="field">
-              <label for="sn-action-reminder">{% trans "What to remind" %}</label>
+              <label>{% trans "Remind whom" %}</label>
+              <div class="sn-who" role="radiogroup" aria-label="{% trans 'Remind whom' %}">
+                {% for value, label in step_notes_notify.options %}
+                  <button type="button" role="radio" :aria-checked="notify === '{{ value }}'"
+                          :class="notify === '{{ value }}' ? 'active' : ''" @click="notify = '{{ value }}'">
+                    {{ label }}
+                  </button>
+                {% endfor %}
+              </div>
+            </div>
+            {% if step_notes_notify.colleagues %}
+            <div class="field" x-show="notify === 'users'" x-cloak>
+              <label for="sn-notify-users">{% trans "Colleagues" %}</label>
+              <select id="sn-notify-users" name="notify_users" multiple size="5" :disabled="kind !== 'reminder' || notify !== 'users'">
+                {% for u in step_notes_notify.colleagues %}
+                  <option value="{{ u.pk }}">{% if u.on_request %}★ {% endif %}{{ u.get_full_name|default:u.username }}</option>
+                {% endfor %}
+              </select>
+              <p class="sn-hint">{% trans "★ = assigned to this request. Hold Ctrl (⌘ on Mac) to pick several." %}</p>
+            </div>
+            {% endif %}
+            {% if step_notes_notify.roles %}
+            <div class="field" x-show="notify === 'roles'" x-cloak>
+              <span class="sn-label">{% trans "Roles" %}</span>
+              <div class="sn-pills">
+                {% for code, label in step_notes_notify.roles %}
+                  <label class="sn-pill"><input type="checkbox" name="notify_roles" value="{{ code }}" :disabled="kind !== 'reminder' || notify !== 'roles'"> {{ label }}</label>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+            <div class="field" x-show="notify === 'client'" x-cloak>
+              <label for="sn-client-email">{% trans "Client address" %}</label>
+              {% if step_notes_notify.client_emails %}
+                <select id="sn-client-email" name="client_email" :disabled="kind !== 'reminder' || notify !== 'client'">
+                  {% for email in step_notes_notify.client_emails %}<option value="{{ email }}">{{ email }}</option>{% endfor %}
+                </select>
+                <p class="sn-hint">{% trans "Only addresses from this request, its documents and the client base." %}</p>
+              {% else %}
+                <p class="sn-hint sn-hint--warn">{% trans "This request has no client email address." %}</p>
+              {% endif %}
+            </div>
+            {% endif %}
+            <div class="field">
+              <label for="sn-action-reminder" x-show="notify !== 'client'">{% trans "What to remind" %}</label>
+              <label for="sn-action-reminder" x-show="notify === 'client'" x-cloak>{% trans "Email subject" %}</label>
               <input id="sn-action-reminder" type="text" name="action" maxlength="255"
                 :disabled="kind !== 'reminder'"
                 placeholder="{% trans 'e.g. Follow up on the offer' %}">
             </div>
-            <div class="field">
+            <div class="field" x-show="notify !== 'client'">
               <label for="sn-text-reminder">{% trans "Note" %}</label>
-              <textarea id="sn-text-reminder" name="text" rows="4" :disabled="kind !== 'reminder'"></textarea>
+              <textarea id="sn-text-reminder" name="text" rows="4" :disabled="kind !== 'reminder' || notify === 'client'"></textarea>
             </div>
+            {% if step_notes_notify.client_emails %}
+            <div class="field" x-show="notify === 'client'" x-cloak>
+              <label for="sn-text-client">{% trans "Email text" %}</label>
+              <textarea id="sn-text-client" name="text" rows="6" :disabled="kind !== 'reminder' || notify !== 'client'">{{ step_notes_notify.client_body }}</textarea>
+              <p class="sn-hint">{% trans "Ready-made text — edit as needed. The email goes out at the reminder time." %}</p>
+            </div>
+            {% endif %}
           </div>
         </form>
 
@@ -178,6 +238,8 @@ user actually filled in on submit.
                   <span class="hdate" title="{{ entry.next_contact_at|date:'Y-m-d H:i' }}">{{ entry.next_contact_at|date:"d.m.Y H:i" }}</span>
                   <span class="hwho">{{ entry.author.get_full_name|default:entry.author.username|default:"—" }}</span>
                   {% if entry.stage_label %}<span class="hwho">{{ entry.stage_label }}</span>{% endif %}
+                  {% if entry.notify_label %}<span class="sn-tag{% if entry.notify == 'client' %} sn-tag--client{% endif %}">→ {{ entry.notify_label }}</span>{% endif %}
+                  {% if entry.reminder_sent_at %}<span class="sn-tag sn-tag--sent">{% trans "sent" %} {{ entry.reminder_sent_at|date:"d.m H:i" }}</span>{% endif %}
                   {% comment %}
                   claude — plain "✓" rather than the <use href="#cc-i-check"/>
                   sprite the Person card's checkmark uses: that symbol is
@@ -215,6 +277,8 @@ user actually filled in on submit.
                   <span class="hdate" title="{{ entry.sort_at|date:'Y-m-d H:i' }}">{{ entry.sort_at|naturaltime }}</span>
                   <span class="hwho">{{ entry.author.get_full_name|default:entry.author.username|default:"—" }}</span>
                   {% if entry.stage_label %}<span class="hwho">{{ entry.stage_label }}</span>{% endif %}
+                  {% if entry.notify_label %}<span class="sn-tag{% if entry.notify == 'client' %} sn-tag--client{% endif %}">→ {{ entry.notify_label }}</span>{% endif %}
+                  {% if entry.reminder_sent_at %}<span class="sn-tag sn-tag--sent">{% trans "sent" %} {{ entry.reminder_sent_at|date:"d.m H:i" }}</span>{% endif %}
                 </div>
                 {% if entry.action %}<div class="htext"><strong>{{ entry.action }}</strong></div>{% endif %}
                 <div class="htext">{{ entry.text|linebreaksbr }}</div>

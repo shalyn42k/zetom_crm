@@ -64,9 +64,9 @@ def create_rbac_defaults(sender, **kwargs):
         ("view_clients", _("View clients")),
         ("edit_clients", _("Edit/create clients")),
         ("delete_clients", _("Delete clients")),
-        # claude — messages and reminders (notification.ScheduledMessage).
-        # Gates in crm/notification/views_messages.py and the composer on
-        # the document window.
+        # claude — who a StepNote reminder may be addressed to (Dziennik
+        # kontaktów: client by email / colleagues / a whole role), plus
+        # changing other users' notification settings.
         ("send_client_messages", _("Send emails and reminders to clients")),
         ("send_staff_messages", _("Send messages and reminders to other users")),
         ("message_roles", _("Send messages to everyone with a role")),

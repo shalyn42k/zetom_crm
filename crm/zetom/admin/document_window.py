@@ -17,7 +17,6 @@ from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from crm.notification.message_targets import build_composer_context
 from crm.notification.services.request_mail import document_code
 
 DOCUMENT_TITLES = {
@@ -90,5 +89,4 @@ class DocumentWindowMixin:
             "parent_url": reverse("admin:zetom_requestmain_change", args=[parent.pk]) if parent else "",
             "print_url": reverse(f"admin:{opts.app_label}_{opts.model_name}_print", args=[obj.pk]),
             "mark_done_url": mark_done_url,
-            "composer": build_composer_context(request, obj, paper["doc_code"]),
         }

@@ -28,7 +28,7 @@ class DocumentWindowTests(TestCase):
     def _change(self, obj):
         return self.client.get(reverse(f"admin:zetom_{type(obj).__name__.lower()}_change", args=[obj.pk]))
 
-    def test_oferta_window_has_preview_composer_and_print(self):
+    def test_oferta_window_has_preview_and_print(self):
         response = self._change(self.oferta)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "de-paper")
@@ -36,8 +36,6 @@ class DocumentWindowTests(TestCase):
         self.assertContains(response, 'data-de-field="price"')
         self.assertContains(response, "Two audits")
         self.assertContains(response, reverse("admin:zetom_oferta_print", args=[self.oferta.pk]))
-        self.assertContains(response, reverse("notification:message_compose"))
-        self.assertContains(response, f'value="oferta:{self.oferta.pk}"')
         self.assertContains(response, reverse("admin:zetom_oferta_mark_done", args=[self.oferta.pk]))
         self.assertContains(response, reverse("admin:zetom_requestmain_change", args=[self.parent.pk]))
 
@@ -88,13 +86,3 @@ class DocumentWindowTests(TestCase):
         response = self.client.get(reverse("admin:zetom_oferta_add"))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "de-paper")
-
-    # claude
-    def test_request_page_has_composer_outside_main_form(self):
-        response = self.client.get(reverse("admin:zetom_requestmain_change", args=[self.parent.pk]))
-        self.assertEqual(response.status_code, 200)
-        html = response.content.decode()
-        self.assertIn(f'value="requestmain:{self.parent.pk}"', html)
-        # composer starts after the main form is closed — no nested forms
-        main_form_end = html.index("</form>", html.index('class="rm-grid"'))
-        self.assertGreater(html.index('id="messages"'), main_form_end)

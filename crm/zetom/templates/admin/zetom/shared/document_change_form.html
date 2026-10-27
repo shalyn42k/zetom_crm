@@ -8,7 +8,7 @@ fieldsets to what the document template needs. Right: live preview of the
 paper, print/PDF, and the messages & reminders panel.
 
 The side panel is outside the admin <form> (it follows block.super), so the
-composer and mark-done forms are siblings of it, never nested. The add view
+mark-done form is a sibling of it, never nested. The add view
 has no doc_window and falls back to the plain form.
 
 company_card.css is reloaded cache-busted for the step-notes modal, same as
@@ -57,7 +57,6 @@ the old per-model templates did.
           {% include "admin/zetom/shared/document_paper.html" with doc=original kind=doc_window.kind doc_title=doc_window.doc_title doc_code=doc_window.doc_code doc_date=doc_window.doc_date signer_name=doc_window.signer_name %}
         </div>
       </section>
-      {% include "notification/_composer.html" with composer=doc_window.composer %}
     </aside>
   </div>
   {% include "admin/zetom/shared/step_notes_modal.html" with step_notes_hide_inline_trigger=True %}

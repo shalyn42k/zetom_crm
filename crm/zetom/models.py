@@ -455,6 +455,39 @@ class StepNote(models.Model):
         verbose_name=_("Done at"),
     )
 
+    # claude — who a reminder is addressed to (Dziennik kontaktów → "Komu
+    # przypomnieć"). Empty = the original behaviour: owners → assignees →
+    # author (notification/services/followup_reminders._resolve_recipients).
+    class Notify(models.TextChoices):
+        SELF = "self", _("Me")
+        USERS = "users", _("Colleagues")
+        ROLES = "roles", _("Role")
+        CLIENT = "client", _("Client by email")
+
+    notify = models.CharField(
+        max_length=10,
+        choices=Notify.choices,
+        blank=True,
+        verbose_name=_("Remind whom"),
+    )
+    notify_users = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name="addressed_reminders",
+        verbose_name=_("Colleagues to remind"),
+    )
+    notify_roles = ArrayField(
+        models.CharField(max_length=50),
+        default=list,
+        blank=True,
+        verbose_name=_("Roles to remind"),
+    )
+    client_email = models.EmailField(
+        max_length=254,
+        blank=True,
+        verbose_name=_("Client email"),
+    )
+
     target_content_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
@@ -497,6 +530,24 @@ class StepNote(models.Model):
     def __str__(self):
         who = self.author.username if self.author_id else "system"
         return f"{who}: {self.action or self.text[:40]}"
+
+    # claude — "→ whom" tag on the work-log timeline (step_notes_modal.html).
+    # Empty for contacts and for reminders that use the default recipients.
+    @property
+    def notify_label(self):
+        if self.kind != self.Kind.REMINDER or not self.notify:
+            return ""
+        if self.notify == self.Notify.SELF:
+            return str(_("me"))
+        if self.notify == self.Notify.CLIENT:
+            return str(_("client · %(email)s") % {"email": self.client_email})
+        if self.notify == self.Notify.ROLES:
+            from crm.users.models import Role
+
+            names = {r.code: str(r) for r in Role.objects.filter(code__in=self.notify_roles)}
+            return str(_("role: %(roles)s") % {"roles": ", ".join(names.get(c, c) for c in self.notify_roles)})
+        people = [u.get_full_name() or u.get_username() for u in self.notify_users.all()]
+        return ", ".join(people)
 
     # claude — дублирует CheckConstraint-ы с переводимыми сообщениями,
     # привязанными к конкретному полю, чтобы админка показывала ошибку

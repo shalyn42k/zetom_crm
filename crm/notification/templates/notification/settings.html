@@ -29,26 +29,5 @@ NotificationPreference fields listed in services/preferences.py.
     </div>
   </form>
 
-  <section class="ns-card" aria-labelledby="ns-scheduled-heading">
-    <h2 id="ns-scheduled-heading" class="ns-h2">{% trans "My scheduled messages" %}</h2>
-    {% if my_messages %}
-      <ul class="msg-list">
-        {% for m in my_messages %}
-          <li class="msg-item">
-            <div class="msg-item__main">
-              <span class="msg-item__subject">{{ m.subject }}</span>
-              <span class="msg-item__meta">{{ m.get_audience_display }} · {{ m.send_at|date:"Y-m-d H:i" }}{% if m.target %} · {{ m.target }}{% endif %}</span>
-            </div>
-            <form method="post" action="{% url 'notification:message_cancel' m.pk %}">
-              {% csrf_token %}
-              <button type="submit" class="ns-btn ns-btn--sm">{% trans "Cancel" %}</button>
-            </form>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="ns-hint">{% trans "Nothing scheduled." %}</p>
-    {% endif %}
-  </section>
 </div>
 {% endblock content %}

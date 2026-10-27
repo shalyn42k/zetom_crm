@@ -23,7 +23,6 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
   is still in play.
   {% endcomment %}
   <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}?v={% now "U" %}">
-  <link rel="stylesheet" href="{% static 'notification/css/messages.css' %}?v={% now "U" %}">
 {% endblock extrastyle %}
 
 {% block extrahead %}
@@ -186,10 +185,6 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
       </aside>
     {% endif %}
   </form>
-  {% comment %}claude — outside the main form on purpose: the composer is its own <form>.{% endcomment %}
-  {% if original.pk and composer %}
-    <div class="rm-messages">{% include "notification/_composer.html" %}</div>
-  {% endif %}
 </div>
 </div>
 {% include "admin/zetom/shared/step_notes_modal.html" with step_notes_hide_inline_trigger=True %}

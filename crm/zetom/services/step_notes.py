@@ -42,6 +42,10 @@ def create_step_note(
     channel="",
     contacted_at=None,
     next_contact_at=None,
+    notify="",
+    notify_users=(),
+    notify_roles=(),
+    client_email="",
 ) -> StepNote:
     """Build, validate and save a StepNote. The single entry point for note
     creation — the admin action (Task 4) and the clients-side caller
@@ -65,9 +69,32 @@ def create_step_note(
     )
     if target is not None:
         note.target = target
+    # claude — "Komu przypomnieć" only means something on a reminder; a
+    # contact entry never sends anything, whatever the form posted.
+    notify_users = list(notify_users or ())
+    notify_roles = [r for r in (notify_roles or ()) if r]
+    if kind == StepNote.Kind.REMINDER and notify:
+        _check_addressee(notify, notify_users, notify_roles, client_email)
+        note.notify = notify
+        note.notify_roles = notify_roles if notify == StepNote.Notify.ROLES else []
+        note.client_email = client_email if notify == StepNote.Notify.CLIENT else ""
     note.full_clean()
     note.save()
+    if note.notify == StepNote.Notify.USERS:
+        note.notify_users.set(notify_users)
     return note
+
+
+# claude
+def _check_addressee(notify, users, roles, client_email):
+    if notify not in StepNote.Notify.values:
+        raise ValidationError({"notify": _("Unknown recipient type.")})
+    if notify == StepNote.Notify.USERS and not users:
+        raise ValidationError({"notify_users": _("Choose at least one colleague.")})
+    if notify == StepNote.Notify.ROLES and not roles:
+        raise ValidationError({"notify_roles": _("Choose at least one role.")})
+    if notify == StepNote.Notify.CLIENT and not client_email:
+        raise ValidationError({"client_email": _("Choose the client's email address.")})
 
 
 # claude

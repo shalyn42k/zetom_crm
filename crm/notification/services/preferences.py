@@ -12,19 +12,16 @@ INAPP_FIELD_BY_KIND = {
     NotificationKind.ASSIGNMENT: "inapp_assignment",
     NotificationKind.STATUS_CHANGE: "inapp_status_change",
     NotificationKind.REMINDER: "inapp_reminders",
-    NotificationKind.MESSAGE: "inapp_messages",
 }
 
 EMAIL_FIELD_BY_KIND = {
     NotificationKind.REMINDER: "email_reminders",
-    NotificationKind.MESSAGE: "email_messages",
 }
 
 # Order and grouping of the switches on the user's Notifications tab.
 PREFERENCE_GROUPS = (
     ("requests", ("inapp_assignment", "inapp_status_change")),
     ("reminders", ("inapp_reminders", "email_reminders")),
-    ("messages", ("inapp_messages", "email_messages")),
 )
 PREFERENCE_FIELDS = tuple(f for _group, fields in PREFERENCE_GROUPS for f in fields)
 

@@ -1,6 +1,6 @@
-{% load i18n %}{% comment %}Письмо клиенту, написанное сотрудником вручную или
-   запланированное как напоминание (ScheduledMessage, claude).
-   Тема берётся из message.subject, тут только тело + подпись.
+{% load i18n %}{% comment %}Письмо клиенту:
+   напоминание из «Dziennik kontaktów» (StepNote.notify=client, claude).
+   Тема — StepNote.action, тут только тело (StepNote.text) + подпись.
 {% endcomment %}{% autoescape off %}{{ body }}
 
 {% trans "Kind regards," %}

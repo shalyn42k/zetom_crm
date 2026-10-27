@@ -1,7 +1,0 @@
-{% load i18n %}{% comment %}Письмо сотруднику от сотрудника (ScheduledMessage, claude).
-   Тема берётся из message.subject, тут только тело.
-{% endcomment %}{% autoescape off %}{{ body }}
-
---
-{% blocktrans %}Sent by {{ author }} via Zetom CRM.{% endblocktrans %}{% if target_label %}
-{% blocktrans %}Regarding: {{ target_label }}{% endblocktrans %}{% endif %}{% endautoescape %}

@@ -5,6 +5,7 @@ this module is loaded first and shouldn't pull in Crispy / heavy stuff.
 """
 from django import forms
 from django.contrib import admin, messages
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models import Q
@@ -26,6 +27,8 @@ from crm.zetom.services.step_notes import (
     HISTORY_FILTER, OPEN_REMINDER_FILTER, create_step_note, mark_reminder_done,
 )
 from crm.zetom.services.visibility import visible_requests_for
+
+User = get_user_model()
 
 
 class ReasonForm(forms.Form):
@@ -70,6 +73,20 @@ class StepNoteCreateForm(forms.Form):
         label=_("Person"),
     )
     contact_person = forms.CharField(max_length=255, required=False, label=_("Contact person"))
+    # claude — "Komu przypomnieć" (reminders only). Choices are open here;
+    # step_note_create_action checks them against reminder_targets for this
+    # user and this request, which is what decides what may be picked.
+    notify = forms.CharField(max_length=10, required=False)
+    notify_users = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(is_active=True), required=False,
+    )
+    notify_roles = forms.MultipleChoiceField(choices=(), required=False)
+    client_email = forms.EmailField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from crm.zetom.services.reminder_targets import role_choices
+        self.fields["notify_roles"].choices = role_choices()
 
 
 class DepartmentsDisplayMixin:
@@ -178,6 +195,17 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
         # contacted_at, что падало IntegrityError на констрейнтах Task 3.
         # Теперь всё создание идёт через create_step_note(), который валидирует
         # через full_clean() до записи в БД.
+        # claude — addressee checks: the option must be one this user may use,
+        # and a client address must be one this request actually has.
+        from crm.zetom.services import reminder_targets
+        notify = form.cleaned_data["notify"] if form.cleaned_data["kind"] == StepNote.Kind.REMINDER else ""
+        if notify and notify not in reminder_targets.allowed_notify(request.user):
+            return HttpResponseForbidden(_("You don't have permission for this action."))
+        client_email = form.cleaned_data["client_email"] or ""
+        if notify == StepNote.Notify.CLIENT and client_email not in reminder_targets.client_email_choices(obj):
+            messages.error(request, _("Choose one of the client's addresses on this request."))
+            return redirect(self._change_url_for_id(object_id))
+
         try:
             create_step_note(
                 author=request.user,
@@ -190,6 +218,10 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
                 channel=form.cleaned_data["channel"],
                 contacted_at=form.cleaned_data["contacted_at"],
                 next_contact_at=form.cleaned_data["next_contact_at"],
+                notify=notify,
+                notify_users=form.cleaned_data["notify_users"],
+                notify_roles=form.cleaned_data["notify_roles"],
+                client_email=client_email,
             )
         except ValidationError as exc:
             messages.error(
@@ -388,7 +420,7 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             )
         return reminders
 
-    def _build_step_notes_context(self, obj):
+    def _build_step_notes_context(self, obj, request=None):
         opts = self.model._meta
         if not obj or not obj.pk:
             return {
@@ -411,7 +443,19 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             ),
             "step_notes_target_label": self._step_note_scope_title(obj, targets),
             "step_notes_persons": self._step_note_persons(obj),
+            # claude — "Komu przypomnieć" block; only request/document pages
+            # pass it, the client cards keep the modal without it.
+            "step_notes_notify": self._step_note_notify(obj, request),
         }
+
+    # claude — None without a request (tests build the context directly).
+    def _step_note_notify(self, obj, request):
+        if request is None:
+            return None
+        from crm.zetom.services.reminder_targets import (
+            notify_context, thread_code,
+        )
+        return notify_context(request.user, obj, thread_code(obj))
 
     # claude — Task 12: people the "who did you talk to" picker can offer —
     # persons already linked to the request thread (RequestMain.clients)
@@ -446,7 +490,7 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
 
     def render_change_form(self, request, context, *args, **kwargs):
         obj = context.get("original")
-        context.update(self._build_step_notes_context(obj))
+        context.update(self._build_step_notes_context(obj, request))
         return super().render_change_form(request, context, *args, **kwargs)
 
     # claude — prefills the request's contact snapshot from ?client=<pk>. The
