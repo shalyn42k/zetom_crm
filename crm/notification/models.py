@@ -3,7 +3,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, pgettext_lazy
 
 from crm.users.models import User
 
@@ -165,10 +165,12 @@ class MessageChannel(models.TextChoices):
 
 # claude
 class MessageStatus(models.TextChoices):
-    PENDING = "PENDING", _("Scheduled")
-    SENT = "SENT", _("Sent")
-    CANCELLED = "CANCELLED", _("Cancelled")
-    FAILED = "FAILED", _("Failed")
+    # Context keeps these apart from EmailStatus' "Sent"/"Failed": in Polish a
+    # message (wiadomość) is feminine, an email is masculine.
+    PENDING = "PENDING", pgettext_lazy("message status", "Scheduled")
+    SENT = "SENT", pgettext_lazy("message status", "Sent")
+    CANCELLED = "CANCELLED", pgettext_lazy("message status", "Cancelled")
+    FAILED = "FAILED", pgettext_lazy("message status", "Failed")
 
 
 # claude
