@@ -209,7 +209,7 @@ selection is deferred and written only on Approve.
       {% if request_dupes %}
         <div class="modal-topbar">
           <span class="lbl">{% trans "These records share signals with this lead." %}</span>
-          <button type="submit" form="vw-form" name="__action" value="delete_all_dupes" class="vw-btn danger-ghost" style="padding:6px 11px;font-size:12px"
+          <button type="submit" form="vw-form" name="__action" value="delete_all_dupes" class="vw-btn danger-ghost" style="padding:6px 11px;font-size:0.75rem"
                   onclick="return confirm('{% trans "Move all duplicates to trash / cancel them? This is a soft delete and can be undone." %}');">
             <svg class="i i-sm"><use href="#i-trash"/></svg> {% blocktrans count n=request_dupes|length %}Delete all {{ n }} duplicate{% plural %}Delete all {{ n }} duplicates{% endblocktrans %}
           </button>
@@ -313,12 +313,12 @@ selection is deferred and written only on Approve.
           </div>
         </label>
 
-        <div style="font-size:12px;color:var(--vw-text-3);padding:2px 2px 0;line-height:1.5">
+        <div style="font-size:0.75rem;color:var(--vw-text-3);padding:2px 2px 0;line-height:1.5">
           <strong style="color:var(--vw-text-2)">{% trans "Leave unlinked:" %}</strong> {% trans "select nothing and don't create — the RequestMain is created without a client." %}
         </div>
       </div>
       <div class="modal-foot">
-        <span class="lbl" style="font-size:12px;color:var(--vw-text-3)"><span id="vwCliFootCount" class="mono">{{ selected_client_ids|length }}</span> {% trans "selected" %}</span>
+        <span class="lbl" style="font-size:0.75rem;color:var(--vw-text-3)"><span id="vwCliFootCount" class="mono">{{ selected_client_ids|length }}</span> {% trans "selected" %}</span>
         <div class="actions"><button type="button" class="vw-btn primary" onclick="vwClose('vwModalClient')"><svg class="i"><use href="#i-check"/></svg> {% trans "Done" %}</button></div>
       </div>
     </div>

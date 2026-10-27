@@ -54,7 +54,7 @@
   --r-sm: 6px; --r-md: 9px; --r-lg: 13px; --r-xl: 18px;
 
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  font-size: 15.5px;
+  font-size: 0.96875rem;
   line-height: 1.5;
   color: var(--text);
   padding: 20px 24px 40px;
@@ -65,32 +65,32 @@
 
 /* back link */
 .cc-stage .backrow { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
-.cc-stage .btn-back { display: inline-flex; align-items: center; gap: 9px; padding: 11px 18px; border-radius: var(--r-md); border: 1px solid var(--border-2); background: var(--surface); color: var(--text); font-size: 15px; font-weight: 600; box-shadow: var(--shadow-sm); }
+.cc-stage .btn-back { display: inline-flex; align-items: center; gap: 9px; padding: 11px 18px; border-radius: var(--r-md); border: 1px solid var(--border-2); background: var(--surface); color: var(--text); font-size: 0.9375rem; font-weight: 600; box-shadow: var(--shadow-sm); }
 .cc-stage .btn-back:hover { background: var(--bg-3); }
-.cc-stage .podglad-tag { font-size: 15px; color: var(--text-3); font-weight: 500; }
+.cc-stage .podglad-tag { font-size: 0.9375rem; color: var(--text-3); font-weight: 500; }
 .cc-stage .podglad-tag b { color: var(--text); font-weight: 700; }
 
 /* buttons */
-.cc-stage .btn { padding: 11px 20px; border-radius: var(--r-md); border: 1px solid var(--border-2); background: var(--surface); color: var(--text); font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 9px; box-shadow: var(--shadow-sm); }
+.cc-stage .btn { padding: 11px 20px; border-radius: var(--r-md); border: 1px solid var(--border-2); background: var(--surface); color: var(--text); font-size: 0.9375rem; font-weight: 600; display: inline-flex; align-items: center; gap: 9px; box-shadow: var(--shadow-sm); }
 .cc-stage .btn:hover { background: var(--bg-3); }
-.cc-stage .btn.sm { padding: 8px 14px; font-size: 14px; }
+.cc-stage .btn.sm { padding: 8px 14px; font-size: 0.875rem; }
 
 /* identity header */
 .cc-stage .id-hero { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
-.cc-stage .id-hero .ava { width: 68px; height: 68px; border-radius: 16px; font-size: 24px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; background: linear-gradient(135deg, var(--purple), color-mix(in srgb, var(--purple) 65%, black)); flex-shrink: 0; }
+.cc-stage .id-hero .ava { width: 68px; height: 68px; border-radius: 16px; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; background: linear-gradient(135deg, var(--purple), color-mix(in srgb, var(--purple) 65%, black)); flex-shrink: 0; }
 /* claude — Person (Osoba) hero avatar/pill, Phase 3b Task 1. Blue gradient
    per README §"Design Tokens" row colour (person: --blue tinted darker, vs.
    company's --purple tinted darker above) — Task 4 (visual-tokens-
    unification) moved these off hand-copied hex onto the shared roles. */
 .cc-stage .id-hero .ava.person { background: linear-gradient(135deg, var(--blue), color-mix(in srgb, var(--blue) 65%, black)); }
-.cc-stage .id-hero .h-nm { font-size: 28px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.cc-stage .id-hero .h-sub { margin-top: 6px; font-size: 15.5px; color: var(--text-3); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cc-stage .id-hero .h-nm { font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.cc-stage .id-hero .h-sub { margin-top: 6px; font-size: 0.96875rem; color: var(--text-3); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-.cc-stage .pill { display: inline-flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 24px; font-size: 14px; font-weight: 700; border: 1px solid transparent; white-space: nowrap; }
+.cc-stage .pill { display: inline-flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 24px; font-size: 0.875rem; font-weight: 700; border: 1px solid transparent; white-space: nowrap; }
 .cc-stage .pill.company { background: var(--purple-bg); color: var(--purple); border-color: color-mix(in srgb, var(--purple) 26%, transparent); }
 .cc-stage .pill.person { background: var(--blue-bg); color: var(--blue); border-color: color-mix(in srgb, var(--blue) 26%, transparent); }
 
-.cc-stage .chip { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 20px; font-size: 13px; font-weight: 700; border: 1px solid transparent; }
+.cc-stage .chip { display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 20px; font-size: 0.8125rem; font-weight: 700; border: 1px solid transparent; }
 .cc-stage .chip.lokalny { background: var(--slate-bg); color: var(--slate); border-color: color-mix(in srgb, var(--slate) 26%, transparent); }
 .cc-stage .chip.regionalny { background: var(--blue-bg); color: var(--blue); border-color: color-mix(in srgb, var(--blue) 26%, transparent); }
 .cc-stage .chip.miedzynarodowy { background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green-bright); border-color: color-mix(in srgb, var(--green) 30%, transparent); }
@@ -102,9 +102,9 @@
 
 .cc-stage .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-md); overflow: hidden; }
 .cc-stage .panel-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 22px; border-bottom: 1px solid var(--border); }
-.cc-stage .panel-h h2 { margin: 0; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 11px; }
+.cc-stage .panel-h h2 { margin: 0; font-size: 1.125rem; font-weight: 700; display: flex; align-items: center; gap: 11px; }
 .cc-stage .panel-h h2 .hico { color: var(--text-3); }
-.cc-stage .panel-h .count { font-size: 14px; color: var(--text-3); font-weight: 600; }
+.cc-stage .panel-h .count { font-size: 0.875rem; color: var(--text-3); font-weight: 600; }
 .cc-stage .edit-btn { width: 40px; height: 40px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface); color: var(--text-2); display: inline-flex; align-items: center; justify-content: center; }
 .cc-stage .edit-btn:hover { background: var(--bg-3); color: var(--text); border-color: var(--border-2); }
 
@@ -112,16 +112,16 @@
 .cc-stage .fields { padding: 10px 22px 18px; }
 .cc-stage .frow { display: grid; grid-template-columns: 150px 1fr; gap: 16px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent); }
 .cc-stage .frow:last-child { border-bottom: none; }
-.cc-stage .frow .fk { font-size: 14.5px; color: var(--text-3); font-weight: 600; }
-.cc-stage .frow .fv { font-size: 16px; color: var(--text); font-weight: 500; word-break: break-word; }
+.cc-stage .frow .fk { font-size: 0.90625rem; color: var(--text-3); font-weight: 600; }
+.cc-stage .frow .fv { font-size: 1rem; color: var(--text); font-weight: 500; word-break: break-word; }
 .cc-stage .frow .fv.none { color: var(--text-3); font-weight: 400; }
 @media (max-width: 520px) { .cc-stage .frow { grid-template-columns: 1fr; gap: 3px; } }
 
 /* osoby kontaktowe (inner table + empty state) */
 .cc-stage table.inner { width: 100%; border-collapse: collapse; }
-.cc-stage table.inner thead th { text-align: left; padding: 12px 22px; font-size: 13px; font-weight: 700; color: var(--text-3); border-bottom: 1px solid var(--border); background: var(--bg-2); white-space: nowrap; }
+.cc-stage table.inner thead th { text-align: left; padding: 12px 22px; font-size: 0.8125rem; font-weight: 700; color: var(--text-3); border-bottom: 1px solid var(--border); background: var(--bg-2); white-space: nowrap; }
 .cc-stage table.inner thead th.act { text-align: right; }
-.cc-stage table.inner tbody td { padding: 15px 22px; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); vertical-align: middle; font-size: 15.5px; }
+.cc-stage table.inner tbody td { padding: 15px 22px; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); vertical-align: middle; font-size: 0.96875rem; }
 .cc-stage table.inner tbody tr:last-child td { border-bottom: none; }
 /* claude — Firmy table rows (Person card, Phase 3b Task 1): whole row links
    to the company card, per README §3 "строки кликабельны → карточка фирмы".
@@ -140,7 +140,7 @@
 
 .cc-stage .empty { padding: 44px 22px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .cc-stage .empty .ring { width: 64px; height: 64px; border-radius: 50%; background: var(--bg-3); color: var(--text-3); display: inline-flex; align-items: center; justify-content: center; }
-.cc-stage .empty p { margin: 0; font-size: 15.5px; color: var(--text-3); max-width: 360px; }
+.cc-stage .empty p { margin: 0; font-size: 0.96875rem; color: var(--text-3); max-width: 360px; }
 
 /* powiazane zgloszenia */
 .cc-stage .reqs { display: flex; flex-direction: column; }
@@ -149,9 +149,9 @@
 .cc-stage .req:hover { background: var(--bg-2); }
 .cc-stage .req-ico { width: 42px; height: 42px; border-radius: 11px; background: var(--bg-3); color: var(--text-2); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .cc-stage .req-main { flex: 1; min-width: 0; }
-.cc-stage .req-title { font-size: 16px; font-weight: 700; color: var(--text); }
-.cc-stage .req-meta { font-size: 14px; color: var(--text-3); margin-top: 2px; }
-.cc-stage .st { display: inline-flex; align-items: center; gap: 7px; padding: 5px 13px; border-radius: 22px; font-size: 13.5px; font-weight: 700; white-space: nowrap; }
+.cc-stage .req-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+.cc-stage .req-meta { font-size: 0.875rem; color: var(--text-3); margin-top: 2px; }
+.cc-stage .st { display: inline-flex; align-items: center; gap: 7px; padding: 5px 13px; border-radius: 22px; font-size: 0.84375rem; font-weight: 700; white-space: nowrap; }
 .cc-stage .st::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 .cc-stage .st.aktywne { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green-bright); }
 .cc-stage .st.oczekuje { background: var(--amber-bg); color: var(--amber); }
@@ -166,10 +166,10 @@
 .cc-stage .hev .line { flex: 1; width: 2px; background: var(--border); margin: 4px 0 -15px; }
 .cc-stage .hev:last-child .line { display: none; }
 .cc-stage .hev .hbody { flex: 1; min-width: 0; }
-.cc-stage .hev .hmeta { font-size: 14px; color: var(--text-3); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.cc-stage .hev .hmeta { font-size: 0.875rem; color: var(--text-3); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .cc-stage .hev .hmeta .hdate { font-weight: 700; color: var(--text-2); }
 .cc-stage .hev .hmeta .hwho { color: var(--text-2); }
-.cc-stage .hev .htext { font-size: 15.5px; color: var(--text); margin-top: 5px; line-height: 1.5; }
+.cc-stage .hev .htext { font-size: 0.96875rem; color: var(--text); margin-top: 5px; line-height: 1.5; }
 /* claude — Task 12: overdue reminder (zetom's work-log modal timeline).
    --red is already theme-aware (:root vs html.dark at the top of this
    file, per project memory project_unfold_dark_theme — Unfold puts
@@ -181,9 +181,9 @@
    heading separates it from the history list below; .hdone pushes the
    close button to the right end of the flex .hmeta row, the same place the
    Person card puts its own checkmark. */
-.cc-stage .hist-h { margin: 0; padding: 10px 22px 2px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); }
+.cc-stage .hist-h { margin: 0; padding: 10px 22px 2px; font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); }
 .cc-stage .hev .hmeta .hdone { margin-left: auto; }
-.cc-stage .readonly-note { padding: 14px 22px; border-top: 1px solid var(--border); background: var(--bg-2); font-size: 14px; color: var(--text-3); display: flex; align-items: center; gap: 9px; }
+.cc-stage .readonly-note { padding: 14px 22px; border-top: 1px solid var(--border); background: var(--bg-2); font-size: 0.875rem; color: var(--text-3); display: flex; align-items: center; gap: 9px; }
 
 /* claude — mPerson add/edit modal (Task 2), reproduces
    design_handoff_clients_unified/Zetom Klienci.html §4 "Modalka Osoba
@@ -205,15 +205,15 @@
 .cc-stage .modal { width: 100%; max-width: 540px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; overflow: hidden; animation: cc-modal-pop .16s ease-out; }
 @keyframes cc-modal-pop { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
 .cc-stage .modal-h { position: relative; padding: 22px 24px 18px; border-bottom: 1px solid var(--border); }
-.cc-stage .modal-h h3 { margin: 0; font-size: 20px; font-weight: 800; }
-.cc-stage .modal-h p { margin: 5px 0 0; font-size: 14.5px; color: var(--text-3); }
+.cc-stage .modal-h h3 { margin: 0; font-size: 1.25rem; font-weight: 800; }
+.cc-stage .modal-h p { margin: 5px 0 0; font-size: 0.90625rem; color: var(--text-3); }
 .cc-stage .modal-x { position: absolute; top: 16px; right: 16px; width: 38px; height: 38px; border-radius: 10px; border: 1px solid transparent; background: transparent; color: var(--text-3); display: inline-flex; align-items: center; justify-content: center; }
 .cc-stage .modal-x:hover { background: var(--bg-3); color: var(--text); border-color: var(--border); }
 .cc-stage .modal-b { padding: 22px 24px; display: flex; flex-direction: column; gap: 18px; }
 .cc-stage .modal-f { padding: 18px 24px; border-top: 1px solid var(--border); background: var(--bg-2); display: flex; justify-content: flex-end; gap: 12px; }
 
 .cc-stage .field { display: flex; flex-direction: column; gap: 8px; }
-.cc-stage .field > label { font-size: 14.5px; font-weight: 600; color: var(--text-2); }
+.cc-stage .field > label { font-size: 0.90625rem; font-weight: 600; color: var(--text-2); }
 /* claude — Fix-round: static/admin/css/custom_admin.css carries
    `#content-main input, #content-main textarea, #content-main select { ...
    !important }` (a blanket dark-theme re-skin for every plain admin form
@@ -232,7 +232,7 @@
    that pairing (grey border on grey fill) reads as almost no border at all,
    exactly the "Note field has no visible border, blends into the
    background" report. */
-#content .cc-stage .field input { width: 100%; padding: 13px 15px !important; border: 1px solid var(--border-2) !important; border-radius: 11px !important; background: var(--input-bg) !important; color: var(--text) !important; font-size: 16px; font-family: inherit; outline: none; transition: border-color .12s, box-shadow .12s; }
+#content .cc-stage .field input { width: 100%; padding: 13px 15px !important; border: 1px solid var(--border-2) !important; border-radius: 11px !important; background: var(--input-bg) !important; color: var(--text) !important; font-size: 1rem; font-family: inherit; outline: none; transition: border-color .12s, box-shadow .12s; }
 #content .cc-stage .field input:focus { border-color: var(--green-bright) !important; box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 22%, transparent); }
 #content .cc-stage .field input::placeholder { color: var(--text-3) !important; }
 /* claude — textarea had no rule here at all, so it fell back to raw
@@ -240,7 +240,7 @@
    fields, resize:both (draggable sideways), and no word-break — a long
    word with no spaces (or any long unbroken run of text) overflowed the
    box to the right instead of wrapping down. */
-#content .cc-stage .field textarea { width: 100%; padding: 13px 15px !important; border: 1px solid var(--border-2) !important; border-radius: 11px !important; background: var(--input-bg) !important; color: var(--text) !important; font-size: 16px; font-family: inherit; outline: none; resize: vertical; overflow-wrap: break-word; word-break: break-word; transition: border-color .12s, box-shadow .12s; }
+#content .cc-stage .field textarea { width: 100%; padding: 13px 15px !important; border: 1px solid var(--border-2) !important; border-radius: 11px !important; background: var(--input-bg) !important; color: var(--text) !important; font-size: 1rem; font-family: inherit; outline: none; resize: vertical; overflow-wrap: break-word; word-break: break-word; transition: border-color .12s, box-shadow .12s; }
 #content .cc-stage .field textarea:focus { border-color: var(--green-bright) !important; box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 22%, transparent); }
 #content .cc-stage .field textarea::placeholder { color: var(--text-3) !important; }
 .cc-stage .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -248,10 +248,10 @@
 
 .cc-stage .check { display: flex; align-items: center; gap: 13px; padding: 15px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-2); cursor: pointer; }
 .cc-stage .check input { width: 22px; height: 22px; accent-color: var(--green-bright); cursor: pointer; flex-shrink: 0; }
-.cc-stage .check .ct { font-size: 15.5px; font-weight: 600; color: var(--text); }
-.cc-stage .check .cd { font-size: 13.5px; color: var(--text-3); margin-top: 1px; }
+.cc-stage .check .ct { font-size: 0.96875rem; font-weight: 600; color: var(--text); }
+.cc-stage .check .cd { font-size: 0.84375rem; color: var(--text-3); margin-top: 1px; }
 
-.cc-stage .form-errors { padding: 12px 15px; border-radius: 10px; background: var(--red-bg); color: var(--red); font-size: 14.5px; font-weight: 600; }
+.cc-stage .form-errors { padding: 12px 15px; border-radius: 10px; background: var(--red-bg); color: var(--red); font-size: 0.90625rem; font-weight: 600; }
 
 /* claude — Phase 3b Task 2: unified Klienci list (klienci_list.html).
    Rules mirror design_handoff_clients_unified/Zetom Klienci.html §1 "Klienci",
@@ -260,34 +260,34 @@
 
 /* page header */
 .cc-stage .phead { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 26px; }
-.cc-stage .phead h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -.02em; }
-.cc-stage .phead .desc { margin: 8px 0 0; font-size: 16px; color: var(--text-3); max-width: 640px; }
+.cc-stage .phead h1 { margin: 0; font-size: 2rem; font-weight: 800; letter-spacing: -.02em; }
+.cc-stage .phead .desc { margin: 8px 0 0; font-size: 1rem; color: var(--text-3); max-width: 640px; }
 .cc-stage .phead-actions { display: flex; align-items: center; gap: 12px; }
 
 /* toolbar / filters */
 .cc-stage .toolbar { display: flex; align-items: center; gap: 16px 20px; flex-wrap: wrap; margin-bottom: 20px; }
 .cc-stage .filt { display: flex; flex-direction: column; gap: 7px; }
-.cc-stage .filt > span { font-size: 13px; font-weight: 600; color: var(--text-3); }
+.cc-stage .filt > span { font-size: 0.8125rem; font-weight: 600; color: var(--text-3); }
 
 /* Rodzaj segmented control (template uses <a>, not <button>) */
 .cc-stage .seg2 { display: flex; gap: 5px; background: var(--surface); border: 1px solid var(--border); padding: 5px; border-radius: 12px; box-shadow: var(--shadow-sm); }
-.cc-stage .seg2 a { padding: 10px 16px; border-radius: 8px; background: transparent; border: none; color: var(--text-2); font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; gap: 9px; }
+.cc-stage .seg2 a { padding: 10px 16px; border-radius: 8px; background: transparent; border: none; color: var(--text-2); font-size: 0.9375rem; font-weight: 600; display: inline-flex; align-items: center; gap: 9px; }
 .cc-stage .seg2 a:hover { color: var(--text); }
 .cc-stage .seg2 a.active { background: var(--bg-3); color: var(--text); }
-.cc-stage .seg2 .cnt { font-size: 13px; color: var(--text-3); font-weight: 700; background: var(--bg-2); padding: 1px 8px; border-radius: 20px; }
+.cc-stage .seg2 .cnt { font-size: 0.8125rem; color: var(--text-3); font-weight: 700; background: var(--bg-2); padding: 1px 8px; border-radius: 20px; }
 .cc-stage .seg2 a.active .cnt { color: var(--green-bright); }
 
 /* Typ dostawcy dropdown */
-.cc-stage select.dropdown { appearance: none; padding: 11px 40px 11px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 15px; font-weight: 600; font-family: inherit; box-shadow: var(--shadow-sm); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2377746e' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; }
+.cc-stage select.dropdown { appearance: none; padding: 11px 40px 11px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.9375rem; font-weight: 600; font-family: inherit; box-shadow: var(--shadow-sm); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2377746e' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; }
 html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%238592a2' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
 .cc-stage .search { display: flex; align-items: center; gap: 11px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-sm); color: var(--text-3); }
-.cc-stage .search input { flex: 1; border: none; background: transparent; outline: none; font-size: 15.5px; font-family: inherit; color: var(--text); }
+.cc-stage .search input { flex: 1; border: none; background: transparent; outline: none; font-size: 0.96875rem; font-family: inherit; color: var(--text); }
 .cc-stage .search input::placeholder { color: var(--text-3); }
 
 /* table */
 .cc-stage .tbl-scroll { overflow-x: auto; }
 .cc-stage table.tbl { width: 100%; border-collapse: collapse; min-width: 760px; }
-.cc-stage table.tbl thead th { text-align: left; padding: 14px 22px; font-size: 13px; font-weight: 700; letter-spacing: .02em; color: var(--text-3); border-bottom: 1px solid var(--border); background: var(--bg-2); white-space: nowrap; }
+.cc-stage table.tbl thead th { text-align: left; padding: 14px 22px; font-size: 0.8125rem; font-weight: 700; letter-spacing: .02em; color: var(--text-3); border-bottom: 1px solid var(--border); background: var(--bg-2); white-space: nowrap; }
 .cc-stage table.tbl thead th.c { text-align: center; }
 .cc-stage table.tbl tbody td { padding: 16px 22px; border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent); vertical-align: middle; }
 .cc-stage table.tbl tbody td.c { text-align: center; }
@@ -298,31 +298,37 @@ html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,
 /* name cell */
 .cc-stage .who { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .cc-stage .who-nm { min-width: 0; }
-.cc-stage .who-nm .nm { font-size: 16.5px; font-weight: 700; color: var(--text); line-height: 1.25; }
+.cc-stage .who-nm .nm { font-size: 1.03125rem; font-weight: 700; color: var(--text); line-height: 1.25; }
 .cc-stage .who-nm .nm a { color: inherit; }
-.cc-stage .who-nm .sub { font-size: 13.5px; color: var(--text-3); margin-top: 2px; }
-.cc-stage .cell-nip { font-size: 15.5px; color: var(--text-2); letter-spacing: .02em; }
+.cc-stage .who-nm .sub { font-size: 0.84375rem; color: var(--text-3); margin-top: 2px; }
+.cc-stage .cell-nip { font-size: 0.96875rem; color: var(--text-2); letter-spacing: .02em; }
 .cc-stage .cell-nip.none { color: var(--text-3); }
-.cc-stage .cell-c { font-size: 15px; color: var(--text-2); }
-.cc-stage .cell-c.em { color: var(--text-3); font-size: 14px; }
+.cc-stage .cell-c { font-size: 0.9375rem; color: var(--text-2); }
+.cc-stage .cell-c.em { color: var(--text-3); font-size: 0.875rem; }
 
 /* list avatar (44px) — hero override (.id-hero .ava) stays more specific */
-.cc-stage .ava { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: white; flex-shrink: 0; }
+.cc-stage .ava { width: 44px; height: 44px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; color: white; flex-shrink: 0; }
 .cc-stage .ava.person { background: linear-gradient(135deg, var(--blue), color-mix(in srgb, var(--blue) 65%, black)); }
 .cc-stage .ava.company { background: linear-gradient(135deg, var(--purple), color-mix(in srgb, var(--purple) 65%, black)); }
 
 /* zgłoszenia badge */
-.cc-stage .zgcount { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 52px; height: 38px; padding: 0 14px; border-radius: 11px; font-size: 16px; font-weight: 800; border: 1px solid var(--border); background: var(--bg-2); color: var(--text); }
+.cc-stage .zgcount { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 52px; height: 38px; padding: 0 14px; border-radius: 11px; font-size: 1rem; font-weight: 800; border: 1px solid var(--border); background: var(--bg-2); color: var(--text); }
 .cc-stage .zgcount.zero { color: var(--text-3); opacity: .6; background: transparent; border-color: transparent; font-weight: 600; }
 .cc-stage .zgcount.hot { border-color: color-mix(in srgb, var(--green) 40%, var(--border)); color: var(--green-bright); background: color-mix(in srgb, var(--green) 12%, transparent); }
 
 /* table footer + pager (template uses <a>/<span>, not <button>) */
-.cc-stage .tbl-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 22px; border-top: 1px solid var(--border); background: var(--bg-2); font-size: 15px; color: var(--text-3); }
+.cc-stage .tbl-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 22px; border-top: 1px solid var(--border); background: var(--bg-2); font-size: 0.9375rem; color: var(--text-3); }
 .cc-stage .tbl-foot b { color: var(--text-2); font-weight: 700; }
 .cc-stage .pager { display: flex; gap: 6px; }
-.cc-stage .pager a, .cc-stage .pager span { min-width: 38px; height: 38px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+.cc-stage .pager a, .cc-stage .pager span { min-width: 38px; height: 38px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); font-size: 0.9375rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
 .cc-stage .pager a:hover { background: var(--bg-3); color: var(--text); }
 .cc-stage .pager span.active { background: var(--green-bright); border-color: var(--green-bright); color: color-mix(in srgb, var(--green) 18%, black); }
+/* claude — --green-bright is the text-on-tint role and went one step darker
+   in the light theme (tokens.css); these two use it as a FILL under
+   near-black text, which that darker step would make muddy. Light theme
+   keeps the fill on --green, as it looked before. */
+html:not(.dark) .cc-stage .btn.primary,
+html:not(.dark) .cc-stage .pager span.active { background: var(--green); border-color: var(--green); }
 .cc-stage .pager span.dis { opacity: .4; cursor: default; }
 .cc-stage .pager span.gap { border-color: transparent; background: transparent; }
 
@@ -333,10 +339,10 @@ html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,
 .cc-stage .picker-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 13px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 .cc-stage .picker-row:hover { background: var(--bg-3); border-color: var(--border-2); }
 .cc-stage .picker-row .pr-nm { font-weight: 600; }
-.cc-stage .picker-row .pr-nip { color: var(--text-3); font-size: 13.5px; margin-left: auto; }
+.cc-stage .picker-row .pr-nip { color: var(--text-3); font-size: 0.84375rem; margin-left: auto; }
 .cc-stage .picker-row .i { color: var(--green-bright); flex-shrink: 0; }
-.cc-stage .picker-empty { padding: 20px 4px; text-align: center; color: var(--text-3); font-size: 14.5px; }
-.cc-stage .picker-err { margin-top: 10px; color: var(--red); font-size: 14px; font-weight: 600; }
+.cc-stage .picker-empty { padding: 20px 4px; text-align: center; color: var(--text-3); font-size: 0.90625rem; }
+.cc-stage .picker-err { margin-top: 10px; color: var(--red); font-size: 0.875rem; font-weight: 600; }
 
 /* ─── Add Client modal (design_handoff_add_client) ─────────────────────────
    claude — new pieces only; the overlay/modal/field/picker chrome above is
@@ -345,10 +351,10 @@ html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,
 
 /* claude — selects were never styled: the Company card's Typ dostawcy modal
    and this one both drop a <select> into .field. Matches .field input. */
-#content .cc-stage .field select { width: 100%; padding: 13px 15px !important; border: 1px solid var(--border-2) !important; border-radius: 11px !important; background: var(--input-bg) !important; color: var(--text) !important; font-size: 16px; font-family: inherit; outline: none; }
+#content .cc-stage .field select { width: 100%; padding: 13px 15px !important; border: 1px solid var(--border-2) !important; border-radius: 11px !important; background: var(--input-bg) !important; color: var(--text) !important; font-size: 1rem; font-family: inherit; outline: none; }
 #content .cc-stage .field select:focus { border-color: var(--green-bright) !important; box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 22%, transparent); }
 
-.cc-stage .btn.lg { padding: 13px 24px; font-size: 15.5px; }
+.cc-stage .btn.lg { padding: 13px 24px; font-size: 0.96875rem; }
 
 /* claude — the add modal is the tallest one (a firm has 12 fields), so its
    body scrolls while header and footer stay pinned. */
@@ -360,8 +366,8 @@ html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,
 .cc-stage .type-opt button { display: flex; align-items: center; gap: 12px; padding: 14px 15px; border-radius: 12px; border: 1px solid var(--border-2); background: var(--surface); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
 .cc-stage .type-opt button:hover { background: var(--bg-3); }
 .cc-stage .type-opt button .i { color: var(--text-3); flex-shrink: 0; }
-.cc-stage .type-opt button b { display: block; font-size: 15px; font-weight: 700; }
-.cc-stage .type-opt button span { font-size: 13px; color: var(--text-3); }
+.cc-stage .type-opt button b { display: block; font-size: 0.9375rem; font-weight: 700; }
+.cc-stage .type-opt button span { font-size: 0.8125rem; color: var(--text-3); }
 .cc-stage .type-opt button.active.person { border-color: var(--blue); background: var(--blue-bg); }
 .cc-stage .type-opt button.active.person .i { color: var(--blue); }
 .cc-stage .type-opt button.active.company { border-color: var(--purple); background: var(--purple-bg); }
@@ -371,19 +377,19 @@ html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,
 .cc-stage .link-panel { border: 1px solid var(--border); border-radius: 12px; background: var(--bg-2); overflow: hidden; }
 .cc-stage .link-head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 15px; border: none; background: transparent; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; }
 .cc-stage .link-head:hover { background: var(--bg-3); }
-.cc-stage .link-head em { margin-left: auto; font-style: normal; font-size: 13px; font-weight: 500; color: var(--text-3); }
+.cc-stage .link-head em { margin-left: auto; font-style: normal; font-size: 0.8125rem; font-weight: 500; color: var(--text-3); }
 .cc-stage .link-head .chev { color: var(--text-3); transition: transform .14s; }
 .cc-stage .link-panel.open .link-head .chev { transform: rotate(180deg); }
 .cc-stage .link-body { padding: 0 15px 15px; display: flex; flex-direction: column; gap: 10px; }
-.cc-stage .link-group { margin: 6px 0 2px; font-size: 12.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); }
+.cc-stage .link-group { margin: 6px 0 2px; font-size: 0.78125rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); }
 .cc-stage .link-body .picker-row { background: var(--surface); }
 
-.cc-stage .picked-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
-.cc-stage .req-chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px; border-radius: 20px; background: color-mix(in srgb, var(--green) 12%, transparent); border: 1px solid color-mix(in srgb, var(--green) 32%, transparent); color: var(--text); font-size: 13.5px; }
+.cc-stage .picked-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.875rem; }
+.cc-stage .req-chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px; border-radius: 20px; background: color-mix(in srgb, var(--green) 12%, transparent); border: 1px solid color-mix(in srgb, var(--green) 32%, transparent); color: var(--text); font-size: 0.84375rem; }
 .cc-stage .req-chip b { font-weight: 800; color: var(--green-bright); }
 .cc-stage .req-chip button { border: none; background: transparent; color: var(--text-3); display: inline-flex; cursor: pointer; padding: 0; }
 .cc-stage .req-chip button:hover { color: var(--red); }
-.cc-stage .req-chip.sm { padding: 3px 9px; font-size: 12.5px; flex-shrink: 0; }
+.cc-stage .req-chip.sm { padding: 3px 9px; font-size: 0.78125rem; flex-shrink: 0; }
 
 /* claude — Fix-round: the "Step notes" trigger button
    (templates/admin/zetom/shared/step_notes_modal.html) sits outside
@@ -403,7 +409,7 @@ html.dark .cc-stage select.dropdown { background-image: url("data:image/svg+xml,
    not just "unstyled"). Switched to the same neutral surface/border/text
    combo .cc-stage .btn already uses elsewhere in this file, which is
    built for readable body text against it in both themes. */
-#content .cc-action-btn { display: inline-flex !important; align-items: center !important; gap: 6px; padding: 8px 14px !important; border-radius: 6px !important; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border-2) !important; background: var(--surface) !important; color: var(--text) !important; }
+#content .cc-action-btn { display: inline-flex !important; align-items: center !important; gap: 6px; padding: 8px 14px !important; border-radius: 6px !important; font-size: 0.8125rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border-2) !important; background: var(--surface) !important; color: var(--text) !important; }
 #content .cc-action-btn:hover { background: var(--bg-3) !important; border-color: var(--border-2) !important; }
 /* claude — "Mark as done" is the one primary/affirmative action among
    these (Step notes and Create order/application are neutral); a small
