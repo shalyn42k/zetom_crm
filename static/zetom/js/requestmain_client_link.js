@@ -35,11 +35,14 @@
 
   function buildLinkedRow(cl, card) {
     var unlinkBase = card.dataset.unlinkUrl.replace("/0/", "/" + cl.pk + "/");
+    // claude — was a hard-coded "/admin/clients/client/…": a 404 whenever
+    // ADMIN_URL is set to anything but the default (as it must be in prod).
+    var clientUrl = card.dataset.clientChangeUrl.replace("/0/", "/" + cl.pk + "/");
     var row = document.createElement("div");
     row.className = "rm-linked-row";
     row.dataset.clientPk = cl.pk;
     row.innerHTML =
-      '<a class="rm-linked-name" href="/admin/clients/client/' + cl.pk + '/change/" target="_blank">' + cl.label + "</a>" +
+      '<a class="rm-linked-name" href="' + clientUrl + '" target="_blank">' + cl.label + "</a>" +
       (cl.nip ? '<span class="rm-linked-nip mono">NIP ' + cl.nip + "</span>" : "") +
       '<button type="button" class="rm-linked-edit js-edit-client" data-client="' + cl.pk + '" title="' + escapeHtml(t("tEdit", "Edit")) + '">\u270e</button>' +
       '<button type="button" class="rm-linked-x js-unlink-client" data-client="' + cl.pk + '" data-url="' + unlinkBase + '" title="' + escapeHtml(t("tUnlink", "Unlink")) + '">\u00d7</button>';

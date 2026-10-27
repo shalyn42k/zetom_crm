@@ -38,6 +38,7 @@ create/suggest flows in a live browser, not just by reading the markup.
          data-create-url="{% if original.pk %}{% url 'admin:zetom_requestmain_create_client_json' original.pk %}{% endif %}"
          data-edit-url="{% if original.pk %}{% url 'admin:zetom_requestmain_edit_client_json' original.pk 0 %}{% endif %}"
          data-save-url="{% if original.pk %}{% url 'admin:zetom_requestmain_save_client_json' original.pk 0 %}{% endif %}"
+         data-client-change-url="{% url 'admin:clients_client_change' 0 %}"
          data-pk="{{ original.pk|default:'' }}"
          data-t-linked="{% trans 'Linked.' %}"
          data-t-unlinked="{% trans 'Unlinked.' %}"
@@ -64,7 +65,7 @@ create/suggest flows in a live browser, not just by reading the markup.
   {# Avatar + company header #}
   <div class="rm-client">
     <div class="rm-avatar rm-avatar--lg" aria-hidden="true">
-      {{ original.company_name|slice:":1"|upper|default:"?" }}
+      {{ original.company_name|default:"?"|slice:":1"|upper }}
     </div>
     <div class="rm-client__meta">
       <div class="rm-client__name">{{ original.company_name|default:"—" }}</div>
