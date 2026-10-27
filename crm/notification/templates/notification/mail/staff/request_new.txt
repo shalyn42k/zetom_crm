@@ -4,7 +4,7 @@
    стаффа: открыть Validation Window и подтвердить/отклонить.
    Контекст рендера:
        request — RequestNull
-   Первая строка — тема. Шаблон-черновик.{% endcomment %}{% trans "New request from the site" %} REQ-{{ request.created_at|date:"Y" }}-{{ request.pk|stringformat:"04d" }}{% if request.company_name %} ({{ request.company_name }}){% endif %}
+   Первая строка — тема. Шаблон-черновик.{% endcomment %}{% autoescape off %}{% trans "New request from the site" %} REQ-{{ request.created_at|date:"Y" }}-{{ request.pk|stringformat:"04d" }}{% if request.company_name %} ({{ request.company_name }}){% endif %}
 
 {% trans "Hello," %}
 
@@ -16,4 +16,4 @@
   {% trans "Phone:" %} {{ request.phone|default:"—" }}
   {% trans "Email:" %} {{ request.email|default:"—" }}
 
-{% trans "Open the Validation Window in CRM to approve or reject this request." %}
+{% trans "Open the Validation Window in CRM to approve or reject this request." %}{% endautoescape %}

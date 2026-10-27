@@ -20,7 +20,7 @@
    single label substitution can't produce a grammatically correct verb
    form in Polish. Restructuring around a label-only sentence sidesteps
    that instead of guessing a gender.
-   {% endcomment %}{% blocktrans with decision_label=decision|review_decision_label %}Review on {{ request_label }}: {{ decision_label }}{% endblocktrans %}
+   {% endcomment %}{% autoescape off %}{% blocktrans with decision_label=decision|review_decision_label %}Review on {{ request_label }}: {{ decision_label }}{% endblocktrans %}
 
 {% blocktrans with decision_label=decision|review_decision_label %}Decision by {{ resolver_name }} on your review request: {{ decision_label }}{% endblocktrans %}
-{% if note %}{{ note }}{% endif %}
+{% if note %}{{ note }}{% endif %}{% endautoescape %}

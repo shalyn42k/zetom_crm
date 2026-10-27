@@ -3,7 +3,7 @@
    С этого момента можно начинать работу по заявке.
    Контекст рендера:
        request — RequestMain
-   Первая строка — тема. Шаблон-черновик.{% endcomment %}{% trans "Request validated, ready to start" %} REQ-{{ request.created_at|date:"Y" }}-{{ request.pk|stringformat:"04d" }}{% if request.company_name %} ({{ request.company_name }}){% endif %}
+   Первая строка — тема. Шаблон-черновик.{% endcomment %}{% autoescape off %}{% trans "Request validated, ready to start" %} REQ-{{ request.created_at|date:"Y" }}-{{ request.pk|stringformat:"04d" }}{% if request.company_name %} ({{ request.company_name }}){% endif %}
 
 {% trans "Hello," %}
 
@@ -15,4 +15,4 @@
   {% trans "Phone:" %} {{ request.phone|default:"—" }}
   {% trans "Email:" %} {{ request.email|default:"—" }}
 
-{% trans "Check your messages in CRM to start working on this request." %}
+{% trans "Check your messages in CRM to start working on this request." %}{% endautoescape %}

@@ -4,5 +4,5 @@
        request_label  — короткая строка-заголовок, e.g. "REQ-2026-0042 — Acme"
        created_at     — когда заявка была создана
        days_open      — сколько дней она висит без движения
-   Первая строка — title уведомления.{% endcomment %}{% blocktrans %}Unhandled request: {{ request_label }}{% endblocktrans %}
-{% blocktrans %}Open since {{ created_at }} ({{ days_open }} days) — no one has picked it up yet.{% endblocktrans %}
+   Первая строка — title уведомления.{% endcomment %}{% autoescape off %}{% blocktrans %}Unhandled request: {{ request_label }}{% endblocktrans %}
+{% blocktrans %}Open since {{ created_at }} ({{ days_open }} days) — no one has picked it up yet.{% endblocktrans %}{% endautoescape %}

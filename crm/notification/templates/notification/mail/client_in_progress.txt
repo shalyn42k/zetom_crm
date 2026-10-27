@@ -18,7 +18,7 @@
    on a variable. Branching into three fully independent sentences per
    kind, each its own catalog entry, is the only way to get this
    grammatically right — same fix shape as review_resolved.txt's decision
-   label earlier.{% endcomment %}{% if kind == "Oferta" %}{% blocktrans %}{{ document_code }}: your offer is now in progress{% endblocktrans %}{% elif kind == "Zlecenie" %}{% blocktrans %}{{ document_code }}: your order is now in progress{% endblocktrans %}{% else %}{% blocktrans %}{{ document_code }}: your application is now in progress{% endblocktrans %}{% endif %}
+   label earlier.{% endcomment %}{% autoescape off %}{% if kind == "Oferta" %}{% blocktrans %}{{ document_code }}: your offer is now in progress{% endblocktrans %}{% elif kind == "Zlecenie" %}{% blocktrans %}{{ document_code }}: your order is now in progress{% endblocktrans %}{% else %}{% blocktrans %}{{ document_code }}: your application is now in progress{% endblocktrans %}{% endif %}
 
 {% trans "Hello" %}{% if parent.first_name %}, {{ parent.first_name }}{% endif %}!
 
@@ -29,4 +29,4 @@
 {% trans "If you have any questions, simply reply to this email." %}
 
 {% trans "Kind regards," %}
-{% trans "Zetom team" %}
+{% trans "Zetom team" %}{% endautoescape %}

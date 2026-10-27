@@ -232,3 +232,17 @@ class PlainTextEscapingTests(TestCase):
         schedule_message(author=author, audience=MessageAudience.USERS, subject="s", body=text, users=[colleague])
         _title, body = render_notification(Notification.objects.get(recipient=colleague))
         self.assertIn(text, body)
+
+
+# claude
+class SystemTemplatesEscapingTests(TestCase):
+    def test_company_ampersand_not_double_escaped(self):
+        from crm.notification.utils import render_notification
+        from crm.zetom.models import RequestMain
+
+        spec = make_user("spec")
+        req = RequestMain.objects.create(**{**DOC, "company_name": "A&B"})
+        req.assigned_to.add(spec)
+        title, _body = render_notification(Notification.objects.get(kind=NotificationKind.ASSIGNMENT))
+        self.assertIn("A&B", title)
+        self.assertNotIn("&amp;", title)
