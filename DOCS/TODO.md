@@ -91,11 +91,8 @@
   - Требует эндпоинта-фрагмента в `crm/users/views.py` + URL — зона авторов `users`, согласовать.
   - Аддитивно к текущей реализации, ничего ломать не нужно.
 
-- [ ] Notifications-таб: согласовать с бизнесом и подключить к модели
-  - Сейчас [tab_notifications.html](crm/users/templates/admin/auth/user/_partials/tab_notifications.html) — UI-заглушка, 3 disabled toggles.
-  - **Сначала нужен бизнес-вход**: какие из 12 триггеров матрицы юзер вправе глушить? По каким каналам (inapp / mail / оба)? Без этого модель проектировать рано — текущие 3 toggle'а это домыслы, могут не совпасть с реальными хотелками.
-  - Когда categories утверждены: модель `UserProfile.notification_settings = JSONField` (дёшево, гибко) либо отдельная `NotificationPreference(user, kind, channel, enabled)` (нормализованно). На альфу не критично — без preferences инструмент работает корректно (всем отправляется по умолчанию).
-  - Зона: согласование — бизнес; модель/UI — `users`-команда; уважение preferences в send-pipeline — `notification` (моя).
+- [x] Notifications-таб подключён к модели `NotificationPreference` — 2026-10-27. Глушатся: назначение, смена статуса, напоминания (inbox/email), сообщения (inbox/email). Review-запросы не глушатся. Своя страница для всех: `/notifications/settings/`; чужие — с правом `manage_notification_settings`.
+  - Список категорий выбран без бизнес-входа — показать заказчику, поправить при необходимости.
 
 - [ ] Avatar в шапке профиля
   - Сейчас — инициалы. Хотим загружаемое изображение → нужно поле `UserProfile.avatar = ImageField(...)` и миграция.
@@ -174,10 +171,10 @@
 | 3 | Document → `in_progress` (signal) | mail | client (`document.email` → `parent.email`) | `mail/client_in_progress.txt` | done |
 | 4 | "Mail" по document (staff action) | mail | каскад (owners → dep_heads → admins) | `mail/{oferta,zlecenie,wniosek}_staff.txt` | done |
 | 5 | Freeform mail (staff action) | mail | client (`request_main.email`) | — (raw subject/body) | done |
-| 6 | Req stale (cron) | mail | каскад | `mail/staff/request_stale_reminder.txt` | pending |
+| 6 | Req stale (cron) | inapp | все с `edit_requests` | `inapp/staff/stale_request.txt` | done (inapp, kind=REMINDER) |
 | 6.1 | Req stale + `NOTIFICATION_REMIND_TO_CLIENT` | mail | client | `mail/client/request_stale_reminder.txt` | pending |
 | 7 | RequestMain `status` changed | inapp | каскад (assigned specialists добавить позже) | `inapp/staff/request_status_changed.txt` | done |
-| 8 | Specialist назначен на Req | inapp | назначенный specialist | `inapp/staff/request_assigned.txt` | pending |
+| 8 | Specialist назначен на Req | inapp | назначенный specialist (кроме actor'а) | `inapp/staff/request_assigned.txt` | done (m2m_changed, 2026-10-27) |
 | 9 | Specialist запросил review | inapp | picker: default по каскаду + extras из dep_heads/admins (фильтр по роли отправителя) | `inapp/staff/review_requested.txt` | done |
 | 10 | Review resolved | inapp | автор запроса (specialist) | `inapp/staff/review_resolved.txt` | done |
 | 11 | Req cancelled / deleted | inapp | каскад + assigned specialists | тот же `request_status_changed.txt` | pending |
@@ -226,8 +223,7 @@
 
 #### Inapp: что осталось
 
-- [ ] Сигнал на M2M `RequestMain.assigned_to.add(user)` → inapp `request_assigned` для добавленного юзера.
-  - Через `m2m_changed`, фильтр `action == "post_add"`. На каждый pk из `pk_set` — отдельная запись.
+- [x] Сигнал на M2M `RequestMain.assigned_to.add(user)` → inapp `request_assigned` — закрыто 2026-10-27 ([signals.py](crm/notification/signals.py), actor через `obj._actor`).
 
 - [ ] V3 — bell-popover для quick-triage (см. handoff §V3). Сейчас inbox-страница это полноценная V1, popover-вариант отдельной задачей.
 
@@ -257,6 +253,15 @@ Backend сейчас захардкожен SMTP. План:
 - [ ] Сделать `EMAIL_BACKEND` тоже env-управляемым (`os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")`). Тогда в dev можно ставить `console.EmailBackend` (письма в stdout) без правки кода.
 - [ ] Для реальной отправки заполнить в production-`.env`: `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USE_TLS`, `SMTP_USER`, `SMTP_PASSWORD`. Не коммитить.
 - Локально для интеграционного теста — MailHog / Mailtrap; production — Google Workspace / SendGrid / Mailgun.
+
+### Сообщения и напоминания (ScheduledMessage) — 2026-10-27
+
+- [x] Модель `ScheduledMessage`: клиенту (email) / выбранным юзерам / ролям; inbox, email или оба; сейчас или по времени. Отправка — тиком `create_followup_reminders` (и dev-потоком).
+- [x] Панель «Wiadomości i przypomnienia» на окне документа и на странице RequestMain; журнал в System → Scheduled messages.
+- [x] Права: `send_client_messages`, `send_staff_messages`, `message_roles`, `manage_notification_settings` (dep_head: первые три; specialist: первые два).
+- [x] Email-копия follow-up напоминаний — по опции «Przypomnienia e-mailem» (по умолчанию выкл.).
+- [ ] Повторяющиеся напоминания (раз в N дней) — не делали.
+- [ ] Вложения в сообщения клиенту — не делали (зависит от пункта про RequestAttachment ниже).
 
 ## RBAC
 
