@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.shortcuts import redirect
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_noop
 from unfold.admin import ModelAdmin
 
 from crm.status_manager.models import StatusHistory
@@ -87,7 +87,7 @@ class CancelledRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             request=obj,
             old_status=old_status,
             new_status=RequestStatus.active,
-            reason=_("Restored from cancelled"),
+            reason=gettext_noop("Restored from cancelled"),
             changed_by=request.user,
         )
         return redirect("admin:zetom_requestmain_change", object_id)

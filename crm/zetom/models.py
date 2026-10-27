@@ -97,7 +97,10 @@ class RequestTemplate(SafeDeleteModel):
         return " ".join(filter(None, (self.first_name, self.last_name)))
 
     def __str__(self):
-        return f"{self.company_name}"
+        # claude — was f"{self.company_name}": a private-person request (no
+        # company) rendered as the literal "None" in breadcrumbs, titles and
+        # the avatar initials.
+        return self.company_name or self.full_name or "—"
 
 
 class RequestNull(RequestTemplate):
