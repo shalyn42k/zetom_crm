@@ -350,6 +350,10 @@ class RequestMainAdmin(
         context["ofertas"] = obj.oferta_set.order_by("-created_at") if has_obj else []
         context["zlecenia"] = obj.zlecenie_set.order_by("-created_at") if has_obj else []
         context["wnioski"] = obj.wniosek_set.order_by("-created_at") if has_obj else []
+        # claude — total for the Documents card header.
+        context["docs_count"] = (
+            len(context["ofertas"]) + len(context["zlecenia"]) + len(context["wnioski"])
+        )
         context["history_entries"] = (
             obj.status_history.select_related("changed_by").order_by("-changed_at")
             if has_obj else []

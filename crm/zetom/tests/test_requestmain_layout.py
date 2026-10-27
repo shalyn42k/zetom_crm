@@ -52,3 +52,12 @@ class RequestMainLayoutTests(TestCase):
         self.assertEqual(response.status_code, 302, response.context and response.context["adminform"].form.errors)
         self.req.refresh_from_db()
         self.assertEqual(self.req.last_name, "Nowak")
+
+    # claude — the old |length|add:|length chain always rendered 0
+    def test_documents_counter_counts(self):
+        from crm.zetom.models import Oferta, Zlecenie
+        Oferta.objects.create(from_main=self.req, **DOC)
+        Zlecenie.objects.create(from_main=self.req, **DOC)
+        response = self.client.get(reverse("admin:zetom_requestmain_change", args=[self.req.pk]))
+        self.assertEqual(response.context["docs_count"], 2)
+        self.assertContains(response, '<span class="rm-counter">2</span>', html=False)

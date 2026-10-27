@@ -10,7 +10,8 @@ Wniosek stayed "Nie utworzono" no matter how many times the button was
 clicked). Deferred the disable one tick via setTimeout so the browser
 dispatches the submit first — same double-click protection, without
 cancelling the very click it's attached to.{% endcomment %}
-{% with docs_count=ofertas|length|add:zlecenia|length|add:wnioski|length %}
+{% comment %}claude — docs_count comes from the view: the old filter chain
+ofertas|length|add:zlecenia|length applied |length to the sum and always showed 0.{% endcomment %}
 <section class="rm-card rm-card--collapsible" aria-labelledby="rm-docs-heading" id="documents" x-data="{ open: $persist(false).as('rm-documents-{{ request.user.id }}-{{ original.pk }}') }">
   <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
     <h2 id="rm-docs-heading" class="rm-card__title">
@@ -144,4 +145,4 @@ cancelling the very click it's attached to.{% endcomment %}
   </div>
   </div>
 </section>
-{% endwith %}
+
