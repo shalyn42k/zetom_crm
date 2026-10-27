@@ -61,3 +61,27 @@ class RequestMainLayoutTests(TestCase):
         response = self.client.get(reverse("admin:zetom_requestmain_change", args=[self.req.pk]))
         self.assertEqual(response.context["docs_count"], 2)
         self.assertContains(response, '<span class="rm-counter">2</span>', html=False)
+
+    # claude — linked clients as contact rows with real buttons
+    def test_linked_client_row(self):
+        from crm.clients.models import Client
+        from crm.zetom.models import RequestClientLink
+        cl = Client.objects.create(first_name="Anna", last_name="Lis", email="anna@acme.pl", phone="+48501600301")
+        RequestClientLink.objects.create(request=self.req, client=cl, linked_by=self.user)
+        html = self.client.get(reverse("admin:zetom_requestmain_change", args=[self.req.pk])).content.decode()
+        self.assertIn('class="rm-linked-ava"', html)
+        self.assertIn("anna@acme.pl", html)
+        self.assertIn('class="rm-tbtn js-edit-client"', html)
+        self.assertIn('class="rm-tbtn rm-tbtn--danger js-unlink-client"', html)
+        self.assertIn('id="rm-linked-empty" hidden', html)
+
+    def test_empty_state_offers_link_button(self):
+        self.assertIn("js-open-link", self.html)
+        self.assertNotIn('id="rm-linked-empty" hidden', self.html)
+
+    def test_link_json_returns_contact(self):
+        from crm.clients.models import Client
+        cl = Client.objects.create(first_name="Ewa", last_name="Bąk", email="ewa@acme.pl")
+        data = self.client.post(reverse("admin:zetom_requestmain_link_client_json", args=[self.req.pk, cl.pk])).json()
+        self.assertEqual(data["email"], "ewa@acme.pl")
+        self.assertIn("phone", data)

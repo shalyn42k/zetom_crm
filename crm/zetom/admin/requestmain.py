@@ -646,7 +646,11 @@ class RequestMainAdmin(
             request=obj, client=cl, defaults={"linked_by": request.user}
         )
         company = self._client_company(cl)
-        return JsonResponse({"ok": True, "created": created, "label": str(cl), "pk": cl.pk, "nip": company.nip if company else ""})
+        return JsonResponse({
+            "ok": True, "created": created, "label": str(cl), "pk": cl.pk, "nip": company.nip if company else "",
+            # claude — contact line on the linked-client row
+            "email": cl.email or "", "phone": str(cl.phone or ""),
+        })
 
     def unlink_client_json(self, request, object_id, client_id):
         if request.method != "POST":
@@ -676,7 +680,11 @@ class RequestMainAdmin(
             linked_by=request.user,
         )
         RequestClientLink.objects.create(request=obj, client=cl, linked_by=request.user)
-        return JsonResponse({"ok": True, "label": str(cl), "pk": cl.pk, "nip": company.nip if company else ""})
+        return JsonResponse({
+            "ok": True, "label": str(cl), "pk": cl.pk, "nip": company.nip if company else "",
+            # claude — contact line on the linked-client row
+            "email": cl.email or "", "phone": str(cl.phone or ""),
+        })
 
     def edit_client_json(self, request, object_id, client_id):
         """Returns client data in JSON format for inline editing in a modal."""

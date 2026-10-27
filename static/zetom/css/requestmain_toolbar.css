@@ -91,3 +91,37 @@
 .rm-files__input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .rm-files__picked { font-size: 12px; color: var(--text-muted); overflow-wrap: anywhere; }
 .rm-tbtn--danger { color: var(--red); border-color: color-mix(in srgb, var(--red) 35%, var(--border)); }
+
+/* ---- linked clients: Klienci contact-list rows ------------------------ */
+.rm-col--client .rm-linked-label { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 4px; }
+.rm-linked-row {
+  display: flex; align-items: center; gap: 12px; padding: 10px 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+.rm-linked-label + .rm-linked-row { border-top: 0; }
+.rm-linked-ava {
+  width: 36px; height: 36px; flex-shrink: 0; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: var(--blue);
+  background: color-mix(in srgb, var(--blue) 14%, transparent);
+}
+.rm-linked-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rm-col--client .rm-linked-name { font-size: 14.5px; font-weight: 600; color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
+.rm-col--client .rm-linked-name:hover { color: var(--accent); text-decoration: underline; }
+.rm-linked-sub { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 12.5px; color: var(--text-subtle); }
+.rm-linked-sub span:empty { display: none; }
+.rm-linked-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.rm-col--client .rm-linked-empty {
+  display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 6px 0 2px;
+  font-size: 13px; font-style: normal; color: var(--text-subtle);
+}
+.rm-col--client .rm-linked-empty[hidden] { display: none; }
+.rm-linked-add {
+  padding: 10px 12px; border: 1px dashed var(--border-strong); border-radius: var(--r-md);
+  background: transparent; color: var(--accent); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+}
+.rm-linked-add:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); border-color: var(--accent); }
+@media (max-width: 1500px) {
+  .rm-linked-row { flex-wrap: wrap; }
+  .rm-linked-actions { width: 100%; padding-left: 48px; }
+}
