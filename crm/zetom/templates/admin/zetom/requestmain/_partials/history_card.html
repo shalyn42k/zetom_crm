@@ -26,8 +26,8 @@
               {{ entry.get_new_status_display }}
             </span>
           </div>
-          {% if entry.reason %}
-            <div class="rm-history-row__reason">"{{ entry.reason }}"</div>
+          {% if entry.reason_display %}
+            <div class="rm-history-row__reason">"{{ entry.reason_display }}"</div>
           {% endif %}
           <div class="rm-history-row__sub">
             <strong>{{ entry.changed_by.username|default:"—" }}</strong>

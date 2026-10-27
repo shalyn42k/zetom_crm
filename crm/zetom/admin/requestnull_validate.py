@@ -36,6 +36,7 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_noop
 
 from crm.clients.models import Client
 from crm.clients.services import create_person_with_company
@@ -299,7 +300,7 @@ def _soft_delete_request_dupe(target, user) -> None:
         try:
             cancel_request(
                 target, user,
-                reason=_("Cancelled as duplicate from the Validation Window."),
+                reason=gettext_noop("Cancelled as duplicate from the Validation Window."),
             )
         except ValueError:
             pass  # already cancelled/deleted

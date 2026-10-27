@@ -2,6 +2,7 @@ from itertools import chain
 
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_noop
 
 from crm.status_manager.models import ChildDocumentDeletion, StatusHistory
 from crm.status_manager.services.statuses import RequestStatus, Status
@@ -84,7 +85,7 @@ def update_parent(parent):
             request=parent,
             old_status=old_status,
             new_status=new_status,
-            reason=_("Automatic transition based on child document statuses."),
+            reason=gettext_noop("Automatic transition based on child document statuses."),
             changed_by=None,
         )
 

@@ -165,9 +165,9 @@
                            {% if item.extra %}checked{% endif %}
                            {% if not can_edit_roles or editing_self %}disabled{% endif %}>
                   {% endif %}
-                  <span class="up-perm__meta">
+                  {# claude — the internal code (view_users, …) used to sit under the name as a visible second line — raw English in the Polish UI. Kept as a hover hint for whoever debugs RBAC. #}
+                  <span class="up-perm__meta" title="{{ item.perm.code }}">
                     <span class="up-perm__name">{% trans item.perm.name %}</span>
-                    <span class="up-perm__code">{{ item.perm.code }}</span>
                   </span>
                   <span class="up-perm__badges">
                     {% if item.from_role %}

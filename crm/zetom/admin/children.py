@@ -25,6 +25,7 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_noop
 
 from crm.status_manager.services.status_service import (
     delete_child_document, save_child_with_status, update_parent,
@@ -100,7 +101,9 @@ class ChildDeleteReasonMixin:
     @transaction.atomic
     def delete_queryset(self, request, queryset):
         for obj in queryset:
-            delete_child_document(obj, request.user, reason=_("Deleted via admin (bulk)"))
+            delete_child_document(
+                obj, request.user, reason=gettext_noop("Deleted via admin (bulk)")
+            )
 
 
 # claude — "Mark as done" button, shared by all three child-doc admins.
