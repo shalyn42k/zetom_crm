@@ -254,14 +254,14 @@ Backend сейчас захардкожен SMTP. План:
 - [ ] Для реальной отправки заполнить в production-`.env`: `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USE_TLS`, `SMTP_USER`, `SMTP_PASSWORD`. Не коммитить.
 - Локально для интеграционного теста — MailHog / Mailtrap; production — Google Workspace / SendGrid / Mailgun.
 
-### Сообщения и напоминания (ScheduledMessage) — 2026-10-27
+### Напоминания с адресатом (Dziennik kontaktów) — 2026-10-27
 
-- [x] Модель `ScheduledMessage`: клиенту (email) / выбранным юзерам / ролям; inbox, email или оба; сейчас или по времени. Отправка — тиком `create_followup_reminders` (и dev-потоком).
-- [x] Панель «Wiadomości i przypomnienia» на окне документа и на странице RequestMain; журнал в System → Scheduled messages.
+- [x] «Komu przypomnieć» в существующем окне напоминаний: mnie / współpracownicy / rola / klient e-mailem (`StepNote.notify*`). Доставка тиком `create_followup_reminders`; письмо клиенту само закрывает напоминание.
 - [x] Права: `send_client_messages`, `send_staff_messages`, `message_roles`, `manage_notification_settings` (dep_head: первые три; specialist: первые два).
-- [x] Email-копия follow-up напоминаний — по опции «Przypomnienia e-mailem» (по умолчанию выкл.).
+- [x] Email-копия напоминаний сотрудникам — по опции «Przypomnienia e-mailem» (по умолчанию выкл.).
+- [x] Отдельная панель/модель `ScheduledMessage` из первой версии удалена — дублировала окно напоминаний.
 - [ ] Повторяющиеся напоминания (раз в N дней) — не делали.
-- [ ] Вложения в сообщения клиенту — не делали (зависит от пункта про RequestAttachment ниже).
+- [ ] Шаблоны документов (Oferta/Zlecenie/Wniosek) — пока заглушка; ждём пример от заказчика. Потом — настоящий PDF.
 
 ## RBAC
 
