@@ -1,0 +1,82 @@
+{% load i18n %}
+{% comment %}
+claude — compact files block for the right column (replaces the full-width
+attachments card on an existing request). Shows the latest few files; the
+full list, upload and delete open in a modal teleported to <body>, so its
+forms are not nested in the main request <form>. Same endpoints as before
+(upload_attachment / delete_attachment), downloads through zetom:attachment.
+{% endcomment %}
+<section class="rm-card rm-files" aria-labelledby="rm-files-heading" id="attachments" x-data="{ filesOpen: false }"
+         @keydown.escape.window="filesOpen = false">
+  <header class="rm-card__header">
+    <h2 id="rm-files-heading" class="rm-card__title">
+      {% trans "Files" %} <span class="rm-counter">{{ attachments|length }}</span>
+    </h2>
+    <button type="button" class="rm-tbtn" @click="filesOpen = true">
+      {% if attachments %}{% trans "All / add" %}{% else %}+ {% trans "Add" %}{% endif %}
+    </button>
+  </header>
+  {% if attachments %}
+    <ul class="rm-files__list">
+      {% for att in attachments|slice:":4" %}
+        <li class="rm-files__row">
+          <a href="{{ att.download_url }}" target="_blank" rel="noopener" class="rm-files__name">{{ att.display_name }}</a>
+          <span class="rm-files__meta">{{ att.uploaded_at|date:"d.m" }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+    {% if attachments|length > 4 %}
+      <button type="button" class="rm-files__more" @click="filesOpen = true">
+        {% blocktrans count n=attachments|length|add:"-4" %}+ {{ n }} more{% plural %}+ {{ n }} more{% endblocktrans %}
+      </button>
+    {% endif %}
+  {% else %}
+    <p class="rm-files__empty">{% trans "No files yet." %}</p>
+  {% endif %}
+
+  <template x-teleport="body">
+    <div class="rm-modal" x-show="filesOpen" x-cloak role="dialog" aria-modal="true" aria-labelledby="rm-files-modal-title">
+      <div class="rm-modal__backdrop" @click="filesOpen = false"></div>
+      <div class="rm-modal__panel rm-modal__panel--wide" @click.stop>
+        <header class="rm-modal__header">
+          <h2 id="rm-files-modal-title" class="rm-modal__title">{% trans "Files" %} · REQ-{{ original.created_at|date:"Y" }}-{{ original.pk|stringformat:"04d" }}</h2>
+          <button type="button" class="rm-modal__close" @click="filesOpen = false" aria-label='{% trans "Close" %}'>×</button>
+        </header>
+        <div class="rm-files__modal">
+          {% if attachments %}
+            <ul class="rm-files__list rm-files__list--full">
+              {% for att in attachments %}
+                <li class="rm-files__row">
+                  <a href="{{ att.download_url }}" target="_blank" rel="noopener" class="rm-files__name">{{ att.display_name }}</a>
+                  <span class="rm-files__meta">
+                    {{ att.uploaded_by.get_full_name|default:att.uploaded_by.username|default:"—" }} · {{ att.uploaded_at|date:"d.m.Y H:i" }}
+                  </span>
+                  {% if has_change_permission %}
+                    <form method="post" action="{% url 'admin:zetom_requestmain_delete_attachment' original.pk att.pk %}"
+                          onsubmit="return confirm('{% trans "Delete this attachment?" %}')">
+                      {% csrf_token %}
+                      <button type="submit" class="rm-tbtn rm-tbtn--danger">{% trans "Delete" %}</button>
+                    </form>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="rm-files__empty">{% trans "No files yet." %}</p>
+          {% endif %}
+          {% if has_change_permission %}
+            <form method="post" action="{% url 'admin:zetom_requestmain_upload_attachment' original.pk %}"
+                  enctype="multipart/form-data" class="rm-files__upload">
+              {% csrf_token %}
+              <input id="rm-files-input" type="file" name="attachments" multiple class="rm-files__input"
+                     onchange="this.form.querySelector('[data-picked]').textContent = Array.from(this.files).map(f => f.name).join(', '); this.form.querySelector('[data-send]').hidden = !this.files.length">
+              <label for="rm-files-input" class="rm-tbtn">{% trans "Choose files" %}</label>
+              <span class="rm-files__picked" data-picked></span>
+              <button type="submit" class="rm-tbtn rm-tbtn--primary" data-send hidden>{% trans "Upload" %}</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </template>
+</section>

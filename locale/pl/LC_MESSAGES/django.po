@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-27 10:03+0100\n"
+"POT-Creation-Date: 2026-10-27 14:50+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -184,6 +184,7 @@ msgid "Channel"
 msgstr "Kanał"
 
 #: crm/clients/admin.py:175 crm/zetom/admin/base.py:75 crm/zetom/models.py:477
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:80
 msgid "Contact person"
 msgstr "Osoba kontaktowa"
 
@@ -196,7 +197,7 @@ msgstr "Data rozmowy"
 msgid "Next client contact at"
 msgstr "Następny kontakt z klientem o"
 
-#: crm/clients/admin.py:352 crm/zetom/admin/requestmain.py:979
+#: crm/clients/admin.py:352 crm/zetom/admin/requestmain.py:983
 msgid "Client not found."
 msgstr "Klient nie znaleziony."
 
@@ -207,9 +208,9 @@ msgstr "Klient nie znaleziony."
 #: crm/zetom/admin/deletedvalidationrequest.py:103
 #: crm/zetom/admin/document_window.py:123
 #: crm/zetom/admin/document_window.py:142
-#: crm/zetom/admin/document_window.py:156 crm/zetom/admin/requestmain.py:760
-#: crm/zetom/admin/requestmain.py:904 crm/zetom/admin/requestmain.py:1100
-#: crm/zetom/admin/requestmain.py:1125 crm/zetom/admin/requestmain_mail.py:64
+#: crm/zetom/admin/document_window.py:156 crm/zetom/admin/requestmain.py:764
+#: crm/zetom/admin/requestmain.py:908 crm/zetom/admin/requestmain.py:1104
+#: crm/zetom/admin/requestmain.py:1129 crm/zetom/admin/requestmain_mail.py:64
 #: crm/zetom/admin/requestmain_resolve_review.py:115
 #: crm/zetom/admin/requestmain_review.py:66
 #: crm/zetom/admin/requestnull_validate.py:437
@@ -280,9 +281,9 @@ msgstr "Szukaj klienta — nazwisko, firma lub NIP…"
 #: crm/clients/fields.py:52 crm/clients/models.py:28
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:58
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:59
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:61
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:104
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:161
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:69
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:110
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:167
 msgid "Client"
 msgstr "Klient"
 
@@ -291,8 +292,8 @@ msgstr "Klient"
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:81
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:63
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:54
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:118
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:177
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:124
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:183
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:309
 #: crm/zetom/templates/zetom/email_template.html:121
 msgid "First name"
@@ -303,8 +304,8 @@ msgstr "Imię"
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:85
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:67
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:55
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:122
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:181
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:128
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:187
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:310
 #: crm/zetom/templates/zetom/email_template.html:129
 msgid "Last name"
@@ -380,8 +381,9 @@ msgstr "Pełna nazwa"
 #: crm/clients/templates/admin/clients/company/company_card.html:107
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:73
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:75
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:110
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:169
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:79
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:116
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:175
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:312
 #: crm/zetom/templates/admin/zetom/shared/document_paper.html:33
 msgid "NIP"
@@ -427,8 +429,9 @@ msgstr "Uwagi"
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:77
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:71
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:53
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:114
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:173
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:78
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:120
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:179
 msgid "Company"
 msgstr "Firma"
 
@@ -1812,7 +1815,7 @@ msgstr ""
 #: crm/users/templates/users/user_form.html:27
 #: crm/users/templates/users/user_profile_edit.html:122
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:64
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:201
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:207
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:18
 #: crm/zetom/templates/admin/zetom/shared/document_change_form.html:58
 msgid "Save"
@@ -2275,6 +2278,7 @@ msgstr "Widzący wszystko"
 
 #: crm/users/templates/admin/auth/user/_partials/_dept_search_results.html:16
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/departments.html:48
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/files_compact.html:16
 msgid "Add"
 msgstr "Dodaj"
 
@@ -2701,7 +2705,7 @@ msgstr "Dezaktywuj"
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:234
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:324
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:418
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:200
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:206
 #: crm/zetom/templates/admin/zetom/requestmain/reason_form.html:18
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:338
 #: crm/zetom/templates/admin/zetom/shared/reason_form.html:17
@@ -2717,7 +2721,7 @@ msgstr "Nazwa użytkownika"
 #: crm/users/templates/users/user_detail.html:20
 #: crm/users/templates/users/user_list.html:49
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:51
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:84
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:93
 msgid "Edit"
 msgstr "Edytuj"
 
@@ -2735,9 +2739,9 @@ msgid "Department"
 msgstr "Dział"
 
 #: crm/users/templates/users/user_list.html:48
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:45
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:85
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:125
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:47
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:87
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:127
 msgid "View"
 msgstr "Podgląd"
 
@@ -2815,7 +2819,7 @@ msgstr "Powód"
 
 #: crm/zetom/admin/base.py:176 crm/zetom/admin/deletedrequest.py:126
 #: crm/zetom/admin/deletedvalidationrequest.py:108
-#: crm/zetom/admin/requestmain.py:909 crm/zetom/admin/requestmain.py:924
+#: crm/zetom/admin/requestmain.py:913 crm/zetom/admin/requestmain.py:928
 #: crm/zetom/admin/requestmain_mail.py:69
 #: crm/zetom/admin/requestmain_resolve_review.py:111
 #: crm/zetom/admin/requestmain_review.py:72
@@ -2829,21 +2833,21 @@ msgstr "Wybierz jeden z adresów klienta z tego zgłoszenia."
 #: crm/zetom/admin/base.py:322 crm/zetom/admin/children.py:164
 #: crm/zetom/admin/document_window.py:31 crm/zetom/models.py:177
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:182
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:30
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:32
 msgid "Offer"
 msgstr "Oferta"
 
 #: crm/zetom/admin/base.py:324 crm/zetom/admin/children.py:195
 #: crm/zetom/admin/document_window.py:32 crm/zetom/models.py:210
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:196
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:70
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:72
 msgid "Order"
 msgstr "Zlecenie"
 
 #: crm/zetom/admin/base.py:326 crm/zetom/admin/children.py:221
 #: crm/zetom/admin/document_window.py:33 crm/zetom/models.py:239
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:210
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:110
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:112
 msgid "Application"
 msgstr "Wniosek"
 
@@ -2873,7 +2877,7 @@ msgid "Document deleted."
 msgstr "Dokument usunięty."
 
 #: crm/zetom/admin/children.py:90 crm/zetom/admin/requestmain.py:301
-#: crm/zetom/admin/requestmain.py:1198
+#: crm/zetom/admin/requestmain.py:1202
 msgid "Reason is required."
 msgstr "Powód jest wymagany."
 
@@ -2903,7 +2907,7 @@ msgstr "Zlecenie trwale usunięte."
 msgid "Request restored to the Validation Window."
 msgstr "Zgłoszenie przywrócono do okna walidacji."
 
-#: crm/zetom/admin/document_window.py:126 crm/zetom/admin/requestmain.py:1257
+#: crm/zetom/admin/document_window.py:126 crm/zetom/admin/requestmain.py:1261
 msgid "No files selected."
 msgstr "Nie wybrano plików."
 
@@ -2912,12 +2916,12 @@ msgstr "Nie wybrano plików."
 msgid "Too large (max 20 MB): %(names)s"
 msgstr "Za duże (maks. 20 MB): %(names)s"
 
-#: crm/zetom/admin/document_window.py:134 crm/zetom/admin/requestmain.py:1263
+#: crm/zetom/admin/document_window.py:134 crm/zetom/admin/requestmain.py:1267
 #, python-format
 msgid "%(n)d file(s) uploaded."
 msgstr "Przesłano %(n)d plik(ów)."
 
-#: crm/zetom/admin/document_window.py:147 crm/zetom/admin/requestmain.py:1276
+#: crm/zetom/admin/document_window.py:147 crm/zetom/admin/requestmain.py:1280
 msgid "Attachment deleted."
 msgstr "Załącznik usunięty."
 
@@ -2938,140 +2942,140 @@ msgstr "Zlecenie usunięte."
 msgid "Delete request"
 msgstr "Usuń zgłoszenie"
 
-#: crm/zetom/admin/requestmain.py:638 crm/zetom/admin/requestmain.py:686
-#: crm/zetom/admin/requestmain.py:712
+#: crm/zetom/admin/requestmain.py:642 crm/zetom/admin/requestmain.py:690
+#: crm/zetom/admin/requestmain.py:716
 msgid "not found"
 msgstr "Nie znaleziono"
 
-#: crm/zetom/admin/requestmain.py:828
+#: crm/zetom/admin/requestmain.py:832
 msgid "POST required"
 msgstr "Wymagane żądanie POST"
 
-#: crm/zetom/admin/requestmain.py:853
+#: crm/zetom/admin/requestmain.py:857
 msgid "Cancelled as duplicate from the add form."
 msgstr "Anulowano jako duplikat z formularza dodawania."
 
-#: crm/zetom/admin/requestmain.py:875
+#: crm/zetom/admin/requestmain.py:879
 msgid "bad action"
 msgstr "Nieprawidłowa akcja"
 
-#: crm/zetom/admin/requestmain.py:880
+#: crm/zetom/admin/requestmain.py:884
 msgid "bad pk"
 msgstr "Nieprawidłowy identyfikator"
 
-#: crm/zetom/admin/requestmain.py:886
+#: crm/zetom/admin/requestmain.py:890
 msgid "unknown op"
 msgstr "Nieznana operacja"
 
-#: crm/zetom/admin/requestmain.py:939
+#: crm/zetom/admin/requestmain.py:943
 msgid "Invalid department."
 msgstr "Nieprawidłowy dział."
 
-#: crm/zetom/admin/requestmain.py:942
+#: crm/zetom/admin/requestmain.py:946
 msgid "Already assigned."
 msgstr "Już przypisany."
 
-#: crm/zetom/admin/requestmain.py:948
+#: crm/zetom/admin/requestmain.py:952
 #, python-format
 msgid "Added %(label)s."
 msgstr "Dodano %(label)s."
 
-#: crm/zetom/admin/requestmain.py:962
+#: crm/zetom/admin/requestmain.py:966
 #, python-format
 msgid "Removed %(label)s."
 msgstr "Usunięto %(label)s."
 
-#: crm/zetom/admin/requestmain.py:986
+#: crm/zetom/admin/requestmain.py:990
 #, python-format
 msgid "Linked client %(c)s."
 msgstr "Powiązano klienta %(c)s."
 
-#: crm/zetom/admin/requestmain.py:988
+#: crm/zetom/admin/requestmain.py:992
 msgid "Client already linked."
 msgstr "Klient jest już powiązany."
 
-#: crm/zetom/admin/requestmain.py:1015
+#: crm/zetom/admin/requestmain.py:1019
 #, python-format
 msgid "Created and linked client %(c)s."
 msgstr "Utworzono i powiązano klienta %(c)s."
 
-#: crm/zetom/admin/requestmain.py:1029
+#: crm/zetom/admin/requestmain.py:1033
 msgid "Client unlinked."
 msgstr "Odłączono klienta."
 
-#: crm/zetom/admin/requestmain.py:1046
+#: crm/zetom/admin/requestmain.py:1050
 msgid "No user selected."
 msgstr "Nie wybrano użytkownika."
 
-#: crm/zetom/admin/requestmain.py:1051 crm/zetom/admin/requestmain.py:1076
-#: crm/zetom/admin/requestmain.py:1105 crm/zetom/admin/requestmain.py:1130
+#: crm/zetom/admin/requestmain.py:1055 crm/zetom/admin/requestmain.py:1080
+#: crm/zetom/admin/requestmain.py:1109 crm/zetom/admin/requestmain.py:1134
 msgid "User not found."
 msgstr "Użytkownik nie znaleziony."
 
-#: crm/zetom/admin/requestmain.py:1055
+#: crm/zetom/admin/requestmain.py:1059
 msgid "You can't assign this user."
 msgstr "Nie możesz przypisać tego użytkownika."
 
-#: crm/zetom/admin/requestmain.py:1062
+#: crm/zetom/admin/requestmain.py:1066
 #, python-format
 msgid "Assigned %(name)s."
 msgstr "Przypisano %(name)s."
 
-#: crm/zetom/admin/requestmain.py:1080
+#: crm/zetom/admin/requestmain.py:1084
 msgid "You can't unassign this user."
 msgstr "Nie możesz odpiąć tego użytkownika."
 
-#: crm/zetom/admin/requestmain.py:1088
+#: crm/zetom/admin/requestmain.py:1092
 #, python-format
 msgid "Removed %(name)s."
 msgstr "Usunięto %(name)s."
 
-#: crm/zetom/admin/requestmain.py:1109
+#: crm/zetom/admin/requestmain.py:1113
 msgid "User must be assigned before becoming owner."
 msgstr "Użytkownik musi być przypisany, zanim zostanie właścicielem."
 
-#: crm/zetom/admin/requestmain.py:1114
+#: crm/zetom/admin/requestmain.py:1118
 #, python-format
 msgid "%(name)s is now an owner."
 msgstr "%(name)s jest teraz właścicielem."
 
-#: crm/zetom/admin/requestmain.py:1135
+#: crm/zetom/admin/requestmain.py:1139
 #, python-format
 msgid "%(name)s is no longer an owner."
 msgstr "%(name)s nie jest już właścicielem."
 
-#: crm/zetom/admin/requestmain.py:1163
+#: crm/zetom/admin/requestmain.py:1167
 msgid "Reason required"
 msgstr "Wymagany powód"
 
-#: crm/zetom/admin/requestmain.py:1172
+#: crm/zetom/admin/requestmain.py:1176
 #, python-format
 msgid "Status changed to %(status)s."
 msgstr "Status zmieniony na %(status)s."
 
-#: crm/zetom/admin/requestmain.py:1189
+#: crm/zetom/admin/requestmain.py:1193
 msgid "This request is already cancelled."
 msgstr "To zgłoszenie jest już anulowane."
 
-#: crm/zetom/admin/requestmain.py:1196
+#: crm/zetom/admin/requestmain.py:1200
 msgid "Request cancelled."
 msgstr "Zgłoszenie anulowane."
 
-#: crm/zetom/admin/requestmain.py:1210
+#: crm/zetom/admin/requestmain.py:1214
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:55
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:79
 msgid "Cancel request"
 msgstr "Anuluj zgłoszenie"
 
-#: crm/zetom/admin/requestmain.py:1224
+#: crm/zetom/admin/requestmain.py:1228
 msgid "Offer created."
 msgstr "Oferta utworzona."
 
-#: crm/zetom/admin/requestmain.py:1234
+#: crm/zetom/admin/requestmain.py:1238
 msgid "Order created."
 msgstr "Zlecenie utworzone."
 
-#: crm/zetom/admin/requestmain.py:1244
+#: crm/zetom/admin/requestmain.py:1248
 msgid "Application created."
 msgstr "Wniosek utworzony."
 
@@ -3384,7 +3388,7 @@ msgstr "Załącznik"
 
 #: crm/zetom/models.py:308
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:14
-#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:117
+#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:131
 #: crm/zetom/templates/zetom/email_template.html:171
 msgid "Attachments"
 msgstr "Załączniki"
@@ -3659,7 +3663,7 @@ msgstr ""
 
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:93
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:83
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_information.html:5
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_information.html:6
 msgid "Client information"
 msgstr "Informacje o kliencie"
 
@@ -3677,7 +3681,7 @@ msgid "No departments."
 msgstr "Brak działów."
 
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:172
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:18
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:20
 msgid "Documents"
 msgstr "Dokumenty"
 
@@ -3730,6 +3734,7 @@ msgstr "Więcej działań"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:58
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:45
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/files_compact.html:58
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:71
 #: crm/zetom/templates/admin/zetom/shared/document_change_form.html:113
 msgid "Delete"
@@ -3739,9 +3744,10 @@ msgstr "Usuń"
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:92
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:258
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:348
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:136
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:196
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:142
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:202
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:53
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/files_compact.html:43
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:62
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:209
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:256
@@ -3918,6 +3924,7 @@ msgid "Add user"
 msgstr "Dodaj użytkownika"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:52
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/files_compact.html:56
 #: crm/zetom/templates/admin/zetom/shared/document_change_form.html:111
 msgid "Delete this attachment?"
 msgstr "Usunąć ten załącznik?"
@@ -3927,17 +3934,18 @@ msgid "No attachments yet."
 msgstr "Brak załączników."
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:97
-#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:152
+#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:166
 msgid "Drop files here or click to browse"
 msgstr "Upuść pliki tutaj lub kliknij, aby wybrać"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:130
-#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:178
+#: crm/zetom/templates/admin/zetom/requestmain/change_form.html:192
 msgid "Clear"
 msgstr "Wyczyść"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:140
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/attachments_card.html:142
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/files_compact.html:75
 #: crm/zetom/templates/admin/zetom/shared/document_change_form.html:96
 msgid "Upload"
 msgstr "Prześlij"
@@ -3979,37 +3987,37 @@ msgid "Unknown error"
 msgstr "Nieznany błąd"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:52
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:85
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:94
 msgid "Unlink"
 msgstr "Odłącz"
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:77
-msgid "Linked clients"
-msgstr "Powiązani klienci"
-
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:90
-msgid "No clients linked yet."
-msgstr "Brak powiązanych klientów."
-
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:97
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:135
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:72
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:141
 msgid "Link a client"
 msgstr "Powiąż klienta"
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:142
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:86
+msgid "Linked clients"
+msgstr "Powiązani klienci"
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:99
+msgid "No clients linked yet."
+msgstr "Brak powiązanych klientów."
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:148
 msgid "Suggested matches"
 msgstr "Sugerowane dopasowania"
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:148
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:164
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:154
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:170
 msgid "Link"
 msgstr "Powiąż"
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:165
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:171
 msgid "Create from request"
 msgstr "Utwórz z zgłoszenia"
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:195
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:201
 msgid "Edit Client"
 msgstr "Edytuj klienta"
 
@@ -4021,27 +4029,27 @@ msgstr "Usuń dział"
 msgid "No departments assigned yet."
 msgstr "Brak przypisanych działów."
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:40
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:80
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:120
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:42
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:82
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:122
 msgid "Not created"
 msgstr "Nie utworzono"
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:52
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:54
 msgid "Create new offer"
 msgstr "Utwórz nową ofertę"
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:61
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:101
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:141
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:63
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:103
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:143
 msgid "Create"
 msgstr "Utwórz"
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:92
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:94
 msgid "Create new order"
 msgstr "Utwórz nowe zlecenie"
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:132
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:134
 msgid "Create new application"
 msgstr "Utwórz nowy wniosek"
 
@@ -4201,6 +4209,33 @@ msgstr "Dalej"
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:137
 msgid "Save request"
 msgstr "Zapisz zgłoszenie"
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/files_compact.html:13
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/files_compact.html:42
+msgid "Files"
+msgstr "Pliki"
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/files_compact.html:16
+msgid "All / add"
+msgstr "Wszystkie / dodaj"
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/files_compact.html:30
+#, python-format
+msgid "+ %(n)s more"
+msgid_plural "+ %(n)s more"
+msgstr[0] "+ %(n)s plik więcej"
+msgstr[1] "+ %(n)s pliki więcej"
+msgstr[2] "+ %(n)s plików więcej"
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/files_compact.html:34
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/files_compact.html:65
+msgid "No files yet."
+msgstr "Brak plików."
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/files_compact.html:73
+#: crm/zetom/templates/admin/zetom/shared/document_change_form.html:92
+msgid "Choose files"
+msgstr "Wybierz pliki"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/history_card.html:17
 msgid "Status changes"
@@ -4510,10 +4545,6 @@ msgstr ""
 #: crm/zetom/templates/admin/zetom/shared/document_change_form.html:87
 msgid "Files and team notes"
 msgstr "Pliki i notatki zespołu"
-
-#: crm/zetom/templates/admin/zetom/shared/document_change_form.html:92
-msgid "Choose files"
-msgstr "Wybierz pliki"
 
 #: crm/zetom/templates/admin/zetom/shared/document_change_form.html:120
 msgid "No files yet. Attach drafts, scans or internal notes for the team."

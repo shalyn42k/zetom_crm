@@ -57,20 +57,28 @@ create/suggest flows in a live browser, not just by reading the markup.
          data-t-email="{% trans 'Email' %}"
          data-t-address="{% trans 'Address' %}">
 
-  <header class="rm-card__header">
-    <h2 id="rm-client-heading" class="rm-card__title">{% trans "Client" %}</h2>
+  {% comment %}
+  claude — redesign: same look as the Klienci cards (panel header with an
+  icon, key/value rows). Every id / js-* hook used by
+  requestmain_client_link.js is kept; "Link a client" moved into the header.
+  {% endcomment %}
+  <header class="rm-card__header rm-panel-h">
+    <h2 id="rm-client-heading" class="rm-card__title">
+      <svg class="rm-panel-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      {% trans "Client" %}
+    </h2>
+    {% if original.pk %}
+      <button type="button" id="rm-link-client-open" class="rm-tbtn rm-client-link-trigger">+ {% trans "Link a client" %}</button>
+    {% endif %}
   </header>
 
-  {# Avatar + company header #}
-  <div class="rm-client">
-    <div class="rm-avatar rm-avatar--lg" aria-hidden="true">
-      {{ original.company_name|slice:":1"|upper|default:"?" }}
-    </div>
-    <div class="rm-client__meta">
-      <div class="rm-client__name">{{ original.company_name|default:"—" }}</div>
-      <div class="rm-client__sub">{% if original.company_nip %}NIP {{ original.company_nip }}{% endif %}</div>
-    </div>
-  </div>
+  {% if original.pk %}
+  <dl class="rm-kv">
+    <div class="rm-kv__row"><dt>{% trans "Company" %}</dt><dd>{{ original.company_name|default:"—" }}</dd></div>
+    <div class="rm-kv__row"><dt>{% trans "NIP" %}</dt><dd class="mono">{{ original.company_nip|default:"—" }}</dd></div>
+    <div class="rm-kv__row"><dt>{% trans "Contact person" %}</dt><dd>{{ original.full_name|default:"—" }}</dd></div>
+  </dl>
+  {% endif %}
 
   {# ---- Linked clients (M2M) ---- #}
   <div class="rm-linked-section" id="rm-linked-list">
@@ -92,10 +100,7 @@ create/suggest flows in a live browser, not just by reading the markup.
   </div>
 
   {% if original.pk %}
-    {# ---- Trigger: opens the link/create modal below (outside this <section>, still inside <form class="rm-grid">) ---- #}
-    <button type="button" id="rm-link-client-open" class="rm-btn rm-btn--sm rm-btn--block rm-client-link-trigger">
-      {% trans "Link a client" %}
-    </button>
+    {# trigger lives in the header now (rm-link-client-open) #}
     <div id="rm-link-status" class="rm-link-status" hidden></div>
   {% else %}
     {# ---- New request: these fields ARE the request's own client info, always visible ---- #}
