@@ -40,14 +40,15 @@ from .base import BaseRequestAdmin, ReasonForm
 from .document_window import DocumentWindowMixin
 
 # claude — document window fieldsets: the template's own fields first, the
-# client block second, everything inherited from the request collapsed.
+# client snapshot collapsed underneath.
+# Departments, assignees and source are inherited from the request and are
+# no longer edited on the document (they still exist on the model).
 CLIENT_FIELDSET = (
-    _("Client"),
-    {"fields": (("first_name", "last_name"), ("company_name", "company_nip"), ("email", "phone"))},
-)
-DETAILS_FIELDSET = (
-    _("Details"),
-    {"classes": ("collapse",), "fields": ("from_main", "departments", "assigned_to", "source")},
+    _("Client data on the document"),
+    {
+        "classes": ("collapse",),
+        "fields": (("first_name", "last_name"), ("company_name", "company_nip"), ("email", "phone")),
+    },
 )
 
 
@@ -162,7 +163,6 @@ class OfertaAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMix
     fieldsets = (
         (_("Offer"), {"fields": ("price", "notes")}),
         CLIENT_FIELDSET,
-        DETAILS_FIELDSET,
     )
     warn_unsaved_form = True
 
@@ -194,7 +194,6 @@ class ZlecenieAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, BaseRequestAdmi
     fieldsets = (
         (_("Order"), {"fields": (("deadline", "price"), "notes")}),
         CLIENT_FIELDSET,
-        DETAILS_FIELDSET,
     )
     warn_unsaved_form = True
 
@@ -221,7 +220,6 @@ class WniosekAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMi
     fieldsets = (
         (_("Application"), {"fields": ("application_number", "notes")}),
         CLIENT_FIELDSET,
-        DETAILS_FIELDSET,
     )
     warn_unsaved_form = True
 

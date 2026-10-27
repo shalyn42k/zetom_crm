@@ -1,26 +1,29 @@
 {% extends "admin/change_form.html" %}
-{% load i18n static %}
+{% load i18n static humanize %}
 {% comment %}
 claude — document window for Oferta / Zlecenie / Wniosek (DocumentWindowMixin,
-crm/zetom/admin/document_window.py). Replaces the three per-model
-change_form.html files. Left: the normal admin form, cut down by the admin's
-fieldsets to what the document template needs. Right: live preview of the
-paper, print/PDF, and the messages & reminders panel.
+crm/zetom/admin/document_window.py), per the approved redesign
+(docs/superpowers/specs/2026-10-27-requests-declutter-design.md):
+small buttons on top, the template's fields left, the document right, the
+team's files underneath.
 
-The side panel is outside the admin <form> (it follows block.super), so the
-mark-done form is a sibling of it, never nested. The add view
-has no doc_window and falls back to the plain form.
+Only the admin form itself sits inside {{ block.super }}; every other form
+here (mark done, create document, upload, delete file) is a sibling of it,
+never nested. "Zapisz" on top submits the admin form through form=, so the
+bottom submit row is dropped. The add view has no doc_window and falls back
+to the plain admin form.
 
-company_card.css is reloaded cache-busted for the step-notes modal, same as
-the old per-model templates did.
+company_card.css is loaded cache-busted for the work-log modal, same as the
+old per-model templates did.
 {% endcomment %}
 
 {% block extrastyle %}
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}?v={% now "U" %}">
   <link rel="stylesheet" href="{% static 'zetom/css/document_editor.css' %}?v={% now "U" %}">
-  <link rel="stylesheet" href="{% static 'notification/css/messages.css' %}?v={% now "U" %}">
 {% endblock extrastyle %}
+
+{% block footer %}{% if not doc_window %}{{ block.super }}{% endif %}{% endblock footer %}
 
 {% block content %}
 {% if doc_window %}
@@ -28,19 +31,31 @@ the old per-model templates did.
     <div class="de-bar__id">
       <span class="de-bar__code">{{ doc_window.doc_code }}</span>
       <span class="de-badge de-badge--{{ original.status }}">{{ doc_window.status_label }}</span>
-      {% if doc_window.parent_url %}
-        <a class="de-bar__parent" href="{{ doc_window.parent_url }}">← {% trans "Back to request" %}</a>
-      {% endif %}
     </div>
     <div class="de-bar__actions">
+      {% if doc_window.parent_url %}
+        <a class="de-btn de-btn--ghost" href="{{ doc_window.parent_url }}">← {{ doc_window.parent_code }}</a>
+      {% endif %}
+      <button type="button" class="de-btn" onclick="window.dispatchEvent(new CustomEvent('open-step-notes'))">
+        {% trans "Step notes" %}{% if doc_window.notes_count %} <span class="de-count">{{ doc_window.notes_count }}</span>{% endif %}
+      </button>
       <a class="de-btn" href="{{ doc_window.print_url }}" target="_blank" rel="noopener">{% trans "Print / PDF" %}</a>
-      <button type="button" class="de-btn" onclick="window.dispatchEvent(new CustomEvent('open-step-notes'))">{% trans "Step notes" %}</button>
-      <a class="de-btn" href="#messages">{% trans "Remind / send" %}</a>
       {% if doc_window.mark_done_url %}
         <form method="post" action="{{ doc_window.mark_done_url }}" class="de-inline">
           {% csrf_token %}
-          <button type="submit" class="de-btn de-btn--accent">{% trans "Mark as done" %}</button>
+          <button type="submit" class="de-btn">{% trans "Mark as done" %}</button>
         </form>
+      {% endif %}
+      {% if doc_window.delete_url %}
+        <details class="de-more">
+          <summary class="de-btn" aria-label="{% trans 'More actions' %}">⋯</summary>
+          <div class="de-more__menu">
+            <a class="de-more__item de-more__item--danger" href="{{ doc_window.delete_url }}">{% trans "Delete document" %}</a>
+          </div>
+        </details>
+      {% endif %}
+      {% if doc_window.can_change %}
+        <button type="submit" form="{{ opts.model_name }}_form" name="_continue" value="1" class="de-btn de-btn--accent">{% trans "Save" %}</button>
       {% endif %}
     </div>
   </div>
@@ -50,15 +65,62 @@ the old per-model templates did.
     <aside class="de-side">
       <section class="de-card" aria-labelledby="de-preview-heading">
         <div class="de-card__head">
-          <h2 id="de-preview-heading" class="de-card__title">{% trans "Preview" %}</h2>
-          <span class="de-card__hint">{% trans "Updates as you type. Save to keep changes." %}</span>
+          <h2 id="de-preview-heading" class="de-card__title">{% trans "Document" %}</h2>
+          {% if doc_window.can_change %}
+            <form method="post" action="{{ doc_window.create_document_url }}" class="de-inline">
+              {% csrf_token %}
+              <button type="submit" class="de-btn de-btn--accent">{% trans "Create document" %}</button>
+            </form>
+          {% endif %}
         </div>
+        <p class="de-card__hint">{% trans "Updates as you type. “Create document” saves this version to the files below." %}</p>
         <div class="de-preview" data-de-preview data-de-form="{{ opts.model_name }}_form">
           {% include "admin/zetom/shared/document_paper.html" with doc=original kind=doc_window.kind doc_title=doc_window.doc_title doc_code=doc_window.doc_code doc_date=doc_window.doc_date signer_name=doc_window.signer_name %}
         </div>
       </section>
     </aside>
   </div>
+
+  <section class="de-card de-files" id="files" aria-labelledby="de-files-heading">
+    <div class="de-card__head">
+      <h2 id="de-files-heading" class="de-card__title">
+        {% trans "Files and team notes" %} <span class="de-count">{{ doc_window.files|length }}</span>
+      </h2>
+      {% if doc_window.can_change %}
+        <form method="post" action="{{ doc_window.upload_url }}" enctype="multipart/form-data" class="de-upload">
+          {% csrf_token %}
+          <label class="de-btn" for="de-file-input">{% trans "Choose files" %}</label>
+          <input id="de-file-input" type="file" name="files" multiple class="de-upload__input"
+                 onchange="this.form.querySelector('[data-de-upload]').hidden = !this.files.length; this.form.querySelector('[data-de-picked]').textContent = Array.from(this.files).map(f => f.name).join(', ')">
+          <span class="de-upload__picked" data-de-picked></span>
+          <button type="submit" class="de-btn de-btn--accent" data-de-upload hidden>{% trans "Upload" %}</button>
+        </form>
+      {% endif %}
+    </div>
+    {% if doc_window.files %}
+      <ul class="de-files__list">
+        {% for att in doc_window.files %}
+          <li class="de-file">
+            <a class="de-file__name" href="{{ att.download_url }}" target="_blank" rel="noopener">{{ att.display_name }}</a>
+            <span class="de-file__meta">
+              {{ att.uploaded_by.get_full_name|default:att.uploaded_by.username|default:"—" }}
+              · <span title="{{ att.uploaded_at|date:'Y-m-d H:i' }}">{{ att.uploaded_at|date:"d.m.Y H:i" }}</span>
+            </span>
+            {% if doc_window.can_change %}
+              <form method="post" action="{{ att.delete_url }}" class="de-inline"
+                    onsubmit="return confirm('{% trans "Delete this attachment?" %}')">
+                {% csrf_token %}
+                <button type="submit" class="de-btn de-btn--sm de-btn--danger" aria-label="{% trans 'Delete' %} {{ att.display_name }}">{% trans "Delete" %}</button>
+              </form>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="de-card__hint">{% trans "No files yet. Attach drafts, scans or internal notes for the team." %}</p>
+    {% endif %}
+  </section>
+
   {% include "admin/zetom/shared/step_notes_modal.html" with step_notes_hide_inline_trigger=True %}
   <script src="{% static 'zetom/js/document_editor.js' %}?v={% now "U" %}" defer></script>
 {% else %}

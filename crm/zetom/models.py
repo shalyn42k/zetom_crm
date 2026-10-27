@@ -282,6 +282,17 @@ class RequestAttachment(models.Model):
         blank=True,
         related_name="attachments",
     )
+    # claude — files on the document window ("Pliki i notatki zespołu").
+    # Declared by name because Oferta/Zlecenie/Wniosek are defined above.
+    oferta = models.ForeignKey(
+        "Oferta", on_delete=models.CASCADE, null=True, blank=True, related_name="attachments",
+    )
+    zlecenie = models.ForeignKey(
+        "Zlecenie", on_delete=models.CASCADE, null=True, blank=True, related_name="attachments",
+    )
+    wniosek = models.ForeignKey(
+        "Wniosek", on_delete=models.CASCADE, null=True, blank=True, related_name="attachments",
+    )
     file = models.FileField(upload_to="request_attachments/%Y/%m/")
     uploaded_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.ForeignKey(
@@ -298,6 +309,22 @@ class RequestAttachment(models.Model):
 
     def __str__(self):
         return self.file.name
+
+    # claude — the only link templates should use: goes through
+    # zetom:attachment (login + visibility check), works in production too,
+    # where /media/ isn't served at all.
+    @property
+    def download_url(self):
+        from django.urls import reverse
+        return reverse("zetom:attachment", args=[self.pk])
+
+    @property
+    def display_name(self):
+        return self.file.name.rsplit("/", 1)[-1]
+
+    def owner(self):
+        """The request or document this file belongs to."""
+        return self.request_main or self.oferta or self.zlecenie or self.wniosek or self.request_null
 
 
 # claude — through-таблицы для Oferta/Zlecenie/Wniosek.clients (M2M).
