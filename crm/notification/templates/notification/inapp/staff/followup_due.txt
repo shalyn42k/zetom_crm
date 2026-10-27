@@ -5,9 +5,9 @@
        note_action     — поле "что сделано" StepNote (может быть пустым)
        author          — автор заметки
        note_text       — текст заметки (может быть пустым)
-   Первая строка — title уведомления.{% endcomment %}{% blocktrans %}Follow-up due: {{ target_label }}{% endblocktrans %}
+   Первая строка — title уведомления.{% endcomment %}{% autoescape off %}{% blocktrans %}Follow-up due: {{ target_label }}{% endblocktrans %}
 {% blocktrans %}Next client contact: {{ next_contact_at }}{% endblocktrans %}
 
 {% if note_action %}{% blocktrans %}Action: {{ note_action }}{% endblocktrans %}
 {% endif %}{% blocktrans %}Author: {{ author }}{% endblocktrans %}
-{% if note_text %}{% blocktrans %}Note: {{ note_text }}{% endblocktrans %}{% endif %}
+{% if note_text %}{% blocktrans %}Note: {{ note_text }}{% endblocktrans %}{% endif %}{% endautoescape %}

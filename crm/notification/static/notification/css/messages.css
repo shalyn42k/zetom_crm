@@ -1,0 +1,74 @@
+/* claude
+   Messages & reminders panel (notification/_composer.html), the own
+   notification settings page (notification/settings.html) and the switch
+   rows shared with the admin user tab. Colours only from tokens.css roles.
+*/
+
+/* ---- composer card ---------------------------------------------------- */
+.msg-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm); padding: 14px 16px; scroll-margin-top: 80px;
+}
+.msg-card__title { margin: 0 0 12px; font-size: 15px; font-weight: 700; color: var(--text); }
+.msg-card__subtitle { margin: 18px 0 8px; font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+.msg-form { display: flex; flex-direction: column; gap: 10px; }
+
+.msg-seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; background: var(--surface-soft); border: 1px solid var(--border); border-radius: var(--r-md); align-self: flex-start; }
+.msg-seg__btn { padding: 6px 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); background: transparent; border: 0; border-radius: var(--r-sm); cursor: pointer; }
+.msg-seg__btn.is-active { color: var(--text); background: var(--surface); box-shadow: var(--shadow-sm); }
+
+.msg-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.msg-chip { padding: 4px 10px; font-size: 12px; color: var(--accent); background: transparent; border: 1px dashed var(--accent); border-radius: 999px; cursor: pointer; }
+.msg-chip:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+.msg-field { display: flex; flex-direction: column; gap: 4px; }
+.msg-label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.msg-input {
+  width: 100%; padding: 7px 10px; font: inherit; font-size: 13px; color: var(--text);
+  background: var(--input-bg); border: 1px solid var(--input-border); border-radius: var(--r-md);
+}
+.msg-input:focus { outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 1px; border-color: var(--accent); }
+textarea.msg-input { resize: vertical; min-height: 96px; }
+.msg-checks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.msg-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text); cursor: pointer; }
+.msg-hint { margin: 0; font-size: 12px; color: var(--text-subtle); }
+.msg-hint--warn { color: var(--amber); }
+.msg-actions { display: flex; justify-content: flex-end; }
+
+.msg-btn { padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-md); cursor: pointer; }
+.msg-btn:hover { background: var(--surface-soft); }
+.msg-btn--primary { color: white; background: var(--accent); border-color: var(--accent); }
+.msg-btn--primary:hover { background: var(--accent); filter: brightness(1.08); }
+.msg-btn--sm { padding: 4px 10px; font-size: 12px; }
+
+.msg-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.msg-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+.msg-item:first-child { border-top: 0; }
+.msg-item__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.msg-item__subject { font-size: 13px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.msg-item__meta { font-size: 12px; color: var(--text-subtle); }
+.msg-badge { display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.msg-badge--pending { color: var(--amber); background: color-mix(in srgb, var(--amber) 14%, transparent); }
+.msg-badge--sent { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
+.msg-badge--cancelled { color: var(--slate); background: color-mix(in srgb, var(--slate) 14%, transparent); }
+.msg-badge--failed { color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
+
+/* ---- settings page + switches ----------------------------------------- */
+.ns-stage { max-width: 760px; padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; }
+.ns-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px; }
+.ns-h1 { margin: 0; font-size: 22px; font-weight: 700; color: var(--text); }
+.ns-h2 { margin: 0 0 8px; font-size: 15px; font-weight: 700; color: var(--text); }
+.ns-link { font-size: 13px; color: var(--accent); }
+.ns-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); padding: 16px 18px; }
+.ns-hint { margin: 0 0 10px; font-size: 13px; color: var(--text-subtle); }
+.ns-group { margin: 0 0 14px; padding: 0; border: 0; }
+.ns-group__title { padding: 0; margin-bottom: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
+.ns-switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--border); cursor: pointer; }
+.ns-switch__title { font-size: 14px; color: var(--text); }
+.ns-switch input { width: 18px; height: 18px; accent-color: var(--accent); }
+.ns-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+.ns-btn { padding: 7px 16px; font-size: 13px; font-weight: 600; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-md); cursor: pointer; }
+.ns-btn--primary { color: white; background: var(--accent); border-color: var(--accent); }
+.ns-btn--sm { padding: 4px 10px; font-size: 12px; }
+.up-notif-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+.rm-messages { margin-top: 20px; }

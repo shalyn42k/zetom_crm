@@ -63,6 +63,13 @@ def create_inapp(
         )
         kind = NotificationKind.SYSTEM
 
+    # claude — drop recipients who muted this kind (NotificationPreference).
+    from crm.notification.services.preferences import filter_inapp
+
+    recipients = filter_inapp(recipients, kind)
+    if not recipients:
+        return []
+
     target_ct, target_id = _resolve_target(target)
 
     records = []

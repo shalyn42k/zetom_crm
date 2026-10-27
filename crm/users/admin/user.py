@@ -440,6 +440,14 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
         if obj is not None:
             context.update(self._build_dept_context(request, obj))
             context["can_toggle_active"] = self._can_toggle_active(request, obj)
+            # claude — Notifications tab: NotificationPreference switches.
+            from crm.notification.services.preferences import get_preferences
+            from crm.notification.views_messages import preference_rows
+            context["notif_groups"] = preference_rows(get_preferences(obj))
+            context["can_edit_notif"] = (
+                (obj.pk == request.user.pk or user_has_perm(request.user, "manage_notification_settings"))
+                and not (obj.is_superuser and not request.user.is_superuser)
+            )
         return super().render_change_form(request, context, *args, **kwargs)
 
     # claude — кнопка Deactivate/Reactivate на карточке юзера.

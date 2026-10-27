@@ -61,7 +61,7 @@ def process_stale_requests(now=None):
     created_reminders = 0
     for request in candidates:
         notifications = inapp_service.create_inapp(
-            kind=NotificationKind.SYSTEM,
+            kind=NotificationKind.REMINDER,
             template_name=TEMPLATE_NAME,
             payload={
                 "request_label": str(request),

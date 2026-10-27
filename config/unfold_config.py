@@ -36,6 +36,11 @@ UNFOLD = {
                 "title": _("View profile"),
                 "link": lambda request: reverse("user_profile_edit"),
             },
+            # claude — own NotificationPreference switches + scheduled messages.
+            {
+                "title": _("Notification settings"),
+                "link": lambda request: reverse("notification:settings"),
+            },
         ],
     },
 
@@ -281,6 +286,17 @@ UNFOLD = {
                         "icon": "outbox",
                         "link": reverse_lazy(
                             "admin:notification_emailnotification_changelist"
+                        ),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_email_log"
+                        ),
+                    },
+                    # claude
+                    {
+                        "title": _("Scheduled messages"),
+                        "icon": "schedule_send",
+                        "link": reverse_lazy(
+                            "admin:notification_scheduledmessage_changelist"
                         ),
                         "permission": lambda request: user_has_perm(
                             request.user, "view_email_log"

@@ -245,6 +245,7 @@ def _do_approve(rn: RequestNull, cleaned: dict, user=None):
         )
 
     owners = list(cleaned["owners"])
+    new_main._actor = user  # claude — skip self in the assignment notification
     new_main.assigned_to.set(owners)
     new_main.owners.set(owners)
 

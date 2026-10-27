@@ -45,6 +45,10 @@ def _document_code(document):
 
 
 # claude
+# claude — public name for the document window / print view.
+document_code = _document_code
+
+
 def _split_subject_body(rendered):
     """Convention: first non-empty line is the subject, the rest is the body.
 

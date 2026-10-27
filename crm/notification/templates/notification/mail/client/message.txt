@@ -1,0 +1,8 @@
+{% load i18n %}{% comment %}Письмо клиенту, написанное сотрудником вручную или
+   запланированное как напоминание (ScheduledMessage, claude).
+   Тема берётся из message.subject, тут только тело + подпись.
+{% endcomment %}{% autoescape off %}{{ body }}
+
+{% trans "Kind regards," %}
+{{ author }}
+{% trans "Zetom team" %}{% endautoescape %}

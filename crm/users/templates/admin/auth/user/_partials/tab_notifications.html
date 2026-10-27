@@ -1,45 +1,27 @@
-{% load i18n %}
+{% load i18n static %}
 {% comment %}
-  Notifications tab — ЗАГЛУШКА. Модели preferences нет, toggles
-  задизейблены. См. TODO.md.
+  Notifications tab (claude) — NotificationPreference switches for this user.
+  The tab sits inside the user change form, so saving goes through
+  formaction to notification:user_preferences (a nested <form> would be
+  invalid HTML); that view reads only the notif_-prefixed inputs.
+  Editable by the user themself or with manage_notification_settings.
 {% endcomment %}
+<link rel="stylesheet" href="{% static 'notification/css/messages.css' %}">
 <div class="up-card" aria-labelledby="up-notif-heading">
   <h2 id="up-notif-heading" class="up-card__title">{% trans "Notification preferences" %}</h2>
-
   <p class="up-callout">
-    {% trans "Notification preferences are not persisted yet. UI is ready; backend model is pending." %}
+    {% trans "Choose what reaches this user. Review requests always arrive — they need a decision." %}
   </p>
-
-  <div class="up-notif-group">
-    <h3 class="up-card__subtitle">{% trans "Requests" %}</h3>
-    <label class="up-switch">
-      <span class="up-switch__meta">
-        <span class="up-switch__title">{% trans "New request assigned to me" %}</span>
-        <span class="up-switch__sub">{% trans "Assignment events" %}</span>
-      </span>
-      <input type="checkbox" disabled checked aria-describedby="up-stub-note">
-    </label>
-    <label class="up-switch">
-      <span class="up-switch__meta">
-        <span class="up-switch__title">{% trans "Request status changed" %}</span>
-        <span class="up-switch__sub">{% trans "Active ↔ Archive" %}</span>
-      </span>
-      <input type="checkbox" disabled checked aria-describedby="up-stub-note">
-    </label>
-  </div>
-
-  <div class="up-notif-group">
-    <h3 class="up-card__subtitle">{% trans "Documents" %}</h3>
-    <label class="up-switch">
-      <span class="up-switch__meta">
-        <span class="up-switch__title">{% trans "Document ready for review" %}</span>
-        <span class="up-switch__sub">{% trans "Waiting status reached" %}</span>
-      </span>
-      <input type="checkbox" disabled aria-describedby="up-stub-note">
-    </label>
-  </div>
-
-  <p id="up-stub-note" class="up-empty">
-    {% trans "Toggles are disabled until the preferences model is added." %}
-  </p>
+  {% if can_edit_notif %}
+    {% include "notification/_preference_switches.html" with groups=notif_groups prefix="notif_" %}
+    <div class="up-notif-actions">
+      <button type="submit" class="up-btn up-btn--primary"
+              formaction="{% url 'notification:user_preferences' original.pk %}" formnovalidate>
+        {% trans "Save notification settings" %}
+      </button>
+    </div>
+  {% else %}
+    {% include "notification/_preference_switches.html" with groups=notif_groups prefix="notif_" disabled=True %}
+    <p class="up-empty">{% trans "You can't change another user's notification settings." %}</p>
+  {% endif %}
 </div>

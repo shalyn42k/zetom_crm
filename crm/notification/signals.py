@@ -10,7 +10,7 @@
 этот модуль.
 """
 # Django imports
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import m2m_changed, post_save, pre_save
 
 # Local imports
 from crm.notification.models import NotificationKind
@@ -109,4 +109,43 @@ post_save.connect(
     _notify_inapp_on_request_status_change,
     sender=RequestMain,
     dispatch_uid="notification.inapp_on_request_status_change",
+)
+
+
+# claude — specialist added to RequestMain.assigned_to → inapp ASSIGNMENT for
+# each newly added user (matrix row #8). The actor (set as instance._actor by
+# the admin view before .add()/.set()) is skipped — nobody needs to be told
+# they assigned themselves. Respects NotificationPreference.inapp_assignment
+# through create_inapp.
+REQUEST_ASSIGNED_TEMPLATE = "notification/inapp/staff/request_assigned.txt"
+
+
+def _notify_inapp_on_assignment(sender, instance, action, pk_set, **kwargs):
+    if action != "post_add" or not pk_set or not isinstance(instance, RequestMain):
+        return
+    from django.contrib.auth import get_user_model
+
+    actor = getattr(instance, "_actor", None)
+    added = get_user_model().objects.filter(pk__in=pk_set, is_active=True)
+    if actor is not None:
+        added = added.exclude(pk=actor.pk)
+    inapp_service.create_inapp(
+        kind=NotificationKind.ASSIGNMENT,
+        template_name=REQUEST_ASSIGNED_TEMPLATE,
+        payload={
+            "request_id": instance.pk,
+            "request_label": f"REQ-{instance.created_at.year}-{instance.pk:04d}"
+                             f" — {instance.company_name or '—'}",
+            "actor_name": (actor.get_full_name() or actor.username) if actor else "system",
+        },
+        recipients=list(added),
+        actor=actor,
+        target=instance,
+    )
+
+
+m2m_changed.connect(
+    _notify_inapp_on_assignment,
+    sender=RequestMain.assigned_to.through,
+    dispatch_uid="notification.inapp_on_assignment",
 )

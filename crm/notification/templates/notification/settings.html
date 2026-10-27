@@ -1,0 +1,54 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{% comment %}
+claude — own notification settings (any staff user). Same switches as the
+Notifications tab on the admin user page; both post the
+NotificationPreference fields listed in services/preferences.py.
+{% endcomment %}
+
+{% block title %}{% trans "Notification settings" %} | {{ site_title|default:_("Django site admin") }}{% endblock title %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'notification/css/messages.css' %}?v={% now "U" %}">
+{% endblock extrastyle %}
+
+{% block content %}
+<div class="ns-stage" id="content-main">
+  <header class="ns-head">
+    <h1 class="ns-h1">{% trans "Notification settings" %}</h1>
+    <a class="ns-link" href="{% url 'notification:inbox' %}">{% trans "Back to notifications" %}</a>
+  </header>
+
+  <form method="post" class="ns-card">
+    {% csrf_token %}
+    <p class="ns-hint">{% trans "Choose what reaches you. Review requests always arrive — they need your decision." %}</p>
+    {% include "notification/_preference_switches.html" with prefix="" %}
+    <div class="ns-actions">
+      <button type="submit" class="ns-btn ns-btn--primary">{% trans "Save" %}</button>
+    </div>
+  </form>
+
+  <section class="ns-card" aria-labelledby="ns-scheduled-heading">
+    <h2 id="ns-scheduled-heading" class="ns-h2">{% trans "My scheduled messages" %}</h2>
+    {% if my_messages %}
+      <ul class="msg-list">
+        {% for m in my_messages %}
+          <li class="msg-item">
+            <div class="msg-item__main">
+              <span class="msg-item__subject">{{ m.subject }}</span>
+              <span class="msg-item__meta">{{ m.get_audience_display }} · {{ m.send_at|date:"Y-m-d H:i" }}{% if m.target %} · {{ m.target }}{% endif %}</span>
+            </div>
+            <form method="post" action="{% url 'notification:message_cancel' m.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="ns-btn ns-btn--sm">{% trans "Cancel" %}</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="ns-hint">{% trans "Nothing scheduled." %}</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock content %}

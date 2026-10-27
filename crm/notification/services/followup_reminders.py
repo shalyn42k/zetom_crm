@@ -1,11 +1,14 @@
 from django.db import transaction
+from django.template.loader import render_to_string
 from django.utils import timezone
 
 from crm.notification.models import NotificationKind
-from crm.notification.services import inapp_service
+from crm.notification.services import inapp_service, mail_service
+from crm.notification.services.preferences import filter_email
 from crm.zetom.models import RequestMain, StepNote
 
 TEMPLATE_NAME = "notification/inapp/staff/followup_due.txt"
+MAIL_TEMPLATE_NAME = "notification/mail/staff/followup_due.txt"
 
 
 def process_due_followups(now=None):
@@ -39,26 +42,29 @@ def _create_for_note(note: StepNote, now):
         if not recipients:
             return 0
 
+        payload = {
+            "target_label": str(target) if target is not None else "",
+            "next_contact_at": timezone.localtime(locked.next_contact_at).strftime("%Y-%m-%d %H:%M"),
+            "note_action": locked.action or "",
+            "note_text": (locked.text or "")[:240],
+            "author": locked.author.get_username() if locked.author_id else "system",
+        }
         notifications = inapp_service.create_inapp(
-            kind=NotificationKind.SYSTEM,
+            kind=NotificationKind.REMINDER,
             template_name=TEMPLATE_NAME,
-            payload={
-                "target_label": str(target) if target is not None else "",
-                "next_contact_at": timezone.localtime(locked.next_contact_at).strftime("%Y-%m-%d %H:%M"),
-                "note_action": locked.action or "",
-                "note_text": (locked.text or "")[:240],
-                "author": locked.author.get_username() if locked.author_id else "system",
-            },
+            payload=payload,
             recipients=recipients,
             actor=locked.author,
             target=target,
         )
-        if not notifications:
-            return 0
+        # claude — email copy for whoever switched "Reminders by email" on.
+        emailed = _email_reminder(recipients, payload, locked.author)
 
+        # claude — stamped even when every recipient muted the inbox: a muted
+        # reminder is a delivered one, otherwise it would retry every tick.
         locked.reminder_sent_at = now
         locked.save(update_fields=["reminder_sent_at"])
-        return len(notifications)
+        return len(notifications) + emailed
 
 
 def _resolve_recipients(note: StepNote, target):
@@ -105,3 +111,21 @@ def _resolve_main_request(target):
     if hasattr(target, "from_main"):
         return target.from_main
     return None
+
+
+# claude
+def _email_reminder(recipients, payload, actor):
+    mail_users = filter_email(recipients, NotificationKind.REMINDER)
+    if not mail_users:
+        return 0
+    rendered = render_to_string(MAIL_TEMPLATE_NAME, payload).lstrip()
+    subject, _sep, body = rendered.partition("\n")
+    records = mail_service.send_to_staff(
+        subject=subject.strip(),
+        body=body.lstrip("\n"),
+        recipients=[u.email for u in mail_users],
+        template_name=MAIL_TEMPLATE_NAME,
+        payload=payload,
+        actor=actor,
+    )
+    return len(records)
