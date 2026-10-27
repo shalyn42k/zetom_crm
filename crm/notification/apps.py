@@ -21,8 +21,15 @@ class NotificationConfig(AppConfig):
         # ModelAdmin'ы, которые явно задают свой `list_per_page` в коде,
         # переопределяют этот дефолт — это намеренно.
         from django.contrib.admin import ModelAdmin
+        from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
         from . import signals  # noqa: F401
         from .services.followup_scheduler import start_followup_scheduler
         ModelAdmin.list_per_page = settings.PAGE_SIZE
+        # claude — Unfold wraps every changelist in Tailwind's `container`
+        # (max-width 1536px, centred), so on a wide screen the table sat in
+        # a narrow column with big empty gutters on both sides.
+        # list_fullwidth is Unfold's own switch for that; same "global
+        # default, a ModelAdmin may still override it" pattern as above.
+        UnfoldModelAdmin.list_fullwidth = True
         start_followup_scheduler()
