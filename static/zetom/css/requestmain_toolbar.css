@@ -216,3 +216,16 @@
 #rm-link-client-modal .rm-modal__body { overflow: visible; }
 #rm-link-client-modal .rm-modal__content { overflow: visible; max-height: none; }
 #rm-link-client-modal .rm-suggestions { border-top: 0; margin-top: 0; padding-top: 0; }
+
+/* ---- no card wider than its column ----------------------------------- */
+/* .rm-card is a grid with an auto track, so one unbreakable string (a long
+   e-mail, a list of departments) sized the track to its full length and
+   every row — buttons, the owner highlight, the department pills — slid
+   out of the card. Pin the track to the card and let long words wrap. */
+#content-main .rm-card { grid-template-columns: minmax(0, 1fr); }
+#content-main .rm-card > * { min-width: 0; }
+.rm-linked-contact, .rm-linked-nip, .rm-linked-name,
+#content-main .rm-user__name, #content-main .rm-user__sub,
+#content-main .rm-dept-row__name, #content-main .rm-dgroup__doc { overflow-wrap: anywhere; min-width: 0; }
+#content-main .rm-user, #content-main .rm-dept-row { min-width: 0; }
+#content-main .rm-user__meta { min-width: 0; flex: 1 1 auto; }
