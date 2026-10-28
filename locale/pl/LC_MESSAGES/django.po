@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 03:13+0100\n"
+"POT-Creation-Date: 2026-10-28 03:17+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,9 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && "
-"(n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && "
-"n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
+"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 
 #: config/settings.py:276
 msgid "English"
@@ -69,18 +67,18 @@ msgstr "Walidacja"
 msgid "Information"
 msgstr "Informacje"
 
-#: config/unfold_config.py:170 crm/clients/admin.py:234 crm/zetom/models.py:230
-#: templates/admin/index.html:1307
+#: config/unfold_config.py:170 crm/clients/admin.py:234
+#: crm/zetom/models.py:230 templates/admin/index.html:1307
 msgid "Offers"
 msgstr "Oferty"
 
-#: config/unfold_config.py:178 crm/clients/admin.py:239 crm/zetom/models.py:307
-#: templates/admin/index.html:1308
+#: config/unfold_config.py:178 crm/clients/admin.py:239
+#: crm/zetom/models.py:307 templates/admin/index.html:1308
 msgid "Orders"
 msgstr "Zlecenia"
 
-#: config/unfold_config.py:186 crm/clients/admin.py:244 crm/zetom/models.py:336
-#: templates/admin/index.html:1309
+#: config/unfold_config.py:186 crm/clients/admin.py:244
+#: crm/zetom/models.py:336 templates/admin/index.html:1309
 msgid "Applications"
 msgstr "Wnioski"
 
@@ -97,7 +95,7 @@ msgid "Trash"
 msgstr "Kosz"
 
 #: config/unfold_config.py:222 config/unfold_config.py:226
-#: crm/clients/admin.py:640 crm/clients/apps.py:12 crm/clients/models.py:30
+#: crm/clients/admin.py:640 crm/clients/apps.py:12 crm/clients/models.py:29
 #: crm/users/admin/user.py:47
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:40
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:127
@@ -199,24 +197,24 @@ msgstr "Data rozmowy"
 msgid "Next client contact at"
 msgstr "Następny kontakt z klientem o"
 
-#: crm/clients/admin.py:352 crm/zetom/admin/requestmain.py:1003
+#: crm/clients/admin.py:352 crm/zetom/admin/requestmain.py:1002
 msgid "Client not found."
 msgstr "Klient nie znaleziony."
 
 #: crm/clients/admin.py:355 crm/notification/views_messages.py:60
 #: crm/notification/views_messages.py:62 crm/users/views.py:199
 #: crm/zetom/admin/base.py:178 crm/zetom/admin/base.py:203
-#: crm/zetom/admin/children.py:67 crm/zetom/admin/deletedrequest.py:122
+#: crm/zetom/admin/children.py:66 crm/zetom/admin/deletedrequest.py:121
 #: crm/zetom/admin/deletedvalidationrequest.py:103
 #: crm/zetom/admin/document_window.py:127
 #: crm/zetom/admin/document_window.py:146
-#: crm/zetom/admin/document_window.py:160 crm/zetom/admin/requestmain.py:784
-#: crm/zetom/admin/requestmain.py:928 crm/zetom/admin/requestmain.py:1124
-#: crm/zetom/admin/requestmain.py:1149 crm/zetom/admin/requestmain_mail.py:64
+#: crm/zetom/admin/document_window.py:160 crm/zetom/admin/requestmain.py:783
+#: crm/zetom/admin/requestmain.py:927 crm/zetom/admin/requestmain.py:1123
+#: crm/zetom/admin/requestmain.py:1148 crm/zetom/admin/requestmain_mail.py:64
 #: crm/zetom/admin/requestmain_resolve_review.py:115
 #: crm/zetom/admin/requestmain_review.py:66
-#: crm/zetom/admin/requestnull_validate.py:438
-#: crm/zetom/admin/requestnull_validate.py:447
+#: crm/zetom/admin/requestnull_validate.py:437
+#: crm/zetom/admin/requestnull_validate.py:446
 msgid "You don't have permission for this action."
 msgstr "Nie masz uprawnień do tej akcji."
 
@@ -256,8 +254,8 @@ msgstr "Nie udało się zamknąć przypomnienia: %(error)s"
 msgid "Reminder closed."
 msgstr "Przypomnienie zamknięte."
 
-#: crm/clients/admin.py:510 crm/clients/models.py:35 crm/clients/models.py:42
-#: crm/clients/views.py:110
+#: crm/clients/admin.py:510 crm/clients/models.py:34 crm/clients/models.py:41
+#: crm/clients/views.py:109
 #, python-format
 msgid "Client #%(pk)s"
 msgstr "Klient #%(pk)s"
@@ -285,7 +283,7 @@ msgstr "Szukaj klienta — nazwisko, firma lub NIP…"
 msgid "No matching clients"
 msgstr "Brak pasujących klientów"
 
-#: crm/clients/fields.py:54 crm/clients/models.py:29
+#: crm/clients/fields.py:54 crm/clients/models.py:28
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:58
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:59
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:71
@@ -294,8 +292,8 @@ msgstr "Brak pasujących klientów"
 msgid "Client"
 msgstr "Klient"
 
-#: crm/clients/models.py:15 crm/users/templates/users/user_detail.html:12
-#: crm/zetom/admin/requestnull_validate.py:129 crm/zetom/models.py:55
+#: crm/clients/models.py:14 crm/users/templates/users/user_detail.html:12
+#: crm/zetom/admin/requestnull_validate.py:128 crm/zetom/models.py:55
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:81
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:63
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:56
@@ -306,8 +304,8 @@ msgstr "Klient"
 msgid "First name"
 msgstr "Imię"
 
-#: crm/clients/models.py:16 crm/users/templates/users/user_detail.html:13
-#: crm/zetom/admin/requestnull_validate.py:135 crm/zetom/models.py:58
+#: crm/clients/models.py:15 crm/users/templates/users/user_detail.html:13
+#: crm/zetom/admin/requestnull_validate.py:134 crm/zetom/models.py:58
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:85
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:67
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:57
@@ -318,10 +316,10 @@ msgstr "Imię"
 msgid "Last name"
 msgstr "Nazwisko"
 
-#: crm/clients/models.py:18 crm/clients/models.py:88
+#: crm/clients/models.py:17 crm/clients/models.py:87
 #: crm/users/templates/users/user_detail.html:11
 #: crm/users/templates/users/user_list.html:20
-#: crm/zetom/admin/requestnull_validate.py:152 crm/zetom/forms.py:52
+#: crm/zetom/admin/requestnull_validate.py:151 crm/zetom/forms.py:52
 #: crm/zetom/models.py:38 crm/zetom/models.py:62 crm/zetom/models.py:517
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:97
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:87
@@ -332,8 +330,8 @@ msgstr "Nazwisko"
 msgid "Email"
 msgstr "E-mail"
 
-#: crm/clients/models.py:19 crm/clients/models.py:87
-#: crm/zetom/admin/requestnull_validate.py:143 crm/zetom/forms.py:40
+#: crm/clients/models.py:18 crm/clients/models.py:86
+#: crm/zetom/admin/requestnull_validate.py:142 crm/zetom/forms.py:40
 #: crm/zetom/models.py:37 crm/zetom/models.py:60
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:101
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:91
@@ -343,44 +341,44 @@ msgstr "E-mail"
 msgid "Phone"
 msgstr "Telefon"
 
-#: crm/clients/models.py:21 crm/zetom/forms.py:118 crm/zetom/models.py:126
+#: crm/clients/models.py:20 crm/zetom/forms.py:118 crm/zetom/models.py:126
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:105
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:60
 msgid "Address"
 msgstr "Adres"
 
-#: crm/clients/models.py:24 crm/zetom/forms.py:160 crm/zetom/forms.py:192
+#: crm/clients/models.py:23 crm/zetom/forms.py:160 crm/zetom/forms.py:192
 #: crm/zetom/forms.py:220 crm/zetom/models.py:172 crm/zetom/models.py:295
 #: crm/zetom/models.py:324
 msgid "Notes"
 msgstr "Uwagi"
 
-#: crm/clients/models.py:58
+#: crm/clients/models.py:57
 msgid "Lokalny"
 msgstr "Lokalny"
 
-#: crm/clients/models.py:59
+#: crm/clients/models.py:58
 msgid "Regionalny"
 msgstr "Regionalny"
 
-#: crm/clients/models.py:60
+#: crm/clients/models.py:59
 msgid "Międzynarodowy"
 msgstr "Międzynarodowy"
 
-#: crm/clients/models.py:68 crm/users/admin/role.py:52 crm/users/models.py:14
-#: crm/users/models.py:36
+#: crm/clients/models.py:67 crm/users/admin/otp.py:22
+#: crm/users/admin/role.py:52 crm/users/models.py:14 crm/users/models.py:36
 msgid "Name"
 msgstr "Nazwa"
 
-#: crm/clients/models.py:69
+#: crm/clients/models.py:68
 msgid "Short name"
 msgstr "Nazwa skrócona"
 
-#: crm/clients/models.py:70
+#: crm/clients/models.py:69
 msgid "Full name"
 msgstr "Pełna nazwa"
 
-#: crm/clients/models.py:73
+#: crm/clients/models.py:72
 #: crm/clients/templates/admin/clients/client/_add_modal.html:63
 #: crm/clients/templates/admin/clients/client/klienci_list.html:106
 #: crm/clients/templates/admin/clients/company/company_card.html:64
@@ -396,43 +394,43 @@ msgstr "Pełna nazwa"
 msgid "NIP"
 msgstr "NIP"
 
-#: crm/clients/models.py:76
+#: crm/clients/models.py:75
 #: crm/clients/templates/admin/clients/client/_add_modal.html:64
 #: crm/clients/templates/admin/clients/company/company_card.html:90
 #: crm/clients/templates/admin/clients/company/company_card.html:108
 msgid "REGON"
 msgstr "REGON"
 
-#: crm/clients/models.py:78
+#: crm/clients/models.py:77
 msgid "Supplier type"
 msgstr "Typ dostawcy"
 
-#: crm/clients/models.py:81
+#: crm/clients/models.py:80
 msgid "Country"
 msgstr "Kraj"
 
-#: crm/clients/models.py:82
+#: crm/clients/models.py:81
 msgid "City"
 msgstr "Miasto"
 
-#: crm/clients/models.py:83
+#: crm/clients/models.py:82
 msgid "Voivodeship"
 msgstr "Województwo"
 
-#: crm/clients/models.py:84
+#: crm/clients/models.py:83
 msgid "Post code"
 msgstr "Kod pocztowy"
 
-#: crm/clients/models.py:85
+#: crm/clients/models.py:84
 msgid "Street"
 msgstr "Ulica"
 
-#: crm/clients/models.py:90
+#: crm/clients/models.py:89
 msgid "Comments"
 msgstr "Uwagi"
 
-#: crm/clients/models.py:94 crm/clients/models.py:124
-#: crm/zetom/admin/requestnull_validate.py:160 crm/zetom/models.py:156
+#: crm/clients/models.py:93 crm/clients/models.py:123
+#: crm/zetom/admin/requestnull_validate.py:159 crm/zetom/models.py:156
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:77
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:71
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:55
@@ -442,32 +440,33 @@ msgstr "Uwagi"
 msgid "Company"
 msgstr "Firma"
 
-#: crm/clients/models.py:95 templates/admin/index.html:1319
+#: crm/clients/models.py:94 templates/admin/index.html:1319
 msgid "Companies"
 msgstr "Firmy"
 
-#: crm/clients/models.py:128 crm/zetom/admin/base.py:73 crm/zetom/models.py:568
+#: crm/clients/models.py:127 crm/zetom/admin/base.py:73
+#: crm/zetom/models.py:568
 #: crm/zetom/templates/admin/zetom/shared/step_notes_modal.html:108
 msgid "Person"
 msgstr "Osoba"
 
-#: crm/clients/models.py:130
+#: crm/clients/models.py:129
 msgid "Position"
 msgstr "Stanowisko"
 
-#: crm/clients/models.py:131
+#: crm/clients/models.py:130
 msgid "Primary contact"
 msgstr "Główny kontakt"
 
-#: crm/clients/models.py:134
+#: crm/clients/models.py:133
 msgid "Linked by"
 msgstr "Powiązano przez"
 
-#: crm/clients/models.py:139
+#: crm/clients/models.py:138
 msgid "Company contact"
 msgstr "Osoba kontaktowa"
 
-#: crm/clients/models.py:140
+#: crm/clients/models.py:139
 msgid "Company contacts"
 msgstr "Osoby kontaktowe"
 
@@ -1034,59 +1033,59 @@ msgstr ""
 msgid "Invalid NIP checksum."
 msgstr "Nieprawidłowa suma kontrolna NIP."
 
-#: crm/clients/views.py:34 crm/zetom/admin/requestmain.py:72
+#: crm/clients/views.py:33 crm/zetom/admin/requestmain.py:71
 msgid "You do not have permission to perform this action."
 msgstr "Nie masz uprawnień do wykonania tej akcji."
 
-#: crm/clients/views.py:171
+#: crm/clients/views.py:170
 msgid "Nieprawidłowy adres e-mail."
 msgstr "Nieprawidłowy adres e-mail."
 
-#: crm/clients/views.py:184
+#: crm/clients/views.py:183
 msgid "Nieprawidłowy numer telefonu."
 msgstr "Nieprawidłowy numer telefonu."
 
-#: crm/clients/views.py:336
+#: crm/clients/views.py:335
 msgid "Nazwa firmy jest wymagana."
 msgstr "Nazwa firmy jest wymagana."
 
-#: crm/clients/views.py:348
+#: crm/clients/views.py:347
 msgid "Firma z tym NIP-em już istnieje."
 msgstr "Firma z tym NIP-em już istnieje."
 
-#: crm/clients/views.py:351
+#: crm/clients/views.py:350
 msgid "Nieznany typ dostawcy."
 msgstr "Nieznany typ dostawcy."
 
-#: crm/clients/views.py:556
+#: crm/clients/views.py:555
 msgid "dopasowanie po telefonie"
 msgstr "dopasowanie po telefonie"
 
-#: crm/clients/views.py:558
+#: crm/clients/views.py:557
 msgid "dopasowanie po NIP"
 msgstr "dopasowanie po NIP"
 
-#: crm/clients/views.py:560
+#: crm/clients/views.py:559
 msgid "dopasowanie po e-mailu"
 msgstr "dopasowanie po e-mailu"
 
-#: crm/clients/views.py:561
+#: crm/clients/views.py:560
 msgid "dopasowanie po nazwie"
 msgstr "dopasowanie po nazwie"
 
-#: crm/clients/views.py:686
+#: crm/clients/views.py:685
 msgid "Tego zgłoszenia nie można powiązać z tym rodzajem klienta."
 msgstr "Tego zgłoszenia nie można powiązać z tym rodzajem klienta."
 
-#: crm/clients/views.py:690
+#: crm/clients/views.py:689
 msgid "Nie znaleziono wybranego zgłoszenia."
 msgstr "Nie znaleziono wybranego zgłoszenia."
 
-#: crm/clients/views.py:737
+#: crm/clients/views.py:736
 msgid "Podaj imię lub nazwisko."
 msgstr "Podaj imię lub nazwisko."
 
-#: crm/clients/views.py:767
+#: crm/clients/views.py:766
 msgid "To zgłoszenie jest już powiązane z inną firmą."
 msgstr "To zgłoszenie jest już powiązane z inną firmą."
 
@@ -1134,7 +1133,8 @@ msgid "Author"
 msgstr "Autor"
 
 #: crm/notification/admin.py:34 crm/notification/models.py:49
-#: crm/notification/models.py:98 crm/zetom/models.py:52 crm/zetom/models.py:530
+#: crm/notification/models.py:98 crm/users/admin/otp.py:28
+#: crm/zetom/models.py:52 crm/zetom/models.py:530
 msgid "Created at"
 msgstr "Utworzono"
 
@@ -1274,7 +1274,7 @@ msgid "Subject"
 msgstr "Temat"
 
 #: crm/notification/models.py:45 crm/users/templates/users/user_list.html:23
-#: crm/zetom/admin/base.py:538 crm/zetom/admin/requestmain.py:184
+#: crm/zetom/admin/base.py:538 crm/zetom/admin/requestmain.py:183
 msgid "Status"
 msgstr "Status"
 
@@ -1326,7 +1326,8 @@ msgstr "Przeczytano o"
 msgid "Notification"
 msgstr "Powiadomienie"
 
-#: crm/notification/models.py:132 crm/users/models.py:49
+#: crm/notification/models.py:132 crm/users/admin/otp.py:21
+#: crm/users/models.py:49
 msgid "User"
 msgstr "Użytkownik"
 
@@ -1442,10 +1443,8 @@ msgstr "Zlecenie %(request_label)s: zmiana statusu"
 
 #: crm/notification/templates/notification/inapp/staff/request_status_changed.txt:16
 #, python-format
-msgid ""
-"%(actor_name)s changed status from \"%(old_label)s\" to \"%(new_label)s\"."
-msgstr ""
-"%(actor_name)s zmienił/a status z \"%(old_label)s\" na \"%(new_label)s\"."
+msgid "%(actor_name)s changed status from \"%(old_label)s\" to \"%(new_label)s\"."
+msgstr "%(actor_name)s zmienił/a status z \"%(old_label)s\" na \"%(new_label)s\"."
 
 #: crm/notification/templates/notification/inapp/staff/review_requested.txt:9
 #, python-format
@@ -1483,7 +1482,8 @@ msgstr "Nieobsłużone zgłoszenie: %(request_label)s"
 #: crm/notification/templates/notification/inapp/staff/stale_request.txt:9
 #, python-format
 msgid ""
-"Open since %(created_at)s (%(days_open)s days) — no one has picked it up yet."
+"Open since %(created_at)s (%(days_open)s days) — no one has picked it up "
+"yet."
 msgstr ""
 "Otwarte od %(created_at)s (%(days_open)s dni) — nikt jeszcze się tym nie "
 "zajął."
@@ -1888,11 +1888,11 @@ msgstr "Usunięcie dokumentu podrzędnego"
 msgid "Child document deletions"
 msgstr "Usunięcia dokumentów podrzędnych"
 
-#: crm/status_manager/services/status_service.py:38
+#: crm/status_manager/services/status_service.py:37
 msgid "Invalid status transition."
 msgstr "Niedozwolona zmiana statusu."
 
-#: crm/status_manager/services/status_service.py:88
+#: crm/status_manager/services/status_service.py:87
 msgid "Automatic transition based on child document statuses."
 msgstr "Automatyczne przejście na podstawie statusów dokumentów podrzędnych."
 
@@ -1967,17 +1967,122 @@ msgstr "Tylko administratorzy mogą cofnąć status kierownika"
 msgid "Missing view_users permission"
 msgstr "Brak uprawnienia view_users"
 
+#: crm/users/admin/otp.py:21
+msgid "The user this device belongs to."
+msgstr "Użytkownik, do którego należy to urządzenie."
+
+#: crm/users/admin/otp.py:22
+msgid "A readable name for this device."
+msgstr "Czytelna nazwa tego urządzenia."
+
+#: crm/users/admin/otp.py:23
+msgid "Confirmed"
+msgstr "Potwierdzone"
+
+#: crm/users/admin/otp.py:23
+msgid "Is this device ready for use?"
+msgstr "Czy urządzenie jest gotowe do użycia?"
+
+#: crm/users/admin/otp.py:25
+msgid "Last failed attempt"
+msgstr "Ostatnia nieudana próba"
+
+#: crm/users/admin/otp.py:25
+msgid ""
+"Time of the last failed verification; empty if the last attempt succeeded."
+msgstr ""
+"Czas ostatniej nieudanej weryfikacji; puste, jeśli ostatnia próba się "
+"powiodła."
+
+#: crm/users/admin/otp.py:27
+msgid "Failed attempts in a row"
+msgstr "Nieudane próby z rzędu"
+
+#: crm/users/admin/otp.py:27
+msgid "Number of successive failed attempts."
+msgstr "Liczba kolejnych nieudanych prób."
+
+#: crm/users/admin/otp.py:28
+msgid "When this device was added."
+msgstr "Kiedy urządzenie zostało dodane."
+
+#: crm/users/admin/otp.py:29
+msgid "Last used at"
+msgstr "Ostatnio użyte"
+
+#: crm/users/admin/otp.py:29
+msgid "When this device was last used."
+msgstr "Kiedy urządzenie było ostatnio używane."
+
+#: crm/users/admin/otp.py:30
+msgid "Secret key"
+msgstr "Klucz tajny"
+
+#: crm/users/admin/otp.py:30
+msgid "Hex-encoded secret key, up to 40 bytes."
+msgstr "Klucz tajny zapisany szesnastkowo, do 40 bajtów."
+
+#: crm/users/admin/otp.py:31
+msgid "Time step"
+msgstr "Krok czasowy"
+
+#: crm/users/admin/otp.py:31
+msgid "Length of one time step in seconds."
+msgstr "Długość jednego kroku czasowego w sekundach."
+
+#: crm/users/admin/otp.py:32
+msgid "Start time"
+msgstr "Czas początkowy"
+
+#: crm/users/admin/otp.py:32
+msgid "Unix time at which step counting begins."
+msgstr "Czas Unix, od którego liczone są kroki."
+
+#: crm/users/admin/otp.py:33
+msgid "Digits"
+msgstr "Liczba cyfr"
+
+#: crm/users/admin/otp.py:33
+msgid "Number of digits in a code."
+msgstr "Liczba cyfr w kodzie."
+
+#: crm/users/admin/otp.py:34
+msgid "Tolerance"
+msgstr "Tolerancja"
+
+#: crm/users/admin/otp.py:34
+msgid "How many time steps before or after the current one are accepted."
+msgstr "Ile kroków czasowych przed lub po bieżącym jest akceptowanych."
+
+#: crm/users/admin/otp.py:35
+msgid "Clock drift"
+msgstr "Odchylenie zegara"
+
+#: crm/users/admin/otp.py:35
+msgid "How many time steps the device's clock differs from ours."
+msgstr "O ile kroków czasowych zegar urządzenia różni się od naszego."
+
+#: crm/users/admin/otp.py:36
+msgid "Last time step"
+msgstr "Ostatni krok czasowy"
+
+#: crm/users/admin/otp.py:36
+msgid "Time step of the last accepted code; the next code must be later."
+msgstr ""
+"Krok czasowy ostatnio zaakceptowanego kodu; następny kod musi być "
+"późniejszy."
+
 #: crm/users/admin/role.py:68 crm/users/models.py:25 crm/users/models.py:37
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:18
 msgid "Permissions"
 msgstr "Uprawnienia"
 
-#: crm/users/admin/user.py:48 crm/users/admin/user.py:364 crm/users/forms.py:34
-#: crm/users/models.py:72
+#: crm/users/admin/user.py:48 crm/users/admin/user.py:364
+#: crm/users/forms.py:34 crm/users/models.py:72
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:31
 #: crm/users/templates/admin/auth/user/_partials/tabs_nav.html:24
 #: crm/users/templates/users/user_detail.html:15 crm/zetom/admin/base.py:96
-#: crm/zetom/admin/requestnull_validate.py:80 crm/zetom/forms.py:27
+#: crm/zetom/admin/requestnull_validate.py:79 crm/zetom/forms.py:27
 #: crm/zetom/models.py:77
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:150
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:106
@@ -2060,8 +2165,8 @@ msgstr "Przywrócono %(n)s użytkownika/ów."
 msgid ""
 "Deactivated %(n)s user(s). Their sessions and trusted browsers were revoked."
 msgstr ""
-"Dezaktywowano %(n)s użytkownika/ów. Ich sesje i zaufane przeglądarki zostały "
-"unieważnione."
+"Dezaktywowano %(n)s użytkownika/ów. Ich sesje i zaufane przeglądarki zostały"
+" unieważnione."
 
 #: crm/users/admin/user.py:585
 #, python-format
@@ -2097,7 +2202,8 @@ msgid "2FA exempt"
 msgstr "Zwolniony z 2FA"
 
 #: crm/users/forms.py:130 crm/users/models.py:89
-msgid "If enabled, this user is not required to use two-factor authentication."
+msgid ""
+"If enabled, this user is not required to use two-factor authentication."
 msgstr ""
 "Jeśli włączone, ten użytkownik nie jest zobowiązany do korzystania z "
 "uwierzytelniania dwuskładnikowego."
@@ -2160,7 +2266,8 @@ msgstr ""
 
 #: crm/users/models.py:137
 msgid ""
-"A department can be marked as head-of only if the user already belongs to it."
+"A department can be marked as head-of only if the user already belongs to "
+"it."
 msgstr ""
 "Dział może być oznaczony jako kierowany tylko jeśli użytkownik już do niego "
 "należy."
@@ -2411,8 +2518,8 @@ msgid ""
 "Primary marks the user's main department. Head status is granted separately "
 "by an admin and identifies the department lead."
 msgstr ""
-"Główny oznacza podstawowy dział użytkownika. Status kierownika jest nadawany "
-"przez administratora i identyfikuje szefa działu."
+"Główny oznacza podstawowy dział użytkownika. Status kierownika jest nadawany"
+" przez administratora i identyfikuje szefa działu."
 
 #: crm/users/templates/admin/auth/user/_partials/tab_departments.html:186
 msgid "Team in your departments"
@@ -2443,8 +2550,8 @@ msgid ""
 "Choose what reaches this user. Review requests always arrive — they need a "
 "decision."
 msgstr ""
-"Wybierz, co ma docierać do tego użytkownika. Prośby o weryfikację przychodzą "
-"zawsze — wymagają decyzji."
+"Wybierz, co ma docierać do tego użytkownika. Prośby o weryfikację przychodzą"
+" zawsze — wymagają decyzji."
 
 #: crm/users/templates/admin/auth/user/_partials/tab_notifications.html:20
 msgid "Save notification settings"
@@ -2506,8 +2613,8 @@ msgstr "Jeszcze nie zaimplementowane"
 
 #: crm/users/templates/admin/auth/user/_partials/tab_permissions.html:121
 msgid ""
-"You can view permissions but not change them. The 'edit_roles' permission is "
-"required to assign roles and individual permissions."
+"You can view permissions but not change them. The 'edit_roles' permission is"
+" required to assign roles and individual permissions."
 msgstr ""
 "Możesz przeglądać uprawnienia, ale nie możesz ich zmieniać. Uprawnienie "
 "'edit_roles' jest wymagane do przypisywania ról i indywidualnych uprawnień."
@@ -2544,8 +2651,8 @@ msgstr "Bezpieczeństwo"
 #: crm/users/templates/admin/auth/user/_partials/tab_security.html:19
 msgid ""
 "This account is deactivated: the user cannot log in. Use “Reactivate user” "
-"at the bottom of the page to restore access — role and departments are still "
-"in place, only 2FA has to be set up again."
+"at the bottom of the page to restore access — role and departments are still"
+" in place, only 2FA has to be set up again."
 msgstr ""
 "To konto jest dezaktywowane: użytkownik nie może się zalogować. Użyj "
 "„Przywróć użytkownika” na dole strony, aby oddać dostęp — rola i działy "
@@ -2594,20 +2701,20 @@ msgid ""
 "cancel and use “Deactivate” instead — that keeps the history and can be "
 "undone."
 msgstr ""
-"Wpisy w Dzienniku aktywności oraz powiadomienia w aplikacji zostaną usunięte "
-"razem z kontem i nie da się ich przywrócić. Jeśli chcesz tylko odebrać "
-"dostęp, anuluj i użyj „Dezaktywuj” — historia zostanie zachowana, a operację "
-"można cofnąć."
+"Wpisy w Dzienniku aktywności oraz powiadomienia w aplikacji zostaną usunięte"
+" razem z kontem i nie da się ich przywrócić. Jeśli chcesz tylko odebrać "
+"dostęp, anuluj i użyj „Dezaktywuj” — historia zostanie zachowana, a operację"
+" można cofnąć."
 
 #: crm/users/templates/admin/auth/user/submit_line.html:34
 msgid ""
 "Deactivate this user? They will be signed out everywhere immediately and "
-"will not be able to log in. Role, departments and history are kept — you can "
-"reactivate them at any time."
+"will not be able to log in. Role, departments and history are kept — you can"
+" reactivate them at any time."
 msgstr ""
 "Dezaktywować tego użytkownika? Zostanie natychmiast wylogowany wszędzie i "
-"nie będzie mógł się zalogować. Rola, działy i historia zostają zachowane — w "
-"każdej chwili możesz przywrócić mu dostęp."
+"nie będzie mógł się zalogować. Rola, działy i historia zostają zachowane — w"
+" każdej chwili możesz przywrócić mu dostęp."
 
 #: crm/users/templates/admin/auth/user/submit_line.html:36
 #: crm/users/templates/users/user_confirm_delete.html:17
@@ -2656,8 +2763,8 @@ msgstr "Uwierzytelnianie dwuskładnikowe"
 
 #: crm/users/templates/users/otp_setup.html:18
 msgid ""
-"Scan this code with Google Authenticator, Authy or 1Password, then enter the "
-"6-digit code it shows."
+"Scan this code with Google Authenticator, Authy or 1Password, then enter the"
+" 6-digit code it shows."
 msgstr ""
 "Zeskanuj ten kod w Google Authenticator, Authy lub 1Password, a następnie "
 "wpisz wyświetlony 6-cyfrowy kod."
@@ -2690,8 +2797,8 @@ msgid ""
 "Open your authenticator app and enter the current 6-digit code. Lost your "
 "phone? Use one of your backup codes instead."
 msgstr ""
-"Otwórz aplikację uwierzytelniającą i wpisz aktualny 6-cyfrowy kod. Zgubiłeś(-"
-"aś) telefon? Użyj jednego z kodów zapasowych."
+"Otwórz aplikację uwierzytelniającą i wpisz aktualny 6-cyfrowy kod. "
+"Zgubiłeś(-aś) telefon? Użyj jednego z kodów zapasowych."
 
 #: crm/users/templates/users/user_confirm_delete.html:22
 #: crm/users/templates/users/user_detail.html:23
@@ -2834,9 +2941,9 @@ msgstr "Nieprawidłowy kod."
 msgid "Reason"
 msgstr "Powód"
 
-#: crm/zetom/admin/base.py:176 crm/zetom/admin/deletedrequest.py:127
+#: crm/zetom/admin/base.py:176 crm/zetom/admin/deletedrequest.py:126
 #: crm/zetom/admin/deletedvalidationrequest.py:108
-#: crm/zetom/admin/requestmain.py:933 crm/zetom/admin/requestmain.py:948
+#: crm/zetom/admin/requestmain.py:932 crm/zetom/admin/requestmain.py:947
 #: crm/zetom/admin/requestmain_mail.py:69
 #: crm/zetom/admin/requestmain_resolve_review.py:111
 #: crm/zetom/admin/requestmain_review.py:72
@@ -2847,7 +2954,7 @@ msgstr "Zgłoszenie nie znalezione."
 msgid "Choose one of the client's addresses on this request."
 msgstr "Wybierz jeden z adresów klienta z tego zgłoszenia."
 
-#: crm/zetom/admin/base.py:322 crm/zetom/admin/children.py:225
+#: crm/zetom/admin/base.py:322 crm/zetom/admin/children.py:224
 #: crm/zetom/admin/document_window.py:33 crm/zetom/models.py:229
 #: crm/zetom/models.py:256
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:182
@@ -2855,14 +2962,14 @@ msgstr "Wybierz jeden z adresów klienta z tego zgłoszenia."
 msgid "Offer"
 msgstr "Oferta"
 
-#: crm/zetom/admin/base.py:324 crm/zetom/admin/children.py:304
+#: crm/zetom/admin/base.py:324 crm/zetom/admin/children.py:303
 #: crm/zetom/admin/document_window.py:34 crm/zetom/models.py:306
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:196
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:31
 msgid "Order"
 msgstr "Zlecenie"
 
-#: crm/zetom/admin/base.py:326 crm/zetom/admin/children.py:330
+#: crm/zetom/admin/base.py:326 crm/zetom/admin/children.py:329
 #: crm/zetom/admin/document_window.py:35 crm/zetom/models.py:335
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:210
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:31
@@ -2882,69 +2989,69 @@ msgstr "Przypisani"
 msgid "Restored from cancelled"
 msgstr "Przywrócono z anulowanych"
 
-#: crm/zetom/admin/children.py:51
+#: crm/zetom/admin/children.py:50
 msgid "Client data on the document"
 msgstr "Dane klienta na dokumencie"
 
-#: crm/zetom/admin/children.py:71
+#: crm/zetom/admin/children.py:70
 msgid "Not found."
 msgstr "Nie znaleziono."
 
-#: crm/zetom/admin/children.py:92
+#: crm/zetom/admin/children.py:91
 msgid "Document deleted."
 msgstr "Dokument usunięty."
 
-#: crm/zetom/admin/children.py:94 crm/zetom/admin/requestmain.py:306
-#: crm/zetom/admin/requestmain.py:1222
+#: crm/zetom/admin/children.py:93 crm/zetom/admin/requestmain.py:305
+#: crm/zetom/admin/requestmain.py:1221
 msgid "Reason is required."
 msgstr "Powód jest wymagany."
 
-#: crm/zetom/admin/children.py:112
+#: crm/zetom/admin/children.py:111
 #: crm/zetom/templates/admin/zetom/shared/document_change_form.html:58
 msgid "Delete document"
 msgstr "Usuń dokument"
 
-#: crm/zetom/admin/children.py:121
+#: crm/zetom/admin/children.py:120
 msgid "Deleted via admin (bulk)"
 msgstr "Usunięte przez administratora (zbiorczo)"
 
-#: crm/zetom/admin/children.py:154
+#: crm/zetom/admin/children.py:153
 msgid "Marked as done."
 msgstr "Oznaczono jako wykonane."
 
-#: crm/zetom/admin/children.py:193 crm/zetom/models.py:265
+#: crm/zetom/admin/children.py:192 crm/zetom/models.py:265
 msgid "Offer item"
 msgstr "Pozycja oferty"
 
-#: crm/zetom/admin/children.py:194 crm/zetom/models.py:266
+#: crm/zetom/admin/children.py:193 crm/zetom/models.py:266
 msgid "Offer items"
 msgstr "Pozycje oferty"
 
-#: crm/zetom/admin/children.py:226
+#: crm/zetom/admin/children.py:225
 msgid "Price and deadline"
 msgstr "Cena i termin"
 
-#: crm/zetom/admin/children.py:227
+#: crm/zetom/admin/children.py:226
 msgid "More options"
 msgstr "Więcej opcji"
 
-#: crm/zetom/admin/children.py:232
+#: crm/zetom/admin/children.py:231
 msgid "Internal note"
 msgstr "Notatka wewnętrzna"
 
-#: crm/zetom/admin/children.py:237
+#: crm/zetom/admin/children.py:236
 msgid "set automatically when empty"
 msgstr "nadawany automatycznie, gdy puste"
 
-#: crm/zetom/admin/deletedrequest.py:150
+#: crm/zetom/admin/deletedrequest.py:149
 msgid "Restored from trash"
 msgstr "Przywrócono z kosza"
 
-#: crm/zetom/admin/deletedrequest.py:153
+#: crm/zetom/admin/deletedrequest.py:152
 msgid "Request restored."
 msgstr "Zlecenie przywrócone."
 
-#: crm/zetom/admin/deletedrequest.py:167
+#: crm/zetom/admin/deletedrequest.py:166
 #: crm/zetom/admin/deletedvalidationrequest.py:145
 msgid "Request permanently deleted."
 msgstr "Zlecenie trwale usunięte."
@@ -2953,7 +3060,7 @@ msgstr "Zlecenie trwale usunięte."
 msgid "Request restored to the Validation Window."
 msgstr "Zgłoszenie przywrócono do okna walidacji."
 
-#: crm/zetom/admin/document_window.py:130 crm/zetom/admin/requestmain.py:1281
+#: crm/zetom/admin/document_window.py:130 crm/zetom/admin/requestmain.py:1280
 msgid "No files selected."
 msgstr "Nie wybrano plików."
 
@@ -2962,12 +3069,12 @@ msgstr "Nie wybrano plików."
 msgid "Too large (max 20 MB): %(names)s"
 msgstr "Za duże (maks. 20 MB): %(names)s"
 
-#: crm/zetom/admin/document_window.py:138 crm/zetom/admin/requestmain.py:1287
+#: crm/zetom/admin/document_window.py:138 crm/zetom/admin/requestmain.py:1286
 #, python-format
 msgid "%(n)d file(s) uploaded."
 msgstr "Przesłano %(n)d plik(ów)."
 
-#: crm/zetom/admin/document_window.py:151 crm/zetom/admin/requestmain.py:1300
+#: crm/zetom/admin/document_window.py:151 crm/zetom/admin/requestmain.py:1299
 msgid "Attachment deleted."
 msgstr "Załącznik usunięty."
 
@@ -2980,152 +3087,152 @@ msgstr "Dokument zapisany w plikach: %(name)s"
 msgid "Change message"
 msgstr "Treść zmiany"
 
-#: crm/zetom/admin/requestmain.py:270
+#: crm/zetom/admin/requestmain.py:269
 msgid "Deleted via admin"
 msgstr "Usunięte przez administratora"
 
-#: crm/zetom/admin/requestmain.py:304
+#: crm/zetom/admin/requestmain.py:303
 msgid "Request deleted."
 msgstr "Zlecenie usunięte."
 
-#: crm/zetom/admin/requestmain.py:322
+#: crm/zetom/admin/requestmain.py:321
 msgid "Delete request"
 msgstr "Usuń zgłoszenie"
 
-#: crm/zetom/admin/requestmain.py:654 crm/zetom/admin/requestmain.py:710
-#: crm/zetom/admin/requestmain.py:736
+#: crm/zetom/admin/requestmain.py:653 crm/zetom/admin/requestmain.py:709
+#: crm/zetom/admin/requestmain.py:735
 msgid "not found"
 msgstr "Nie znaleziono"
 
-#: crm/zetom/admin/requestmain.py:852
+#: crm/zetom/admin/requestmain.py:851
 msgid "POST required"
 msgstr "Wymagane żądanie POST"
 
-#: crm/zetom/admin/requestmain.py:877
+#: crm/zetom/admin/requestmain.py:876
 msgid "Cancelled as duplicate from the add form."
 msgstr "Anulowano jako duplikat z formularza dodawania."
 
-#: crm/zetom/admin/requestmain.py:899
+#: crm/zetom/admin/requestmain.py:898
 msgid "bad action"
 msgstr "Nieprawidłowa akcja"
 
-#: crm/zetom/admin/requestmain.py:904
+#: crm/zetom/admin/requestmain.py:903
 msgid "bad pk"
 msgstr "Nieprawidłowy identyfikator"
 
-#: crm/zetom/admin/requestmain.py:910
+#: crm/zetom/admin/requestmain.py:909
 msgid "unknown op"
 msgstr "Nieznana operacja"
 
-#: crm/zetom/admin/requestmain.py:963
+#: crm/zetom/admin/requestmain.py:962
 msgid "Invalid department."
 msgstr "Nieprawidłowy dział."
 
-#: crm/zetom/admin/requestmain.py:966
+#: crm/zetom/admin/requestmain.py:965
 msgid "Already assigned."
 msgstr "Już przypisany."
 
-#: crm/zetom/admin/requestmain.py:972
+#: crm/zetom/admin/requestmain.py:971
 #, python-format
 msgid "Added %(label)s."
 msgstr "Dodano %(label)s."
 
-#: crm/zetom/admin/requestmain.py:986
+#: crm/zetom/admin/requestmain.py:985
 #, python-format
 msgid "Removed %(label)s."
 msgstr "Usunięto %(label)s."
 
-#: crm/zetom/admin/requestmain.py:1010
+#: crm/zetom/admin/requestmain.py:1009
 #, python-format
 msgid "Linked client %(c)s."
 msgstr "Powiązano klienta %(c)s."
 
-#: crm/zetom/admin/requestmain.py:1012
+#: crm/zetom/admin/requestmain.py:1011
 msgid "Client already linked."
 msgstr "Klient jest już powiązany."
 
-#: crm/zetom/admin/requestmain.py:1039
+#: crm/zetom/admin/requestmain.py:1038
 #, python-format
 msgid "Created and linked client %(c)s."
 msgstr "Utworzono i powiązano klienta %(c)s."
 
-#: crm/zetom/admin/requestmain.py:1053
+#: crm/zetom/admin/requestmain.py:1052
 msgid "Client unlinked."
 msgstr "Odłączono klienta."
 
-#: crm/zetom/admin/requestmain.py:1070
+#: crm/zetom/admin/requestmain.py:1069
 msgid "No user selected."
 msgstr "Nie wybrano użytkownika."
 
-#: crm/zetom/admin/requestmain.py:1075 crm/zetom/admin/requestmain.py:1100
-#: crm/zetom/admin/requestmain.py:1129 crm/zetom/admin/requestmain.py:1154
+#: crm/zetom/admin/requestmain.py:1074 crm/zetom/admin/requestmain.py:1099
+#: crm/zetom/admin/requestmain.py:1128 crm/zetom/admin/requestmain.py:1153
 msgid "User not found."
 msgstr "Użytkownik nie znaleziony."
 
-#: crm/zetom/admin/requestmain.py:1079
+#: crm/zetom/admin/requestmain.py:1078
 msgid "You can't assign this user."
 msgstr "Nie możesz przypisać tego użytkownika."
 
-#: crm/zetom/admin/requestmain.py:1086
+#: crm/zetom/admin/requestmain.py:1085
 #, python-format
 msgid "Assigned %(name)s."
 msgstr "Przypisano %(name)s."
 
-#: crm/zetom/admin/requestmain.py:1104
+#: crm/zetom/admin/requestmain.py:1103
 msgid "You can't unassign this user."
 msgstr "Nie możesz odpiąć tego użytkownika."
 
-#: crm/zetom/admin/requestmain.py:1112
+#: crm/zetom/admin/requestmain.py:1111
 #, python-format
 msgid "Removed %(name)s."
 msgstr "Usunięto %(name)s."
 
-#: crm/zetom/admin/requestmain.py:1133
+#: crm/zetom/admin/requestmain.py:1132
 msgid "User must be assigned before becoming owner."
 msgstr "Użytkownik musi być przypisany, zanim zostanie właścicielem."
 
-#: crm/zetom/admin/requestmain.py:1138
+#: crm/zetom/admin/requestmain.py:1137
 #, python-format
 msgid "%(name)s is now an owner."
 msgstr "%(name)s jest teraz właścicielem."
 
-#: crm/zetom/admin/requestmain.py:1159
+#: crm/zetom/admin/requestmain.py:1158
 #, python-format
 msgid "%(name)s is no longer an owner."
 msgstr "%(name)s nie jest już właścicielem."
 
-#: crm/zetom/admin/requestmain.py:1187
+#: crm/zetom/admin/requestmain.py:1186
 msgid "Reason required"
 msgstr "Wymagany powód"
 
-#: crm/zetom/admin/requestmain.py:1196
+#: crm/zetom/admin/requestmain.py:1195
 #, python-format
 msgid "Status changed to %(status)s."
 msgstr "Status zmieniony na %(status)s."
 
-#: crm/zetom/admin/requestmain.py:1213
+#: crm/zetom/admin/requestmain.py:1212
 msgid "This request is already cancelled."
 msgstr "To zgłoszenie jest już anulowane."
 
-#: crm/zetom/admin/requestmain.py:1220
+#: crm/zetom/admin/requestmain.py:1219
 msgid "Request cancelled."
 msgstr "Zgłoszenie anulowane."
 
-#: crm/zetom/admin/requestmain.py:1234
+#: crm/zetom/admin/requestmain.py:1233
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:55
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:79
 msgid "Cancel request"
 msgstr "Anuluj zgłoszenie"
 
-#: crm/zetom/admin/requestmain.py:1248
+#: crm/zetom/admin/requestmain.py:1247
 msgid "Offer created."
 msgstr "Oferta utworzona."
 
-#: crm/zetom/admin/requestmain.py:1258
+#: crm/zetom/admin/requestmain.py:1257
 msgid "Order created."
 msgstr "Zlecenie utworzone."
 
-#: crm/zetom/admin/requestmain.py:1268
+#: crm/zetom/admin/requestmain.py:1267
 msgid "Application created."
 msgstr "Wniosek utworzony."
 
@@ -3190,45 +3297,45 @@ msgstr "Brak dostępnych weryfikatorów do powiadomienia."
 msgid "Review request sent."
 msgstr "Prośba o weryfikację wysłana."
 
-#: crm/zetom/admin/requestnull_validate.py:85
+#: crm/zetom/admin/requestnull_validate.py:84
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:111
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:159
 msgid "Owners"
 msgstr "Właściciele"
 
-#: crm/zetom/admin/requestnull_validate.py:110
+#: crm/zetom/admin/requestnull_validate.py:109
 msgid "Provide at least a phone or email for the new client."
 msgstr "Podaj co najmniej telefon lub e-mail dla nowego klienta."
 
-#: crm/zetom/admin/requestnull_validate.py:131
-#: crm/zetom/admin/requestnull_validate.py:137
-#: crm/zetom/admin/requestnull_validate.py:163
+#: crm/zetom/admin/requestnull_validate.py:130
+#: crm/zetom/admin/requestnull_validate.py:136
+#: crm/zetom/admin/requestnull_validate.py:162
 msgid "present"
 msgstr "obecny"
 
-#: crm/zetom/admin/requestnull_validate.py:131
-#: crm/zetom/admin/requestnull_validate.py:137
-#: crm/zetom/admin/requestnull_validate.py:145
+#: crm/zetom/admin/requestnull_validate.py:130
+#: crm/zetom/admin/requestnull_validate.py:136
+#: crm/zetom/admin/requestnull_validate.py:144
 msgid "required, missing"
 msgstr "wymagane, brakuje"
 
-#: crm/zetom/admin/requestnull_validate.py:145
+#: crm/zetom/admin/requestnull_validate.py:144
 msgid "E.164 format"
 msgstr "Format E.164"
 
-#: crm/zetom/admin/requestnull_validate.py:154
+#: crm/zetom/admin/requestnull_validate.py:153
 msgid "valid"
 msgstr "poprawny"
 
-#: crm/zetom/admin/requestnull_validate.py:154
+#: crm/zetom/admin/requestnull_validate.py:153
 msgid "required, invalid"
 msgstr "wymagane, nieprawidłowe"
 
-#: crm/zetom/admin/requestnull_validate.py:162
+#: crm/zetom/admin/requestnull_validate.py:161
 msgid "optional · acceptable empty"
 msgstr "opcjonalne · dopuszczalnie puste"
 
-#: crm/zetom/admin/requestnull_validate.py:168 crm/zetom/forms.py:73
+#: crm/zetom/admin/requestnull_validate.py:167 crm/zetom/forms.py:73
 #: crm/zetom/models.py:72
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:109
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:95
@@ -3237,95 +3344,95 @@ msgstr "opcjonalne · dopuszczalnie puste"
 msgid "Message"
 msgstr "Wiadomość"
 
-#: crm/zetom/admin/requestnull_validate.py:171
+#: crm/zetom/admin/requestnull_validate.py:170
 msgid "free text from the website form"
 msgstr "tekst z formularza strony"
 
-#: crm/zetom/admin/requestnull_validate.py:172
+#: crm/zetom/admin/requestnull_validate.py:171
 msgid "no message provided"
 msgstr "brak wiadomości"
 
-#: crm/zetom/admin/requestnull_validate.py:183
+#: crm/zetom/admin/requestnull_validate.py:182
 msgid "Required fields missing — review before approving"
 msgstr "Brakuje wymaganych pól — sprawdź przed zatwierdzeniem"
 
-#: crm/zetom/admin/requestnull_validate.py:184
+#: crm/zetom/admin/requestnull_validate.py:183
 msgid "Approve is disabled until the snapshot has all required fields."
 msgstr ""
 "Zatwierdzenie jest zablokowane, dopóki migawka nie ma wszystkich wymaganych "
 "pól."
 
-#: crm/zetom/admin/requestnull_validate.py:189
+#: crm/zetom/admin/requestnull_validate.py:188
 msgid "No duplicate clients found · email domain looks fine"
 msgstr "Nie znaleziono duplikatów · domena e-mail wygląda poprawnie"
 
-#: crm/zetom/admin/requestnull_validate.py:190
+#: crm/zetom/admin/requestnull_validate.py:189
 msgid "Proceed by creating a new client from the snapshot data."
 msgstr "Utwórz nowego klienta na podstawie danych ze migawki."
 
-#: crm/zetom/admin/requestnull_validate.py:195
+#: crm/zetom/admin/requestnull_validate.py:194
 msgid "One strong duplicate found · all required fields valid"
 msgstr "Znaleziono jeden silny duplikat · wszystkie wymagane pola poprawne"
 
-#: crm/zetom/admin/requestnull_validate.py:196
+#: crm/zetom/admin/requestnull_validate.py:195
 msgid "Recommended action: link to the proposed client."
 msgstr "Zalecana akcja: powiąż z proponowanym klientem."
 
-#: crm/zetom/admin/requestnull_validate.py:200
+#: crm/zetom/admin/requestnull_validate.py:199
 #, python-format
 msgid "%(n)d possible duplicates · pick the closest match"
 msgstr "%(n)d możliwych duplikatów · wybierz najbliższe dopasowanie"
 
-#: crm/zetom/admin/requestnull_validate.py:201
+#: crm/zetom/admin/requestnull_validate.py:200
 msgid "Several candidates match — review the badges before linking."
 msgstr "Kilku kandydatów pasuje — sprawdź odznaki przed powiązaniem."
 
-#: crm/zetom/admin/requestnull_validate.py:304
+#: crm/zetom/admin/requestnull_validate.py:303
 msgid "Cancelled as duplicate from the Validation Window."
 msgstr "Anulowano jako duplikat z Okna walidacji."
 
-#: crm/zetom/admin/requestnull_validate.py:321
+#: crm/zetom/admin/requestnull_validate.py:320
 msgid "Request discarded as spam (moved to Cancelled)."
 msgstr "Zlecenie odrzucone jako spam (przeniesione do Anulowanych)."
 
-#: crm/zetom/admin/requestnull_validate.py:327
+#: crm/zetom/admin/requestnull_validate.py:326
 msgid "This request was moved to trash as a duplicate."
 msgstr "To zgłoszenie przeniesiono do kosza jako duplikat."
 
-#: crm/zetom/admin/requestnull_validate.py:345
+#: crm/zetom/admin/requestnull_validate.py:344
 #, python-format
 msgid "%(n)d duplicate(s) moved to trash / cancelled."
 msgstr "Przeniesiono do kosza / anulowano duplikatów: %(n)d."
 
-#: crm/zetom/admin/requestnull_validate.py:358
+#: crm/zetom/admin/requestnull_validate.py:357
 msgid "Duplicate target not found."
 msgstr "Nie znaleziono wskazanego duplikatu."
 
-#: crm/zetom/admin/requestnull_validate.py:368
+#: crm/zetom/admin/requestnull_validate.py:367
 #, python-format
 msgid "Existing request #%(id)d cancelled as duplicate."
 msgstr "Istniejące zgłoszenie #%(id)d anulowano jako duplikat."
 
-#: crm/zetom/admin/requestnull_validate.py:373
+#: crm/zetom/admin/requestnull_validate.py:372
 #, python-format
 msgid "Existing validation request #%(id)d moved to trash."
 msgstr "Istniejące zgłoszenie walidacji #%(id)d przeniesiono do kosza."
 
-#: crm/zetom/admin/requestnull_validate.py:388
+#: crm/zetom/admin/requestnull_validate.py:387
 msgid "Existing request updated with this data; this request was removed."
 msgstr ""
 "Istniejące zgłoszenie zaktualizowano tymi danymi; to zgłoszenie zostało "
 "usunięte."
 
-#: crm/zetom/admin/requestnull_validate.py:399
+#: crm/zetom/admin/requestnull_validate.py:398
 msgid "This request was updated from the existing duplicate."
 msgstr "To zgłoszenie zaktualizowano z istniejącego duplikatu."
 
-#: crm/zetom/admin/requestnull_validate.py:478
+#: crm/zetom/admin/requestnull_validate.py:477
 msgid "Request approved and promoted."
 msgstr "Zlecenie zatwierdzone i awansowane."
 
-#: crm/zetom/admin/requestnull_validate.py:503
+#: crm/zetom/admin/requestnull_validate.py:502
 #, python-format
 msgid "Validation Window — RequestNull #%(id)d"
 msgstr "Okno walidacji — RequestNull #%(id)d"
@@ -3709,39 +3816,33 @@ msgstr "brak innych sygnałów"
 msgid ""
 "Hello,\n"
 "\n"
-"we would like to remind you about our offer %(code)s. Please let us know if "
-"you have any questions or if we can proceed."
+"we would like to remind you about our offer %(code)s. Please let us know if you have any questions or if we can proceed."
 msgstr ""
 "Dzień dobry,\n"
 "\n"
-"uprzejmie przypominamy o naszej ofercie %(code)s. Prosimy o informację, czy "
-"mają Państwo pytania lub czy możemy przystąpić do realizacji."
+"uprzejmie przypominamy o naszej ofercie %(code)s. Prosimy o informację, czy mają Państwo pytania lub czy możemy przystąpić do realizacji."
 
 #: crm/zetom/services/reminder_targets.py:76
 #, python-format
 msgid ""
 "Hello,\n"
 "\n"
-"we would like to remind you about your order %(code)s. Please contact us if "
-"anything needs to be clarified."
+"we would like to remind you about your order %(code)s. Please contact us if anything needs to be clarified."
 msgstr ""
 "Dzień dobry,\n"
 "\n"
-"uprzejmie przypominamy o Państwa zleceniu %(code)s. Prosimy o kontakt, jeśli "
-"coś wymaga wyjaśnienia."
+"uprzejmie przypominamy o Państwa zleceniu %(code)s. Prosimy o kontakt, jeśli coś wymaga wyjaśnienia."
 
 #: crm/zetom/services/reminder_targets.py:79
 #, python-format
 msgid ""
 "Hello,\n"
 "\n"
-"we would like to remind you about your application %(code)s. Please send us "
-"any missing documents or information."
+"we would like to remind you about your application %(code)s. Please send us any missing documents or information."
 msgstr ""
 "Dzień dobry,\n"
 "\n"
-"uprzejmie przypominamy o Państwa wniosku %(code)s. Prosimy o przesłanie "
-"brakujących dokumentów lub informacji."
+"uprzejmie przypominamy o Państwa wniosku %(code)s. Prosimy o przesłanie brakujących dokumentów lub informacji."
 
 #: crm/zetom/services/reminder_targets.py:82
 #, python-format
@@ -3914,8 +4015,8 @@ msgid ""
 "The selected document will be e-mailed to staff. Its status will flip from "
 "In progress → Waiting."
 msgstr ""
-"Wybrany dokument zostanie wysłany e-mailem do pracowników. Status zmieni się "
-"z W realizacji → Oczekujące."
+"Wybrany dokument zostanie wysłany e-mailem do pracowników. Status zmieni się"
+" z W realizacji → Oczekujące."
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:129
 msgid "Order (Zlecenie)"
@@ -3959,8 +4060,7 @@ msgid ""
 "            "
 msgstr ""
 "\n"
-"              Wiadomość zostanie wysłana do klienta: <strong>%(email)s</"
-"strong>\n"
+"              Wiadomość zostanie wysłana do klienta: <strong>%(email)s</strong>\n"
 "            "
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:237
@@ -3978,7 +4078,8 @@ msgstr "Dokument: %(doc)s"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:297
 msgid ""
-"Notification will be sent in-app to the specialist who requested this review."
+"Notification will be sent in-app to the specialist who requested this "
+"review."
 msgstr ""
 "Powiadomienie zostanie wysłane w aplikacji do specjalisty, który poprosił o "
 "weryfikację."
@@ -4242,7 +4343,8 @@ msgstr "+ nowy"
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:42
 msgid "Move all duplicates to trash / cancel them? This can be undone."
-msgstr "Przenieść wszystkie duplikaty do kosza / anulować je? Można to cofnąć."
+msgstr ""
+"Przenieść wszystkie duplikaty do kosza / anulować je? Można to cofnąć."
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:43
 msgid ""
@@ -4538,8 +4640,8 @@ msgstr "Te rekordy mają wspólne sygnały z tym zgłoszeniem."
 
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:215
 msgid ""
-"Move all duplicates to trash / cancel them? This is a soft delete and can be "
-"undone."
+"Move all duplicates to trash / cancel them? This is a soft delete and can be"
+" undone."
 msgstr ""
 "Przenieść wszystkie duplikaty do kosza / anulować je? To usunięcie miękkie, "
 "które można cofnąć."
@@ -4919,9 +5021,9 @@ msgid ""
 "likely a server configuration issue (invalid SMTP host). The staff will "
 "review your request manually."
 msgstr ""
-"Zgłoszenie zostało utworzone, ale nie udało się wysłać powiadomienia e-mail. "
-"Prawdopodobnie to problem z konfiguracją serwera (nieprawidłowy host SMTP). "
-"Pracownicy przejrzą zgłoszenie ręcznie."
+"Zgłoszenie zostało utworzone, ale nie udało się wysłać powiadomienia e-mail."
+" Prawdopodobnie to problem z konfiguracją serwera (nieprawidłowy host SMTP)."
+" Pracownicy przejrzą zgłoszenie ręcznie."
 
 #: crm/zetom/views.py:57
 msgid ""
