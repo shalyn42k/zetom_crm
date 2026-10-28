@@ -95,6 +95,20 @@ STALE_REQUEST_REMINDER_EPOCH = os.getenv("STALE_REQUEST_REMINDER_EPOCH", "2026-0
 # tick (no request, so no active language there; LANGUAGE_CODE is "en").
 CLIENT_EMAIL_LANGUAGE = os.getenv("CLIENT_EMAIL_LANGUAGE", "pl")
 
+# claude — signature under e-mails sent to clients (document sent from the
+# document window). The sender's own name, job title and e-mail come from
+# their user profile; these are the company's lines.
+COMPANY_SIGNATURE = {
+    "company": os.getenv(
+        "COMPANY_NAME",
+        "Zakłady Badań i Atestacji „ZETOM” im. Prof. F. Stauba w Katowicach sp. z o.o.",
+    ),
+    "address": os.getenv("COMPANY_ADDRESS", "ul. Ks. Bpa H. Bednorza 17, 40-384 Katowice"),
+    "www": os.getenv("COMPANY_WWW", "www.zetom.eu"),
+    "phone": os.getenv("COMPANY_PHONE", ""),
+    "tagline": "BADANIA | CERTYFIKACJA | SZKOLENIA | WZORCOWANIE",
+}
+
 # Прод-настройки безопасности (включаются автоматически при DEBUG=False).
 # Cloudflare терминирует TLS, поэтому редирект и сертификаты не наша забота.
 if not DEBUG:

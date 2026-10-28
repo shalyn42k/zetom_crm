@@ -129,13 +129,40 @@ class DocumentSourceAndSendTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)                    # no extra "in progress" mail
         sent = mail.outbox[0]
         self.assertEqual(sent.to, ["jan@acme.pl"])
-        self.assertIn("LTO/1/2025-10", sent.alternatives[0][0])
-        self.assertEqual(sent.alternatives[0][1], "text/html")
-        self.assertEqual(len(sent.attachments), 1)
+        html, mimetype = sent.alternatives[0]
+        self.assertEqual(mimetype, "text/html")
+        # body: the message + the sender's signature, not the document
+        self.assertIn("Dzień dobry", html)
+        self.assertIn("Anna Nowak", html)
+        self.assertIn("ZETOM", html)
+        self.assertIn("cid:zetom-logo", html)
+        self.assertNotIn("de-paper", html)
+        self.assertIn("Anna Nowak", sent.body)
+        # attachment: the document as a self-contained .html file + the inline logo
+        name, sheet, sheet_type = next(a for a in sent.attachments if isinstance(a, tuple))
+        self.assertTrue(name.endswith(".html"))
+        self.assertEqual(sheet_type, "text/html")
+        self.assertIn("LTO/1/2025-10", sheet)
+        self.assertIn("de-paper", sheet)
+        self.assertIn("data:image/png;base64,", sheet)
+        self.assertNotIn("/static/", sheet)
+        self.assertNotIn("var(--", sheet)
+        logo = next(a for a in sent.attachments if not isinstance(a, tuple))
+        self.assertEqual(logo["Content-ID"], "<zetom-logo>")
         self.oferta.refresh_from_db()
         self.assertEqual(self.oferta.status, Status.waiting)
         self.assertTrue(RequestAttachment.objects.filter(oferta=self.oferta, file__contains="wyslane").exists())
         self.assertEqual(StepNote.objects.get().channel, "email")
+
+    def test_default_message_has_no_signature_twice(self):
+        message = self.client.get(self.url).context["doc_window"]["send_message"]
+        self.assertTrue(message.startswith("Dzień dobry."))
+        self.assertNotIn("Z poważaniem", message)  # the signature is added on sending
+
+    def test_save_then_send_reopens_the_dialog(self):
+        response = self._post(completion_term="listopad 2025 r.", _open_send="1")
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["Location"].endswith("#send"))
 
     def test_send_to_a_typed_address(self):
         self.client.post(reverse("admin:zetom_oferta_send_to_client", args=[self.oferta.pk]),

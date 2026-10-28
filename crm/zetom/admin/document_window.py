@@ -14,9 +14,12 @@ The document text itself is a placeholder until the real templates arrive;
 "Create document" saves the current sheet as an HTML file (open it and
 print → "Save as PDF").
 """
+import base64
 import json
+from email.mime.image import MIMEImage
 
 from django import forms
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -25,9 +28,8 @@ from django.core.validators import validate_email
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
-from django.templatetags.static import static
 from django.urls import path, reverse
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.text import capfirst, slugify
 from django.utils.translation import gettext_lazy as _
 
@@ -78,19 +80,72 @@ def _send_subject(obj, paper):
     return f"{paper['doc_title']} {number} — ZETOM"
 
 
-# Default mail text — Polish (the client's language), one sentence per kind
-# because the noun's gender changes the wording.
+# Default mail text — Polish (the client's language), worded like the mails
+# ZETOM staff send by hand. The signature is added below it on sending, so it
+# is not part of the editable text.
 _SEND_MESSAGES = {
-    "Oferta": "Dzień dobry,\n\nw załączeniu przesyłamy ofertę {number}. W razie pytań prosimy o kontakt.",
-    "Zlecenie": "Dzień dobry,\n\nw załączeniu przesyłamy zlecenie {number}. W razie pytań prosimy o kontakt.",
-    "Wniosek": "Dzień dobry,\n\nw załączeniu przesyłamy wniosek {number}. W razie pytań prosimy o kontakt.",
+    "Oferta": (
+        "Dzień dobry.\n\nW załączniku umieściłem ofertę cenową {number} na wykonanie wzorcowania "
+        "przyrządu pomiarowego wyszczególnionego w zapytaniu ofertowym."
+    ),
+    "Zlecenie": "Dzień dobry.\n\nW załączniku umieściłem zlecenie {number}.",
+    "Wniosek": "Dzień dobry.\n\nW załączniku umieściłem wniosek {number}.",
 }
 
 
 def _send_message(obj, paper):
     number = getattr(obj, "offer_number", "") or paper["doc_code"]
-    text = _SEND_MESSAGES.get(type(obj).__name__, "Dzień dobry,\n\nw załączeniu przesyłamy dokument {number}.")
-    return text.format(number=number) + f"\n\nZ poważaniem,\n{paper['signer_name']}\nZespół Zetom"
+    text = _SEND_MESSAGES.get(type(obj).__name__, "Dzień dobry.\n\nW załączniku umieściłem dokument {number}.")
+    return text.format(number=number)
+
+
+def signature(user):
+    """The sender's mail signature: their own lines from the user profile,
+    the company's from settings.COMPANY_SIGNATURE."""
+    from crm.zetom.models import DepartmentsVariants
+
+    profile = getattr(user, "profile", None)
+    codes = (profile.main_departments or profile.departments) if profile else []
+    labels = dict(DepartmentsVariants.choices)
+    return {
+        **settings.COMPANY_SIGNATURE,
+        "name": user.get_full_name() or user.get_username(),
+        "job_title": (profile.job_title or "") if profile else "",
+        "department": ", ".join(str(labels.get(c, c)) for c in codes),
+        "email": user.email,
+    }
+
+
+def signature_text(sig):
+    lines = [sig["name"], sig["job_title"], "", sig["company"], sig["department"]]
+    if sig.get("phone"):
+        lines.append(f"tel. {sig['phone']}")
+    if sig["email"]:
+        lines.append(f"e-mail: {sig['email']}")
+    lines += [sig["www"], sig["address"]]
+    return "\n".join(line for i, line in enumerate(lines) if line or i == 2)
+
+
+def _logo_png():
+    from django.contrib.staticfiles import finders
+
+    path = finders.find("img/logo_mail.png")
+    if not path:
+        return b""
+    with open(path, "rb") as f:
+        return f.read()
+
+
+def standalone_sheet(paper):
+    """The document as one .html file that opens anywhere: inlined CSS and
+    the logo as a data: URI (the mail attachment and saved versions)."""
+    logo = _logo_png()
+    with translation.override(settings.CLIENT_EMAIL_LANGUAGE):
+        return render_to_string("admin/zetom/shared/document_standalone.html", {
+            **paper,
+            "email_css": email_css(),
+            "logo_url": f"data:image/png;base64,{base64.b64encode(logo).decode()}" if logo else "",
+        })
 
 
 _EMAIL_CSS = None
@@ -263,7 +318,7 @@ class DocumentWindowMixin:
         if not allowed:
             return HttpResponseForbidden(_("You don't have permission for this action."))
         paper = document_context(obj, request.user)
-        html = render_to_string("admin/zetom/shared/document_print.html", paper, request=request)
+        html = standalone_sheet(paper)
         version = sum(
             1 for a in self._files(obj) if a.file.name.rsplit("/", 1)[-1].startswith(slugify(paper["doc_code"]))
         ) + 1
@@ -307,17 +362,21 @@ class DocumentWindowMixin:
             return redirect(self._change_url(obj))
 
         paper = document_context(obj, request.user)
-        sheet_file = render_to_string("admin/zetom/shared/document_print.html", paper, request=request)
+        sheet_file = standalone_sheet(paper)
+        sig = signature(request.user)
+        logo = _logo_png()
+        attachments = [(f"{slugify(paper['doc_code'])}.html", sheet_file, "text/html")]
+        if logo:
+            image = MIMEImage(logo, "png")
+            image.add_header("Content-ID", "<zetom-logo>")
+            image.add_header("Content-Disposition", "inline", filename="zetom.png")
+            attachments.append((image,))
         html_body = render_to_string("admin/zetom/shared/document_email.html", {
-            **paper,
-            "message": message,
-            "email_css": email_css(),
-            "logo_url": request.build_absolute_uri(static("img/logo.avif")),
+            "subject": subject, "message": message, "signature": sig, "logo_cid": "zetom-logo" if logo else "",
         })
-        file_name = f"{slugify(paper['doc_code'])}.html"
         records = mail_service.send_to_client(
-            to=to, subject=subject, body=message, html_body=html_body,
-            attachments=[(file_name, sheet_file, "text/html")],
+            to=to, subject=subject, body=f"{message}\n\n--\n{signature_text(sig)}", html_body=html_body,
+            attachments=attachments,
             template_name="admin/zetom/shared/document_email.html",
             payload={"document_id": obj.pk, "document_kind": type(obj).__name__},
             actor=request.user,
@@ -350,6 +409,15 @@ class DocumentWindowMixin:
         )
         messages.success(request, _("Sent to %(email)s. Status: waiting for the client.") % {"email": to})
         return redirect(self._change_url(obj))
+
+    def response_change(self, request, obj):
+        # claude — "Send to client" with unsaved edits saves first
+        # (document_editor.js sets _open_send) and comes back with the send
+        # dialog open, so the client always gets what is on the screen.
+        response = super().response_change(request, obj)
+        if request.POST.get("_open_send") and response.status_code == 302:
+            response["Location"] = response["Location"].split("#")[0] + "#send"
+        return response
 
     # ---- page context ----------------------------------------------------
 
