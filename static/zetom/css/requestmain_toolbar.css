@@ -125,3 +125,70 @@
   .rm-linked-row { flex-wrap: wrap; }
   .rm-linked-actions { width: 100%; padding-left: 48px; }
 }
+
+/* ---- quiet empty states (no big green boxes in cards / history) -------- */
+#content-main .rm-card .rm-empty,
+.rm-modal .rm-empty {
+  display: block; padding: 6px 0; margin: 0; text-align: left;
+  background: none; border: 0; border-radius: 0;
+  font-size: 13px; font-style: normal; color: var(--text-subtle);
+}
+#content-main .rm-card .rm-empty[hidden], .rm-modal .rm-empty[hidden] { display: none; }
+
+/* ---- team card: people and departments on one edge -------------------- */
+#content-main .rm-team-depts { padding: 12px 0 0; margin-top: 10px; border-top: 1px solid var(--border); }
+#content-main .rm-team-depts .rm-history-section-title {
+  margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--text-subtle);
+}
+#content-main .rm-user-add,
+#content-main .rm-dept-add {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; margin-top: 10px; padding: 0;
+}
+#content-main .rm-user-add .rm-btn,
+#content-main .rm-dept-add .rm-btn { height: 36px; white-space: nowrap; }
+#content-main .rm-dept-list, #content-main .rm-user-list { margin: 0; padding: 0; }
+#content-main .rm-dept-row { padding-left: 0; padding-right: 0; }
+
+/* ---- documents card: one group per type ------------------------------- */
+#content-main .rm-docs { display: flex; flex-direction: column; gap: 10px; }
+.rm-dgroup { padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-soft); }
+.rm-dgroup__head { display: flex; align-items: center; gap: 8px; }
+.rm-dgroup__icon {
+  width: 26px; height: 26px; flex-shrink: 0; border-radius: var(--r-sm);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.rm-dgroup__title { margin: 0; font-size: 14px; font-weight: 700; color: var(--text); }
+.rm-dgroup__count { font-size: 12px; font-weight: 700; color: var(--text-subtle); }
+.rm-dgroup__new { margin-left: auto; }
+.rm-dgroup__list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.rm-dgroup__doc {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px;
+  border-radius: var(--r-sm); text-decoration: none; color: var(--text); background: var(--surface);
+  border: 1px solid var(--border);
+}
+.rm-dgroup__doc:hover { border-color: var(--accent); }
+.rm-dgroup__code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; font-weight: 600; }
+.rm-dgroup__status {
+  font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; white-space: nowrap;
+  color: var(--slate); background: color-mix(in srgb, var(--slate) 14%, transparent);
+}
+.rm-dgroup__status--in_progress { color: var(--blue); background: color-mix(in srgb, var(--blue) 14%, transparent); }
+.rm-dgroup__status--waiting { color: var(--amber); background: color-mix(in srgb, var(--amber) 14%, transparent); }
+.rm-dgroup__status--done { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
+.rm-dgroup__none { margin: 6px 0 0 34px; font-size: 12.5px; color: var(--text-subtle); }
+
+/* long file names never push the date out of the card */
+.rm-files { overflow: hidden; }
+.rm-files__row { min-width: 0; }
+
+/* ---- link-a-client modal: suggestion rows on one grid ------------------ */
+#rm-link-client-modal .rm-suggestion-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 4px 10px;
+  padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent); flex-wrap: nowrap;
+}
+#rm-link-client-modal .rm-sug-name { font-weight: 600; overflow-wrap: anywhere; }
+#rm-link-client-modal .rm-sug-badges { grid-column: 1 / 2; grid-row: 2; display: flex; flex-wrap: wrap; gap: 4px; }
+#rm-link-client-modal .rm-sug-score { grid-column: 2; grid-row: 1 / span 2; white-space: nowrap; }
+#rm-link-client-modal .rm-suggestion-row .rm-dupe-btn { grid-column: 3; grid-row: 1 / span 2; white-space: nowrap; }
+.rm-modal__panel--wide .rm-card__title { display: flex; align-items: center; gap: 8px; }

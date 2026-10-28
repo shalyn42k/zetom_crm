@@ -85,3 +85,17 @@ class RequestMainLayoutTests(TestCase):
         data = self.client.post(reverse("admin:zetom_requestmain_link_client_json", args=[self.req.pk, cl.pk])).json()
         self.assertEqual(data["email"], "ewa@acme.pl")
         self.assertIn("phone", data)
+
+    # claude — searchable selects and grouped documents
+    def test_team_selects_are_searchable(self):
+        User.objects.create_user("extra", "e@zetom.pl", "x", is_staff=True)
+        html = self.client.get(reverse("admin:zetom_requestmain_change", args=[self.req.pk])).content.decode()
+        self.assertIn('name="user_id" class="rm-select" data-combobox', html)
+        self.assertIn('name="dept_code" class="rm-select" data-combobox', html)
+
+    def test_documents_grouped_with_links(self):
+        from crm.zetom.models import Oferta
+        o = Oferta.objects.create(from_main=self.req, **DOC)
+        html = self.client.get(reverse("admin:zetom_requestmain_change", args=[self.req.pk])).content.decode()
+        self.assertIn('class="rm-dgroup__doc" href="%s"' % reverse("admin:zetom_oferta_change", args=[o.pk]), html)
+        self.assertIn(reverse("admin:zetom_requestmain_oferta_action", args=[self.req.pk]), html)

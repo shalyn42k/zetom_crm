@@ -62,10 +62,13 @@ UNFOLD = {
     "STYLES": [
         lambda request: static("admin/css/clickable_rows.css"),
         lambda request: static("admin/css/notification_badge.css"),
+        # claude — searchable dropdowns (client picker, <select data-combobox>)
+        lambda request: static("admin/css/combobox.css"),
     ],
     "SCRIPTS": [
         lambda request: static("admin/js/clickable_rows.js"),
         lambda request: static("admin/js/notification_badge.js"),
+        lambda request: static("admin/js/combobox.js"),
     ],
 
     "SITE_URL": "https://www.zetom.eu/",

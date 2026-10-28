@@ -1,0 +1,37 @@
+/* claude
+   Searchable dropdown shared by the client picker (crm/clients/static/client/
+   client_picker.js) and every <select data-combobox> (static/admin/js/
+   combobox.js). Loaded on every admin page via config/unfold_config.py.
+   Colours only from static/css/tokens.css roles.
+*/
+.cbx { position: relative; width: 100%; min-width: 0; }
+.cbx__input {
+  width: 100%; box-sizing: border-box; padding: 8px 32px 8px 11px;
+  font: inherit; font-size: 14px; color: var(--text);
+  background: var(--input-bg); border: 1px solid var(--input-border); border-radius: var(--r-md);
+}
+.cbx__input::placeholder { color: var(--text-subtle); }
+.cbx__input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.cbx::after {
+  content: ""; position: absolute; right: 12px; top: 50%; width: 7px; height: 7px; margin-top: -5px;
+  border-right: 2px solid var(--text-subtle); border-bottom: 2px solid var(--text-subtle);
+  transform: rotate(45deg); pointer-events: none;
+}
+.cbx--search::after { display: none; }
+
+.cbx__list {
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 1000;
+  max-height: 280px; overflow-y: auto; margin: 0; padding: 4px; list-style: none;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md);
+  box-shadow: var(--shadow-lg);
+}
+.cbx__list[hidden] { display: none; }
+.cbx__opt {
+  display: flex; flex-direction: column; gap: 1px; padding: 7px 10px;
+  border-radius: var(--r-sm); cursor: pointer; color: var(--text);
+}
+.cbx__opt[aria-selected="true"], .cbx__opt:hover { background: var(--surface-soft); }
+.cbx__opt-main { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.cbx__opt-sub { font-size: 12px; color: var(--text-subtle); overflow-wrap: anywhere; }
+.cbx__opt mark { background: color-mix(in srgb, var(--accent) 25%, transparent); color: inherit; border-radius: 2px; }
+.cbx__empty { padding: 9px 10px; font-size: 13px; color: var(--text-subtle); }

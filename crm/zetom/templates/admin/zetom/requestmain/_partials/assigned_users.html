@@ -91,9 +91,13 @@
 
   {% if assignable_users %}
     <div class="rm-user-add">
-      <select name="user_id" class="rm-select">
+      {# claude — searchable via static/admin/js/combobox.js #}
+      <select name="user_id" class="rm-select" data-combobox
+              data-combobox-placeholder="{% trans 'Search for a person…' %}"
+              data-combobox-empty="{% trans 'Nobody matches' %}">
+        <option value=""></option>
         {% for u in assignable_users %}
-          <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>
+          <option value="{{ u.pk }}" data-sub="{% if u.profile.role %}{% trans u.profile.role.name %}{% endif %}">{{ u.get_full_name|default:u.username }}</option>
         {% endfor %}
       </select>
       <button type="submit"
@@ -101,7 +105,7 @@
               formmethod="post"
               formnovalidate
               class="rm-btn rm-btn--primary rm-btn--sm">
-        + {% trans "Add user" %}
+        + {% trans "Add" %}
       </button>
     </div>
   {% endif %}

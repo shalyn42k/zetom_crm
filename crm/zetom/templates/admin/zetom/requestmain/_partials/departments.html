@@ -34,7 +34,10 @@
 
   {% if available_departments %}
     <div class="rm-dept-add">
-      <select name="dept_code" class="rm-select">
+      <select name="dept_code" class="rm-select" data-combobox
+              data-combobox-placeholder="{% trans 'Search for a department…' %}"
+              data-combobox-empty="{% trans 'No matching departments' %}">
+        <option value=""></option>
         {% for code, label in available_departments %}
           <option value="{{ code }}">{{ label }}</option>
         {% endfor %}
