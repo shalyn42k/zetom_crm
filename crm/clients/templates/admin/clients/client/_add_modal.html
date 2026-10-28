@@ -1,4 +1,4 @@
-{% load i18n %}
+{% load i18n static %}
 
 {% comment %}
 Add Client modal — reproduces design_handoff_add_client. Included from
@@ -59,16 +59,26 @@ server re-validates everything and answers with the new card's URL.
       <template x-if="kind === 'firma'">
         <div>
           <div class="field"><label>{% trans "Nazwa" %}</label><input type="text" x-model="form.name" placeholder="{% trans 'np. Zetom Sp. z o.o.' %}"></div>
-          <div class="field-row">
-            <div class="field"><label>{% trans "NIP" %}</label><input type="text" x-model="form.nip" placeholder="123-456-32-18"></div>
-            <div class="field"><label>{% trans "REGON" %}</label><input type="text" x-model="form.regon" placeholder="000000000"></div>
-          </div>
+          {% comment %}claude — NIP first-class: "Pobierz z rejestru" fills name, REGON and the address (MF VAT register){% endcomment %}
           <div class="field">
-            <label>{% trans "Typ dostawcy" %}</label>
-            <select x-model="form.type_supplier">
-              <option value="">{% trans "— brak —" %}</option>
-              {% for value, label in supplier_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
-            </select>
+            <label>{% trans "NIP" %}</label>
+            <div class="nip-row">
+              <input type="text" x-model="form.nip" placeholder="123-456-32-18" @keydown.enter.prevent="zetomNipLookup($data, '{% url 'clients:nip_lookup' %}', {address: true})">
+              <button type="button" class="btn sm" :disabled="nipBusy" @click="zetomNipLookup($data, '{% url 'clients:nip_lookup' %}', {address: true})">
+                <span x-show="!nipBusy">{% trans "Pobierz z rejestru" %}</span><span x-show="nipBusy" x-cloak>…</span>
+              </button>
+            </div>
+            <p class="nip-msg" x-show="nipMsg" x-cloak :class="nipError ? 'err' : ''" x-text="nipMsg"></p>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>{% trans "REGON" %}</label><input type="text" x-model="form.regon" placeholder="000000000"></div>
+            <div class="field">
+              <label>{% trans "Typ dostawcy" %}</label>
+              <select x-model="form.type_supplier">
+                <option value="">{% trans "— brak —" %}</option>
+                {% for value, label in supplier_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+              </select>
+            </div>
           </div>
           <div class="field-row">
             <div class="field"><label>{% trans "Kraj" %}</label><input type="text" x-model="form.country" placeholder="{% trans 'np. Polska' %}"></div>
@@ -169,3 +179,4 @@ server re-validates everything and answers with the new card's URL.
     </div>
   </div>
 </div>
+<script src="{% static 'clients/js/nip_lookup.js' %}"></script>

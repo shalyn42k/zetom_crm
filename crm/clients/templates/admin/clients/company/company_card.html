@@ -100,16 +100,26 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
             <form class="modal-b" @submit.prevent="submit()">
               <template x-if="errors.length"><div class="form-errors"><template x-for="e in errors" :key="e"><div x-text="e"></div></template></div></template>
               <div class="field"><label>{% trans "Nazwa" %}</label><input type="text" x-model="form.name" placeholder="{% trans 'np. Zetom Sp. z o.o.' %}"></div>
-              <div class="field-row">
-                <div class="field"><label>{% trans "NIP" %}</label><input type="text" x-model="form.nip" placeholder="123-456-32-18"></div>
-                <div class="field"><label>{% trans "REGON" %}</label><input type="text" x-model="form.regon" placeholder="000000000"></div>
-              </div>
+              {% comment %}claude — NIP on its own row with "Pobierz z rejestru" (MF VAT register, static/clients/js/nip_lookup.js){% endcomment %}
               <div class="field">
-                <label>{% trans "Typ dostawcy" %}</label>
-                <select x-model="form.type_supplier">
-                  <option value="">{% trans "— brak —" %}</option>
-                  {% for value, label in supplier_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
-                </select>
+                <label>{% trans "NIP" %}</label>
+                <div class="nip-row">
+                  <input type="text" x-model="form.nip" placeholder="123-456-32-18" @keydown.enter.prevent="zetomNipLookup($data, '{% url 'clients:nip_lookup' %}', {address: false})">
+                  <button type="button" class="btn sm" :disabled="nipBusy" @click="zetomNipLookup($data, '{% url 'clients:nip_lookup' %}', {address: false})">
+                    <span x-show="!nipBusy">{% trans "Pobierz z rejestru" %}</span><span x-show="nipBusy" x-cloak>…</span>
+                  </button>
+                </div>
+                <p class="nip-msg" x-show="nipMsg" x-cloak :class="nipError ? 'err' : ''" x-text="nipMsg"></p>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>{% trans "REGON" %}</label><input type="text" x-model="form.regon" placeholder="000000000"></div>
+                <div class="field">
+                  <label>{% trans "Typ dostawcy" %}</label>
+                  <select x-model="form.type_supplier">
+                    <option value="">{% trans "— brak —" %}</option>
+                    {% for value, label in supplier_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                  </select>
+                </div>
               </div>
             </form>
             <div class="modal-f">
@@ -560,4 +570,5 @@ function openCompanyStepNotes() {
   window.dispatchEvent(new CustomEvent('open-step-notes'));
 }
 </script>
+<script src="{% static 'clients/js/nip_lookup.js' %}"></script>
 {% endblock content %}

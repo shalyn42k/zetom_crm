@@ -771,3 +771,17 @@ def _attach_new_client(kind, obj, req_obj, link_model, user):
         request=req_obj, client=obj, defaults={"linked_by": user},
     )
     return None
+
+
+# claude — company data by NIP from the MF VAT register (services_nip_lookup).
+@login_required
+def nip_lookup(request):
+    if not user_has_perm(request.user, "view_clients"):
+        return JsonResponse({"ok": False, "error": gettext("You don't have permission for this action.")}, status=403)
+    from crm.clients.services_nip_lookup import NipLookupError, lookup_nip
+
+    try:
+        data = lookup_nip(request.GET.get("nip", ""))
+    except NipLookupError as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=200)
+    return JsonResponse({"ok": True, **data})

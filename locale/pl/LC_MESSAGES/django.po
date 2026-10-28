@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 08:36+0100\n"
+"POT-Creation-Date: 2026-10-28 08:43+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -202,10 +202,11 @@ msgstr "Następny kontakt z klientem o"
 msgid "Client not found."
 msgstr "Klient nie znaleziony."
 
-#: crm/clients/admin.py:355 crm/notification/views_messages.py:60
-#: crm/notification/views_messages.py:62 crm/users/views.py:199
-#: crm/zetom/admin/base.py:178 crm/zetom/admin/base.py:203
-#: crm/zetom/admin/children.py:68 crm/zetom/admin/deletedrequest.py:121
+#: crm/clients/admin.py:355 crm/clients/views.py:780
+#: crm/notification/views_messages.py:60 crm/notification/views_messages.py:62
+#: crm/users/views.py:199 crm/zetom/admin/base.py:178
+#: crm/zetom/admin/base.py:203 crm/zetom/admin/children.py:68
+#: crm/zetom/admin/deletedrequest.py:121
 #: crm/zetom/admin/deletedvalidationrequest.py:103
 #: crm/zetom/admin/document_window.py:231
 #: crm/zetom/admin/document_window.py:250
@@ -378,11 +379,11 @@ msgid "Full name"
 msgstr "Pełna nazwa"
 
 #: crm/clients/models.py:72
-#: crm/clients/templates/admin/clients/client/_add_modal.html:63
+#: crm/clients/templates/admin/clients/client/_add_modal.html:65
 #: crm/clients/templates/admin/clients/client/klienci_list.html:106
 #: crm/clients/templates/admin/clients/company/company_card.html:64
 #: crm/clients/templates/admin/clients/company/company_card.html:89
-#: crm/clients/templates/admin/clients/company/company_card.html:107
+#: crm/clients/templates/admin/clients/company/company_card.html:109
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:73
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:75
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:131
@@ -392,9 +393,9 @@ msgid "NIP"
 msgstr "NIP"
 
 #: crm/clients/models.py:75
-#: crm/clients/templates/admin/clients/client/_add_modal.html:64
+#: crm/clients/templates/admin/clients/client/_add_modal.html:75
 #: crm/clients/templates/admin/clients/company/company_card.html:90
-#: crm/clients/templates/admin/clients/company/company_card.html:108
+#: crm/clients/templates/admin/clients/company/company_card.html:119
 msgid "REGON"
 msgstr "REGON"
 
@@ -465,6 +466,25 @@ msgstr "Osoba kontaktowa"
 msgid "Company contacts"
 msgstr "Osoby kontaktowe"
 
+#: crm/clients/services_nip_lookup.py:66 crm/clients/services_nip_lookup.py:68
+#: crm/clients/services_nip_lookup.py:86
+msgid "This is not a valid NIP."
+msgstr "To nie jest poprawny NIP."
+
+#: crm/clients/services_nip_lookup.py:82 crm/clients/services_nip_lookup.py:88
+msgid "The tax register is not reachable right now. Try again later."
+msgstr "Rejestr podatników jest teraz niedostępny. Spróbuj ponownie później."
+
+#: crm/clients/services_nip_lookup.py:84
+msgid "The tax register's daily limit is used up. Try again tomorrow."
+msgstr ""
+"Dzienny limit zapytań do rejestru podatników został wyczerpany. Spróbuj "
+"jutro."
+
+#: crm/clients/services_nip_lookup.py:92
+msgid "No company with this NIP in the tax register."
+msgstr "W rejestrze podatników nie ma firmy z tym NIP."
+
 #: crm/clients/templates/admin/clients/client/_add_modal.html:17
 #: crm/clients/templates/admin/clients/client/klienci_list.html:57
 msgid "Dodaj klienta"
@@ -496,8 +516,8 @@ msgstr "Klient instytucjonalny"
 #: crm/clients/templates/admin/clients/client/_add_modal.html:48
 #: crm/clients/templates/admin/clients/client/person_card.html:77
 #: crm/clients/templates/admin/clients/client/person_card.html:95
-#: crm/clients/templates/admin/clients/company/company_card.html:194
-#: crm/clients/templates/admin/clients/company/company_card.html:237
+#: crm/clients/templates/admin/clients/company/company_card.html:205
+#: crm/clients/templates/admin/clients/company/company_card.html:248
 msgid "Imię"
 msgstr "Imię"
 
@@ -509,8 +529,8 @@ msgstr "np. Jan"
 #: crm/clients/templates/admin/clients/client/_add_modal.html:49
 #: crm/clients/templates/admin/clients/client/person_card.html:78
 #: crm/clients/templates/admin/clients/client/person_card.html:96
-#: crm/clients/templates/admin/clients/company/company_card.html:194
-#: crm/clients/templates/admin/clients/company/company_card.html:238
+#: crm/clients/templates/admin/clients/company/company_card.html:205
+#: crm/clients/templates/admin/clients/company/company_card.html:249
 msgid "Nazwisko"
 msgstr "Nazwisko"
 
@@ -520,26 +540,26 @@ msgid "np. Kowalski"
 msgstr "np. Kowalski"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:52
-#: crm/clients/templates/admin/clients/client/_add_modal.html:83
+#: crm/clients/templates/admin/clients/client/_add_modal.html:94
 #: crm/clients/templates/admin/clients/client/klienci_list.html:108
 #: crm/clients/templates/admin/clients/client/person_card.html:79
 #: crm/clients/templates/admin/clients/client/person_card.html:99
-#: crm/clients/templates/admin/clients/company/company_card.html:140
-#: crm/clients/templates/admin/clients/company/company_card.html:164
-#: crm/clients/templates/admin/clients/company/company_card.html:195
-#: crm/clients/templates/admin/clients/company/company_card.html:241
+#: crm/clients/templates/admin/clients/company/company_card.html:151
+#: crm/clients/templates/admin/clients/company/company_card.html:175
+#: crm/clients/templates/admin/clients/company/company_card.html:206
+#: crm/clients/templates/admin/clients/company/company_card.html:252
 msgid "Telefon"
 msgstr "Telefon"
 
 #: crm/clients/templates/admin/clients/client/_add_modal.html:53
-#: crm/clients/templates/admin/clients/client/_add_modal.html:84
+#: crm/clients/templates/admin/clients/client/_add_modal.html:95
 #: crm/clients/templates/admin/clients/client/klienci_list.html:109
 #: crm/clients/templates/admin/clients/client/person_card.html:80
 #: crm/clients/templates/admin/clients/client/person_card.html:100
-#: crm/clients/templates/admin/clients/company/company_card.html:139
-#: crm/clients/templates/admin/clients/company/company_card.html:165
-#: crm/clients/templates/admin/clients/company/company_card.html:194
-#: crm/clients/templates/admin/clients/company/company_card.html:242
+#: crm/clients/templates/admin/clients/company/company_card.html:150
+#: crm/clients/templates/admin/clients/company/company_card.html:176
+#: crm/clients/templates/admin/clients/company/company_card.html:205
+#: crm/clients/templates/admin/clients/company/company_card.html:253
 msgid "E-mail"
 msgstr "E-mail"
 
@@ -554,115 +574,120 @@ msgstr "Nazwa"
 msgid "np. Zetom Sp. z o.o."
 msgstr "np. Zetom Sp. z o.o."
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:67
+#: crm/clients/templates/admin/clients/client/_add_modal.html:69
+#: crm/clients/templates/admin/clients/company/company_card.html:113
+msgid "Pobierz z rejestru"
+msgstr "Pobierz z rejestru"
+
+#: crm/clients/templates/admin/clients/client/_add_modal.html:77
 #: crm/clients/templates/admin/clients/client/klienci_list.html:82
 #: crm/clients/templates/admin/clients/company/company_card.html:91
-#: crm/clients/templates/admin/clients/company/company_card.html:111
+#: crm/clients/templates/admin/clients/company/company_card.html:121
 msgid "Typ dostawcy"
 msgstr "Typ dostawcy"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:69
-#: crm/clients/templates/admin/clients/company/company_card.html:113
+#: crm/clients/templates/admin/clients/client/_add_modal.html:79
+#: crm/clients/templates/admin/clients/company/company_card.html:123
 msgid "— brak —"
 msgstr "— brak —"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:74
-#: crm/clients/templates/admin/clients/company/company_card.html:134
-#: crm/clients/templates/admin/clients/company/company_card.html:155
+#: crm/clients/templates/admin/clients/client/_add_modal.html:85
+#: crm/clients/templates/admin/clients/company/company_card.html:145
+#: crm/clients/templates/admin/clients/company/company_card.html:166
 msgid "Kraj"
 msgstr "Kraj"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:74
-#: crm/clients/templates/admin/clients/company/company_card.html:155
+#: crm/clients/templates/admin/clients/client/_add_modal.html:85
+#: crm/clients/templates/admin/clients/company/company_card.html:166
 msgid "np. Polska"
 msgstr "np. Polska"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:75
-#: crm/clients/templates/admin/clients/company/company_card.html:136
-#: crm/clients/templates/admin/clients/company/company_card.html:156
+#: crm/clients/templates/admin/clients/client/_add_modal.html:86
+#: crm/clients/templates/admin/clients/company/company_card.html:147
+#: crm/clients/templates/admin/clients/company/company_card.html:167
 msgid "Województwo"
 msgstr "Województwo"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:75
-#: crm/clients/templates/admin/clients/company/company_card.html:156
+#: crm/clients/templates/admin/clients/client/_add_modal.html:86
+#: crm/clients/templates/admin/clients/company/company_card.html:167
 msgid "np. mazowieckie"
 msgstr "np. mazowieckie"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:78
-#: crm/clients/templates/admin/clients/company/company_card.html:137
-#: crm/clients/templates/admin/clients/company/company_card.html:159
+#: crm/clients/templates/admin/clients/client/_add_modal.html:89
+#: crm/clients/templates/admin/clients/company/company_card.html:148
+#: crm/clients/templates/admin/clients/company/company_card.html:170
 msgid "Kod pocztowy"
 msgstr "Kod pocztowy"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:79
-#: crm/clients/templates/admin/clients/company/company_card.html:135
-#: crm/clients/templates/admin/clients/company/company_card.html:160
+#: crm/clients/templates/admin/clients/client/_add_modal.html:90
+#: crm/clients/templates/admin/clients/company/company_card.html:146
+#: crm/clients/templates/admin/clients/company/company_card.html:171
 msgid "Miasto"
 msgstr "Miasto"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:79
-#: crm/clients/templates/admin/clients/company/company_card.html:160
+#: crm/clients/templates/admin/clients/client/_add_modal.html:90
+#: crm/clients/templates/admin/clients/company/company_card.html:171
 msgid "np. Warszawa"
 msgstr "np. Warszawa"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:81
-#: crm/clients/templates/admin/clients/company/company_card.html:138
-#: crm/clients/templates/admin/clients/company/company_card.html:162
+#: crm/clients/templates/admin/clients/client/_add_modal.html:92
+#: crm/clients/templates/admin/clients/company/company_card.html:149
+#: crm/clients/templates/admin/clients/company/company_card.html:173
 msgid "Ulica"
 msgstr "Ulica"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:81
-#: crm/clients/templates/admin/clients/company/company_card.html:162
+#: crm/clients/templates/admin/clients/client/_add_modal.html:92
+#: crm/clients/templates/admin/clients/company/company_card.html:173
 msgid "np. Przemysłowa 12"
 msgstr "np. Przemysłowa 12"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:98
+#: crm/clients/templates/admin/clients/client/_add_modal.html:109
 msgid "Powiąż istniejące zgłoszenie"
 msgstr "Powiąż istniejące zgłoszenie"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:99
+#: crm/clients/templates/admin/clients/client/_add_modal.html:110
 msgid "opcjonalne"
 msgstr "opcjonalne"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:107
+#: crm/clients/templates/admin/clients/client/_add_modal.html:118
 msgid "Numer lub nazwa…"
 msgstr "Numer lub nazwa…"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:112
+#: crm/clients/templates/admin/clients/client/_add_modal.html:123
 msgid "Zostanie powiązane:"
 msgstr "Zostanie powiązane:"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:116
-#: crm/clients/templates/admin/clients/company/company_card.html:211
+#: crm/clients/templates/admin/clients/client/_add_modal.html:127
+#: crm/clients/templates/admin/clients/company/company_card.html:222
 msgid "Usuń"
 msgstr "Usuń"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:125
+#: crm/clients/templates/admin/clients/client/_add_modal.html:136
 msgid "Sugerowane · pasuje do kontaktu"
 msgstr "Sugerowane · pasuje do kontaktu"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:138
+#: crm/clients/templates/admin/clients/client/_add_modal.html:149
 msgid "Ostatnie"
 msgstr "Ostatnie"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:149
+#: crm/clients/templates/admin/clients/client/_add_modal.html:160
 msgid "Brak zgłoszeń do powiązania."
 msgstr "Brak zgłoszeń do powiązania."
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:160
+#: crm/clients/templates/admin/clients/client/_add_modal.html:171
 msgid "wpisz numer lub nazwę, aby zawęzić"
 msgstr "wpisz numer lub nazwę, aby zawęzić"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:167
+#: crm/clients/templates/admin/clients/client/_add_modal.html:178
 #: crm/clients/templates/admin/clients/client/person_card.html:104
 #: crm/clients/templates/admin/clients/client/person_card.html:208
-#: crm/clients/templates/admin/clients/company/company_card.html:119
-#: crm/clients/templates/admin/clients/company/company_card.html:169
-#: crm/clients/templates/admin/clients/company/company_card.html:251
+#: crm/clients/templates/admin/clients/company/company_card.html:130
+#: crm/clients/templates/admin/clients/company/company_card.html:180
+#: crm/clients/templates/admin/clients/company/company_card.html:262
 msgid "Anuluj"
 msgstr "Anuluj"
 
-#: crm/clients/templates/admin/clients/client/_add_modal.html:169
+#: crm/clients/templates/admin/clients/client/_add_modal.html:180
 msgid "Zapisz klienta"
 msgstr "Zapisz klienta"
 
@@ -771,16 +796,16 @@ msgstr "Formularz nie został zapisany. Zamknąć mimo to?"
 #: crm/clients/templates/admin/clients/client/person_card.html:478
 #: crm/clients/templates/admin/clients/client/person_card.html:490
 #: crm/clients/templates/admin/clients/client/person_card.html:511
-#: crm/clients/templates/admin/clients/company/company_card.html:449
-#: crm/clients/templates/admin/clients/company/company_card.html:535
+#: crm/clients/templates/admin/clients/company/company_card.html:460
+#: crm/clients/templates/admin/clients/company/company_card.html:546
 msgid "Błąd sieci — spróbuj ponownie."
 msgstr "Błąd sieci — spróbuj ponownie."
 
 #: crm/clients/templates/admin/clients/client/klienci_list.html:343
 #: crm/clients/templates/admin/clients/client/person_card.html:385
 #: crm/clients/templates/admin/clients/client/person_card.html:457
-#: crm/clients/templates/admin/clients/company/company_card.html:444
-#: crm/clients/templates/admin/clients/company/company_card.html:524
+#: crm/clients/templates/admin/clients/company/company_card.html:455
+#: crm/clients/templates/admin/clients/company/company_card.html:535
 msgid "Nie udało się zapisać."
 msgstr "Nie udało się zapisać."
 
@@ -800,8 +825,8 @@ msgstr "Dane osobowe"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:74
 #: crm/clients/templates/admin/clients/company/company_card.html:85
-#: crm/clients/templates/admin/clients/company/company_card.html:131
-#: crm/clients/templates/admin/clients/company/company_card.html:210
+#: crm/clients/templates/admin/clients/company/company_card.html:142
+#: crm/clients/templates/admin/clients/company/company_card.html:221
 msgid "Edytuj"
 msgstr "Edytuj"
 
@@ -815,9 +840,9 @@ msgstr "Dane osoby."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:105
 #: crm/clients/templates/admin/clients/client/person_card.html:209
-#: crm/clients/templates/admin/clients/company/company_card.html:120
-#: crm/clients/templates/admin/clients/company/company_card.html:170
-#: crm/clients/templates/admin/clients/company/company_card.html:252
+#: crm/clients/templates/admin/clients/company/company_card.html:131
+#: crm/clients/templates/admin/clients/company/company_card.html:181
+#: crm/clients/templates/admin/clients/company/company_card.html:263
 msgid "Zapisz"
 msgstr "Zapisz"
 
@@ -828,13 +853,13 @@ msgstr "Przypisz do firmy"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:120
 #: crm/clients/templates/admin/clients/client/person_card.html:201
-#: crm/clients/templates/admin/clients/company/company_card.html:195
-#: crm/clients/templates/admin/clients/company/company_card.html:244
+#: crm/clients/templates/admin/clients/company/company_card.html:206
+#: crm/clients/templates/admin/clients/company/company_card.html:255
 msgid "Stanowisko"
 msgstr "Stanowisko"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:120
-#: crm/clients/templates/admin/clients/company/company_card.html:196
+#: crm/clients/templates/admin/clients/company/company_card.html:207
 msgid "Operacje"
 msgstr "Operacje"
 
@@ -879,23 +904,23 @@ msgid "Rola tej osoby w wybranej firmie."
 msgstr "Rola tej osoby w wybranej firmie."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:201
-#: crm/clients/templates/admin/clients/company/company_card.html:244
+#: crm/clients/templates/admin/clients/company/company_card.html:255
 msgid "np. Dyrektor techniczny"
 msgstr "np. Dyrektor techniczny"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:204
-#: crm/clients/templates/admin/clients/company/company_card.html:202
-#: crm/clients/templates/admin/clients/company/company_card.html:247
+#: crm/clients/templates/admin/clients/company/company_card.html:213
+#: crm/clients/templates/admin/clients/company/company_card.html:258
 msgid "Główny kontakt"
 msgstr "Główny kontakt"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:204
-#: crm/clients/templates/admin/clients/company/company_card.html:247
+#: crm/clients/templates/admin/clients/company/company_card.html:258
 msgid "Główna osoba do kontaktu w tej firmie."
 msgstr "Główna osoba do kontaktu w tej firmie."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:221
-#: crm/clients/templates/admin/clients/company/company_card.html:263
+#: crm/clients/templates/admin/clients/company/company_card.html:274
 msgid "Powiązane zgłoszenia"
 msgstr "Powiązane zgłoszenia"
 
@@ -904,32 +929,32 @@ msgid "Brak zgłoszeń powiązanych z tą osobą."
 msgstr "Brak zgłoszeń powiązanych z tą osobą."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:256
-#: crm/clients/templates/admin/clients/company/company_card.html:301
+#: crm/clients/templates/admin/clients/company/company_card.html:312
 msgid "Zaplanowane"
 msgstr "Zaplanowane"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:269
-#: crm/clients/templates/admin/clients/company/company_card.html:314
+#: crm/clients/templates/admin/clients/company/company_card.html:325
 msgid "Oznacz jako wykonane"
 msgstr "Oznacz jako wykonane"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:290
-#: crm/clients/templates/admin/clients/company/company_card.html:335
+#: crm/clients/templates/admin/clients/company/company_card.html:346
 msgid "Brak zaplanowanych przypomnień."
 msgstr "Brak zaplanowanych przypomnień."
 
 #: crm/clients/templates/admin/clients/client/person_card.html:298
-#: crm/clients/templates/admin/clients/company/company_card.html:343
+#: crm/clients/templates/admin/clients/company/company_card.html:354
 msgid "Historia kontaktów"
 msgstr "Historia kontaktów"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:300
-#: crm/clients/templates/admin/clients/company/company_card.html:359
+#: crm/clients/templates/admin/clients/company/company_card.html:370
 msgid "Dodaj kontakt"
 msgstr "Dodaj kontakt"
 
 #: crm/clients/templates/admin/clients/client/person_card.html:321
-#: crm/clients/templates/admin/clients/company/company_card.html:384
+#: crm/clients/templates/admin/clients/company/company_card.html:395
 msgid "Brak historii kontaktów."
 msgstr "Brak historii kontaktów."
 
@@ -957,64 +982,64 @@ msgstr "Edytuj dane podstawowe"
 msgid "Dane identyfikacyjne firmy."
 msgstr "Dane identyfikacyjne firmy."
 
-#: crm/clients/templates/admin/clients/company/company_card.html:130
+#: crm/clients/templates/admin/clients/company/company_card.html:141
 msgid "Dane szczegółowe"
 msgstr "Dane szczegółowe"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:148
+#: crm/clients/templates/admin/clients/company/company_card.html:159
 msgid "Edytuj dane szczegółowe"
 msgstr "Edytuj dane szczegółowe"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:149
+#: crm/clients/templates/admin/clients/company/company_card.html:160
 msgid "Adres i dane kontaktowe firmy."
 msgstr "Adres i dane kontaktowe firmy."
 
-#: crm/clients/templates/admin/clients/company/company_card.html:188
+#: crm/clients/templates/admin/clients/company/company_card.html:199
 msgid "Osoby kontaktowe"
 msgstr "Osoby kontaktowe"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:189
-#: crm/clients/templates/admin/clients/company/company_card.html:230
+#: crm/clients/templates/admin/clients/company/company_card.html:200
+#: crm/clients/templates/admin/clients/company/company_card.html:241
 msgid "Dodaj osobę kontaktową"
 msgstr "Dodaj osobę kontaktową"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:221
+#: crm/clients/templates/admin/clients/company/company_card.html:232
 msgid "Brak osób kontaktowych przypisanych do tej firmy."
 msgstr "Brak osób kontaktowych przypisanych do tej firmy."
 
-#: crm/clients/templates/admin/clients/company/company_card.html:222
+#: crm/clients/templates/admin/clients/company/company_card.html:233
 msgid "Dodaj osobę"
 msgstr "Dodaj osobę"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:230
+#: crm/clients/templates/admin/clients/company/company_card.html:241
 msgid "Edytuj osobę kontaktową"
 msgstr "Edytuj osobę kontaktową"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:231
+#: crm/clients/templates/admin/clients/company/company_card.html:242
 msgid "Osoba kontaktowa powiązana z firmą."
 msgstr "Osoba kontaktowa powiązana z firmą."
 
-#: crm/clients/templates/admin/clients/company/company_card.html:237
+#: crm/clients/templates/admin/clients/company/company_card.html:248
 msgid "np. Marek"
 msgstr "np. Marek"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:238
+#: crm/clients/templates/admin/clients/company/company_card.html:249
 msgid "np. Wiśniewski"
 msgstr "np. Wiśniewski"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:281
+#: crm/clients/templates/admin/clients/company/company_card.html:292
 msgid "Brak zgłoszeń powiązanych z tą firmą."
 msgstr "Brak zgłoszeń powiązanych z tą firmą."
 
-#: crm/clients/templates/admin/clients/company/company_card.html:362
+#: crm/clients/templates/admin/clients/company/company_card.html:373
 msgid "Najpierw dodaj osobę kontaktową do tej firmy."
 msgstr "Najpierw dodaj osobę kontaktową do tej firmy."
 
-#: crm/clients/templates/admin/clients/company/company_card.html:362
+#: crm/clients/templates/admin/clients/company/company_card.html:373
 msgid "Brak osób do wyboru"
 msgstr "Brak osób do wyboru"
 
-#: crm/clients/templates/admin/clients/company/company_card.html:466
+#: crm/clients/templates/admin/clients/company/company_card.html:477
 msgid "Czy na pewno chcesz usunąć tę osobę kontaktową?"
 msgstr "Czy na pewno chcesz usunąć tę osobę kontaktową?"
 
@@ -3094,7 +3119,6 @@ msgid "Document saved to files: %(name)s"
 msgstr "Dokument zapisany w plikach: %(name)s"
 
 #: crm/zetom/admin/document_window.py:303
-#| msgid "Choose the client's email address."
 msgid "Enter a valid email address."
 msgstr "Wprowadź poprawny adres e-mail."
 
