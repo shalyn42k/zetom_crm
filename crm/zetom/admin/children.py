@@ -27,6 +27,7 @@ from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import StackedInline
+from unfold.widgets import UnfoldAdminTextInputWidget
 
 from crm.status_manager.services.status_service import (
     delete_child_document, save_child_with_status, update_parent,
@@ -151,6 +152,17 @@ class MarkDoneActionMixin:
         return redirect(change_url, object_id)
 
 
+# claude — Unfold-styled input with the browser's own calendar picker
+# (type="date" posts YYYY-MM-DD; DateField accepts it via input_formats).
+class CalendarDateWidget(UnfoldAdminTextInputWidget):
+    input_type = "date"
+
+    def format_value(self, value):
+        if hasattr(value, "strftime"):
+            return value.strftime("%Y-%m-%d")
+        return value or None
+
+
 # claude — lines of the offer table. Permissions follow the project's RBAC,
 # not Django's own model perms (which this project never populates — the
 # inline would otherwise be hidden from everyone but superusers).
@@ -159,12 +171,21 @@ class OfertaItemInline(StackedInline):
     # narrow for six columns side by side.
     model = OfertaItem
     extra = 0
-    fields = ("name", "details", "norm", "quantity", "unit_price", "position")
+    # No manual "order" field: lines keep the order they were added in.
+    fields = ("name", "details", "norm", "quantity", "unit_price")
+    placeholders = {
+        "name": "np. Maszyna wytrzymałościowa : DSI NIEMCY typ HOZ 4000/250",
+        "details": "np. Kierunek działania siły: rozciąganie, zakres :500kN.",
+        "norm": "np. wg Norma PN-EN ISO 7500-1; 2018",
+    }
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         field = super().formfield_for_dbfield(db_field, request, **kwargs)
-        if db_field.name == "details" and field is not None:
-            field.widget.attrs["rows"] = 3
+        if field is not None:
+            if db_field.name == "details":
+                field.widget.attrs["rows"] = 2
+            if db_field.name in self.placeholders:
+                field.widget.attrs["placeholder"] = self.placeholders[db_field.name]
         return field
     verbose_name = _("Offer item")
     verbose_name_plural = _("Offer items")
@@ -194,15 +215,37 @@ class OfertaAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMix
     list_filter = ("source",)
     readonly_fields = ("from_main",)
     inlines = [OfertaItemInline]
+    # claude — only what changes from offer to offer is on view; the number
+    # (set automatically) and the standard terms that are the same on almost
+    # every offer sit in a collapsed "More options".
     fieldsets = (
-        (_("Offer"), {"fields": ("offer_number", "offer_date", "subject", "inquiry_ref")}),
-        (_("Terms"), {"fields": (
-            "extra_costs", "vat_rate", "place_of_work", "completion_term",
-            "confirmation_document", "payment_terms",
-        )}),
+        (_("Offer"), {"fields": ("offer_date", "subject", "inquiry_channel", "inquiry_date")}),
+        (_("Price and deadline"), {"fields": ("extra_costs", "completion_term")}),
+        (_("More options"), {
+            "classes": ("collapse",),
+            "fields": ("offer_number", "vat_rate", "place_of_work", "confirmation_document", "payment_terms"),
+        }),
         CLIENT_FIELDSET,
         (_("Internal note"), {"classes": ("collapse",), "fields": ("notes",)}),
     )
+    # dates from a calendar (native date picker)
+    date_fields = ("offer_date", "inquiry_date")
+    placeholders = {
+        "offer_number": _("set automatically when empty"),
+        "completion_term": "np. listopad 2025 r.",
+        "extra_costs": "0,00",
+    }
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        field = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if field is None:
+            return field
+        if db_field.name in self.date_fields:
+            field.widget = CalendarDateWidget()
+            field.input_formats = ["%Y-%m-%d", "%d.%m.%Y"]
+        if db_field.name in self.placeholders:
+            field.widget.attrs["placeholder"] = self.placeholders[db_field.name]
+        return field
 
     # claude — after the item lines are saved: offer number in the sample's
     # LTO/<no>/<YYYY-MM> shape when left empty, today's date when none, and
@@ -240,6 +283,14 @@ class OfertaAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMix
 class ZlecenieAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, BaseRequestAdmin):
     actions = []
     form = AddZlecenie
+
+    # claude — deadline from a calendar, same as the offer dates
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        field = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if field is not None and db_field.name == "deadline":
+            field.widget = CalendarDateWidget()
+            field.input_formats = ["%Y-%m-%d", "%d.%m.%Y"]
+        return field
     list_display = (
         "from_main", "created_at", "updated_at", "company_name",
         "display_departments", "assignees_display", "colored_status", "source",

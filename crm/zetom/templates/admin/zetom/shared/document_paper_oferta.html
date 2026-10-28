@@ -35,7 +35,8 @@ are our guess, the margin is left out.
   <p class="of-subject">dotyczy : <u data-de-field="subject" data-de-empty="—">{{ doc.subject|default:"—" }}</u></p>
 
   <p class="of-intro">
-    W odpowiedzi na <span data-de-field="inquiry_ref" data-de-empty="Państwa zapytanie">{{ doc.inquiry_ref|default:"Państwa zapytanie" }}</span>
+    W odpowiedzi na <span data-de-field="inquiry_channel" data-de-map='{{ inquiry_phrases_json }}'>{{ doc.inquiry_phrase }}</span>
+    z dnia <span data-de-field="inquiry_date" data-de-empty="…">{{ doc.inquiry_date|date:"d.m.Y"|default:"…" }}</span> r.
     przedstawiamy poniżej naszą ofertę na wykonanie wzorcowania wyposażenia pomiarowego ujętego w zapytaniu ofertowym :
   </p>
 

@@ -14,6 +14,8 @@ The document text itself is a placeholder until the real templates arrive;
 "Create document" saves the current sheet as an HTML file (open it and
 print → "Save as PDF").
 """
+import json
+
 from django.contrib import messages
 from django.core.files.base import ContentFile
 from django.http import Http404, HttpResponseForbidden
@@ -53,6 +55,8 @@ def document_context(obj, user):
         "doc_date": timezone.localtime(obj.created_at) if obj.created_at else timezone.localtime(),
         "parent": parent,
         "signer_name": (signer.get_full_name() or signer.get_username()) if signer else "",
+        # claude — channel code -> Polish phrase, for the live preview of the offer
+        "inquiry_phrases_json": json.dumps(getattr(type(obj), "INQUIRY_PHRASES_PL", {}), ensure_ascii=False),
     }
 
 
@@ -183,6 +187,8 @@ class DocumentWindowMixin:
         return {
             **paper,
             "status_label": obj.get_status_display(),
+            # claude — the offer's own number leads the header when it has one
+            "title_number": getattr(obj, "offer_number", "") or "",
             "parent_url": reverse("admin:zetom_requestmain_change", args=[parent.pk]) if parent else "",
             "parent_code": f"REQ-{parent.created_at.year}-{parent.pk:04d}" if parent else "",
             "print_url": reverse(f"{prefix}_print", args=[obj.pk]),

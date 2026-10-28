@@ -185,10 +185,27 @@ class Oferta(RequestTemplate):
     subject = models.CharField(
         max_length=255, blank=True, default="wzorcowania przyrządów pomiarowych", verbose_name=_("Regarding"),
     )
-    inquiry_ref = models.CharField(
-        max_length=255, blank=True, verbose_name=_("In response to"),
-        help_text=_("e.g. e-mail z dnia 28.10.2025 r."),
+    # claude — "W odpowiedzi na <e-mail> z dnia <data>": a channel + a date
+    # (picked from a calendar) instead of free text typed every time.
+    class InquiryChannel(models.TextChoices):
+        EMAIL = "email", _("e-mail")
+        PHONE = "phone", _("phone call")
+        LETTER = "letter", _("letter")
+        FORM = "form", _("website form")
+
+    # Polish wording on the sheet — the document is always issued in Polish,
+    # whatever language the person editing it uses.
+    INQUIRY_PHRASES_PL = {
+        "email": "e-mail",
+        "phone": "zapytanie telefoniczne",
+        "letter": "pismo",
+        "form": "zapytanie złożone przez formularz",
+    }
+
+    inquiry_channel = models.CharField(
+        max_length=10, choices=InquiryChannel.choices, default=InquiryChannel.EMAIL, verbose_name=_("Inquiry received by"),
     )
+    inquiry_date = models.DateField(null=True, blank=True, verbose_name=_("Inquiry date"))
     extra_costs = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Additional costs (net)"),
     )
@@ -211,6 +228,10 @@ class Oferta(RequestTemplate):
 
     # claude
     @property
+    def inquiry_phrase(self):
+        return self.INQUIRY_PHRASES_PL.get(self.inquiry_channel, "")
+
+    @property
     def items_total(self):
         return sum((i.line_total for i in self.items.all()), Decimal("0"))
 
@@ -232,8 +253,8 @@ class OfertaItem(models.Model):
     oferta = models.ForeignKey(Oferta, on_delete=models.CASCADE, related_name="items", verbose_name=_("Offer"))
     position = models.PositiveSmallIntegerField(default=0, verbose_name=_("Sort order"))
     name = models.CharField(max_length=255, verbose_name=_("Instrument name"))
-    details = models.TextField(blank=True, verbose_name=_("Details"), help_text=_("e.g. Kierunek działania siły…"))
-    norm = models.CharField(max_length=255, blank=True, verbose_name=_("Standard"), help_text=_("e.g. wg Norma PN-EN ISO 7500-1; 2018"))
+    details = models.TextField(blank=True, verbose_name=_("Details"))
+    norm = models.CharField(max_length=255, blank=True, verbose_name=_("Standard"))
     quantity = models.PositiveIntegerField(default=1, verbose_name=_("Quantity"))
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Unit price (net)"))
 

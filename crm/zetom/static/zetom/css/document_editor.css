@@ -13,6 +13,7 @@
 }
 .de-bar__id { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .de-bar__code { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: .02em; }
+.de-bar__sub { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--text-subtle); }
 .de-bar__parent { font-size: 13px; color: var(--text-muted); text-decoration: none; }
 .de-bar__parent:hover { color: var(--accent); text-decoration: underline; }
 .de-bar__actions { display: flex; flex-wrap: wrap; gap: 8px; }

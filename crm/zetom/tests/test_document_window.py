@@ -44,7 +44,8 @@ class DocumentWindowTests(TestCase):
     def test_form_shows_only_template_and_client_fields(self):
         response = self._change(self.oferta)
         rendered = {f for fs in response.context["adminform"] for line in fs for f in line.fields}
-        self.assertTrue({"offer_number", "subject", "payment_terms", "notes", "first_name", "company_nip", "email", "phone"} <= rendered)
+        self.assertTrue({"offer_number", "offer_date", "inquiry_channel", "inquiry_date", "subject", "payment_terms",
+                         "notes", "first_name", "company_nip", "email", "phone"} <= rendered)
         self.assertNotIn("price", rendered)  # computed from the items
         self.assertTrue(rendered.isdisjoint({"departments", "assigned_to", "source", "from_main"}))
 
@@ -62,14 +63,14 @@ class DocumentWindowTests(TestCase):
     def test_save_still_works(self):
         url = reverse("admin:zetom_oferta_change", args=[self.oferta.pk])
         response = self.client.post(url, {
-            "offer_number": "", "offer_date": "", "subject": "wzorcowania", "inquiry_ref": "e-mail z dnia 28.10.2025 r.",
+            "offer_number": "", "offer_date": "", "subject": "wzorcowania", "inquiry_channel": "email", "inquiry_date": "2025-10-28",
             "extra_costs": "150", "vat_rate": "23", "place_of_work": "w miejscu użytkowania",
             "completion_term": "listopad 2025 r.", "confirmation_document": "Świadectwo", "payment_terms": "14 dni",
             "notes": "Updated", "first_name": "Jan", "last_name": "Kowalski",
             "company_name": "Acme", "company_nip": "", "email": "jan@client.pl", "phone": "+48501600300",
             "items-TOTAL_FORMS": "1", "items-INITIAL_FORMS": "0", "items-MIN_NUM_FORMS": "0", "items-MAX_NUM_FORMS": "1000",
             "items-0-name": "Maszyna wytrzymałościowa", "items-0-details": "zakres 500kN", "items-0-norm": "PN-EN ISO 7500-1",
-            "items-0-quantity": "1", "items-0-unit_price": "1200", "items-0-position": "0",
+            "items-0-quantity": "1", "items-0-unit_price": "1200",
             "_continue": "1",
         })
         self.assertEqual(response.status_code, 302, response.content[:3000])
@@ -79,6 +80,7 @@ class DocumentWindowTests(TestCase):
         self.assertEqual(self.oferta.notes, "Updated")
         self.assertTrue(self.oferta.offer_number.startswith(f"LTO/{self.oferta.pk}/"))
         self.assertIsNotNone(self.oferta.offer_date)
+        self.assertEqual(str(self.oferta.inquiry_date), "2025-10-28")
         # fields no longer on the form keep their values
         self.assertEqual(self.oferta.departments, ["DEPARTMENT_0"])
         self.assertEqual(list(self.oferta.assigned_to.all()), [self.user])
@@ -182,3 +184,21 @@ class OfertaTotalsTests(TestCase):
         self.assertEqual(o.net_total, Decimal("1350"))
         self.assertEqual(o.vat_amount, Decimal("310.50"))
         self.assertEqual(o.gross_total, Decimal("1660.50"))
+
+
+# claude
+class OfertaWindowOptimisedTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser("boss", "b@zetom.pl", "x")
+        self.client.force_login(self.user)
+        import datetime
+        self.o = Oferta.objects.create(offer_number="LTO/987/2025-10", inquiry_channel="phone",
+                                       inquiry_date=datetime.date(2025, 10, 28), **DOC)
+
+    def test_dates_use_calendar_and_header_shows_offer_number(self):
+        html = self.client.get(reverse("admin:zetom_oferta_change", args=[self.o.pk])).content.decode()
+        self.assertIn('type="date" name="offer_date"', html)
+        self.assertIn('type="date" name="inquiry_date" value="2025-10-28"', html)
+        self.assertIn('<span class="de-bar__code">LTO/987/2025-10</span>', html)
+        self.assertIn("zapytanie telefoniczne", html)  # Polish phrase on the sheet
+        self.assertIn("28.10.2025", html)

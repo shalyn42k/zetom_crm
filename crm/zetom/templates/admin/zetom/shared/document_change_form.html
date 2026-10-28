@@ -29,7 +29,12 @@ old per-model templates did.
 {% if doc_window %}
   <div class="de-bar">
     <div class="de-bar__id">
-      <span class="de-bar__code">{{ doc_window.doc_code }}</span>
+      {% if doc_window.title_number %}
+        <span class="de-bar__code">{{ doc_window.title_number }}</span>
+        <span class="de-bar__sub">{{ doc_window.doc_code }}</span>
+      {% else %}
+        <span class="de-bar__code">{{ doc_window.doc_code }}</span>
+      {% endif %}
       <span class="de-badge de-badge--{{ original.status }}">{{ doc_window.status_label }}</span>
     </div>
     <div class="de-bar__actions">
@@ -73,9 +78,8 @@ old per-model templates did.
             </form>
           {% endif %}
         </div>
-        <p class="de-card__hint">{% trans "Updates as you type. “Create document” saves this version to the files below." %}</p>
         <div class="de-preview" data-de-preview data-de-form="{{ opts.model_name }}_form">
-          {% include "admin/zetom/shared/document_paper.html" with doc=original kind=doc_window.kind doc_title=doc_window.doc_title doc_code=doc_window.doc_code doc_date=doc_window.doc_date signer_name=doc_window.signer_name %}
+          {% include "admin/zetom/shared/document_paper.html" with doc=original kind=doc_window.kind doc_title=doc_window.doc_title doc_code=doc_window.doc_code doc_date=doc_window.doc_date signer_name=doc_window.signer_name inquiry_phrases_json=doc_window.inquiry_phrases_json %}
         </div>
       </section>
     </aside>

@@ -26,8 +26,11 @@
       var name = target.dataset.deField;
       var input = form.querySelector('[name="' + name + '"]');
       if (!input) return;
+      var map = null;
+      try { map = target.dataset.deMap ? JSON.parse(target.dataset.deMap) : null; } catch (e) { map = null; }
       var update = function () {
         var text = formatValue(name, input);
+        if (map) text = map[input.value] || "";
         target.textContent = text || target.dataset.deEmpty || "";
         target.classList.toggle("de-empty", !text);
       };

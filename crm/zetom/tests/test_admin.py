@@ -340,7 +340,7 @@ class ChildSaveModelTests(TestCase):
             "departments": [],
             # claude — the offer window now carries the OfertaItem inline;
             # its management form must be present or the whole form is invalid.
-            "vat_rate": "23",
+            "vat_rate": "23", "inquiry_channel": "email",
             "items-TOTAL_FORMS": "0", "items-INITIAL_FORMS": "0",
             "items-MIN_NUM_FORMS": "0", "items-MAX_NUM_FORMS": "1000",
         }
