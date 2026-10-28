@@ -50,7 +50,9 @@ CLIENT_FIELDSET = (
     _("Client data on the document"),
     {
         "classes": ("collapse",),
-        "fields": (("first_name", "last_name"), ("company_name", "company_nip"), ("email", "phone")),
+        # one field per row: the left column of the document window is too
+        # narrow for pairs (the right-hand inputs spilled out of the card)
+        "fields": ("first_name", "last_name", "company_name", "company_nip", "email", "phone"),
     },
 )
 
