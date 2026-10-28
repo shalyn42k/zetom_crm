@@ -417,3 +417,16 @@ html:not(.dark) .cc-stage .pager span.active { background: var(--green); border-
    solid-green mistake above (accent text + border, no fill). */
 #content .cc-action-btn--accent { color: var(--green-bright) !important; border-color: color-mix(in srgb, var(--green-bright) 45%, var(--border-2)) !important; }
 #content .cc-action-btn--accent:hover { background: color-mix(in srgb, var(--green) 14%, var(--surface)) !important; }
+
+/* claude — NIP + "Pobierz z rejestru" (MF VAT register lookup) */
+.cc-stage .nip-row { display: flex; gap: 8px; align-items: stretch; }
+.cc-stage .nip-row input { flex: 1 1 auto; min-width: 0; }
+.cc-stage .nip-row .btn { flex-shrink: 0; white-space: nowrap; }
+.cc-stage .nip-msg { margin: 2px 0 0; font-size: 13px; color: var(--green); overflow-wrap: anywhere; }
+.cc-stage .nip-msg.err { color: var(--red); }
+/* fields in a row line up at the top even when one has a hint under it */
+.cc-stage .field-row { align-items: start; }
+/* claude — sections inside a dialog body are plain wrappers, so the body's
+   own gap doesn't reach their fields: stack them with the same gap. Shared
+   by every cc-stage dialog (client/company dialogs, work-log modal). */
+.cc-stage .modal-b > div:not(.field-row):not(.field):not(.type-opt):not([hidden]) { display: flex; flex-direction: column; gap: 16px; }

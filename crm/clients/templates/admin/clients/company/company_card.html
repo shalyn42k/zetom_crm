@@ -100,16 +100,26 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
             <form class="modal-b" @submit.prevent="submit()">
               <template x-if="errors.length"><div class="form-errors"><template x-for="e in errors" :key="e"><div x-text="e"></div></template></div></template>
               <div class="field"><label>{% trans "Nazwa" %}</label><input type="text" x-model="form.name" placeholder="{% trans 'np. Zetom Sp. z o.o.' %}"></div>
-              <div class="field-row">
-                <div class="field"><label>{% trans "NIP" %}</label><input type="text" x-model="form.nip" placeholder="123-456-32-18"></div>
-                <div class="field"><label>{% trans "REGON" %}</label><input type="text" x-model="form.regon" placeholder="000000000"></div>
-              </div>
+              {% comment %}claude — NIP on its own row with "Pobierz z rejestru" (MF VAT register, static/clients/js/nip_lookup.js){% endcomment %}
               <div class="field">
-                <label>{% trans "Typ dostawcy" %}</label>
-                <select x-model="form.type_supplier">
-                  <option value="">{% trans "— brak —" %}</option>
-                  {% for value, label in supplier_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
-                </select>
+                <label>{% trans "NIP" %}</label>
+                <div class="nip-row">
+                  <input type="text" x-model="form.nip" placeholder="123-456-32-18" @keydown.enter.prevent="zetomNipLookup($data, '{% url 'clients:nip_lookup' %}', {address: false})">
+                  <button type="button" class="btn sm" :disabled="nipBusy" @click="zetomNipLookup($data, '{% url 'clients:nip_lookup' %}', {address: false})">
+                    <span x-show="!nipBusy">{% trans "Pobierz z rejestru" %}</span><span x-show="nipBusy" x-cloak>…</span>
+                  </button>
+                </div>
+                <p class="nip-msg" x-show="nipMsg" x-cloak :class="nipError ? 'err' : ''" x-text="nipMsg"></p>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>{% trans "REGON" %}</label><input type="text" x-model="form.regon" placeholder="000000000"></div>
+                <div class="field">
+                  <label>{% trans "Typ dostawcy" %}</label>
+                  <select x-model="form.type_supplier">
+                    <option value="">{% trans "— brak —" %}</option>
+                    {% for value, label in supplier_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                  </select>
+                </div>
               </div>
             </form>
             <div class="modal-f">
@@ -229,6 +239,36 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
           </div>
           <form class="modal-b" @submit.prevent="submit()">
             <template x-if="errors.length"><div class="form-errors"><template x-for="e in errors" :key="e"><div x-text="e"></div></template></div></template>
+            {% comment %}claude — add mode: pick someone already in the client base, or create a new person{% endcomment %}
+            <div class="type-opt" x-show="mode === 'add'">
+              <button type="button" :class="source === 'existing' ? 'active person' : ''" @click="source = 'existing'">
+                <span><b>{% trans "Z bazy klientów" %}</b>{% trans "Osoba, która już jest w bazie" %}</span>
+              </button>
+              <button type="button" :class="source === 'new' ? 'active company' : ''" @click="source = 'new'">
+                <span><b>{% trans "Nowa osoba" %}</b>{% trans "Dodaj nową osobę do bazy" %}</span>
+              </button>
+            </div>
+            <div x-show="mode === 'add' && source === 'existing'" x-cloak>
+              <div class="field">
+                <label for="cp-search">{% trans "Znajdź osobę" %}</label>
+                <div class="cbx cbx--search">
+                  <input id="cp-search" type="text" class="cbx__input" autocomplete="off" x-model="q"
+                         @input.debounce.250ms="search()" @focus="search()"
+                         placeholder="{% trans 'Imię, nazwisko, e-mail lub telefon…' %}">
+                  <ul class="cbx__list" x-show="results !== null && !picked" x-cloak>
+                    <template x-for="p in results" :key="p.id">
+                      <li class="cbx__opt" @mousedown.prevent="pick(p)">
+                        <span class="cbx__opt-main" x-text="p.name"></span>
+                        <span class="cbx__opt-sub" x-text="[p.company, p.email, p.phone].filter(Boolean).join(' · ')"></span>
+                      </li>
+                    </template>
+                    <li class="cbx__empty" x-show="results && !results.length">{% trans "Nie znaleziono — dodaj jako nową osobę." %}</li>
+                  </ul>
+                </div>
+                <p class="nip-msg" x-show="picked" x-cloak x-text="picked && [picked.name, picked.email, picked.phone].filter(Boolean).join(' · ')"></p>
+              </div>
+            </div>
+            <div x-show="mode === 'edit' || source === 'new'">
             <div class="field-row">
               <div class="field"><label>{% trans "Imię" %}</label><input type="text" x-model="form.first_name" placeholder="{% trans 'np. Marek' %}"></div>
               <div class="field"><label>{% trans "Nazwisko" %}</label><input type="text" x-model="form.last_name" placeholder="{% trans 'np. Wiśniewski' %}"></div>
@@ -236,6 +276,7 @@ design_handoff_clients_unified/Zetom Klienci.html §2.
             <div class="field-row">
               <div class="field"><label>{% trans "Telefon" %}</label><input type="text" x-model="form.phone" placeholder="+48 …"></div>
               <div class="field"><label>{% trans "E-mail" %}</label><input type="email" x-model="form.email" placeholder="nazwa@firma.pl"></div>
+            </div>
             </div>
             <div class="field"><label>{% trans "Stanowisko" %}</label><input type="text" x-model="form.position" placeholder="{% trans 'np. Dyrektor techniczny' %}"></div>
             <label class="check">
@@ -453,6 +494,9 @@ function daneModal(section, initial) {
 // already used by addClientModal() in the Client change_list template.
 function personPanel(initialRows, canEdit) {
   const addUrl = "{% url 'admin:clients_company_person_add' company.pk %}";
+  // claude — existing person from the client base
+  const searchUrl = "{% url 'admin:clients_company_person_search' company.pk %}";
+  const attachUrl = "{% url 'admin:clients_company_person_attach' company.pk %}";
   const personBase = addUrl.replace(/add\/$/, '');
   const csrfToken = '{{ csrf_token }}';
   const confirmMsg = "{% trans 'Czy na pewno chcesz usunąć tę osobę kontaktową?' %}";
@@ -469,8 +513,24 @@ function personPanel(initialRows, canEdit) {
     saving: false,
     errors: [],
     form: emptyForm(),
+    source: 'existing',
+    q: '',
+    results: null,
+    picked: null,
+
+    async search() {
+      this.picked = null;
+      const r = await fetch(searchUrl + '?q=' + encodeURIComponent(this.q.trim()));
+      const j = await r.json();
+      this.results = j.results || [];
+    },
+    pick(p) { this.picked = p; this.q = p.name; },
 
     openAdd() {
+      this.source = 'existing';
+      this.q = '';
+      this.results = null;
+      this.picked = null;
       this.mode = 'add';
       this.editingPk = null;
       this.form = emptyForm();
@@ -504,7 +564,16 @@ function personPanel(initialRows, canEdit) {
       data.set('position', this.form.position);
       if (this.form.is_primary) data.set('is_primary', '1');
 
-      const url = this.mode === 'add' ? addUrl : (personBase + this.editingPk + '/edit/');
+      let url = this.mode === 'add' ? addUrl : (personBase + this.editingPk + '/edit/');
+      if (this.mode === 'add' && this.source === 'existing') {
+        if (!this.picked) {
+          this.errors = ["{% trans 'Wybierz osobę z listy.' %}"];
+          this.saving = false;
+          return;
+        }
+        data.set('person_id', this.picked.id);
+        url = attachUrl;
+      }
       try {
         const r = await fetch(url, {
           method: 'POST',
@@ -560,4 +629,5 @@ function openCompanyStepNotes() {
   window.dispatchEvent(new CustomEvent('open-step-notes'));
 }
 </script>
+<script src="{% static 'clients/js/nip_lookup.js' %}"></script>
 {% endblock content %}

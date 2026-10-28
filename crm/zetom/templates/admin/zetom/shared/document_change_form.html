@@ -46,7 +46,7 @@ old per-model templates did.
       </button>
       <a class="de-btn" href="{{ doc_window.print_url }}" target="_blank" rel="noopener">{% trans "Print / PDF" %}</a>
       {% if doc_window.can_send %}
-        <button type="button" class="de-btn de-btn--accent" onclick="document.querySelector('[data-de-send-overlay]').hidden = false">
+        <button type="button" class="de-btn de-btn--accent" data-de-send-open data-de-form="{{ opts.model_name }}_form">
           {% trans "Send to client" %}
         </button>
       {% endif %}
@@ -173,9 +173,11 @@ old per-model templates did.
     </div>
   </div>
   {% if doc_window.can_send %}
+  <input type="hidden" name="_open_send" value="" form="{{ opts.model_name }}_form" data-de-send-flag>
   {% comment %}
-  claude — "Send to client": the finished document goes by email (sheet in
-  the body + .html attachment), then the status moves to "waiting" (sent,
+  claude — "Send to client": the message + signature go by email, the
+  document as a self-contained .html attachment; unsaved edits are saved
+  first (document_editor.js), then the status moves to "waiting" (sent,
   waiting for the client), a copy lands in the files and the work log gets
   an entry. Its own <form>, outside the admin form.
   {% endcomment %}
@@ -186,20 +188,18 @@ old per-model templates did.
         {% csrf_token %}
         <div class="modal-h">
           <h3 id="de-send-title">{% trans "Send to client" %}</h3>
-          <p>{% trans "The document goes in the email and as an attached file. Afterwards the status is “waiting” — sent, waiting for the client." %}</p>
-          <p><b>{% trans "The saved version is sent — save your changes first." %}</b></p>
+          <p>{% trans "The message goes with your signature, the document as an attached file. Afterwards the status is “waiting” — sent, waiting for the client." %}</p>
           <button type="button" class="modal-x" onclick="this.closest('[data-de-send-overlay]').hidden = true" aria-label="{% trans 'Close' %}">×</button>
         </div>
         <div class="modal-b">
           <div class="field">
             <label for="de-send-to">{% trans "To" %}</label>
-            {% if doc_window.client_emails %}
-              <select id="de-send-to" name="to">
-                {% for email in doc_window.client_emails %}<option value="{{ email }}">{{ email }}</option>{% endfor %}
-              </select>
-            {% else %}
-              <p class="de-source__changed">{% trans "This request has no client email address." %}</p>
-            {% endif %}
+            {% comment %}claude — suggests the client's known addresses, any other address can be typed{% endcomment %}
+            <input id="de-send-to" type="email" name="to" list="de-send-emails" required autocomplete="off"
+                   value="{{ doc_window.client_emails.0|default:'' }}" placeholder="nazwa@firma.pl">
+            <datalist id="de-send-emails">
+              {% for email in doc_window.client_emails %}<option value="{{ email }}"></option>{% endfor %}
+            </datalist>
           </div>
           <div class="field">
             <label for="de-send-subject">{% trans "Subject" %}</label>
@@ -212,7 +212,7 @@ old per-model templates did.
         </div>
         <div class="modal-f">
           <button type="button" class="btn" onclick="this.closest('[data-de-send-overlay]').hidden = true">{% trans "Cancel" %}</button>
-          <button type="submit" class="btn primary"{% if not doc_window.client_emails %} disabled{% endif %}>{% trans "Send" %}</button>
+          <button type="submit" class="btn primary">{% trans "Send" %}</button>
         </div>
       </form>
     </div>

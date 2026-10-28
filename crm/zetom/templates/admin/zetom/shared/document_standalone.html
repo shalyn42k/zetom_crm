@@ -1,0 +1,22 @@
+{% load i18n %}<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ doc_title }} {{ doc_code }}</title>
+  {% comment %}
+  claude — the document as one self-contained .html file: the attachment of
+  the mail to the client and the version saved by "Create document". Opens
+  the same as the print page on any computer — the CSS is inlined with
+  every var() resolved (email_css()) and the logo is a data: URI, so nothing
+  is loaded from our server.
+  {% endcomment %}
+  <style>{{ email_css|safe }}</style>
+</head>
+<body class="de-print">
+  <div class="de-print__bar">
+    <button type="button" class="de-btn de-btn--accent" onclick="window.print()">{% trans "Print / Save as PDF" %}</button>
+  </div>
+  {% include "admin/zetom/shared/document_paper.html" %}
+</body>
+</html>

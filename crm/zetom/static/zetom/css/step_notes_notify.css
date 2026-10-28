@@ -62,5 +62,4 @@
 
 /* The contact/reminder sections are plain wrappers inside .modal-b, so the
    modal's own `gap` doesn't reach their fields — give them the same rhythm. */
-.cc-stage .modal-b > div > .field:not(:first-child),
-.cc-stage .modal-b > div > .field-row:not(:first-child) { margin-top: 16px; }
+/* section spacing inside dialogs: see clients/css/company_card.css */

@@ -1,23 +1,31 @@
-{% load i18n %}<!doctype html>
+<!doctype html>
 <html lang="pl">
 <head>
 <meta charset="utf-8">
-<title>{{ doc_title }} {{ doc_code }}</title>
+<title>{{ subject }}</title>
 {% comment %}
 claude — HTML body of the "send document to client" mail
-(DocumentWindowMixin.send_to_client_action): the message, then the same
-sheet as the preview / print page. CSS is inlined in <style> with every
-var() resolved (email_css()), and the logo is an absolute URL — mail
-clients load neither linked stylesheets nor relative paths.
+(DocumentWindowMixin.send_to_client_action): the sender's message, then the
+company signature, like the mails ZETOM staff send by hand. The document
+itself is the attached .html file, not part of the body.
+
+Styles are inline (Gmail drops <style> in places); the logo is an inline
+image part referenced by cid:, so it shows without loading anything.
 {% endcomment %}
-<style>{{ email_css|safe }}
-body { margin: 0; padding: 16px; background: #ffffff; color: #111111; font-family: Arial, Helvetica, sans-serif; }
-.mail-message { max-width: 210mm; margin: 0 auto 18px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
-.de-paper { border: 1px solid #dddddd; }
-</style>
 </head>
-<body>
-<div class="mail-message">{{ message }}</div>
-{% include "admin/zetom/shared/document_paper.html" %}
+<body style="margin:0;padding:16px;background:#ffffff;color:#222222;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;">
+<div style="white-space:pre-wrap;margin:0 0 22px;">{{ message }}</div>
+<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;line-height:1.45;color:#222222;">
+  <tr><td style="padding:0 0 2px;"><b>{{ signature.name }}</b></td></tr>
+  {% if signature.job_title %}<tr><td>{{ signature.job_title }}</td></tr>{% endif %}
+  <tr><td style="padding-top:6px;"><b>{{ signature.company }}</b></td></tr>
+  {% if signature.department %}<tr><td>{{ signature.department }}</td></tr>{% endif %}
+  {% if signature.phone %}<tr><td>tel. {{ signature.phone }}</td></tr>{% endif %}
+  {% if signature.email %}<tr><td>e-mail: <a href="mailto:{{ signature.email }}" style="color:#1a5fb4;">{{ signature.email }}</a></td></tr>{% endif %}
+  {% if signature.www %}<tr><td><a href="https://{{ signature.www }}" style="color:#1a5fb4;">{{ signature.www }}</a></td></tr>{% endif %}
+  {% if signature.address %}<tr><td>{{ signature.address }}</td></tr>{% endif %}
+  {% if logo_cid %}<tr><td style="padding-top:12px;"><img src="cid:{{ logo_cid }}" alt="ZETOM" width="180" style="display:block;width:180px;height:auto;border:0;"></td></tr>{% endif %}
+  {% if signature.tagline %}<tr><td style="padding-top:8px;"><span style="display:inline-block;padding:4px 10px;background:#0b7a3e;color:#ffffff;font-size:11px;font-weight:bold;letter-spacing:.06em;">{{ signature.tagline }}</span></td></tr>{% endif %}
+</table>
 </body>
 </html>

@@ -160,7 +160,46 @@
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !overlay.hidden) close(); });
   }
 
+  // claude — "Send to client": the saved version is what gets sent, so with
+  // unsaved edits the button saves first; the server answers with #send and
+  // the dialog opens on the reloaded page.
+  function snapshot(form) {
+    var parts = [];
+    new FormData(form).forEach(function (v, k) {
+      if (k !== "csrfmiddlewaretoken" && k !== "_open_send") parts.push(k + "=" + (typeof v === "string" ? v : v.name));
+    });
+    return parts.join("&");
+  }
+
+  function bindSend(button) {
+    var form = document.getElementById(button.dataset.deForm);
+    var overlay = document.querySelector("[data-de-send-overlay]");
+    if (!overlay) return;
+    var initial = form ? snapshot(form) : "";
+    var open = function () {
+      overlay.hidden = false;
+      var to = overlay.querySelector('[name="to"]');
+      if (to) to.focus();
+    };
+    button.addEventListener("click", function () {
+      if (form && snapshot(form) !== initial) {
+        var flag = document.querySelector("[data-de-send-flag]");
+        if (flag) flag.value = "1";
+        var save = document.querySelector('button[form="' + form.id + '"][name="_continue"]');
+        if (form.requestSubmit) form.requestSubmit(save || undefined);
+        else form.submit();
+        return;
+      }
+      open();
+    });
+    if (location.hash === "#send") {
+      history.replaceState(null, "", location.pathname + location.search);
+      open();
+    }
+  }
+
   function init() {
+    document.querySelectorAll("[data-de-send-open]").forEach(bindSend);
     document.querySelectorAll("[data-de-source]").forEach(bindSourceDialog);
     document.querySelectorAll("[data-de-preview]").forEach(function (preview) {
       bind(preview);

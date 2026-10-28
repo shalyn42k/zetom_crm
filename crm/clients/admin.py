@@ -824,6 +824,17 @@ class CompanyAdmin(admin.ModelAdmin):
                 view(views.company_person_delete),
                 name="clients_company_person_delete",
             ),
+            # claude — add an EXISTING person from the client base
+            path(
+                "<int:pk>/person/search/",
+                view(views.company_person_search),
+                name="clients_company_person_search",
+            ),
+            path(
+                "<int:pk>/person/attach/",
+                view(views.company_person_attach),
+                name="clients_company_person_attach",
+            ),
         ]
         return custom + urls
 

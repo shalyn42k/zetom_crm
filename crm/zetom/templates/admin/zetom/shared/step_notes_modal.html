@@ -202,14 +202,14 @@ user actually filled in on submit.
             {% endif %}
             <div class="field" x-show="notify === 'client'" x-cloak>
               <label for="sn-client-email">{% trans "Client address" %}</label>
-              {% if step_notes_notify.client_emails %}
-                <select id="sn-client-email" name="client_email" :disabled="kind !== 'reminder' || notify !== 'client'">
-                  {% for email in step_notes_notify.client_emails %}<option value="{{ email }}">{{ email }}</option>{% endfor %}
-                </select>
-                <p class="sn-hint">{% trans "Only addresses from this request, its documents and the client base." %}</p>
-              {% else %}
-                <p class="sn-hint sn-hint--warn">{% trans "This request has no client email address." %}</p>
-              {% endif %}
+              {% comment %}claude — known client addresses suggested, any address can be typed{% endcomment %}
+              <input id="sn-client-email" type="email" name="client_email" list="sn-client-emails" autocomplete="off"
+                     value="{{ step_notes_notify.client_emails.0|default:'' }}" placeholder="nazwa@firma.pl"
+                     :disabled="kind !== 'reminder' || notify !== 'client'">
+              <datalist id="sn-client-emails">
+                {% for email in step_notes_notify.client_emails %}<option value="{{ email }}"></option>{% endfor %}
+              </datalist>
+              <p class="sn-hint">{% trans "Pick a suggested address or type another one." %}</p>
             </div>
             {% endif %}
             <div class="field">
@@ -223,7 +223,7 @@ user actually filled in on submit.
               <label for="sn-text-reminder">{% trans "Note" %}</label>
               <textarea id="sn-text-reminder" name="text" rows="4" :disabled="kind !== 'reminder' || notify === 'client'"></textarea>
             </div>
-            {% if step_notes_notify.client_emails %}
+            {% if step_notes_notify %}
             <div class="field" x-show="notify === 'client'" x-cloak>
               <label for="sn-text-client">{% trans "Email text" %}</label>
               <textarea id="sn-text-client" name="text" rows="6" :disabled="kind !== 'reminder' || notify !== 'client'">{{ step_notes_notify.client_body }}</textarea>
