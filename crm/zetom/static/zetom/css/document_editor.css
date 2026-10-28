@@ -171,3 +171,7 @@
 .of-terms dt { font-weight: 700; }
 .of-terms dd { margin: 0; }
 .of-red { color: var(--paper-red); font-weight: 700; }
+
+/* "Skąd te dane?" dialog — the modal look comes from company_card.css (.cc-stage .modal) */
+.de-source .overlay[hidden] { display: none !important; }
+.de-source__changed { margin: 0; font-size: 13px; font-weight: 600; color: var(--amber); }

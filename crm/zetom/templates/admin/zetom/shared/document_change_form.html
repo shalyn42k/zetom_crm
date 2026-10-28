@@ -45,6 +45,11 @@ old per-model templates did.
         {% trans "Step notes" %}{% if doc_window.notes_count %} <span class="de-count">{{ doc_window.notes_count }}</span>{% endif %}
       </button>
       <a class="de-btn" href="{{ doc_window.print_url }}" target="_blank" rel="noopener">{% trans "Print / PDF" %}</a>
+      {% if doc_window.can_send %}
+        <button type="button" class="de-btn de-btn--accent" onclick="document.querySelector('[data-de-send-overlay]').hidden = false">
+          {% trans "Send to client" %}
+        </button>
+      {% endif %}
       {% if doc_window.mark_done_url %}
         <form method="post" action="{{ doc_window.mark_done_url }}" class="de-inline">
           {% csrf_token %}
@@ -125,6 +130,94 @@ old per-model templates did.
     {% endif %}
   </section>
 
+  {% comment %}
+  claude — "Skąd te dane?": shown by document_editor.js when the client data
+  on this document changed and Save is pressed. Its inputs belong to the
+  admin form through form= (the dialog itself sits outside it); the server
+  (DocumentWindowMixin.get_form) refuses the save without a channel and
+  turns the answer into a contact-log entry on this document.
+  {% endcomment %}
+  <div class="cc-stage de-source" data-de-source data-de-form="{{ opts.model_name }}_form"
+       data-de-client-fields="{{ doc_window.client_fields|join:',' }}" style="padding:0">
+    <div class="overlay" data-de-source-overlay hidden role="dialog" aria-modal="true" aria-labelledby="de-source-title">
+      <div class="modal">
+        <div class="modal-h">
+          <h3 id="de-source-title">{% trans "Where is the new client data from?" %}</h3>
+          <p>{% trans "You changed the client data on this document. Note the source — it goes to the work log." %}</p>
+          <button type="button" class="modal-x" data-de-source-close aria-label="{% trans 'Close' %}">×</button>
+        </div>
+        <div class="modal-b">
+          <p class="de-source__changed" data-de-source-changed></p>
+          <div class="field">
+            <label for="de-source-channel">{% trans "Channel" %}</label>
+            <select id="de-source-channel" name="source_channel" form="{{ opts.model_name }}_form">
+              <option value="">---------</option>
+              {% for value, label in doc_window.source_channels %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="de-source-person">{% trans "Who gave the data" %}</label>
+            <input id="de-source-person" type="text" name="source_person" maxlength="255" form="{{ opts.model_name }}_form"
+                   placeholder="{% trans 'e.g. Anna from accounting' %}">
+          </div>
+          <div class="field">
+            <label for="de-source-note">{% trans "Note" %}</label>
+            <textarea id="de-source-note" name="source_note" rows="3" form="{{ opts.model_name }}_form"></textarea>
+          </div>
+        </div>
+        <div class="modal-f">
+          <button type="button" class="btn" data-de-source-close>{% trans "Cancel" %}</button>
+          <button type="button" class="btn primary" data-de-source-save>{% trans "Save" %}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% if doc_window.can_send %}
+  {% comment %}
+  claude — "Send to client": the finished document goes by email (sheet in
+  the body + .html attachment), then the status moves to "waiting" (sent,
+  waiting for the client), a copy lands in the files and the work log gets
+  an entry. Its own <form>, outside the admin form.
+  {% endcomment %}
+  <div class="cc-stage de-source" style="padding:0">
+    <div class="overlay" data-de-send-overlay hidden role="dialog" aria-modal="true" aria-labelledby="de-send-title"
+         onclick="if (event.target === this) this.hidden = true">
+      <form class="modal" method="post" action="{{ doc_window.send_url }}">
+        {% csrf_token %}
+        <div class="modal-h">
+          <h3 id="de-send-title">{% trans "Send to client" %}</h3>
+          <p>{% trans "The document goes in the email and as an attached file. Afterwards the status is “waiting” — sent, waiting for the client." %}</p>
+          <p><b>{% trans "The saved version is sent — save your changes first." %}</b></p>
+          <button type="button" class="modal-x" onclick="this.closest('[data-de-send-overlay]').hidden = true" aria-label="{% trans 'Close' %}">×</button>
+        </div>
+        <div class="modal-b">
+          <div class="field">
+            <label for="de-send-to">{% trans "To" %}</label>
+            {% if doc_window.client_emails %}
+              <select id="de-send-to" name="to">
+                {% for email in doc_window.client_emails %}<option value="{{ email }}">{{ email }}</option>{% endfor %}
+              </select>
+            {% else %}
+              <p class="de-source__changed">{% trans "This request has no client email address." %}</p>
+            {% endif %}
+          </div>
+          <div class="field">
+            <label for="de-send-subject">{% trans "Subject" %}</label>
+            <input id="de-send-subject" type="text" name="subject" maxlength="255" value="{{ doc_window.send_subject }}" required>
+          </div>
+          <div class="field">
+            <label for="de-send-message">{% trans "Message" %}</label>
+            <textarea id="de-send-message" name="message" rows="7">{{ doc_window.send_message }}</textarea>
+          </div>
+        </div>
+        <div class="modal-f">
+          <button type="button" class="btn" onclick="this.closest('[data-de-send-overlay]').hidden = true">{% trans "Cancel" %}</button>
+          <button type="submit" class="btn primary"{% if not doc_window.client_emails %} disabled{% endif %}>{% trans "Send" %}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
   {% include "admin/zetom/shared/step_notes_modal.html" with step_notes_hide_inline_trigger=True %}
   <script src="{% static 'zetom/js/document_editor.js' %}?v={% now "U" %}" defer></script>
 {% else %}

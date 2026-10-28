@@ -16,18 +16,23 @@ print → "Save as PDF").
 """
 import json
 
+from django import forms
 from django.contrib import messages
+from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
+from django.templatetags.static import static
 from django.urls import path, reverse
 from django.utils import timezone
-from django.utils.text import slugify
+from django.utils.text import capfirst, slugify
 from django.utils.translation import gettext_lazy as _
 
 from crm.notification.services.request_mail import document_code
-from crm.zetom.models import RequestAttachment
+from crm.users.utils import user_has_perm
+from crm.zetom.models import RequestAttachment, StepNote
+from crm.zetom.services.reminder_targets import client_email_choices
 
 DOCUMENT_TITLES = {
     "Oferta": _("Offer"),
@@ -60,8 +65,104 @@ def document_context(obj, user):
     }
 
 
+# claude — the client data copied onto a document. Changing any of them on
+# the document needs a note of where the new data came from (a contact-log
+# entry), asked for by the "Skąd te dane?" dialog on save.
+CLIENT_FIELDS = ("first_name", "last_name", "company_name", "company_nip", "email", "phone")
+
+
+def _send_subject(obj, paper):
+    number = getattr(obj, "offer_number", "") or paper["doc_code"]
+    return f"{paper['doc_title']} {number} — ZETOM"
+
+
+# Default mail text — Polish (the client's language), one sentence per kind
+# because the noun's gender changes the wording.
+_SEND_MESSAGES = {
+    "Oferta": "Dzień dobry,\n\nw załączeniu przesyłamy ofertę {number}. W razie pytań prosimy o kontakt.",
+    "Zlecenie": "Dzień dobry,\n\nw załączeniu przesyłamy zlecenie {number}. W razie pytań prosimy o kontakt.",
+    "Wniosek": "Dzień dobry,\n\nw załączeniu przesyłamy wniosek {number}. W razie pytań prosimy o kontakt.",
+}
+
+
+def _send_message(obj, paper):
+    number = getattr(obj, "offer_number", "") or paper["doc_code"]
+    text = _SEND_MESSAGES.get(type(obj).__name__, "Dzień dobry,\n\nw załączeniu przesyłamy dokument {number}.")
+    return text.format(number=number) + f"\n\nZ poważaniem,\n{paper['signer_name']}\nZespół Zetom"
+
+
+_EMAIL_CSS = None
+
+
+def email_css():
+    """tokens.css + document_editor.css with every var(--x) replaced by its
+    light value: mail clients (Gmail…) don't support CSS custom properties."""
+    global _EMAIL_CSS
+    if _EMAIL_CSS is None:
+        import re
+
+        from django.contrib.staticfiles import finders
+
+        def read(name):
+            path = finders.find(name)
+            return open(path, encoding="utf-8").read() if path else ""
+
+        tokens = read("css/tokens.css")
+        root = tokens[tokens.find(":root"):]
+        root = root[:root.find("}")]
+        values = dict(re.findall(r"(--[\w-]+)\s*:\s*([^;]+);", root))
+
+        def resolve(match):
+            name, fallback = match.group(1), match.group(2)
+            value = values.get(name, fallback or "")
+            return resolve_all(value.strip())
+
+        def resolve_all(text):
+            return re.sub(r"var\((--[\w-]+)(?:\s*,\s*([^()]+))?\)", resolve, text)
+
+        _EMAIL_CSS = resolve_all(read("zetom/css/document_editor.css"))
+    return _EMAIL_CSS
+
+
 class DocumentWindowMixin:
     change_form_template = "admin/zetom/shared/document_change_form.html"
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form_class = super().get_form(request, obj, change=change, **kwargs)
+        if obj is None:
+            return form_class
+
+        class SourceLoggedForm(form_class):
+            def clean(self):
+                cleaned = super().clean()
+                self.client_changes = [f for f in CLIENT_FIELDS if f in self.changed_data]
+                if self.client_changes and not (self.data.get("source_channel") or "").strip():
+                    raise forms.ValidationError(
+                        _("Client data changed — say where the new data came from (contact log)."),
+                        code="source_required",
+                    )
+                return cleaned
+
+        return SourceLoggedForm
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        changes = getattr(form, "client_changes", None)
+        if change and changes:
+            obj = form.instance
+            labels = ", ".join(str(capfirst(obj._meta.get_field(f).verbose_name)) for f in changes)
+            channel = request.POST.get("source_channel", "")
+            StepNote.objects.create(
+                author=request.user,
+                kind=StepNote.Kind.CONTACT,
+                channel=channel if channel in StepNote.Channel.values else StepNote.Channel.OTHER,
+                contacted_at=timezone.now(),
+                contact_person=(request.POST.get("source_person") or "").strip()[:255],
+                action=str(_("Client data changed: %(fields)s") % {"fields": labels})[:255],
+                text=(request.POST.get("source_note") or "").strip(),
+                target_content_type=ContentType.objects.get_for_model(type(obj)),
+                target_object_id=obj.pk,
+            )
     # Oferta / Wniosek can be closed by hand; Zlecenie only through the chain.
     can_mark_done = False
 
@@ -79,6 +180,7 @@ class DocumentWindowMixin:
                 name=f"{prefix}_delete_file",
             ),
             path("<path:object_id>/create-document/", wrap(self.create_document_action), name=f"{prefix}_create_document"),
+            path("<path:object_id>/send-to-client/", wrap(self.send_to_client_action), name=f"{prefix}_send_to_client"),
         ] + urls
 
     # ---- helpers ---------------------------------------------------------
@@ -170,6 +272,80 @@ class DocumentWindowMixin:
         messages.success(request, _("Document saved to files: %(name)s") % {"name": name})
         return redirect(self._change_url(obj) + "#files")
 
+    def send_to_client_action(self, request, object_id):
+        """Email the finished document to the client: the sheet in the mail
+        body + the same sheet as an .html file. Then: status -> waiting
+        (sent, waiting for the client), a copy of what was sent in the files,
+        an entry in the work log."""
+        from crm.notification.services import mail_service
+        from crm.status_manager.services.status_service import (
+            handle_child_change,
+        )
+        from crm.status_manager.services.statuses import Status
+        from crm.users.utils import user_has_perm
+        from crm.zetom.services.reminder_targets import client_email_choices
+
+        if request.method != "POST":
+            return redirect(self._change_url(object_id))
+        obj, allowed = self._get_doc(request, object_id, change=True)
+        if not allowed or not user_has_perm(request.user, "send_documents"):
+            return HttpResponseForbidden(_("You don't have permission for this action."))
+
+        to = (request.POST.get("to") or "").strip()
+        subject = (request.POST.get("subject") or "").strip()
+        message = (request.POST.get("message") or "").strip()
+        if to not in client_email_choices(obj):
+            messages.error(request, _("Choose one of the client's addresses on this request."))
+            return redirect(self._change_url(obj))
+        if not subject:
+            messages.error(request, _("Subject is required."))
+            return redirect(self._change_url(obj))
+
+        paper = document_context(obj, request.user)
+        sheet_file = render_to_string("admin/zetom/shared/document_print.html", paper, request=request)
+        html_body = render_to_string("admin/zetom/shared/document_email.html", {
+            **paper,
+            "message": message,
+            "email_css": email_css(),
+            "logo_url": request.build_absolute_uri(static("img/logo.avif")),
+        })
+        file_name = f"{slugify(paper['doc_code'])}.html"
+        records = mail_service.send_to_client(
+            to=to, subject=subject, body=message, html_body=html_body,
+            attachments=[(file_name, sheet_file, "text/html")],
+            template_name="admin/zetom/shared/document_email.html",
+            payload={"document_id": obj.pk, "document_kind": type(obj).__name__},
+            actor=request.user,
+        )
+        if not any(r.status == "SENT" for r in records):
+            messages.error(request, _("The email could not be sent — see the email log."))
+            return redirect(self._change_url(obj))
+
+        # status: sent to the client, waiting for an answer (the FSM only
+        # allows new -> in_progress -> waiting, so walk it; no "in progress"
+        # auto-mail on the way — the client is getting the document itself).
+        obj._skip_in_progress_mail = True
+        if obj.status == Status.new:
+            handle_child_change(obj, Status.in_progress, reason=None, user=request.user)
+        if obj.status == Status.in_progress:
+            handle_child_change(obj, Status.waiting, reason=None, user=request.user)
+
+        stamp = timezone.localtime().strftime("%Y%m%d-%H%M")
+        RequestAttachment.objects.create(
+            **{self._fk_name(): obj},
+            file=ContentFile(sheet_file.encode("utf-8"), name=f"{slugify(paper['doc_code'])}-wyslane-{stamp}.html"),
+            uploaded_by=request.user,
+        )
+        StepNote.objects.create(
+            author=request.user, kind=StepNote.Kind.CONTACT, channel=StepNote.Channel.EMAIL,
+            contacted_at=timezone.now(), contact_person=to,
+            action=str(_("Document sent to the client: %(subject)s") % {"subject": subject})[:255],
+            text=message,
+            target_content_type=ContentType.objects.get_for_model(type(obj)), target_object_id=obj.pk,
+        )
+        messages.success(request, _("Sent to %(email)s. Status: waiting for the client.") % {"email": to})
+        return redirect(self._change_url(obj))
+
     # ---- page context ----------------------------------------------------
 
     def render_change_form(self, request, context, *args, **kwargs):
@@ -202,4 +378,11 @@ class DocumentWindowMixin:
             "upload_url": reverse(f"{prefix}_upload_files", args=[obj.pk]),
             "create_document_url": reverse(f"{prefix}_create_document", args=[obj.pk]),
             "notes_count": obj.step_notes.count(),
+            "client_fields": CLIENT_FIELDS,
+            "send_url": reverse(f"{prefix}_send_to_client", args=[obj.pk]),
+            "client_emails": client_email_choices(obj),
+            "send_subject": _send_subject(obj, paper),
+            "send_message": _send_message(obj, paper),
+            "can_send": can_change and user_has_perm(request.user, "send_documents"),
+            "source_channels": StepNote.Channel.choices,
         }

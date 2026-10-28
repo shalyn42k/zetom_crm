@@ -110,7 +110,58 @@
     new MutationObserver(rebuild).observe(form, { childList: true, subtree: true });
   }
 
+  // ---- "Skąd te dane?" before saving changed client data ---------------
+  function bindSourceDialog(box) {
+    var form = document.getElementById(box.dataset.deForm);
+    if (!form) return;
+    var names = (box.dataset.deClientFields || "").split(",").filter(Boolean);
+    var initial = {};
+    names.forEach(function (n) {
+      var el = form.querySelector('[name="' + n + '"]');
+      if (el) initial[n] = el.value;
+    });
+    var overlay = box.querySelector("[data-de-source-overlay]");
+    var channel = box.querySelector('[name="source_channel"]');
+    var changedLine = box.querySelector("[data-de-source-changed]");
+    var pendingSubmitter = null;
+
+    function changedFields() {
+      return names.filter(function (n) {
+        var el = form.querySelector('[name="' + n + '"]');
+        return el && el.value.trim() !== (initial[n] || "").trim();
+      }).map(function (n) {
+        var label = form.querySelector('label[for="id_' + n + '"]');
+        return label ? label.textContent.replace("*", "").trim() : n;
+      });
+    }
+    function open(fields) {
+      changedLine.textContent = fields.join(", ");
+      overlay.hidden = false;
+      channel.focus();
+    }
+    function close() { overlay.hidden = true; }
+
+    form.addEventListener("submit", function (e) {
+      var fields = changedFields();
+      if (fields.length && !channel.value) {
+        e.preventDefault();
+        pendingSubmitter = e.submitter || null;
+        open(fields);
+      }
+    });
+    box.querySelectorAll("[data-de-source-close]").forEach(function (b) { b.addEventListener("click", close); });
+    box.querySelector("[data-de-source-save]").addEventListener("click", function () {
+      if (!channel.value) { channel.focus(); channel.reportValidity && channel.setCustomValidity(""); return; }
+      close();
+      if (form.requestSubmit) form.requestSubmit(pendingSubmitter || undefined);
+      else form.submit();
+    });
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !overlay.hidden) close(); });
+  }
+
   function init() {
+    document.querySelectorAll("[data-de-source]").forEach(bindSourceDialog);
     document.querySelectorAll("[data-de-preview]").forEach(function (preview) {
       bind(preview);
       var form = document.getElementById(preview.dataset.deForm);

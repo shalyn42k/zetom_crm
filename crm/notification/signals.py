@@ -45,6 +45,11 @@ def _capture_old_status(sender, instance, **kwargs):
 def _send_client_on_in_progress(sender, instance, created, **kwargs):
     """If the document just transitioned into in_progress, email the client."""
     old = getattr(instance, "_old_status", None)
+    # claude — set by the "send document to client" action: the finished
+    # document is being emailed right now, a second "it's in progress" mail
+    # in the same second would only confuse the client.
+    if getattr(instance, "_skip_in_progress_mail", False):
+        return
     if old != instance.status and instance.status == Status.in_progress:
         request_mail.send_document_to_client(instance)
 

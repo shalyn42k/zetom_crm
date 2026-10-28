@@ -1,0 +1,23 @@
+{% load i18n %}<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>{{ doc_title }} {{ doc_code }}</title>
+{% comment %}
+claude — HTML body of the "send document to client" mail
+(DocumentWindowMixin.send_to_client_action): the message, then the same
+sheet as the preview / print page. CSS is inlined in <style> with every
+var() resolved (email_css()), and the logo is an absolute URL — mail
+clients load neither linked stylesheets nor relative paths.
+{% endcomment %}
+<style>{{ email_css|safe }}
+body { margin: 0; padding: 16px; background: #ffffff; color: #111111; font-family: Arial, Helvetica, sans-serif; }
+.mail-message { max-width: 210mm; margin: 0 auto 18px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+.de-paper { border: 1px solid #dddddd; }
+</style>
+</head>
+<body>
+<div class="mail-message">{{ message }}</div>
+{% include "admin/zetom/shared/document_paper.html" %}
+</body>
+</html>

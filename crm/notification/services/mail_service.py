@@ -11,7 +11,7 @@ import logging
 
 # Django imports
 from django.conf import settings
-from django.core.mail import EmailMessage, get_connection
+from django.core.mail import EmailMultiAlternatives, get_connection
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 # claude
-def _send(*, recipients, subject, body, template_name="", payload=None, actor=None):
+def _send(*, recipients, subject, body, template_name="", payload=None, actor=None, html_body=None, attachments=()):
     """One EmailNotification per recipient + send_mail per recipient.
 
     Records are created in PENDING before the SMTP call. On success — flip to
@@ -125,13 +125,19 @@ def _send(*, recipients, subject, body, template_name="", payload=None, actor=No
                 status=EmailStatus.PENDING,
             )
             try:
-                msg = EmailMessage(
+                # claude — optional HTML alternative and attachments
+                # (name, content, mimetype) for the document-to-client mail.
+                msg = EmailMultiAlternatives(
                     subject=subject,
                     body=body,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     to=[email],
                     connection=connection,
                 )
+                if html_body:
+                    msg.attach_alternative(html_body, "text/html")
+                for attachment in attachments or ():
+                    msg.attach(*attachment)
                 msg.send(fail_silently=False)
             except Exception as exc:
                 record.status = EmailStatus.FAILED
@@ -157,7 +163,7 @@ def _send(*, recipients, subject, body, template_name="", payload=None, actor=No
 
 
 # claude
-def send_to_client(*, to, subject, body, template_name="", payload=None, actor=None):
+def send_to_client(*, to, subject, body, template_name="", payload=None, actor=None, html_body=None, attachments=()):
     """Send a single email to a client address."""
     return _send(
         recipients=[to],
@@ -166,6 +172,8 @@ def send_to_client(*, to, subject, body, template_name="", payload=None, actor=N
         template_name=template_name,
         payload=payload,
         actor=actor,
+        html_body=html_body,
+        attachments=attachments,
     )
 
 

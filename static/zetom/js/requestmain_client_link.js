@@ -43,6 +43,19 @@
     return [email, phone].filter(Boolean).join(" \u00b7 ");
   }
 
+  // claude — the server filled the request's empty "Client information"
+  // fields from the linked client; mirror that in the open form (only where
+  // the input is still empty, so nothing typed gets overwritten).
+  function applyFilled(filled) {
+    Object.keys(filled || {}).forEach(function (name) {
+      var input = document.getElementById("id_" + name);
+      if (input && !input.value) {
+        input.value = filled[name];
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+  }
+
   function buildLinkedRow(cl, card) {
     var unlinkBase = card.dataset.unlinkUrl.replace("/0/", "/" + cl.pk + "/");
     // claude — was a hard-coded "/admin/clients/client/…": a 404 whenever
@@ -220,6 +233,7 @@
           .then(function (d) {
             if (d.ok) {
               var row = buildLinkedRow(d, card);
+              applyFilled(d.filled);
               if (empty) list.insertBefore(row, empty);
               else list.appendChild(row);
               hideEmpty();
@@ -248,6 +262,7 @@
             if (d.ok) {
               if (!d.created) { closeLinkModal(); showStatus(status, t("tAlreadyLinked", "Already linked."), true); return; }
               var row = buildLinkedRow(d, card);
+              applyFilled(d.filled);
               if (empty) list.insertBefore(row, empty);
               else list.appendChild(row);
               hideEmpty();
@@ -268,6 +283,7 @@
           .then(function (d) {
             if (d.ok) {
               var row = buildLinkedRow(d, card);
+              applyFilled(d.filled);
               if (empty) list.insertBefore(row, empty);
               else list.appendChild(row);
               hideEmpty();

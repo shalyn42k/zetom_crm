@@ -24,7 +24,7 @@ are our guess, the margin is left out.
       <i class="l"></i><i class="g"></i><i></i><i class="s"></i><i></i>
       <i class="s"></i><i></i><i></i><i></i><i></i>
     </div>
-    <img class="of-logo" src="{% static 'img/logo.avif' %}" alt="ZETOM">
+    <img class="of-logo" src="{% if logo_url %}{{ logo_url }}{% else %}{% static 'img/logo.avif' %}{% endif %}" alt="ZETOM">
   </header>
 
   <div class="of-meta">
