@@ -173,19 +173,22 @@ create/suggest flows in a live browser, not just by reading the markup.
       ---- Search-and-create form. Client select doubles as linker — Link
       button creates the M2M entry immediately via fetch, no page reload. ----
       {% endcomment %}
-      <dl class="rm-linked-fields">
-        <div class="rm-linked-field rm-linked-field--client">
-          <dt class="rm-linked-field__label"><label for="{{ form.client.id_for_label }}">{% trans "Client" %}</label></dt>
-          <dd class="rm-linked-field__value rm-client-select-row">
-            {{ form.client }}
-            <button type="button" id="rm-linker-btn" class="rm-dupe-btn link">{% trans "Link" %}</button>
-            <button type="button" id="rm-create-btn" class="rm-dupe-btn create">{% trans "Create from request" %}</button>
-          </dd>
+      {% comment %}
+      claude — search on top, full width; label above, short hint, then the
+      two ways out: link the person you picked, or create a new client from
+      this request's data. The request's own company / NIP / name fields
+      live in "Client information"; "Create" reads them from there by id.
+      {% endcomment %}
+      <div class="rm-link-search">
+        <label for="{{ form.client.id_for_label }}" class="rm-link-search__label">{% trans "Find a client" %}</label>
+        {{ form.client }}
+        <p class="rm-link-search__hint">{% trans "Type a surname, company or NIP and pick a person from the list." %}</p>
+        <div class="rm-link-search__actions">
+          <button type="button" id="rm-linker-btn" class="rm-tbtn rm-tbtn--primary">{% trans "Link" %}</button>
+          <span class="rm-link-search__or">{% trans "or" %}</span>
+          <button type="button" id="rm-create-btn" class="rm-tbtn">{% trans "Create a new client from this request" %}</button>
         </div>
-        {% comment %}claude — the request's own company / NIP / name fields moved
-        to "Client information" (one place to edit them); "Create from
-        request" still reads them from there by id.{% endcomment %}
-      </dl>
+      </div>
     </div>
   </div>
 </div>

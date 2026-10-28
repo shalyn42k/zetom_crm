@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-28 07:59+0100\n"
+"POT-Creation-Date: 2026-10-28 08:22+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -205,12 +205,12 @@ msgstr ""
 #: crm/clients/admin.py:355 crm/notification/views_messages.py:60
 #: crm/notification/views_messages.py:62 crm/users/views.py:199
 #: crm/zetom/admin/base.py:178 crm/zetom/admin/base.py:203
-#: crm/zetom/admin/children.py:66 crm/zetom/admin/deletedrequest.py:121
+#: crm/zetom/admin/children.py:68 crm/zetom/admin/deletedrequest.py:121
 #: crm/zetom/admin/deletedvalidationrequest.py:103
-#: crm/zetom/admin/document_window.py:232
-#: crm/zetom/admin/document_window.py:251
-#: crm/zetom/admin/document_window.py:265
-#: crm/zetom/admin/document_window.py:293 crm/zetom/admin/requestmain.py:813
+#: crm/zetom/admin/document_window.py:229
+#: crm/zetom/admin/document_window.py:248
+#: crm/zetom/admin/document_window.py:262
+#: crm/zetom/admin/document_window.py:292 crm/zetom/admin/requestmain.py:813
 #: crm/zetom/admin/requestmain.py:957 crm/zetom/admin/requestmain.py:1153
 #: crm/zetom/admin/requestmain.py:1178 crm/zetom/admin/requestmain_mail.py:64
 #: crm/zetom/admin/requestmain_resolve_review.py:115
@@ -289,7 +289,6 @@ msgstr ""
 #: crm/zetom/templates/admin/zetom/deletedvalidationrequest/change_form.html:59
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:71
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:125
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:182
 msgid "Client"
 msgstr ""
 
@@ -1811,7 +1810,7 @@ msgstr ""
 #: crm/users/templates/users/user_form.html:27
 #: crm/users/templates/users/user_profile_edit.html:122
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:64
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:210
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:213
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:18
 #: crm/zetom/templates/admin/zetom/shared/document_change_form.html:68
 #: crm/zetom/templates/admin/zetom/shared/document_change_form.html:171
@@ -2768,7 +2767,7 @@ msgstr ""
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:234
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:324
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:418
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:209
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:212
 #: crm/zetom/templates/admin/zetom/requestmain/reason_form.html:18
 #: crm/zetom/templates/admin/zetom/requestnull/validate.html:338
 #: crm/zetom/templates/admin/zetom/shared/document_change_form.html:170
@@ -2888,27 +2887,27 @@ msgstr ""
 msgid "Request not found."
 msgstr ""
 
-#: crm/zetom/admin/base.py:206 crm/zetom/admin/document_window.py:299
+#: crm/zetom/admin/base.py:206 crm/zetom/admin/document_window.py:298
 msgid "Choose one of the client's addresses on this request."
 msgstr ""
 
-#: crm/zetom/admin/base.py:322 crm/zetom/admin/children.py:224
-#: crm/zetom/admin/document_window.py:41 crm/zetom/models.py:229
+#: crm/zetom/admin/base.py:322 crm/zetom/admin/children.py:226
+#: crm/zetom/admin/document_window.py:38 crm/zetom/models.py:229
 #: crm/zetom/models.py:256
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:182
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:31
 msgid "Offer"
 msgstr ""
 
-#: crm/zetom/admin/base.py:324 crm/zetom/admin/children.py:303
-#: crm/zetom/admin/document_window.py:42 crm/zetom/models.py:306
+#: crm/zetom/admin/base.py:324 crm/zetom/admin/children.py:305
+#: crm/zetom/admin/document_window.py:39 crm/zetom/models.py:306
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:196
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:31
 msgid "Order"
 msgstr ""
 
-#: crm/zetom/admin/base.py:326 crm/zetom/admin/children.py:329
-#: crm/zetom/admin/document_window.py:43 crm/zetom/models.py:335
+#: crm/zetom/admin/base.py:326 crm/zetom/admin/children.py:331
+#: crm/zetom/admin/document_window.py:40 crm/zetom/models.py:335
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:210
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:31
 msgid "Application"
@@ -2931,53 +2930,53 @@ msgstr ""
 msgid "Client data on the document"
 msgstr ""
 
-#: crm/zetom/admin/children.py:70
+#: crm/zetom/admin/children.py:72
 msgid "Not found."
 msgstr "Not found."
 
-#: crm/zetom/admin/children.py:91
+#: crm/zetom/admin/children.py:93
 msgid "Document deleted."
 msgstr ""
 
-#: crm/zetom/admin/children.py:93 crm/zetom/admin/requestmain.py:305
+#: crm/zetom/admin/children.py:95 crm/zetom/admin/requestmain.py:305
 #: crm/zetom/admin/requestmain.py:1251
 msgid "Reason is required."
 msgstr ""
 
-#: crm/zetom/admin/children.py:111
+#: crm/zetom/admin/children.py:113
 #: crm/zetom/templates/admin/zetom/shared/document_change_form.html:63
 msgid "Delete document"
 msgstr ""
 
-#: crm/zetom/admin/children.py:120
+#: crm/zetom/admin/children.py:122
 msgid "Deleted via admin (bulk)"
 msgstr ""
 
-#: crm/zetom/admin/children.py:153
+#: crm/zetom/admin/children.py:155
 msgid "Marked as done."
 msgstr ""
 
-#: crm/zetom/admin/children.py:192 crm/zetom/models.py:265
+#: crm/zetom/admin/children.py:194 crm/zetom/models.py:265
 msgid "Offer item"
 msgstr ""
 
-#: crm/zetom/admin/children.py:193 crm/zetom/models.py:266
+#: crm/zetom/admin/children.py:195 crm/zetom/models.py:266
 msgid "Offer items"
 msgstr ""
 
-#: crm/zetom/admin/children.py:225
+#: crm/zetom/admin/children.py:227
 msgid "Price and deadline"
 msgstr ""
 
-#: crm/zetom/admin/children.py:226
+#: crm/zetom/admin/children.py:228
 msgid "More options"
 msgstr ""
 
-#: crm/zetom/admin/children.py:231
+#: crm/zetom/admin/children.py:233
 msgid "Internal note"
 msgstr ""
 
-#: crm/zetom/admin/children.py:236
+#: crm/zetom/admin/children.py:238
 msgid "set automatically when empty"
 msgstr ""
 
@@ -2998,52 +2997,52 @@ msgstr ""
 msgid "Request restored to the Validation Window."
 msgstr ""
 
-#: crm/zetom/admin/document_window.py:144
+#: crm/zetom/admin/document_window.py:141
 msgid "Client data changed — say where the new data came from (contact log)."
 msgstr ""
 
-#: crm/zetom/admin/document_window.py:164
+#: crm/zetom/admin/document_window.py:161
 #, python-format
 msgid "Client data changed: %(fields)s"
 msgstr ""
 
-#: crm/zetom/admin/document_window.py:235 crm/zetom/admin/requestmain.py:1313
+#: crm/zetom/admin/document_window.py:232 crm/zetom/admin/requestmain.py:1313
 msgid "No files selected."
 msgstr ""
 
-#: crm/zetom/admin/document_window.py:239
+#: crm/zetom/admin/document_window.py:236
 #, python-format
 msgid "Too large (max 20 MB): %(names)s"
 msgstr ""
 
-#: crm/zetom/admin/document_window.py:243 crm/zetom/admin/requestmain.py:1319
+#: crm/zetom/admin/document_window.py:240 crm/zetom/admin/requestmain.py:1319
 #, python-format
 msgid "%(n)d file(s) uploaded."
 msgstr ""
 
-#: crm/zetom/admin/document_window.py:256 crm/zetom/admin/requestmain.py:1332
+#: crm/zetom/admin/document_window.py:253 crm/zetom/admin/requestmain.py:1332
 msgid "Attachment deleted."
 msgstr ""
 
-#: crm/zetom/admin/document_window.py:275
+#: crm/zetom/admin/document_window.py:272
 #, python-format
 msgid "Document saved to files: %(name)s"
 msgstr ""
 
-#: crm/zetom/admin/document_window.py:302
+#: crm/zetom/admin/document_window.py:301
 msgid "Subject is required."
 msgstr ""
 
-#: crm/zetom/admin/document_window.py:322
+#: crm/zetom/admin/document_window.py:321
 msgid "The email could not be sent — see the email log."
 msgstr ""
 
-#: crm/zetom/admin/document_window.py:343
+#: crm/zetom/admin/document_window.py:342
 #, python-format
 msgid "Document sent to the client: %(subject)s"
 msgstr ""
 
-#: crm/zetom/admin/document_window.py:347
+#: crm/zetom/admin/document_window.py:346
 #, python-format
 msgid "Sent to %(email)s. Status: waiting for the client."
 msgstr ""
@@ -3937,7 +3936,7 @@ msgstr ""
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:258
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/actions_card.html:348
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:157
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:205
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:208
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:53
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/files_compact.html:43
 #: crm/zetom/templates/admin/zetom/requestmain/submit_line.html:62
@@ -4202,15 +4201,28 @@ msgid "Suggested matches"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:169
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:185
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:192
 msgid "Link"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:186
-msgid "Create from request"
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:188
+msgid "Find a client"
 msgstr ""
 
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:204
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:190
+msgid "Type a surname, company or NIP and pick a person from the list."
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:193
+msgid "or"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:194
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:86
+msgid "Create a new client from this request"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/requestmain/_partials/client_card.html:207
 msgid "Edit Client"
 msgstr ""
 
@@ -4334,10 +4346,6 @@ msgstr ""
 msgid ""
 "Select one or more clients to attach to this request. Matches are proposed "
 "by the same detector."
-msgstr ""
-
-#: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:86
-msgid "Create a new client from this request"
 msgstr ""
 
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/dupe_popup.html:86

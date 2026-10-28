@@ -201,3 +201,18 @@
 .rm-files__list, .rm-files__list li { min-width: 0; max-width: 100%; }
 .rm-files .rm-card__header > * { min-width: 0; }
 .rm-files .rm-card__header .rm-tbtn { flex-shrink: 0; }
+
+/* ---- link-a-client dialog: search first, full width ------------------- */
+#rm-link-client-modal .rm-modal__content { max-width: 600px; }
+#rm-link-client-modal .rm-suggestions { margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+#rm-link-client-modal .rm-suggestions:empty { display: none; }
+.rm-link-search { display: flex; flex-direction: column; gap: 8px; }
+.rm-link-search__label { font-size: 13px; font-weight: 700; color: var(--text); }
+.rm-link-search .cbx { width: 100%; }
+.rm-link-search .cbx__input { font-size: 15px; padding-top: 10px; padding-bottom: 10px; }
+.rm-link-search__hint { margin: 0; font-size: 12.5px; color: var(--text-subtle); }
+.rm-link-search__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; }
+.rm-link-search__or { font-size: 12.5px; color: var(--text-subtle); }
+#rm-link-client-modal .rm-modal__body { overflow: visible; }
+#rm-link-client-modal .rm-modal__content { overflow: visible; max-height: none; }
+#rm-link-client-modal .rm-suggestions { border-top: 0; margin-top: 0; padding-top: 0; }
