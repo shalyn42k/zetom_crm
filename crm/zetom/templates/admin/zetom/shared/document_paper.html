@@ -9,6 +9,9 @@ document_editor.js copies the input's current value in while typing, so the
 preview follows the form before it is saved. data-de-empty is what shows
 when the field is blank.
 {% endcomment %}
+{% if kind == "Oferta" %}
+{% include "admin/zetom/shared/document_paper_oferta.html" %}
+{% else %}
 <article class="de-paper de-paper--{{ kind|lower }}">
   <header class="de-paper__head">
     <div class="de-paper__brand">ZETOM</div>
@@ -80,3 +83,4 @@ when the field is blank.
     {% endif %}
   </footer>
 </article>
+{% endif %}

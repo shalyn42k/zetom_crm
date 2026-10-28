@@ -130,3 +130,43 @@
   .de-print .de-paper { box-shadow: none; max-width: none; }
   .de-paper .de-empty { display: none; }
 }
+
+/* ---- offer sheet (document_paper_oferta.html), after the sample offer -- */
+.de-paper--oferta { position: relative; padding: 10mm 12mm 12mm 16mm; font-family: Arial, "Liberation Sans", Helvetica, sans-serif; font-size: 12.5px; }
+.de-paper--oferta .of-side {
+  position: absolute; left: 3mm; top: 10mm; bottom: 10mm; overflow: hidden;
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font-size: 7px; letter-spacing: .25em; color: var(--paper-grey); white-space: nowrap;
+}
+.of-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.of-squares { display: grid; grid-template-columns: repeat(5, 9mm); grid-auto-rows: 9mm; }
+.of-squares i { display: block; }
+.of-squares .g { background: var(--paper-green); }
+.of-squares .l { background: var(--paper-green-light); }
+.of-squares .s { background: var(--paper-grey); }
+.of-logo { width: 46mm; max-width: 45%; height: auto; }
+.of-meta { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 8mm 0 3mm; }
+.of-subject { margin: 0 0 3mm 2mm; font-size: 1.15em; }
+.of-intro { margin: 0 0 3mm; font-size: 1.12em; line-height: 1.45; text-indent: 2em; }
+.of-table { width: 100%; border-collapse: collapse; margin: 2mm 0; }
+.of-table th, .of-table td { border: 1.5px solid black; padding: 6px 7px; vertical-align: middle; }
+.of-table thead th { font-weight: 400; text-align: center; font-size: 1.05em; }
+.of-table .c-lp { width: 9mm; text-align: center; }
+.of-table .c-num { width: 22mm; text-align: center; font-variant-numeric: tabular-nums; }
+.of-item { font-size: 1.12em; }
+.of-item-details { font-size: .88em; font-weight: 700; white-space: pre-wrap; }
+.of-item-norm { font-size: .88em; font-style: italic; }
+.of-empty td { color: var(--paper-grey); font-style: italic; }
+.of-extra td:nth-child(2) { font-size: 1.12em; }
+.of-table tfoot td { border: 0; }
+.of-table tfoot .of-total-label { text-align: right; font-size: 1.15em; padding-right: 10px; }
+.of-table tfoot .of-total { border: 1.5px solid black; font-weight: 700; }
+.of-note { margin: 2.5mm 0; font-size: .95em; font-style: italic; }
+.of-note--green { color: var(--paper-green); font-weight: 700; font-size: 1.02em; }
+.of-costs { display: grid; grid-template-columns: auto 1fr; gap: 4px; margin: 3mm 0; font-size: .85em; }
+.of-costs ul { margin: 2px 0 0 14mm; padding-left: 4mm; }
+.of-terms { margin: 3mm 0 0; display: flex; flex-direction: column; gap: 2.2mm; font-size: 1.05em; }
+.of-terms > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.of-terms dt { font-weight: 700; }
+.of-terms dd { margin: 0; }
+.of-red { color: var(--paper-red); font-weight: 700; }

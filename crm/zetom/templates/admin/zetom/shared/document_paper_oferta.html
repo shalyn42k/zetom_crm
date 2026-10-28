@@ -1,0 +1,111 @@
+{% load i18n static %}
+{% comment %}
+claude — offer sheet, laid out after the company's own sample offer
+(LTO/987/2025-10, wzorcowanie przyrządów pomiarowych). Included from
+document_paper.html when kind == "Oferta"; same paper is the live preview,
+the print page and the saved file version.
+
+Editable values come from Oferta fields and OfertaItem lines; the fixed
+paragraphs are the sample's own wording (business text in Polish, the
+language the document is issued in — not interface strings). Fields that
+change while typing carry data-de-field (document_editor.js); the items
+table is rebuilt from the inline rows by the same script.
+
+Not reproduced: the sample's right-hand table columns and left margin text
+were cut off in the picture we have — "Cena jedn. netto" / "Wartość netto"
+are our guess, the margin is left out.
+{% endcomment %}
+<article class="de-paper de-paper--oferta">
+  <div class="of-side" aria-hidden="true">ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM ZETOM</div>
+
+  <header class="of-head">
+    <div class="of-squares" aria-hidden="true">
+      <i class="g"></i><i></i><i class="l"></i><i class="s"></i><i class="l"></i>
+      <i class="l"></i><i class="g"></i><i></i><i class="s"></i><i></i>
+      <i class="s"></i><i></i><i></i><i></i><i></i>
+    </div>
+    <img class="of-logo" src="{% static 'img/logo.avif' %}" alt="ZETOM">
+  </header>
+
+  <div class="of-meta">
+    <span>Oferta numer: <span data-de-field="offer_number" data-de-empty="—">{{ doc.offer_number|default:"—" }}</span></span>
+    <span>Data sporządzenia oferty: <span data-de-field="offer_date" data-de-empty="—">{{ doc.offer_date|date:"d.m.Y"|default:"—" }}</span></span>
+  </div>
+
+  <p class="of-subject">dotyczy : <u data-de-field="subject" data-de-empty="—">{{ doc.subject|default:"—" }}</u></p>
+
+  <p class="of-intro">
+    W odpowiedzi na <span data-de-field="inquiry_ref" data-de-empty="Państwa zapytanie">{{ doc.inquiry_ref|default:"Państwa zapytanie" }}</span>
+    przedstawiamy poniżej naszą ofertę na wykonanie wzorcowania wyposażenia pomiarowego ujętego w zapytaniu ofertowym :
+  </p>
+
+  <table class="of-table" data-de-items>
+    <thead>
+      <tr>
+        <th class="c-lp">L.p.</th>
+        <th>Nazwa wzorcowanego przyrządu pomiarowego</th>
+        <th class="c-num">Ilość wg zapytania</th>
+        <th class="c-num">Cena jedn. netto [zł]</th>
+        <th class="c-num">Wartość netto [zł]</th>
+      </tr>
+    </thead>
+    <tbody data-de-items-body>
+      {% for item in doc.items.all %}
+        <tr>
+          <td class="c-lp">{{ forloop.counter }}.</td>
+          <td>
+            <div class="of-item">{{ item.name }}</div>
+            {% if item.details %}<div class="of-item-details">{{ item.details }}</div>{% endif %}
+            {% if item.norm %}<div class="of-item-norm">{{ item.norm }}</div>{% endif %}
+          </td>
+          <td class="c-num">{{ item.quantity }}</td>
+          <td class="c-num">{{ item.unit_price|floatformat:"2g"|default:"—" }}</td>
+          <td class="c-num">{{ item.line_total|floatformat:"2g" }}</td>
+        </tr>
+      {% empty %}
+        <tr class="of-empty"><td class="c-lp">1.</td><td colspan="4">Pozycje oferty — dodaj je w formularzu.</td></tr>
+      {% endfor %}
+      <tr class="of-extra">
+        <td class="c-lp" data-de-extra-lp>{{ doc.items.count|add:1 }}.</td>
+        <td colspan="3">Koszty dodatkowe:</td>
+        <td class="c-num"><span data-de-field="extra_costs" data-de-empty="—">{{ doc.extra_costs|floatformat:"2g"|default:"—" }}</span></td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="4" class="of-total-label">Razem :</td>
+        <td class="c-num of-total" data-de-total>{{ doc.net_total|floatformat:"2g" }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <p class="of-note">Na życzenie Klienta Laboratorium deklaruje dokonanie stwierdzenia zgodności z wymaganiami (100 zł netto).</p>
+  <p class="of-note">W ramach oceny zgodności w oparciu o dokument ILAC G-8 do oceny wyników przyjmuje się metodę prostej akceptacji lub inną metodę uzgodnioną z Klientem.</p>
+  <p class="of-note of-note--green">W przypadku złożenia zamówienia prosimy o podanie czasookresu pomiędzy wzorcowaniami (datę kolejnego wzorcowania) w celu poprawnego naniesienia etykiet po wzorcowaniu.</p>
+
+  <div class="of-costs">
+    <b>Koszty dodatkowe :</b>
+    <div>
+      Za czynność wzorcowania poza siedzibą Laboratorium „ZETOM” do opłat cennikowych dolicza się:
+      <ul>
+        <li>delegacji pracowników „ZETOM-u”,</li>
+        <li>transportu przyrządów kontrolnych do miejsca wykonywania czynności wzorcowania,</li>
+        <li>związane z czasem przejazdu do miejsca wykonywania prac i z powrotem wyliczane jako iloczyn czasu i 50 % stawki roboczogodziny,</li>
+        <li>inne zależne od warunków u Zleceniodawcy a wynikające z niemożliwości wykonania wzorcowania w przewidzianym przedziale czasu; wyliczenie dopłaty wg kalkulacji wynikowej.</li>
+      </ul>
+    </div>
+  </div>
+
+  <dl class="of-terms">
+    <div><dt>Cena netto łącznie :</dt><dd><span data-de-total>{{ doc.net_total|floatformat:"2g" }}</span> zł; <b>Stawka VAT - <span data-de-field="vat_rate">{{ doc.vat_rate }}</span>%</b></dd></div>
+    <div><dt>Miejsce wykonania :</dt><dd data-de-field="place_of_work" data-de-empty="—">{{ doc.place_of_work|default:"—" }}</dd></div>
+    <div><dt>Termin realizacji :</dt><dd class="of-red" data-de-field="completion_term" data-de-empty="—">{{ doc.completion_term|default:"—" }}</dd></div>
+    <div><dt>Dokument potwierdzający wykonanie wzorcowania :</dt><dd data-de-field="confirmation_document" data-de-empty="—">{{ doc.confirmation_document|default:"—" }}</dd></div>
+    <div><dt>Warunki płatności :</dt><dd data-de-field="payment_terms" data-de-empty="—">{{ doc.payment_terms|default:"—" }}</dd></div>
+  </dl>
+
+  <footer class="de-paper__sign">
+    <div></div>
+    <div class="de-paper__sigbox">Z poważaniem,<br><strong>{{ signer_name }}</strong></div>
+  </footer>
+</article>

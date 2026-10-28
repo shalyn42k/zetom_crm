@@ -24,14 +24,16 @@ from django.db import transaction
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.urls import path, reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from unfold.admin import StackedInline
 
 from crm.status_manager.services.status_service import (
     delete_child_document, save_child_with_status, update_parent,
 )
 from crm.users.utils import user_has_perm
 from crm.zetom.forms import AddOferta, AddWniosek, AddZlecenie
-from crm.zetom.models import Oferta, Wniosek, Zlecenie
+from crm.zetom.models import Oferta, OfertaItem, Wniosek, Zlecenie
 from crm.zetom.services.status_orchestration import (
     bump_new_to_in_progress, mark_child_done,
 )
@@ -149,6 +151,37 @@ class MarkDoneActionMixin:
         return redirect(change_url, object_id)
 
 
+# claude — lines of the offer table. Permissions follow the project's RBAC,
+# not Django's own model perms (which this project never populates — the
+# inline would otherwise be hidden from everyone but superusers).
+class OfertaItemInline(StackedInline):
+    # Stacked, not tabular: the left column of the document window is too
+    # narrow for six columns side by side.
+    model = OfertaItem
+    extra = 0
+    fields = ("name", "details", "norm", "quantity", "unit_price", "position")
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        field = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name == "details" and field is not None:
+            field.widget.attrs["rows"] = 3
+        return field
+    verbose_name = _("Offer item")
+    verbose_name_plural = _("Offer items")
+
+    def has_view_permission(self, request, obj=None):
+        return user_has_perm(request.user, "view_requests")
+
+    def has_add_permission(self, request, obj=None):
+        return user_has_perm(request.user, "edit_requests")
+
+    def has_change_permission(self, request, obj=None):
+        return user_has_perm(request.user, "edit_requests")
+
+    def has_delete_permission(self, request, obj=None):
+        return user_has_perm(request.user, "edit_requests")
+
+
 @admin.register(Oferta)
 class OfertaAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
     actions = []
@@ -160,10 +193,32 @@ class OfertaAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMix
     )
     list_filter = ("source",)
     readonly_fields = ("from_main",)
+    inlines = [OfertaItemInline]
     fieldsets = (
-        (_("Offer"), {"fields": ("price", "notes")}),
+        (_("Offer"), {"fields": ("offer_number", "offer_date", "subject", "inquiry_ref")}),
+        (_("Terms"), {"fields": (
+            "extra_costs", "vat_rate", "place_of_work", "completion_term",
+            "confirmation_document", "payment_terms",
+        )}),
         CLIENT_FIELDSET,
+        (_("Internal note"), {"classes": ("collapse",), "fields": ("notes",)}),
     )
+
+    # claude — after the item lines are saved: offer number in the sample's
+    # LTO/<no>/<YYYY-MM> shape when left empty, today's date when none, and
+    # `price` = net total so mails / lists that read it stay right.
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        obj = form.instance
+        updates = {"price": obj.net_total}
+        if not obj.offer_date:
+            updates["offer_date"] = timezone.localdate()
+        if not obj.offer_number:
+            when = updates.get("offer_date") or obj.offer_date
+            updates["offer_number"] = f"LTO/{obj.pk}/{when:%Y-%m}"
+        type(obj).objects.filter(pk=obj.pk).update(**updates)
+        for k, v in updates.items():
+            setattr(obj, k, v)
     warn_unsaved_form = True
 
     def save_model(self, request, obj, form, change):

@@ -35,8 +35,8 @@ class DocumentWindowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "de-paper")
         self.assertContains(response, document_code(self.oferta))
-        self.assertContains(response, 'data-de-field="price"')
-        self.assertContains(response, "Two audits")
+        self.assertContains(response, 'data-de-field="offer_number"')
+        self.assertContains(response, "data-de-items-body")
         self.assertContains(response, reverse("admin:zetom_oferta_print", args=[self.oferta.pk]))
         self.assertContains(response, reverse("admin:zetom_oferta_mark_done", args=[self.oferta.pk]))
         self.assertContains(response, reverse("admin:zetom_requestmain_change", args=[self.parent.pk]))
@@ -44,7 +44,8 @@ class DocumentWindowTests(TestCase):
     def test_form_shows_only_template_and_client_fields(self):
         response = self._change(self.oferta)
         rendered = {f for fs in response.context["adminform"] for line in fs for f in line.fields}
-        self.assertTrue({"price", "notes", "first_name", "company_nip", "email", "phone"} <= rendered)
+        self.assertTrue({"offer_number", "subject", "payment_terms", "notes", "first_name", "company_nip", "email", "phone"} <= rendered)
+        self.assertNotIn("price", rendered)  # computed from the items
         self.assertTrue(rendered.isdisjoint({"departments", "assigned_to", "source", "from_main"}))
 
     def test_zlecenie_has_no_manual_done(self):
@@ -61,14 +62,23 @@ class DocumentWindowTests(TestCase):
     def test_save_still_works(self):
         url = reverse("admin:zetom_oferta_change", args=[self.oferta.pk])
         response = self.client.post(url, {
-            "price": "1500", "notes": "Updated", "first_name": "Jan", "last_name": "Kowalski",
-            "company_name": "Acme", "company_nip": "", "email": "jan@client.pl",
-            "phone": "+48501600300", "_continue": "1",
+            "offer_number": "", "offer_date": "", "subject": "wzorcowania", "inquiry_ref": "e-mail z dnia 28.10.2025 r.",
+            "extra_costs": "150", "vat_rate": "23", "place_of_work": "w miejscu użytkowania",
+            "completion_term": "listopad 2025 r.", "confirmation_document": "Świadectwo", "payment_terms": "14 dni",
+            "notes": "Updated", "first_name": "Jan", "last_name": "Kowalski",
+            "company_name": "Acme", "company_nip": "", "email": "jan@client.pl", "phone": "+48501600300",
+            "items-TOTAL_FORMS": "1", "items-INITIAL_FORMS": "0", "items-MIN_NUM_FORMS": "0", "items-MAX_NUM_FORMS": "1000",
+            "items-0-name": "Maszyna wytrzymałościowa", "items-0-details": "zakres 500kN", "items-0-norm": "PN-EN ISO 7500-1",
+            "items-0-quantity": "1", "items-0-unit_price": "1200", "items-0-position": "0",
+            "_continue": "1",
         })
         self.assertEqual(response.status_code, 302, response.content[:3000])
         self.oferta.refresh_from_db()
-        self.assertEqual(str(self.oferta.price), "1500.00")
+        self.assertEqual(self.oferta.items.count(), 1)
+        self.assertEqual(str(self.oferta.price), "1350.00")  # 1200 + 150 extra, net
         self.assertEqual(self.oferta.notes, "Updated")
+        self.assertTrue(self.oferta.offer_number.startswith(f"LTO/{self.oferta.pk}/"))
+        self.assertIsNotNone(self.oferta.offer_date)
         # fields no longer on the form keep their values
         self.assertEqual(self.oferta.departments, ["DEPARTMENT_0"])
         self.assertEqual(list(self.oferta.assigned_to.all()), [self.user])
@@ -78,7 +88,8 @@ class DocumentWindowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, document_code(self.oferta))
         self.assertContains(response, "window.print()")
-        self.assertContains(response, "1200")
+        self.assertContains(response, "Oferta numer")
+        self.assertContains(response, "Warunki płatności")
 
     def test_print_page_hidden_document_is_404(self):
         stranger = User.objects.create_user(username="stranger", password="x", is_staff=True)
@@ -156,3 +167,18 @@ class DocumentFilesTests(TestCase):
             {"files": [self.Upload("a.txt", b"a")]},
         )
         self.assertEqual(response.status_code, 403)
+
+
+# claude
+class OfertaTotalsTests(TestCase):
+    def test_totals_and_vat(self):
+        from decimal import Decimal
+
+        from crm.zetom.models import OfertaItem
+        o = Oferta.objects.create(extra_costs=Decimal("150"), vat_rate=23, **DOC)
+        OfertaItem.objects.create(oferta=o, name="A", quantity=2, unit_price=Decimal("600"))
+        OfertaItem.objects.create(oferta=o, name="B", quantity=1, unit_price=None)
+        self.assertEqual(o.items_total, Decimal("1200"))
+        self.assertEqual(o.net_total, Decimal("1350"))
+        self.assertEqual(o.vat_amount, Decimal("310.50"))
+        self.assertEqual(o.gross_total, Decimal("1660.50"))

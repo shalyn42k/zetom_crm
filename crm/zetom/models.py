@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 # Django imports
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import (
@@ -173,9 +175,79 @@ class Oferta(RequestTemplate):
         blank=True,
     )
 
+    # claude — fields of the offer document template (Oferta numer … /
+    # dotyczy / pozycje / warunki), see templates/admin/zetom/shared/
+    # document_paper_oferta.html. Defaults are the wording of the company's
+    # own sample offer. `price` stays the net total (items + extra costs),
+    # recomputed on save, so everything that already reads it keeps working.
+    offer_number = models.CharField(max_length=60, blank=True, verbose_name=_("Offer number"))
+    offer_date = models.DateField(null=True, blank=True, verbose_name=_("Offer date"))
+    subject = models.CharField(
+        max_length=255, blank=True, default="wzorcowania przyrządów pomiarowych", verbose_name=_("Regarding"),
+    )
+    inquiry_ref = models.CharField(
+        max_length=255, blank=True, verbose_name=_("In response to"),
+        help_text=_("e.g. e-mail z dnia 28.10.2025 r."),
+    )
+    extra_costs = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Additional costs (net)"),
+    )
+    vat_rate = models.PositiveSmallIntegerField(default=23, verbose_name=_("VAT rate (%)"))
+    place_of_work = models.CharField(
+        max_length=255, blank=True, default="w miejscu użytkowania", verbose_name=_("Place of work"),
+    )
+    completion_term = models.CharField(max_length=255, blank=True, verbose_name=_("Completion date"))
+    confirmation_document = models.CharField(
+        max_length=255, blank=True, default="„Świadectwo Wzorcowania” z PCA",
+        verbose_name=_("Confirming document"),
+    )
+    payment_terms = models.CharField(
+        max_length=255, blank=True, default="przelew płatny do 14 dni", verbose_name=_("Payment terms"),
+    )
+
     class Meta:
         verbose_name = _("Offer")
         verbose_name_plural = _("Offers")
+
+    # claude
+    @property
+    def items_total(self):
+        return sum((i.line_total for i in self.items.all()), Decimal("0"))
+
+    @property
+    def net_total(self):
+        return self.items_total + (self.extra_costs or Decimal("0"))
+
+    @property
+    def vat_amount(self):
+        return (self.net_total * Decimal(self.vat_rate) / Decimal(100)).quantize(Decimal("0.01"))
+
+    @property
+    def gross_total(self):
+        return self.net_total + self.vat_amount
+
+
+# claude — one line of the offer table (Lp. / Nazwa / Ilość / cena).
+class OfertaItem(models.Model):
+    oferta = models.ForeignKey(Oferta, on_delete=models.CASCADE, related_name="items", verbose_name=_("Offer"))
+    position = models.PositiveSmallIntegerField(default=0, verbose_name=_("Sort order"))
+    name = models.CharField(max_length=255, verbose_name=_("Instrument name"))
+    details = models.TextField(blank=True, verbose_name=_("Details"), help_text=_("e.g. Kierunek działania siły…"))
+    norm = models.CharField(max_length=255, blank=True, verbose_name=_("Standard"), help_text=_("e.g. wg Norma PN-EN ISO 7500-1; 2018"))
+    quantity = models.PositiveIntegerField(default=1, verbose_name=_("Quantity"))
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Unit price (net)"))
+
+    class Meta:
+        verbose_name = _("Offer item")
+        verbose_name_plural = _("Offer items")
+        ordering = ["position", "pk"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def line_total(self):
+        return (self.unit_price or Decimal("0")) * self.quantity
 
 
 class Zlecenie(RequestTemplate):
