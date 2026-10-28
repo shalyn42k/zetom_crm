@@ -128,7 +128,7 @@ html.dark .email-form-card {
 
 .email-form-card h2 {
     margin: 0;
-    font-size: 20px;
+    font-size: 1.25rem;
     font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--zf-text);
@@ -139,7 +139,7 @@ html.dark .email-form-card {
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
-    font-size: 13px;
+    font-size: 0.8125rem;
     font-weight: 500;
     font-family: inherit;
     color: var(--zf-text-muted);
@@ -163,7 +163,7 @@ html.dark .email-form-card {
 
 .email-form-card .subtitle {
     margin: 0 0 24px 0;
-    font-size: 14px;
+    font-size: 0.875rem;
     color: var(--zf-text-subtle);
 }
 
@@ -174,7 +174,7 @@ html.dark .email-form-card {
     background-color: var(--zf-notice-bg);
     color: var(--zf-notice-text);
     border: 1px solid var(--zf-notice-border);
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 500;
 }
 
@@ -186,7 +186,7 @@ html.dark .email-form-card {
     color: var(--zf-error-text);
     border: 1px solid var(--zf-error-border);
     list-style: none;
-    font-size: 13px;
+    font-size: 0.8125rem;
     line-height: 1.5;
 }
 
@@ -216,7 +216,7 @@ html.dark .email-form-card {
 
 .email-form-card .form-group label {
     display: block;
-    font-size: 13px;
+    font-size: 0.8125rem;
     font-weight: 500;
     margin-bottom: 6px;
     color: var(--zf-text-muted);
@@ -226,7 +226,7 @@ html.dark .email-form-card {
 .email-form-card .form-group textarea {
     width: 100%;
     padding: 9px 12px;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-family: inherit;
     color: var(--zf-text);
     background-color: var(--zf-input-bg);
@@ -287,13 +287,13 @@ html.dark .email-form-card .form-group textarea:focus-visible {
     margin-top: 8px;
     margin-bottom: 0;
     padding: 8px 10px;
-    font-size: 12px;
+    font-size: 0.75rem;
 }
 
 .email-form-card button[type="submit"] {
     width: 100%;
     padding: 10px 16px;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 500;
     font-family: inherit;
     color: white;

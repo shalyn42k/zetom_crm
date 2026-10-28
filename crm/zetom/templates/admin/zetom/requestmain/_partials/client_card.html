@@ -38,6 +38,7 @@ create/suggest flows in a live browser, not just by reading the markup.
          data-create-url="{% if original.pk %}{% url 'admin:zetom_requestmain_create_client_json' original.pk %}{% endif %}"
          data-edit-url="{% if original.pk %}{% url 'admin:zetom_requestmain_edit_client_json' original.pk 0 %}{% endif %}"
          data-save-url="{% if original.pk %}{% url 'admin:zetom_requestmain_save_client_json' original.pk 0 %}{% endif %}"
+         data-client-change-url="{% url 'admin:clients_client_change' 0 %}"
          data-pk="{{ original.pk|default:'' }}"
          data-t-linked="{% trans 'Linked.' %}"
          data-t-unlinked="{% trans 'Unlinked.' %}"

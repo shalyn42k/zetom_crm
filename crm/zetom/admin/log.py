@@ -10,7 +10,16 @@ from crm.users.utils import user_has_perm
 @admin.register(LogEntry)
 class LogEntryAdmin(ModelAdmin):
     list_display = ("action_time", "user", "content_type", "object_repr", "action_flag")
-    list_filter = ("action_flag", "content_type", "user")
+    # claude — plain "content_type" listed every ContentType in the project,
+    # including third-party ones nobody edits through the admin
+    # ("Otp_Totp | TOTP device", "historical Informacje", …) whose labels
+    # are hard-coded English upstream. Only types that actually have log
+    # rows are useful as a filter anyway.
+    list_filter = (
+        "action_flag",
+        ("content_type", admin.RelatedOnlyFieldListFilter),
+        ("user", admin.RelatedOnlyFieldListFilter),
+    )
     search_fields = ("object_repr", "change_message")
 
     # claude — no `fields`/`readonly_fields` here before meant the change

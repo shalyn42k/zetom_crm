@@ -13,7 +13,7 @@ from django.db import transaction
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import path, reverse
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _, gettext_noop
 from unfold.decorators import display
 
 from crm.clients.models import Client
@@ -65,6 +65,10 @@ _HISTORY_CHOICE_MAPS = {
     "source": dict(RequestSource.choices),
 }
 _HISTORY_DEPARTMENT_LABELS = dict(DepartmentsVariants.choices)
+
+# claude — JSON 403 body for the client-link endpoints; was a bare
+# "permission" code that requestmain_client_link.js shows verbatim.
+_NO_PERMISSION = _("You do not have permission to perform this action.")
 
 
 def _history_field_label(field_name):
@@ -262,7 +266,7 @@ class RequestMainAdmin(
             # claude — single-object delete (`delete_view`) stashes the reason
             # on the instance; bulk `delete_queryset` doesn't have a reason
             # form, so it falls back to a generic label.
-            reason = getattr(obj, "_delete_reason", None) or "Deleted via admin"
+            reason = getattr(obj, "_delete_reason", None) or gettext_noop("Deleted via admin")
             StatusHistory.objects.create(
                 request=obj,
                 old_status=old_status,
@@ -355,9 +359,16 @@ class RequestMainAdmin(
             len(context["ofertas"]) + len(context["zlecenia"]) + len(context["wnioski"])
         )
         context["history_entries"] = (
-            obj.status_history.select_related("changed_by").order_by("-changed_at")
+            list(obj.status_history.select_related("changed_by").order_by("-changed_at"))
             if has_obj else []
         )
+        # claude — system reasons are stored as their English msgid
+        # (gettext_noop at every write site) and translated here, at render
+        # time, so a row reads in the viewer's language rather than in the
+        # language of whoever clicked the button. Free-text reasons typed by
+        # users have no catalog entry and pass through unchanged.
+        for entry in context["history_entries"]:
+            entry.reason_display = gettext(entry.reason) if entry.reason else ""
         # БАГ-2: полная история изменений полей через django-simple-history.
         # Диффы считаем здесь — в шаблоне нельзя вызывать методы с аргументами.
         if has_obj:
@@ -636,7 +647,7 @@ class RequestMainAdmin(
             return JsonResponse({"ok": False}, status=405)
         obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
         if denied:
-            return JsonResponse({"ok": False, "error": "permission"}, status=403)
+            return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
         cl = Client.objects.filter(pk=client_id).first()
         if not cl:
             return JsonResponse({"ok": False, "error": _("not found")}, status=404)
@@ -657,7 +668,7 @@ class RequestMainAdmin(
             return JsonResponse({"ok": False}, status=405)
         obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
         if denied:
-            return JsonResponse({"ok": False, "error": "permission"}, status=403)
+            return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
         RequestClientLink.objects.filter(request=obj, client_id=client_id).delete()
         return JsonResponse({"ok": True})
 
@@ -666,7 +677,7 @@ class RequestMainAdmin(
             return JsonResponse({"ok": False}, status=405)
         obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
         if denied:
-            return JsonResponse({"ok": False, "error": "permission"}, status=403)
+            return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
         # claude — phase 3c: person + deduped Company + link (Client.company_*
         # dropped). Company data comes from the request's own snapshot.
         cl, company = create_person_with_company(
@@ -692,7 +703,7 @@ class RequestMainAdmin(
             return JsonResponse({"ok": False}, status=405)
         obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
         if denied:
-            return JsonResponse({"ok": False, "error": "permission"}, status=403)
+            return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
         cl = Client.objects.filter(pk=client_id).first()
         if not cl:
             return JsonResponse({"ok": False, "error": _("not found")}, status=404)
@@ -718,7 +729,7 @@ class RequestMainAdmin(
             return JsonResponse({"ok": False}, status=405)
         obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
         if denied:
-            return JsonResponse({"ok": False, "error": "permission"}, status=403)
+            return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
         cl = Client.objects.filter(pk=client_id).first()
         if not cl:
             return JsonResponse({"ok": False, "error": _("not found")}, status=404)
@@ -840,7 +851,7 @@ class RequestMainAdmin(
             return JsonResponse({"ok": False, "error": _("POST required")}, status=405)
         if not user_has_perm(request.user, "edit_requests"):
             return JsonResponse(
-                {"ok": False, "error": "forbidden"}, status=403
+                {"ok": False, "error": _NO_PERMISSION}, status=403
             )
         from crm.status_manager.services.status_service import (
             cancel_request as _cancel,
@@ -862,7 +873,7 @@ class RequestMainAdmin(
                 if obj:
                     try:
                         _cancel(obj, request.user,
-                                reason=_("Cancelled as duplicate from the add form."))
+                                reason=gettext_noop("Cancelled as duplicate from the add form."))
                     except ValueError as exc:
                         return str(exc)
             return None

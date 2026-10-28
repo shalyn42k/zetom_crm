@@ -59,7 +59,7 @@
         </header>
         <div class="rm-client">
           <div class="rm-avatar rm-avatar--lg" aria-hidden="true">
-            {{ original.company_name|slice:":1"|upper|default:"?" }}
+            {{ original.company_name|default:"?"|slice:":1"|upper }}
           </div>
           <div class="rm-client__meta">
             <div class="rm-client__name">{{ original.company_name|default:"—" }}</div>

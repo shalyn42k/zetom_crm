@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
 
 # claude
@@ -31,14 +31,14 @@ class Client(models.Model):
     def __str__(self):
         if self.first_name or self.last_name:
             return f"{self.first_name or ''} {self.last_name or ''}".strip()
-        return f"Client #{self.pk}"
+        return gettext("Client #%(pk)s") % {"pk": self.pk}
 
     def full_name(self):
         return f"{self.first_name or ''} {self.last_name or ''}".strip()
 
     # claude
     def short_label(self):
-        return self.full_name() or f"Client #{self.pk}"
+        return self.full_name() or gettext("Client #%(pk)s") % {"pk": self.pk}
 
     # claude — phase 3c: first linked Company (company data lives on Company via
     # company_links). Callers that render many rows should prefetch

@@ -78,7 +78,7 @@ class AdminRole(UnfoldModelAdmin):
             format_html_join(
                 "",
                 '<span style="display:inline-block;padding:2px 8px;border-radius:999px;'
-                'font-size:12px;line-height:1.6;background:rgba(127,127,127,.18);'
+                'font-size:0.75rem;line-height:1.6;background:rgba(127,127,127,.18);'
                 'color:inherit">{}</span>',
                 ((name,) for name in names),
             ),

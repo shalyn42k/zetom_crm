@@ -8,7 +8,7 @@ from django.contrib import admin, messages
 from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import path
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, gettext_noop
 from unfold.admin import ModelAdmin
 
 from crm.status_manager.models import StatusHistory
@@ -146,7 +146,7 @@ class DeletedRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             request=obj,
             old_status=RequestStatus.deleted,
             new_status=RequestStatus.active,
-            reason="Restored from trash",
+            reason=gettext_noop("Restored from trash"),
             changed_by=request.user,
         )
         messages.success(request, _("Request restored."))

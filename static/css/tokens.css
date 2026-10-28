@@ -95,7 +95,30 @@
    how the reference card already looked. The other legacy files currently
    carry a drifted #22c55e for this name in dark mode — they converge onto
    #4ade80 here when their migration tasks touch them.
+
+   claude — light-theme audit (supersedes the "do not fix" above): that
+   asymmetry was kept only to reproduce the pre-refactor pixels, and it is
+   exactly what made the light theme look washed out — #16a34a text on its
+   own 12-14% green tint measured 2.6-2.8:1 (validation-window pills, client
+   "Aktywne" badges, role badges, "no users assigned" notes, …), far below
+   the 4.5:1 body-text minimum. --green-bright is the text-on-tint role in
+   both themes, so the light value is now one step darker (#15803d,
+   Tailwind green-700): ~4.5:1 on the tint, 5:1 on white. --amber gets the
+   same treatment for the same reason (#d97706 text was 2.5:1 on its tint
+   and 3.2:1 on white); its dark value is unchanged. --green stays as is —
+   it is the fill colour of primary buttons and dots, not a text role.
 */
+
+/* claude — UI scale. Unfold sizes everything (text AND spacing) in rem, and
+   every font-size in the project's own stylesheets/templates was converted
+   from px to the equivalent rem (Npx -> N/16 rem), so this one value scales
+   the whole interface uniformly. 16px = the browser default; raise/lower it
+   here to make the UI bigger/smaller. Done on the root font size rather
+   than CSS `zoom`, which would also scale 100vh and push the sidebar /
+   dashboard past the bottom of the window. */
+html {
+  font-size: 17px;
+}
 
 :root {
   /* Semantic roles — light (Unfold base-* / primary-* scale) */
@@ -124,9 +147,9 @@
 
   /* Status colours — light */
   --green: #16a34a;
-  --green-bright: #16a34a;
+  --green-bright: #15803d;
   --red: #dc2626;
-  --amber: #d97706;
+  --amber: #b45309;
   --blue: #2563eb;
   --purple: #7c3aed;
   --slate: #64748b;

@@ -1,5 +1,6 @@
 import json
 
+from django.apps import apps
 from django.contrib import admin
 from django.urls import NoReverseMatch, reverse
 from django.utils.html import format_html, format_html_join
@@ -38,6 +39,8 @@ _PAYLOAD_KEY_LABELS = {
     "note": _("Note"),
     "resolver_name": _("Resolver"),
     "decision": _("Decision"),
+    "document_id": _("Document ID"),
+    "document_kind": _("Document type"),
 }
 
 _STAGE_LABELS = {"new": _("New"), "validated": _("Validated")}
@@ -63,6 +66,12 @@ def _payload_display_value(key, value):
         return _STAGE_LABELS.get(value, value)
     if key == "decision":
         return _DECISION_LABELS.get(value, value)
+    if key == "document_kind":
+        # Stored as the model class name (request_mail._document_kind).
+        try:
+            return apps.get_model("zetom", value)._meta.verbose_name
+        except LookupError:
+            return value
     return value
 
 

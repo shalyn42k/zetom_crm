@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.utils.translation import gettext
+from django.utils.translation import gettext, gettext_lazy
 from django.views import View
 from django.views.decorators.http import require_POST
 from phonenumber_field.phonenumber import to_python as phone_to_python
@@ -26,6 +26,11 @@ from crm.zetom.services.duplicate_matcher import (
     _email_domain, _norm, _phone_str,
 )
 from crm.zetom.services.visibility import visible_requests_for
+
+# claude — JSON 403 body; was a bare "forbidden" code that the client cards
+# show verbatim in their error banner. JsonResponse's DjangoJSONEncoder
+# renders the lazy string in the request's language.
+_NO_PERMISSION = gettext_lazy("You do not have permission to perform this action.")
 
 
 # claude — /admin/clients/company/ is the stock Django changelist for Company:
@@ -101,7 +106,7 @@ class ClientSearchView(View):
             label = (
                 (company.name if company else None)
                 or f"{c.first_name or ''} {c.last_name or ''}".strip()
-                or f"Client #{c.id}"
+                or gettext("Client #%(pk)s") % {"pk": c.id}
             )
             results.append({
                 "id": c.id,
@@ -125,7 +130,7 @@ class ClientSearchView(View):
 @login_required
 def client_autofill(request):
     if not user_has_perm(request.user, "view_clients"):
-        return JsonResponse({"error": "forbidden"}, status=403)
+        return JsonResponse({"error": _NO_PERMISSION}, status=403)
     nip = request.GET.get("nip")
     if not nip:
         return JsonResponse({"error": "no_nip"}, status=400)
@@ -230,7 +235,7 @@ def company_person_row(link):
 @require_POST
 def company_person_add(request, pk):
     if not user_has_perm(request.user, "edit_clients"):
-        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+        return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
 
     company = get_object_or_404(Company, pk=pk)
     is_primary = bool(request.POST.get("is_primary"))
@@ -263,7 +268,7 @@ def company_person_add(request, pk):
 @require_POST
 def company_person_edit(request, pk, link_pk):
     if not user_has_perm(request.user, "edit_clients"):
-        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+        return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
 
     company = get_object_or_404(Company, pk=pk)
     link = get_object_or_404(CompanyPersonLink, pk=link_pk, company=company)
@@ -296,7 +301,7 @@ def company_person_edit(request, pk, link_pk):
 @require_POST
 def company_person_delete(request, pk, link_pk):
     if not user_has_perm(request.user, "edit_clients"):
-        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+        return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
 
     company = get_object_or_404(Company, pk=pk)
     # Removes only the link row — the person (Client) is left intact.
@@ -360,7 +365,7 @@ def _clean_company_section(section: str, post, company=None):
 @require_POST
 def company_save(request, pk):
     if not user_has_perm(request.user, "edit_clients"):
-        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+        return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
 
     section = request.POST.get("section", "")
     if section not in _COMPANY_SECTIONS:
@@ -384,7 +389,7 @@ def company_save(request, pk):
 @require_POST
 def person_save(request, pk):
     if not user_has_perm(request.user, "edit_clients"):
-        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+        return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
 
     person = get_object_or_404(Client, pk=pk)
     email = request.POST.get("email", "").strip()
@@ -434,7 +439,7 @@ def company_search(request, pk):
 @require_POST
 def attach_company(request, pk):
     if not user_has_perm(request.user, "edit_clients"):
-        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+        return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
 
     person = get_object_or_404(Client, pk=pk)
     company = get_object_or_404(Company, pk=request.POST.get("company_id"))
@@ -449,7 +454,7 @@ def attach_company(request, pk):
 @require_POST
 def company_link_save(request, pk, link_pk):
     if not user_has_perm(request.user, "edit_clients"):
-        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+        return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
 
     person = get_object_or_404(Client, pk=pk)
     link = get_object_or_404(CompanyPersonLink, pk=link_pk, person=person)
@@ -474,7 +479,7 @@ def company_link_save(request, pk, link_pk):
 @require_POST
 def detach_company(request, pk, link_pk):
     if not user_has_perm(request.user, "edit_clients"):
-        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+        return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
 
     person = get_object_or_404(Client, pk=pk)
     # Removes only the link row — the Company and the person both stay.
@@ -694,7 +699,7 @@ def _resolve_request_pick(kind: str, req_type: str, req_pk: str, user):
 @require_POST
 def client_create(request):
     if not user_has_perm(request.user, "edit_clients"):
-        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+        return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
 
     kind = request.POST.get("kind", "")
     if kind not in _KINDS:
