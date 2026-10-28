@@ -104,8 +104,12 @@ class ReminderNotifyTests(TestCase):
         self.assertIsNotNone(note.done_at)
         self.assertFalse(Notification.objects.exists())
 
-    def test_client_address_must_belong_to_request(self):
-        self._post(notify="client", client_email="attacker@evil.example", text="x")
+    def test_client_address_can_be_typed(self):
+        self._post(notify="client", client_email="biuro@inna-firma.pl", text="x")
+        self.assertEqual(StepNote.objects.get().client_email, "biuro@inna-firma.pl")
+
+    def test_invalid_client_address_rejected(self):
+        self._post(notify="client", client_email="not-an-email", text="x")
         self.assertFalse(StepNote.objects.exists())
 
     def test_specialist_cannot_remind_a_role(self):

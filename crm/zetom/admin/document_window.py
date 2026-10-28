@@ -19,7 +19,9 @@ import json
 from django import forms
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
+from django.core.validators import validate_email
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
@@ -294,8 +296,11 @@ class DocumentWindowMixin:
         to = (request.POST.get("to") or "").strip()
         subject = (request.POST.get("subject") or "").strip()
         message = (request.POST.get("message") or "").strip()
-        if to not in client_email_choices(obj):
-            messages.error(request, _("Choose one of the client's addresses on this request."))
+        # claude — known client addresses are suggested, any valid one may be typed
+        try:
+            validate_email(to)
+        except ValidationError:
+            messages.error(request, _("Enter a valid email address."))
             return redirect(self._change_url(obj))
         if not subject:
             messages.error(request, _("Subject is required."))

@@ -137,9 +137,19 @@ class DocumentSourceAndSendTests(TestCase):
         self.assertTrue(RequestAttachment.objects.filter(oferta=self.oferta, file__contains="wyslane").exists())
         self.assertEqual(StepNote.objects.get().channel, "email")
 
-    def test_send_only_to_known_address(self):
+    def test_send_to_a_typed_address(self):
         self.client.post(reverse("admin:zetom_oferta_send_to_client", args=[self.oferta.pk]),
-                         {"to": "x@evil.example", "subject": "s", "message": "m"})
+                         {"to": "biuro@inna-firma.pl", "subject": "s", "message": "m"})
+        self.assertEqual([m.to for m in mail.outbox], [["biuro@inna-firma.pl"]])
+
+    def test_send_rejects_invalid_address(self):
+        self.client.post(reverse("admin:zetom_oferta_send_to_client", args=[self.oferta.pk]),
+                         {"to": "not-an-email", "subject": "s", "message": "m"})
         self.assertEqual(len(mail.outbox), 0)
         self.oferta.refresh_from_db()
         self.assertEqual(self.oferta.status, Status.new)
+
+    def test_send_dialog_suggests_known_addresses(self):
+        html = self.client.get(self.url).content.decode()
+        self.assertIn('list="de-send-emails"', html)
+        self.assertIn('<option value="jan@acme.pl">', html)

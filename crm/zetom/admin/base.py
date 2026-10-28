@@ -202,8 +202,10 @@ class BaseRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
         if notify and notify not in reminder_targets.allowed_notify(request.user):
             return HttpResponseForbidden(_("You don't have permission for this action."))
         client_email = form.cleaned_data["client_email"] or ""
-        if notify == StepNote.Notify.CLIENT and client_email not in reminder_targets.client_email_choices(obj):
-            messages.error(request, _("Choose one of the client's addresses on this request."))
+        # claude — known addresses are only suggestions; StepNoteCreateForm's
+        # EmailField already rejects anything that isn't a valid address.
+        if notify == StepNote.Notify.CLIENT and not client_email:
+            messages.error(request, _("Enter the client's email address."))
             return redirect(self._change_url_for_id(object_id))
 
         try:
