@@ -785,3 +785,53 @@ def nip_lookup(request):
     except NipLookupError as exc:
         return JsonResponse({"ok": False, "error": str(exc)}, status=200)
     return JsonResponse({"ok": True, **data})
+
+
+# claude — Osoby kontaktowe on the Company card: find people already in the
+# client base (not yet linked to this company) and link one, with position
+# and "główny kontakt" — the mirror of company_search / attach_company on
+# the Person card.
+@login_required
+def company_person_search(request, pk):
+    if not user_has_perm(request.user, "view_clients"):
+        return JsonResponse({"results": []}, status=403)
+    company = get_object_or_404(Company, pk=pk)
+    q = request.GET.get("q", "").strip()
+    qs = Client.objects.exclude(company_links__company=company)
+    for word in q.split():
+        qs = qs.filter(
+            Q(first_name__icontains=word) | Q(last_name__icontains=word)
+            | Q(email__icontains=word) | Q(phone__icontains=word)
+        )
+    qs = qs.prefetch_related("company_links__company").order_by("last_name", "first_name")[:8]
+    results = []
+    for person in qs:
+        other = person.primary_company()
+        results.append({
+            "id": person.pk,
+            "name": person.full_name() or str(person),
+            "email": person.email or "",
+            "phone": person.phone.as_international if person.phone else "",
+            "company": other.name if other else "",
+        })
+    return JsonResponse({"results": results})
+
+
+@login_required
+@require_POST
+def company_person_attach(request, pk):
+    if not user_has_perm(request.user, "edit_clients"):
+        return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
+    company = get_object_or_404(Company, pk=pk)
+    person = get_object_or_404(Client, pk=request.POST.get("person_id"))
+    is_primary = bool(request.POST.get("is_primary"))
+    with transaction.atomic():
+        if is_primary:
+            company.person_links.filter(is_primary=True).update(is_primary=False)
+        link, _created = CompanyPersonLink.objects.get_or_create(
+            company=company, person=person, defaults={"linked_by": request.user},
+        )
+        link.position = request.POST.get("position", "").strip()
+        link.is_primary = is_primary
+        link.save(update_fields=["position", "is_primary"])
+    return JsonResponse({"ok": True, "row": company_person_row(link)})

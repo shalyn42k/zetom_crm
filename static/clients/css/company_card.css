@@ -429,4 +429,4 @@ html:not(.dark) .cc-stage .pager span.active { background: var(--green); border-
 /* claude — sections inside a dialog body are plain wrappers, so the body's
    own gap doesn't reach their fields: stack them with the same gap. Shared
    by every cc-stage dialog (client/company dialogs, work-log modal). */
-.cc-stage .modal-b > div:not(.field-row):not(.field):not([hidden]) { display: flex; flex-direction: column; gap: 16px; }
+.cc-stage .modal-b > div:not(.field-row):not(.field):not(.type-opt):not([hidden]) { display: flex; flex-direction: column; gap: 16px; }
