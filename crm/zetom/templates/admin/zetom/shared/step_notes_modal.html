@@ -164,14 +164,30 @@ user actually filled in on submit.
               </div>
             </div>
             {% if step_notes_notify.colleagues %}
-            <div class="field" x-show="notify === 'users'" x-cloak>
-              <label for="sn-notify-users">{% trans "Colleagues" %}</label>
-              <select id="sn-notify-users" name="notify_users" multiple size="5" :disabled="kind !== 'reminder' || notify !== 'users'">
-                {% for u in step_notes_notify.colleagues %}
-                  <option value="{{ u.pk }}">{% if u.on_request %}★ {% endif %}{{ u.get_full_name|default:u.username }}</option>
-                {% endfor %}
-              </select>
-              <p class="sn-hint">{% trans "★ = assigned to this request. Hold Ctrl (⌘ on Mac) to pick several." %}</p>
+            {% comment %}
+            claude — searchable checklist instead of a Ctrl-click <select multiple>:
+            people on this request first (★), role as a second line.
+            {% endcomment %}
+            <div class="field" x-show="notify === 'users'" x-cloak x-data="{ q: '' }">
+              <label for="sn-notify-search">{% trans "Colleagues" %}</label>
+              <div class="sn-people">
+                <input id="sn-notify-search" type="search" class="sn-people__search" x-model="q"
+                       placeholder="{% trans 'Search for a person…' %}" autocomplete="off">
+                <ul class="sn-people__list" role="group" aria-label="{% trans 'Colleagues' %}">
+                  {% for u in step_notes_notify.colleagues %}
+                    <li x-show="!q || $el.dataset.name.includes(q.toLowerCase())"
+                        data-name="{{ u.get_full_name|default:u.username|lower }} {{ u.username|lower }}">
+                      <label class="sn-person">
+                        <input type="checkbox" name="notify_users" value="{{ u.pk }}"
+                               :disabled="kind !== 'reminder' || notify !== 'users'">
+                        <span class="sn-person__name">{% if u.on_request %}<span class="sn-person__star" title="{% trans 'Assigned to this request' %}">★</span> {% endif %}{{ u.get_full_name|default:u.username }}</span>
+                        {% if u.profile.role %}<span class="sn-person__role">{% trans u.profile.role.name %}</span>{% endif %}
+                      </label>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+              <p class="sn-hint">{% trans "★ = assigned to this request." %}</p>
             </div>
             {% endif %}
             {% if step_notes_notify.roles %}

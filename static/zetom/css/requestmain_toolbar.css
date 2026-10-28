@@ -192,3 +192,12 @@
 #rm-link-client-modal .rm-sug-score { grid-column: 2; grid-row: 1 / span 2; white-space: nowrap; }
 #rm-link-client-modal .rm-suggestion-row .rm-dupe-btn { grid-column: 3; grid-row: 1 / span 2; white-space: nowrap; }
 .rm-modal__panel--wide .rm-card__title { display: flex; align-items: center; gap: 8px; }
+
+/* Flex/grid children default to min-width:auto (= their content), so one
+   unbreakable file name widened the whole right column past its 340px
+   track. Let every card in the three columns shrink to its track. */
+#content-main .rm-grid--3 > .rm-col,
+#content-main .rm-grid--3 .rm-col > * { min-width: 0; max-width: 100%; }
+.rm-files__list, .rm-files__list li { min-width: 0; max-width: 100%; }
+.rm-files .rm-card__header > * { min-width: 0; }
+.rm-files .rm-card__header .rm-tbtn { flex-shrink: 0; }

@@ -52,7 +52,9 @@ def client_email_choices(obj):
 def colleague_choices(user, obj):
     """Active staff except the author, people on this request first."""
     on_request = set(_main_request(obj).assigned_to.values_list("pk", flat=True)) if obj is not None else set()
-    users = list(User.objects.filter(is_active=True, is_staff=True).exclude(pk=user.pk))
+    users = list(
+        User.objects.filter(is_active=True, is_staff=True).exclude(pk=user.pk).select_related("profile__role")
+    )
     users.sort(key=lambda u: (u.pk not in on_request, (u.get_full_name() or u.username).lower()))
     for u in users:
         u.on_request = u.pk in on_request

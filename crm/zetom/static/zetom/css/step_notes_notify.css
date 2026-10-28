@@ -19,16 +19,40 @@
 .cc-stage .sn-label { font-size: 14.5px; font-weight: 600; color: var(--text-muted); }
 .cc-stage .sn-hint { margin: 0; font-size: 13px; color: var(--text-subtle); }
 .cc-stage .sn-hint--warn { color: var(--amber); }
+/* role pills: the checkbox itself is hidden, the pill is the control */
 .cc-stage .sn-pills { display: flex; flex-wrap: wrap; gap: 8px; }
 .cc-stage .sn-pill {
-  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
-  border: 1px solid var(--border-strong); font-size: 14px; color: var(--text); cursor: pointer;
+  position: relative; display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border-strong);
+  font-size: 14px; font-weight: 600; line-height: 1.2; white-space: nowrap;
+  color: var(--text-muted); background: var(--surface); cursor: pointer;
 }
+.cc-stage .sn-pill input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.cc-stage .sn-pill:hover { background: var(--surface-soft); }
 .cc-stage .sn-pill:has(input:checked) {
   border-color: var(--purple); color: var(--purple);
   background: color-mix(in srgb, var(--purple) 10%, var(--surface));
 }
-#content .cc-stage .field select[multiple] { min-height: 120px; }
+.cc-stage .sn-pill:has(input:checked)::before { content: "✓"; font-weight: 800; }
+.cc-stage .sn-pill:has(input:focus-visible) { outline: 2px solid var(--purple); outline-offset: 2px; }
+
+/* colleagues: searchable checklist */
+.cc-stage .sn-people { border: 1px solid var(--border-strong); border-radius: 11px; overflow: hidden; background: var(--input-bg); }
+#content .cc-stage .sn-people .sn-people__search {
+  width: 100%; border: 0 !important; border-bottom: 1px solid var(--border) !important; border-radius: 0 !important;
+  padding: 10px 13px !important; font-size: 14px; background: transparent !important; box-shadow: none !important;
+}
+.cc-stage .sn-people__list { list-style: none; margin: 0; padding: 4px; max-height: 210px; overflow-y: auto; }
+.cc-stage .sn-person {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  padding: 7px 9px; border-radius: 8px; cursor: pointer;
+}
+.cc-stage .sn-person:hover { background: var(--surface-soft); }
+.cc-stage .sn-person:has(input:checked) { background: color-mix(in srgb, var(--purple) 10%, transparent); }
+.cc-stage .sn-person input { width: 16px; height: 16px; accent-color: var(--purple); margin: 0; }
+.cc-stage .sn-person__name { font-size: 14px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.cc-stage .sn-person__star { color: var(--amber); }
+.cc-stage .sn-person__role { font-size: 12px; color: var(--text-subtle); white-space: nowrap; }
 .cc-stage .sn-tag {
   font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px;
   color: var(--purple); background: color-mix(in srgb, var(--purple) 12%, transparent);
