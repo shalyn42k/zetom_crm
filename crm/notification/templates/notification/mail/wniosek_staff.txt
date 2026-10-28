@@ -3,7 +3,7 @@
        document  — Wniosek
        parent    — document.from_main (RequestMain)
        sender    — request.user
-   Первая строка — тема.{% endcomment %}{% trans "Application received:" %} WNI-{{ document.created_at|date:"Y" }}-{{ document.pk|stringformat:"04d" }} ({{ parent.company_name|default:"—" }})
+   Первая строка — тема.{% endcomment %}{% autoescape off %}{% trans "Application received:" %} WNI-{{ document.created_at|date:"Y" }}-{{ document.pk|stringformat:"04d" }} ({{ parent.company_name|default:"—" }})
 
 {% trans "Hello," %}
 
@@ -21,4 +21,4 @@
 
 {% trans "After this email is sent, the application status in CRM changes to \"waiting\"." %}
 
-{% trans "Sent by:" %} {% if sender %}{{ sender.get_full_name|default:sender.username }}{% else %}{% trans "system" %}{% endif %}
+{% trans "Sent by:" %} {% if sender %}{{ sender.get_full_name|default:sender.username }}{% else %}{% trans "system" %}{% endif %}{% endautoescape %}

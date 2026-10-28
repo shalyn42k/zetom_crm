@@ -10,6 +10,6 @@
        old_status     — старое значение RequestStatus (raw code)
        new_status     — новое значение RequestStatus (raw code)
        actor_name     — кто инициировал (или "system")
-   Первая строка — title уведомления.{% endcomment %}{% blocktrans %}Request {{ request_label }}: status changed{% endblocktrans %}
+   Первая строка — title уведомления.{% endcomment %}{% autoescape off %}{% blocktrans %}Request {{ request_label }}: status changed{% endblocktrans %}
 
-{% blocktrans with old_label=old_status|request_status_label new_label=new_status|request_status_label %}{{ actor_name }} changed status from "{{ old_label }}" to "{{ new_label }}".{% endblocktrans %}
+{% blocktrans with old_label=old_status|request_status_label new_label=new_status|request_status_label %}{{ actor_name }} changed status from "{{ old_label }}" to "{{ new_label }}".{% endblocktrans %}{% endautoescape %}

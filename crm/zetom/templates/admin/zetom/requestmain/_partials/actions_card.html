@@ -16,92 +16,66 @@
     - admin:zetom_requestmain_mail_freeform
 {% endcomment %}
 
-<section class="rm-card rm-card--collapsible"
-         aria-labelledby="rm-actions-heading" id="actions"
-         x-data="rmActions()"
-         @keydown.escape.window="(modal.open && (modal.open = false)) || (reviewModal.open && (reviewModal.open = false)) || (resolveModal.open && (resolveModal.open = false))">
-  <header class="rm-card__header rm-card__toggle" role="button" tabindex="0"
-          :aria-expanded="open"
-          @click="open = !open"
-          @keydown.enter.prevent="open = !open"
-          @keydown.space.prevent="open = !open">
-    <h2 id="rm-actions-heading" class="rm-card__title">{% trans "Actions" %}</h2>
-    <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }"
-         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <polyline points="6 9 12 15 18 9"/>
-    </svg>
-  </header>
+{% comment %}
+  claude — redesign (docs/superpowers/specs/2026-10-27-requests-declutter-
+  design.md): the Actions card became this row of small buttons in the page
+  header. Same rmActions() state and the same teleported modals below; the
+  history card moved into a modal of its own (historyOpen). "Zapisz"
+  submits the main form via form=, the bottom submit row is gone on this
+  page; Cancel/Delete moved into the ⋯ menu.
+{% endcomment %}
+<div class="rm-toolbar" id="actions"
+     x-data="rmActions()"
+     @keydown.escape.window="(modal.open && (modal.open = false)) || (reviewModal.open && (reviewModal.open = false)) || (resolveModal.open && (resolveModal.open = false)) || (historyOpen && (historyOpen = false))">
+  {% if step_notes_enabled %}
+    <button type="button" class="rm-tbtn" @click="$dispatch('open-step-notes')">
+      {% trans "Step notes" %}{% if step_notes|length %} <span class="rm-tcount">{{ step_notes|length }}</span>{% endif %}
+    </button>
+  {% endif %}
+  <button type="button" class="rm-tbtn" @click="historyOpen = true">{% trans "History" %}</button>
+  {% if can_resolve_review and has_open_review %}
+    <details class="rm-tmore">
+      <summary class="rm-tbtn rm-tbtn--attn">{% trans "Review" %} ▾</summary>
+      <div class="rm-tmore__menu">
+        <button type="button" class="rm-tmore__item" @click="openResolve(); $el.closest('details').open = false">{% trans "Resolve review" %}</button>
+        <button type="button" class="rm-tmore__item" @click="openReview(); $el.closest('details').open = false">{% trans "Request review" %}</button>
+      </div>
+    </details>
+  {% else %}
+    <button type="button" class="rm-tbtn" @click="openReview()">{% trans "Request review" %}</button>
+  {% endif %}
+  <button type="button" class="rm-tbtn" @click="openMail()">{% trans "Send email" %}</button>
+  {% url "admin:zetom_requestmain_cancel" original.pk as cancel_url %}
+  {% url "admin:zetom_requestmain_delete" original.pk as delete_url %}
+  {% if can_change_request_status and original.status != "cancelled" or has_delete_permission %}
+    <details class="rm-tmore">
+      <summary class="rm-tbtn" aria-label="{% trans 'More actions' %}">⋯</summary>
+      <div class="rm-tmore__menu">
+        {% if can_change_request_status and original.status != "cancelled" %}
+          <a class="rm-tmore__item" href="{{ cancel_url }}">{% trans "Cancel request" %}</a>
+        {% endif %}
+        {% if has_delete_permission %}
+          <a class="rm-tmore__item rm-tmore__item--danger" href="{{ delete_url }}">{% trans "Delete" %}</a>
+        {% endif %}
+      </div>
+    </details>
+  {% endif %}
+  {% if has_change_permission %}
+    <button type="submit" form="{{ opts.model_name }}_form" name="_continue" value="1" class="rm-tbtn rm-tbtn--primary">{% trans "Save" %}</button>
+  {% endif %}
 
-  <div x-show="open" x-cloak class="rm-actions-body">
-    {% comment %}Каждый экшен — отдельная строка-кнопка в списке (borrowed
-       from the clients cards' .link-head/.opbtn row idiom: icon + name on
-       the left, whole row clickable, chevron on the right). Расширяется
-       добавлением новой <li class="rm-action"> с <button class="rm-action__row">
-       внутри. Кнопка триггерит модалку либо submit'ит форму на свой URL —
-       на стиль это не влияет. Описание экшена не потеряно — оно живёт в
-       title="" самой кнопки.{% endcomment %}
-    <ul class="rm-action-list">
-      <li class="rm-action">
-        <button type="button"
-                class="rm-action__row"
-                @click="openMail()"
-                title='{% trans "Mail a document to staff or a free message to client" %}'>
-          <span class="rm-action__icon" aria-hidden="true">✉</span>
-          <span class="rm-action__name">{% trans "Send mail" %}</span>
-          <svg class="rm-action__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="9 6 15 12 9 18"/>
-          </svg>
-        </button>
-      </li>
-      <li class="rm-action">
-        <button type="button"
-                class="rm-action__row"
-                @click="openReview()"
-                title='{% trans "Notify owners (or escalate to dep heads / admins) to review this request" %}'>
-          <span class="rm-action__icon" aria-hidden="true">⚑</span>
-          <span class="rm-action__name">{% trans "Request review" %}</span>
-          <svg class="rm-action__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="9 6 15 12 9 18"/>
-          </svg>
-        </button>
-      </li>
-
-      {% if can_resolve_review and has_open_review %}
-      <li class="rm-action">
-        <button type="button"
-                class="rm-action__row"
-                @click="openResolve()"
-                title='{% trans "Approve or reject the pending review request" %}'>
-          <span class="rm-action__icon" aria-hidden="true">✓</span>
-          <span class="rm-action__name">{% trans "Resolve review" %}</span>
-          <svg class="rm-action__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="9 6 15 12 9 18"/>
-          </svg>
-        </button>
-      </li>
-      {% endif %}
-
-      {% if step_notes_enabled %}
-      <li class="rm-action">
-        <button type="button"
-                class="rm-action__row"
-                @click="$dispatch('open-step-notes')"
-                title='{% trans "Timeline of actions and notes for colleagues" %}'>
-          <span class="rm-action__icon" aria-hidden="true">📝</span>
-          <span class="rm-action__name">{% trans "Step notes" %}</span>
-          <svg class="rm-action__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="9 6 15 12 9 18"/>
-          </svg>
-        </button>
-      </li>
-      {% endif %}
-    </ul>
-  </div>
+  {# ----------- Модалка: история (была карточкой в правой колонке) ----------- #}
+  <template x-teleport="body">
+    <div class="rm-modal" x-show="historyOpen" x-cloak
+         role="dialog" aria-modal="true" aria-labelledby="rm-history-heading">
+      <div class="rm-modal__backdrop" @click="historyOpen = false"></div>
+      <div class="rm-modal__panel rm-modal__panel--wide" @click.stop>
+        <button type="button" class="rm-modal__close rm-modal__close--float"
+                @click="historyOpen = false" aria-label='{% trans "Close" %}'>×</button>
+        {% include "admin/zetom/requestmain/_partials/history_card.html" with history_in_modal=True %}
+      </div>
+    </div>
+  </template>
 
   {# ----------- Модалка ----------- #}
   <template x-teleport="body">
@@ -449,7 +423,7 @@
       </div>
     </div>
   </template>
-</section>
+</div>
 
 <script>
   // Регистрируется ровно один раз на страницу. Если карточка
@@ -457,8 +431,8 @@
   if (!window.rmActions) {
     window.rmActions = function () {
       return {
-        // collapsible: разворот карточки. По умолчанию открыта — экшенов мало.
-        open: true,
+        // claude — history modal (the history card lives inside it now).
+        historyOpen: false,
         modal: {
           open: false,
           mode: 'document',  // 'document' | 'freeform'

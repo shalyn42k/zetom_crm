@@ -150,6 +150,8 @@ class AddRequestFormMain(TemplateForm):
 
 class AddOferta(TemplateForm):
     departments = _departments_field()
+    # claude — price is computed from the offer items now (OfertaAdmin.save_related);
+    # kept declared for any other form use, not shown on the document window.
     price = forms.DecimalField(
         label=_("Price"),
         required=False, widget=forms.NumberInput(attrs={"placeholder": "0"})

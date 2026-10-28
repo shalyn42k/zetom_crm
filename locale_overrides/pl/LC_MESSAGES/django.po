@@ -567,3 +567,10 @@ msgstr "wygaśnięcia prób dostępu"
 #. catalog
 msgid "Session key hash (sha256)"
 msgstr "Skrót klucza sesji (sha256)"
+
+#. Django admin: inline "add another" link (django/contrib/admin, used by
+#. the offer items on the document window). Django's own Polish
+#. "Dodaj kolejne(go)(-ną)(-ny) %(verbose_name)s" hedges every gender in
+#. one string; a colon reads naturally whatever the noun's gender is.
+msgid "Add another %(verbose_name)s"
+msgstr "Dodaj: %(verbose_name)s"

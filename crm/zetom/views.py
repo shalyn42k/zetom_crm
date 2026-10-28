@@ -1,12 +1,15 @@
 # Django imports
 from django.contrib import messages
-from django.shortcuts import render
+from django.contrib.admin.views.decorators import staff_member_required
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404, render
 from django.utils.translation import gettext_lazy as _
 
 # Notification app imports
 from crm.notification.services.notification_service import (
     send_notification_to_staff,
 )
+from crm.users.utils import user_has_perm
 # Zetom app imports
 from crm.zetom.forms import AddRequestFormNull
 from crm.zetom.models import RequestAttachment, RequestSource
@@ -64,3 +67,23 @@ def email_template(request):
     else:
         form = AddRequestFormNull()
     return render(request, "zetom/email_template.html", {"form": form})
+
+
+# claude — authenticated file download for RequestAttachment. Replaces the
+# raw /media/ links: those were public in DEBUG (anyone with the URL) and
+# 404 in production (no media serving there).
+@staff_member_required
+def attachment_download(request, pk):
+    from crm.zetom.services.visibility import visible_requests_for
+
+    att = get_object_or_404(RequestAttachment, pk=pk)
+    owner = att.owner()
+    if owner is None or not user_has_perm(request.user, "view_requests"):
+        raise Http404
+    if not visible_requests_for(request.user, type(owner).all_objects.filter(pk=owner.pk)).exists():
+        raise Http404
+    try:
+        handle = att.file.open("rb")
+    except FileNotFoundError:
+        raise Http404
+    return FileResponse(handle, filename=att.display_name)

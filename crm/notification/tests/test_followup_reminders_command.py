@@ -5,10 +5,16 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
-from crm.notification.models import Notification
+from crm.notification.models import Notification, NotificationKind
 from crm.zetom.models import RequestMain, StepNote
 
 User = get_user_model()
+
+
+# claude — assigned_to.add() now also creates an ASSIGNMENT notification;
+# these tests are about follow-up reminders only.
+def _reminders():
+    return Notification.objects.filter(kind=NotificationKind.REMINDER)
 
 
 class FollowupRemindersCommandTests(TestCase):
@@ -43,8 +49,8 @@ class FollowupRemindersCommandTests(TestCase):
 
         call_command("create_followup_reminders")
 
-        self.assertEqual(Notification.objects.count(), 1)
-        n = Notification.objects.first()
+        self.assertEqual(_reminders().count(), 1)
+        n = _reminders().first()
         self.assertEqual(n.recipient, self.assignee)
         self.assertIn("next_contact_at", n.payload)
         note.refresh_from_db()
@@ -64,7 +70,7 @@ class FollowupRemindersCommandTests(TestCase):
         call_command("create_followup_reminders")
         call_command("create_followup_reminders")
 
-        self.assertEqual(Notification.objects.count(), 1)
+        self.assertEqual(_reminders().count(), 1)
 
     def test_future_next_contact_does_not_create_notification(self):
         req = self._request()
@@ -79,7 +85,7 @@ class FollowupRemindersCommandTests(TestCase):
 
         call_command("create_followup_reminders")
 
-        self.assertEqual(Notification.objects.count(), 0)
+        self.assertEqual(_reminders().count(), 0)
         note.refresh_from_db()
         self.assertIsNone(note.reminder_sent_at)
 
@@ -97,7 +103,7 @@ class FollowupRemindersCommandTests(TestCase):
 
         call_command("create_followup_reminders")
 
-        recipients = list(Notification.objects.values_list("recipient__username", flat=True))
+        recipients = list(_reminders().values_list("recipient__username", flat=True))
         self.assertEqual(recipients, ["owner_followup"])
 
     def test_without_recipients_keeps_note_unsent(self):
@@ -112,7 +118,7 @@ class FollowupRemindersCommandTests(TestCase):
 
         call_command("create_followup_reminders")
 
-        self.assertEqual(Notification.objects.count(), 0)
+        self.assertEqual(_reminders().count(), 0)
         note.refresh_from_db()
         self.assertIsNone(note.reminder_sent_at)
 
@@ -128,8 +134,8 @@ class FollowupRemindersCommandTests(TestCase):
 
         call_command("create_followup_reminders")
 
-        self.assertEqual(Notification.objects.count(), 1)
-        n = Notification.objects.first()
+        self.assertEqual(_reminders().count(), 1)
+        n = _reminders().first()
         self.assertEqual(n.recipient, self.author)
         note.refresh_from_db()
         self.assertIsNotNone(note.reminder_sent_at)
@@ -148,6 +154,6 @@ class FollowupRemindersCommandTests(TestCase):
 
         call_command("create_followup_reminders")
 
-        self.assertEqual(Notification.objects.count(), 0)
+        self.assertEqual(_reminders().count(), 0)
         note.refresh_from_db()
         self.assertIsNone(note.reminder_sent_at)

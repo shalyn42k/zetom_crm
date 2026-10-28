@@ -1,8 +1,7 @@
 from itertools import chain
 
 from django.db import transaction
-from django.utils.translation import gettext_lazy as _
-from django.utils.translation import gettext_noop
+from django.utils.translation import gettext_lazy as _, gettext_noop
 
 from crm.status_manager.models import ChildDocumentDeletion, StatusHistory
 from crm.status_manager.services.statuses import RequestStatus, Status

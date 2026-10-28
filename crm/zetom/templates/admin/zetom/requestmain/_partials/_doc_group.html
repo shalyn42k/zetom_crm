@@ -1,0 +1,37 @@
+{% load i18n %}
+{% comment %}
+claude — one document type in the Documents card: header with "+ New", then
+every document of that type as a clickable code + status. "Add", not
+"New": Polish would need nowa / nowe / nowy per document gender. Replaces the old
+code <select> + View + "+" row that didn't fit the right column. The create
+button still submits the main form via formaction (same endpoint as before).
+Params: title, letter, docs, prefix, change_url_name, action_url.
+{% endcomment %}
+<article class="rm-dgroup">
+  <header class="rm-dgroup__head">
+    <span class="rm-dgroup__icon" aria-hidden="true">{{ letter }}</span>
+    <h3 class="rm-dgroup__title">{{ title }}</h3>
+    <span class="rm-dgroup__count">{{ docs|length }}</span>
+    {% if has_change_permission %}
+      <button type="submit" formaction="{{ action_url }}" formmethod="post" formnovalidate
+              onclick="setTimeout(() => this.disabled = true)"
+              class="rm-tbtn rm-dgroup__new" aria-label="{% trans 'Add' %}: {{ title }}">
+        + {% trans "Add" %}
+      </button>
+    {% endif %}
+  </header>
+  {% if docs %}
+    <ul class="rm-dgroup__list">
+      {% for d in docs %}
+        <li>
+          <a class="rm-dgroup__doc" href="{% url change_url_name d.pk %}">
+            <span class="rm-dgroup__code">{{ prefix }}-{{ d.created_at|date:"Y" }}-{{ d.pk|stringformat:"04d" }}</span>
+            <span class="rm-dgroup__status rm-dgroup__status--{{ d.status }}">{{ d.get_status_display }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="rm-dgroup__none">{% trans "Not created" %}</p>
+  {% endif %}
+</article>

@@ -51,6 +51,7 @@ create/suggest flows in a live browser, not just by reading the markup.
          data-t-unknown-error="{% trans 'Unknown error' %}"
          data-t-edit="{% trans 'Edit' %}"
          data-t-unlink="{% trans 'Unlink' %}"
+         data-t-unlink-confirm="{% trans 'Unlink this client from the request?' %}"
          data-t-company="{% trans 'Company' %}"
          data-t-first-name="{% trans 'First name' %}"
          data-t-last-name="{% trans 'Last name' %}"
@@ -58,45 +59,61 @@ create/suggest flows in a live browser, not just by reading the markup.
          data-t-email="{% trans 'Email' %}"
          data-t-address="{% trans 'Address' %}">
 
-  <header class="rm-card__header">
-    <h2 id="rm-client-heading" class="rm-card__title">{% trans "Client" %}</h2>
+  {% comment %}
+  claude — redesign: same look as the Klienci cards (panel header with an
+  icon, key/value rows). Every id / js-* hook used by
+  requestmain_client_link.js is kept; "Link a client" moved into the header.
+  {% endcomment %}
+  <header class="rm-card__header rm-panel-h">
+    <h2 id="rm-client-heading" class="rm-card__title">
+      <svg class="rm-panel-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      {% trans "Client" %}
+    </h2>
+    {% if original.pk %}
+      <button type="button" id="rm-link-client-open" class="rm-tbtn rm-client-link-trigger">+ {% trans "Link a client" %}</button>
+    {% endif %}
   </header>
 
-  {# Avatar + company header #}
-  <div class="rm-client">
-    <div class="rm-avatar rm-avatar--lg" aria-hidden="true">
-      {{ original.company_name|default:"?"|slice:":1"|upper }}
-    </div>
-    <div class="rm-client__meta">
-      <div class="rm-client__name">{{ original.company_name|default:"—" }}</div>
-      <div class="rm-client__sub">{% if original.company_nip %}NIP {{ original.company_nip }}{% endif %}</div>
-    </div>
-  </div>
+  {% comment %}claude — company / NIP / contact person are edited in "Client
+  information" now; this card lists the linked client records.{% endcomment %}
 
   {# ---- Linked clients (M2M) ---- #}
+  {% comment %}
+  claude — rows in the Klienci contact-list look: initials, name linking to
+  the client card, email · phone · NIP underneath, and two real buttons
+  instead of the tiny ✎ / × glyphs. requestmain_client_link.js builds the
+  same markup (buildLinkedRow) for rows linked without a reload.
+  {% endcomment %}
   <div class="rm-linked-section" id="rm-linked-list">
     <div class="rm-linked-label">{% trans "Linked clients" %}</div>
-    {% if linked_clients %}
-      {% for cl in linked_clients %}
-        <div class="rm-linked-row" data-client-pk="{{ cl.pk }}">
-          <a class="rm-linked-name" href="{% url 'admin:clients_client_change' cl.pk %}" target="_blank">{{ cl.short_label }}</a>
-          {% with pc=cl.primary_company %}{% if pc and pc.nip %}<span class="rm-linked-nip mono">NIP {{ pc.nip }}</span>{% endif %}{% endwith %}
-          {% if original.pk %}
-            <button type="button" class="rm-linked-edit js-edit-client" data-client="{{ cl.pk }}" title="{% trans "Edit" %}">✎</button>
-            <button type="button" class="rm-linked-x js-unlink-client" data-client="{{ cl.pk }}" title="{% trans "Unlink" %}">×</button>
-          {% endif %}
+    {% for cl in linked_clients %}
+      <div class="rm-linked-row" data-client-pk="{{ cl.pk }}">
+        <span class="rm-linked-ava" aria-hidden="true">{{ cl.first_name|slice:":1"|upper }}{{ cl.last_name|slice:":1"|upper }}</span>
+        <div class="rm-linked-body">
+          <a class="rm-linked-name" href="{% url 'admin:clients_client_change' cl.pk %}" target="_blank" rel="noopener">{{ cl.short_label }}</a>
+          <div class="rm-linked-sub">
+            <span class="rm-linked-contact">{{ cl.email|default:"" }}{% if cl.email and cl.phone %} · {% endif %}{{ cl.phone|default:"" }}</span>
+            {% with pc=cl.primary_company %}<span class="rm-linked-nip mono">{% if pc and pc.nip %}NIP {{ pc.nip }}{% endif %}</span>{% endwith %}
+          </div>
         </div>
-      {% endfor %}
-    {% else %}
-      <div class="rm-linked-empty" id="rm-linked-empty">{% trans "No clients linked yet." %}</div>
-    {% endif %}
+        {% if original.pk %}
+          <div class="rm-linked-actions">
+            <button type="button" class="rm-tbtn js-edit-client" data-client="{{ cl.pk }}">{% trans "Edit" %}</button>
+            <button type="button" class="rm-tbtn rm-tbtn--danger js-unlink-client" data-client="{{ cl.pk }}">{% trans "Unlink" %}</button>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <div class="rm-linked-empty" id="rm-linked-empty"{% if linked_clients %} hidden{% endif %}>
+      <span>{% trans "No clients linked yet." %}</span>
+      {% if original.pk %}
+        <button type="button" class="rm-linked-add js-open-link">+ {% trans "Link a client" %}</button>
+      {% endif %}
+    </div>
   </div>
 
   {% if original.pk %}
-    {# ---- Trigger: opens the link/create modal below (outside this <section>, still inside <form class="rm-grid">) ---- #}
-    <button type="button" id="rm-link-client-open" class="rm-btn rm-btn--sm rm-btn--block rm-client-link-trigger">
-      {% trans "Link a client" %}
-    </button>
+    {# trigger lives in the header now (rm-link-client-open) #}
     <div id="rm-link-status" class="rm-link-status" hidden></div>
   {% else %}
     {# ---- New request: these fields ARE the request's own client info, always visible ---- #}
@@ -156,32 +173,22 @@ create/suggest flows in a live browser, not just by reading the markup.
       ---- Search-and-create form. Client select doubles as linker — Link
       button creates the M2M entry immediately via fetch, no page reload. ----
       {% endcomment %}
-      <dl class="rm-linked-fields">
-        <div class="rm-linked-field rm-linked-field--client">
-          <dt class="rm-linked-field__label"><label for="{{ form.client.id_for_label }}">{% trans "Client" %}</label></dt>
-          <dd class="rm-linked-field__value rm-client-select-row">
-            {{ form.client }}
-            <button type="button" id="rm-linker-btn" class="rm-dupe-btn link">{% trans "Link" %}</button>
-            <button type="button" id="rm-create-btn" class="rm-dupe-btn create">{% trans "Create from request" %}</button>
-          </dd>
+      {% comment %}
+      claude — search on top, full width; label above, short hint, then the
+      two ways out: link the person you picked, or create a new client from
+      this request's data. The request's own company / NIP / name fields
+      live in "Client information"; "Create" reads them from there by id.
+      {% endcomment %}
+      <div class="rm-link-search">
+        <label for="{{ form.client.id_for_label }}" class="rm-link-search__label">{% trans "Find a client" %}</label>
+        {{ form.client }}
+        <p class="rm-link-search__hint">{% trans "Type a surname, company or NIP and pick a person from the list." %}</p>
+        <div class="rm-link-search__actions">
+          <button type="button" id="rm-linker-btn" class="rm-tbtn rm-tbtn--primary">{% trans "Link" %}</button>
+          <span class="rm-link-search__or">{% trans "or" %}</span>
+          <button type="button" id="rm-create-btn" class="rm-tbtn">{% trans "Create a new client from this request" %}</button>
         </div>
-        <div class="rm-linked-field">
-          <dt class="rm-linked-field__label"><label for="{{ form.company_nip.id_for_label }}">{% trans "NIP" %}</label></dt>
-          <dd class="rm-linked-field__value">{{ form.company_nip }}</dd>
-        </div>
-        <div class="rm-linked-field">
-          <dt class="rm-linked-field__label"><label for="{{ form.company_name.id_for_label }}">{% trans "Company" %}</label></dt>
-          <dd class="rm-linked-field__value">{{ form.company_name }}</dd>
-        </div>
-        <div class="rm-linked-field">
-          <dt class="rm-linked-field__label"><label for="{{ form.first_name.id_for_label }}">{% trans "First name" %}</label></dt>
-          <dd class="rm-linked-field__value">{{ form.first_name }}</dd>
-        </div>
-        <div class="rm-linked-field">
-          <dt class="rm-linked-field__label"><label for="{{ form.last_name.id_for_label }}">{% trans "Last name" %}</label></dt>
-          <dd class="rm-linked-field__value">{{ form.last_name }}</dd>
-        </div>
-      </dl>
+      </div>
     </div>
   </div>
 </div>

@@ -19,23 +19,23 @@
 - [x] **`grant_head` теперь permission-driven** — закрыто 2026-05-26.
   - [`_dept_actions._can_grant_head`](crm/users/admin/_dept_actions.py#L78-L84) теперь зовёт `user_has_perm("grant_head")` вместо hardcoded `is_role("admin")`. Админ может делегировать через `extra_permissions` (нужны: `view_users` + `edit_users` + `grant_head`).
 
-- [ ] **POST-эндпоинты `_dept_actions` без `edit_users` гейта** (осталось)
+- [x] **POST-эндпоинты `_dept_actions` без `edit_users` гейта** — проверено 2026-10-27: все четыре action'а гейтятся `_can_edit_departments`.
   - [crm/users/admin/_dept_actions.py](crm/users/admin/_dept_actions.py) — `add_department_action`, `remove_department_action`, `promote_department_action`, `demote_department_action` принимают POST без `user_has_perm("edit_users")`. Сейчас защищены только `admin_view`-обёрткой (is_staff) + новым `has_view_permission` на UserAdmin (фактически view_users). Но прямой POST от юзера с `view_users` без `edit_users` всё ещё проходит — надо добавить явный `user_has_perm("edit_users")` в каждой action.
 
 ## Zetom: баги и дыры в правах
 
-- [ ] Свести два пути удаления RequestMain в один
+- [x] Свести два пути удаления RequestMain в один — проверено 2026-10-27: в `status_orchestration.py` второго `.delete()` больше нет.
   - `apply_status_change` зовёт `delete_request`, а та сама делает `.delete()` — но оркестратор после этого вызывает `.delete()` ещё раз ([status_orchestration.py:56-58](crm/zetom/services/status_orchestration.py#L56-L58)).
   - Параллельно `delete_model` идёт через `_flip_to_deleted` с reason="Deleted via admin" — без формы причины. Семантика рассинхронизирована.
 
 - [ ] `StatusHistory` создавать ДО `.delete()` в `delete_request` ([status_service.py:104-117](crm/status_manager/services/status_service.py#L104-L117))
   - Сейчас порядок: save → delete → history. На soft-delete пока работает, любая правка каскадов сломает.
 
-- [ ] Проверки прав и `get_object_or_404` в кастомных POST-вью RequestMainAdmin
+- [x] Проверки прав и `get_object_or_404` в кастомных POST-вью RequestMainAdmin — проверено 2026-10-27: `_get_req_for_action` / `_get_req_visible` во всех action'ах.
   - `apply_status_action`, `assign_user_action`, `unassign_user_action`, `add_department_action`, `remove_department_action`, `oferta/zlecenie/wniosek_action` ([requestmain.py:239-350](crm/zetom/admin/requestmain.py#L239-L350)) проверяют только метод POST.
   - Спец с правом `view_requests` может менять департаменты/назначения. `RequestMain.objects.get(...)` бросает 500 на мусорный id.
 
-- [ ] Применить `visible_requests_for` в архивных админах
+- [x] Применить `visible_requests_for` в архивных админах — проверено 2026-10-27.
   - `CancelledRequestAdmin` и `DeletedRequestAdmin` переопределяют `get_queryset` целиком и теряют фильтр видимости — специалист видит чужие департаменты.
 
 - [ ] `views.email_template` редиректит публичного юзера в админку
@@ -91,11 +91,8 @@
   - Требует эндпоинта-фрагмента в `crm/users/views.py` + URL — зона авторов `users`, согласовать.
   - Аддитивно к текущей реализации, ничего ломать не нужно.
 
-- [ ] Notifications-таб: согласовать с бизнесом и подключить к модели
-  - Сейчас [tab_notifications.html](crm/users/templates/admin/auth/user/_partials/tab_notifications.html) — UI-заглушка, 3 disabled toggles.
-  - **Сначала нужен бизнес-вход**: какие из 12 триггеров матрицы юзер вправе глушить? По каким каналам (inapp / mail / оба)? Без этого модель проектировать рано — текущие 3 toggle'а это домыслы, могут не совпасть с реальными хотелками.
-  - Когда categories утверждены: модель `UserProfile.notification_settings = JSONField` (дёшево, гибко) либо отдельная `NotificationPreference(user, kind, channel, enabled)` (нормализованно). На альфу не критично — без preferences инструмент работает корректно (всем отправляется по умолчанию).
-  - Зона: согласование — бизнес; модель/UI — `users`-команда; уважение preferences в send-pipeline — `notification` (моя).
+- [x] Notifications-таб подключён к модели `NotificationPreference` — 2026-10-27. Глушатся: назначение, смена статуса, напоминания (inbox/email), сообщения (inbox/email). Review-запросы не глушатся. Своя страница для всех: `/notifications/settings/`; чужие — с правом `manage_notification_settings`.
+  - Список категорий выбран без бизнес-входа — показать заказчику, поправить при необходимости.
 
 - [ ] Avatar в шапке профиля
   - Сейчас — инициалы. Хотим загружаемое изображение → нужно поле `UserProfile.avatar = ImageField(...)` и миграция.
@@ -174,10 +171,10 @@
 | 3 | Document → `in_progress` (signal) | mail | client (`document.email` → `parent.email`) | `mail/client_in_progress.txt` | done |
 | 4 | "Mail" по document (staff action) | mail | каскад (owners → dep_heads → admins) | `mail/{oferta,zlecenie,wniosek}_staff.txt` | done |
 | 5 | Freeform mail (staff action) | mail | client (`request_main.email`) | — (raw subject/body) | done |
-| 6 | Req stale (cron) | mail | каскад | `mail/staff/request_stale_reminder.txt` | pending |
+| 6 | Req stale (cron) | inapp | все с `edit_requests` | `inapp/staff/stale_request.txt` | done (inapp, kind=REMINDER) |
 | 6.1 | Req stale + `NOTIFICATION_REMIND_TO_CLIENT` | mail | client | `mail/client/request_stale_reminder.txt` | pending |
 | 7 | RequestMain `status` changed | inapp | каскад (assigned specialists добавить позже) | `inapp/staff/request_status_changed.txt` | done |
-| 8 | Specialist назначен на Req | inapp | назначенный specialist | `inapp/staff/request_assigned.txt` | pending |
+| 8 | Specialist назначен на Req | inapp | назначенный specialist (кроме actor'а) | `inapp/staff/request_assigned.txt` | done (m2m_changed, 2026-10-27) |
 | 9 | Specialist запросил review | inapp | picker: default по каскаду + extras из dep_heads/admins (фильтр по роли отправителя) | `inapp/staff/review_requested.txt` | done |
 | 10 | Review resolved | inapp | автор запроса (specialist) | `inapp/staff/review_resolved.txt` | done |
 | 11 | Req cancelled / deleted | inapp | каскад + assigned specialists | тот же `request_status_changed.txt` | pending |
@@ -226,8 +223,7 @@
 
 #### Inapp: что осталось
 
-- [ ] Сигнал на M2M `RequestMain.assigned_to.add(user)` → inapp `request_assigned` для добавленного юзера.
-  - Через `m2m_changed`, фильтр `action == "post_add"`. На каждый pk из `pk_set` — отдельная запись.
+- [x] Сигнал на M2M `RequestMain.assigned_to.add(user)` → inapp `request_assigned` — закрыто 2026-10-27 ([signals.py](crm/notification/signals.py), actor через `obj._actor`).
 
 - [ ] V3 — bell-popover для quick-triage (см. handoff §V3). Сейчас inbox-страница это полноценная V1, popover-вариант отдельной задачей.
 
@@ -257,6 +253,15 @@ Backend сейчас захардкожен SMTP. План:
 - [ ] Сделать `EMAIL_BACKEND` тоже env-управляемым (`os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")`). Тогда в dev можно ставить `console.EmailBackend` (письма в stdout) без правки кода.
 - [ ] Для реальной отправки заполнить в production-`.env`: `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USE_TLS`, `SMTP_USER`, `SMTP_PASSWORD`. Не коммитить.
 - Локально для интеграционного теста — MailHog / Mailtrap; production — Google Workspace / SendGrid / Mailgun.
+
+### Напоминания с адресатом (Dziennik kontaktów) — 2026-10-27
+
+- [x] «Komu przypomnieć» в существующем окне напоминаний: mnie / współpracownicy / rola / klient e-mailem (`StepNote.notify*`). Доставка тиком `create_followup_reminders`; письмо клиенту само закрывает напоминание.
+- [x] Права: `send_client_messages`, `send_staff_messages`, `message_roles`, `manage_notification_settings` (dep_head: первые три; specialist: первые два).
+- [x] Email-копия напоминаний сотрудникам — по опции «Przypomnienia e-mailem» (по умолчанию выкл.).
+- [x] Отдельная панель/модель `ScheduledMessage` из первой версии удалена — дублировала окно напоминаний.
+- [ ] Повторяющиеся напоминания (раз в N дней) — не делали.
+- [ ] Шаблоны документов (Oferta/Zlecenie/Wniosek) — пока заглушка; ждём пример от заказчика. Потом — настоящий PDF.
 
 ## RBAC
 
@@ -312,7 +317,7 @@ Backend сейчас захардкожен SMTP. План:
 
 ### Видимость для dep_head в visibility.py (DOCS/rbac.md §7.3)
 
-- [ ] `crm/zetom/services/visibility.py:34` — dep_head сейчас видит все Req (как admin). Нужно сузить до `qs.filter(departments__overlap=profile.head_of_departments)`, иначе head ничем не отличается от auditor по видимости.
+- [x] `crm/zetom/services/visibility.py` — dep_head сужен до своих отделов (ab3e094), проверено 2026-10-27. Было: dep_head видит все Req (как admin). Нужно сузить до `qs.filter(departments__overlap=profile.head_of_departments)`, иначе head ничем не отличается от auditor по видимости.
 
 ## Validation Window
 

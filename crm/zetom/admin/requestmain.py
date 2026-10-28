@@ -13,8 +13,7 @@ from django.db import transaction
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import path, reverse
-from django.utils.translation import gettext, gettext_noop
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _, gettext_noop
 from unfold.decorators import display
 
 from crm.clients.models import Client
@@ -250,6 +249,7 @@ class RequestMainAdmin(
             obj.save(update_fields=["departments"])
         if owners_raw:
             owner_users = list(User.objects.filter(pk__in=owners_raw, is_active=True))
+            obj._actor = request.user  # claude — skip self in the assignment notification
             obj.assigned_to.set(owner_users)
             obj.owners.set(owner_users)
         for f in request.FILES.getlist("attachments"):
@@ -334,15 +334,40 @@ class RequestMainAdmin(
             helper = FormHelper()
             helper.form_tag = False
             helper.disable_csrf = True
-            helper.layout = Layout(
-                Row(
-                    Column("email", css_class="rm-col-6"),
-                    Column("phone", css_class="rm-col-6"),
-                    css_class="rm-row",
-                ),
-                Field("address"),
-                Field("message"),
-            )
+            # claude — the request's own copy of the client data: prefilled
+            # from the linked client / company, edited here, saved only on
+            # this request (never written back to the client base), and
+            # copied into Oferta / Zlecenie / Wniosek when one is created.
+            if obj is not None and obj.pk:
+                helper.layout = Layout(
+                    Row(
+                        Column("first_name", css_class="rm-col-6"),
+                        Column("last_name", css_class="rm-col-6"),
+                        css_class="rm-row",
+                    ),
+                    Row(
+                        Column("company_name", css_class="rm-col-6"),
+                        Column("company_nip", css_class="rm-col-6"),
+                        css_class="rm-row",
+                    ),
+                    Row(
+                        Column("email", css_class="rm-col-6"),
+                        Column("phone", css_class="rm-col-6"),
+                        css_class="rm-row",
+                    ),
+                    Field("address"),
+                    Field("message"),
+                )
+            else:
+                helper.layout = Layout(
+                    Row(
+                        Column("email", css_class="rm-col-6"),
+                        Column("phone", css_class="rm-col-6"),
+                        css_class="rm-row",
+                    ),
+                    Field("address"),
+                    Field("message"),
+                )
             form.helper = helper
             context["form"] = form
 
@@ -354,6 +379,10 @@ class RequestMainAdmin(
         context["ofertas"] = obj.oferta_set.order_by("-created_at") if has_obj else []
         context["zlecenia"] = obj.zlecenie_set.order_by("-created_at") if has_obj else []
         context["wnioski"] = obj.wniosek_set.order_by("-created_at") if has_obj else []
+        # claude — total for the Documents card header.
+        context["docs_count"] = (
+            len(context["ofertas"]) + len(context["zlecenia"]) + len(context["wnioski"])
+        )
         context["history_entries"] = (
             list(obj.status_history.select_related("changed_by").order_by("-changed_at"))
             if has_obj else []
@@ -647,14 +676,22 @@ class RequestMainAdmin(
         cl = Client.objects.filter(pk=client_id).first()
         if not cl:
             return JsonResponse({"ok": False, "error": _("not found")}, status=404)
-        # claude — was `_, created = …`: binding `_` here made it a local
-        # name for the whole method, so the `_("not found")` above raised
-        # UnboundLocalError (a 500) instead of returning the message.
+        # claude — was `_, created = …`: binding `_` in this function made the
+        # `_("not found")` above an unbound local → 500 instead of 404.
         _link, created = RequestClientLink.objects.get_or_create(
             request=obj, client=cl, defaults={"linked_by": request.user}
         )
         company = self._client_company(cl)
-        return JsonResponse({"ok": True, "created": created, "label": str(cl), "pk": cl.pk, "nip": company.nip if company else ""})
+        # claude — fill the request's empty "Client information" fields from
+        # this client and its company; the page puts them into the form too.
+        from crm.zetom.services.client_snapshot import fill_empty_from_client
+        filled = fill_empty_from_client(obj, cl)
+        return JsonResponse({
+            "ok": True, "created": created, "label": str(cl), "pk": cl.pk, "nip": company.nip if company else "",
+            # claude — contact line on the linked-client row
+            "email": cl.email or "", "phone": str(cl.phone or ""),
+            "filled": filled,
+        })
 
     def unlink_client_json(self, request, object_id, client_id):
         if request.method != "POST":
@@ -684,7 +721,11 @@ class RequestMainAdmin(
             linked_by=request.user,
         )
         RequestClientLink.objects.create(request=obj, client=cl, linked_by=request.user)
-        return JsonResponse({"ok": True, "label": str(cl), "pk": cl.pk, "nip": company.nip if company else ""})
+        return JsonResponse({
+            "ok": True, "label": str(cl), "pk": cl.pk, "nip": company.nip if company else "",
+            # claude — contact line on the linked-client row
+            "email": cl.email or "", "phone": str(cl.phone or ""),
+        })
 
     def edit_client_json(self, request, object_id, client_id):
         """Returns client data in JSON format for inline editing in a modal."""
@@ -1067,6 +1108,7 @@ class RequestMainAdmin(
             messages.error(request, _("You can't assign this user."))
             return redirect("admin:zetom_requestmain_change", object_id)
 
+        obj._actor = request.user  # claude — skip self in the assignment notification
         obj.assigned_to.add(user)
         messages.success(
             request,
@@ -1231,9 +1273,10 @@ class RequestMainAdmin(
         _obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
         if denied is not None:
             return denied
-        approve_oferta_action(object_id)
+        doc = approve_oferta_action(object_id)
         messages.success(request, _("Offer created."))
-        return redirect("admin:zetom_requestmain_change", object_id)
+        # claude — straight into the new document, data already copied over
+        return redirect("admin:zetom_oferta_change", doc.pk)
 
     def zlecenie_action(self, request, object_id):
         if request.method != "POST":
@@ -1241,9 +1284,10 @@ class RequestMainAdmin(
         _obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
         if denied is not None:
             return denied
-        approve_zlecenie_action(object_id, user=request.user)
+        doc = approve_zlecenie_action(object_id, user=request.user)
         messages.success(request, _("Order created."))
-        return redirect("admin:zetom_requestmain_change", object_id)
+        # claude — straight into the new document, data already copied over
+        return redirect("admin:zetom_zlecenie_change", doc.pk)
 
     def wniosek_action(self, request, object_id):
         if request.method != "POST":
@@ -1251,9 +1295,10 @@ class RequestMainAdmin(
         _obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
         if denied is not None:
             return denied
-        approve_wniosek_action(object_id, user=request.user)
+        doc = approve_wniosek_action(object_id, user=request.user)
         messages.success(request, _("Application created."))
-        return redirect("admin:zetom_requestmain_change", object_id)
+        # claude — straight into the new document, data already copied over
+        return redirect("admin:zetom_wniosek_change", doc.pk)
 
     # ---------- File attachment actions ----------
 

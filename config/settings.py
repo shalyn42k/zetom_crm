@@ -91,6 +91,10 @@ STALE_REQUEST_REMINDER_DAYS = int(os.getenv("STALE_REQUEST_REMINDER_DAYS", "3"))
 # never on a backlog it just inherited.
 STALE_REQUEST_REMINDER_EPOCH = os.getenv("STALE_REQUEST_REMINDER_EPOCH", "2026-08-24")
 
+# claude — language of reminder emails sent to clients from the background
+# tick (no request, so no active language there; LANGUAGE_CODE is "en").
+CLIENT_EMAIL_LANGUAGE = os.getenv("CLIENT_EMAIL_LANGUAGE", "pl")
+
 # Прод-настройки безопасности (включаются автоматически при DEBUG=False).
 # Cloudflare терминирует TLS, поэтому редирект и сертификаты не наша забота.
 if not DEBUG:

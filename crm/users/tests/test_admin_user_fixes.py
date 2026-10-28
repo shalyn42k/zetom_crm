@@ -150,3 +150,24 @@ class AddFormDepartmentsAppliedTests(TestCase):
         })
         user = User.objects.get(username="newhire")
         self.assertIn(dept, user.profile.departments or [])
+
+
+# claude
+class GetFormDoesNotLeakTests(TestCase):
+    """Opening the user add page as someone without edit_roles must not
+    disable the role field for the next (admin) request in the process."""
+
+    def test_role_field_stays_enabled_for_admin(self):
+        from crm.users.models import Role
+        limited = User.objects.create_user("limited", "l@zetom.pl", "pass12345", is_staff=True)
+        limited.profile.role = Role.objects.get(code="department_head")
+        limited.profile.save()
+        role = Role.objects.get(code="department_head")
+        role.permissions.add(*Role.objects.get(code="admin").permissions.filter(code__in=["view_users", "edit_users"]))
+        self.client.force_login(limited)
+        self.client.get(reverse("admin:auth_user_add"))
+
+        admin_user = User.objects.create_superuser("boss", "b@zetom.pl", "pass12345")
+        self.client.force_login(admin_user)
+        response = self.client.get(reverse("admin:auth_user_add"))
+        self.assertFalse(response.context["adminform"].form.fields["role"].disabled)

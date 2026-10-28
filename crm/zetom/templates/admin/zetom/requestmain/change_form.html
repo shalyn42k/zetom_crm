@@ -23,6 +23,7 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
   is still in play.
   {% endcomment %}
   <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}?v={% now "U" %}">
+  <link rel="stylesheet" href="{% static 'zetom/css/requestmain_toolbar.css' %}?v={% now "U" %}">
 {% endblock extrastyle %}
 
 {% block extrahead %}
@@ -67,6 +68,10 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
         <h1 class="rm-h1">{% trans "New request" %}</h1>
       {% endif %}
     </div>
+    {% comment %}claude — redesign: the former Actions card, as small buttons.{% endcomment %}
+    {% if original.pk %}
+      {% include "admin/zetom/requestmain/_partials/actions_card.html" %}
+    {% endif %}
   </header>
 
   {% if original.from_null %}
@@ -89,15 +94,28 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
   {% endif %}
 
   {# -------- Form (client card contains linked clients + linker) -------- #}
-  <form method="post" enctype="multipart/form-data" class="rm-grid"
+  {% comment %}
+  claude — redesign: on an existing request three columns — client (left,
+  Klienci-card look), the request's own info (middle), team / documents /
+  files (right). The add page keeps the original two-column layout.
+  {% endcomment %}
+  <form method="post" enctype="multipart/form-data" class="rm-grid{% if original.pk %} rm-grid--3{% endif %}"
         id="{{ opts.model_name }}_form" novalidate>
     {% csrf_token %}
 
-    <div class="rm-col rm-col--left">
+    {% if original.pk %}
+    <div class="rm-col rm-col--client">
+      {% include "admin/zetom/requestmain/_partials/client_card.html" %}
+    </div>
+    <div class="rm-col rm-col--info">
+      {% include "admin/zetom/requestmain/_partials/client_information.html" %}
+    </div>
+    {% endif %}
+
+    <div class="rm-col rm-col--left"{% if original.pk %} hidden{% endif %}>
+      {% if not original.pk %}
       {% include "admin/zetom/requestmain/_partials/client_card.html" %}
       {% include "admin/zetom/requestmain/_partials/client_information.html" %}
-      {% if original.pk %}
-        {% include "admin/zetom/requestmain/_partials/attachments_card.html" %}
       {% endif %}
       {% if not original.pk %}
         {% include "admin/zetom/requestmain/_partials/source_picker.html" %}
@@ -176,12 +194,14 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
     </div>
 
     {% if original.pk %}
+      {% comment %}
+      claude — redesign: Actions → header buttons, History → modal behind
+      the "History" button, Departments → inside the team card.
+      {% endcomment %}
       <aside class="rm-col rm-col--right">
-        {% include "admin/zetom/requestmain/_partials/actions_card.html" %}
         {% include "admin/zetom/requestmain/_partials/assigned_users.html" %}
-        {% include "admin/zetom/requestmain/_partials/departments.html" %}
         {% include "admin/zetom/requestmain/_partials/documents.html" %}
-        {% include "admin/zetom/requestmain/_partials/history_card.html" %}
+        {% include "admin/zetom/requestmain/_partials/files_compact.html" %}
       </aside>
     {% endif %}
   </form>
@@ -189,6 +209,10 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
 </div>
 {% include "admin/zetom/shared/step_notes_modal.html" with step_notes_hide_inline_trigger=True %}
 {% endblock content %}
+
+{% comment %}claude — "Save" lives in the header on an existing request; the
+bottom submit row stays only on the add page.{% endcomment %}
+{% block footer %}{% if not original.pk %}{{ block.super }}{% endif %}{% endblock footer %}
 
 {% block extra_js %}
   {{ block.super }}

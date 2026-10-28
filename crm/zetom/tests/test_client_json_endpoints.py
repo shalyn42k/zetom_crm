@@ -81,3 +81,10 @@ class ClientJsonEndpointsTest(TestCase):
         company = Company.objects.get(nip="1234563218")
         self.assertEqual(CompanyPersonLink.objects.filter(company=company, person=new).count(), 1)
         self.assertTrue(RequestClientLink.objects.filter(request=self.req, client=new).exists())
+
+    # claude — `_` used to be shadowed in link_client_json, turning this 404 into a 500.
+    def test_link_json_unknown_client_is_404(self, _perm):
+        url = reverse("admin:zetom_requestmain_link_client_json", args=[self.req.pk, 999999])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(response.json()["ok"])

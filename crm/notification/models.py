@@ -13,6 +13,10 @@ class NotificationKind(models.TextChoices):
     REVIEW_RESOLVED = "REVIEW_RESOLVED", _("Review resolved")
     ASSIGNMENT = "ASSIGNMENT", _("Assignment")
     SYSTEM = "SYSTEM", _("System")
+    # claude — reminders (StepNote follow-ups, stale requests) and reminders
+    # one staff member addresses to others get their own kinds so the inbox
+    # can filter them and NotificationPreference can mute them.
+    REMINDER = "REMINDER", _("Reminder")
 
 
 class EmailStatus(models.TextChoices):
@@ -108,3 +112,34 @@ class Notification(models.Model):
         actor = self.actor.get_username() if self.actor_id else "system"
         when = self.created_at.strftime("%Y-%m-%d %H:%M") if self.created_at else "—"
         return f"{kind_label} · {actor} → {self.recipient.get_username()} · {when}"
+
+
+# claude
+class NotificationPreference(models.Model):
+    """Per-user switches for the notifications that can be muted.
+
+    No row means "all defaults" — preferences.get_preferences() returns an
+    unsaved instance in that case, so the send pipeline never has to create
+    rows just to read them. Review requests/resolutions and system events
+    are deliberately not here: they require action, muting them would
+    silently break the review flow.
+    """
+
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="notification_preference",
+        verbose_name=_("User"),
+    )
+    inapp_assignment = models.BooleanField(default=True, verbose_name=_("Assigned to a request"))
+    inapp_status_change = models.BooleanField(default=True, verbose_name=_("Request status changed"))
+    inapp_reminders = models.BooleanField(default=True, verbose_name=_("Reminders in the inbox"))
+    email_reminders = models.BooleanField(default=False, verbose_name=_("Reminders by email"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated at"))
+
+    class Meta:
+        verbose_name = _("Notification preference")
+        verbose_name_plural = _("Notification preferences")
+
+    def __str__(self):
+        return str(_("Notification preferences: %(user)s") % {"user": self.user.get_username()})

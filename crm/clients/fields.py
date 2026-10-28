@@ -29,12 +29,14 @@ class ClientPickerWidget(forms.Widget):
         pk = "" if value is None else value
         return format_html(
             '<input type="text" data-client-picker data-target="{id}" '
-            'placeholder="{placeholder}" autocomplete="off">'
+            'data-empty="{empty}" placeholder="{placeholder}" autocomplete="off">'
             '<input type="hidden" name="{name}" id="{id}" value="{pk}">',
             id="id_%s" % name,
             name=name,
             pk=pk,
             placeholder=_("Szukaj klienta — nazwisko, firma lub NIP…"),
+            # claude — shown by client_picker.js when the search finds nobody
+            empty=_("No matching clients"),
         )
 
 

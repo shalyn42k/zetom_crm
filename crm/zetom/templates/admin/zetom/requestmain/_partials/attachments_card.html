@@ -34,8 +34,8 @@
           <polyline points="14 2 14 8 20 8"/>
         </svg>
         <div class="rm-history-row__body" style="flex:1; min-width:0;">
-          <a href="{{ att.file.url }}" target="_blank" class="rm-history-row__action"
-             style="word-break:break-all;">{{ att.file.name|cut:"request_attachments/" }}</a>
+          <a href="{{ att.download_url }}" target="_blank" rel="noopener" class="rm-history-row__action"
+             style="word-break:break-all;">{{ att.display_name }}</a>
           <div class="rm-history-row__sub">
             <strong>{{ att.uploaded_by.username|default:"—" }}</strong>
             <span class="rm-history-row__sep">·</span>

@@ -35,8 +35,7 @@ from django.db import transaction
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, reverse
-from django.utils.translation import gettext_lazy as _
-from django.utils.translation import gettext_noop
+from django.utils.translation import gettext_lazy as _, gettext_noop
 
 from crm.clients.models import Client
 from crm.clients.services import create_person_with_company
@@ -246,6 +245,7 @@ def _do_approve(rn: RequestNull, cleaned: dict, user=None):
         )
 
     owners = list(cleaned["owners"])
+    new_main._actor = user  # claude — skip self in the assignment notification
     new_main.assigned_to.set(owners)
     new_main.owners.set(owners)
 

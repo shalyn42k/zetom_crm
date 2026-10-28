@@ -8,8 +8,7 @@ from django.contrib import admin, messages
 from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import path
-from django.utils.translation import gettext_lazy as _
-from django.utils.translation import gettext_noop
+from django.utils.translation import gettext_lazy as _, gettext_noop
 from unfold.admin import ModelAdmin
 
 from crm.status_manager.models import StatusHistory

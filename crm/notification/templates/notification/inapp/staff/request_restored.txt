@@ -5,6 +5,6 @@
        request_label  — короткая строка-заголовок, e.g. "NULL-42 — Acme"
        source         — источник лида
        actor_name     — кто восстановил (или "system")
-   Первая строка — title уведомления.{% endcomment %}{% blocktrans %}Lead {{ request_label }} restored{% endblocktrans %}
+   Первая строка — title уведомления.{% endcomment %}{% autoescape off %}{% blocktrans %}Lead {{ request_label }} restored{% endblocktrans %}
 
-{% blocktrans %}{{ actor_name }} restored this lead to the Validation Window.{% endblocktrans %}
+{% blocktrans %}{{ actor_name }} restored this lead to the Validation Window.{% endblocktrans %}{% endautoescape %}

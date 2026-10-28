@@ -33,6 +33,29 @@
     setTimeout(function () { el.hidden = true; }, 3000);
   }
 
+  // claude — same markup as the server-rendered rows in client_card.html.
+  function initials(label) {
+    return (label || "").split(/\s+/).filter(Boolean).slice(0, 2)
+      .map(function (w) { return w.charAt(0).toUpperCase(); }).join("");
+  }
+
+  function contactLine(email, phone) {
+    return [email, phone].filter(Boolean).join(" \u00b7 ");
+  }
+
+  // claude — the server filled the request's empty "Client information"
+  // fields from the linked client; mirror that in the open form (only where
+  // the input is still empty, so nothing typed gets overwritten).
+  function applyFilled(filled) {
+    Object.keys(filled || {}).forEach(function (name) {
+      var input = document.getElementById("id_" + name);
+      if (input && !input.value) {
+        input.value = filled[name];
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+  }
+
   function buildLinkedRow(cl, card) {
     var unlinkBase = card.dataset.unlinkUrl.replace("/0/", "/" + cl.pk + "/");
     // claude — was a hard-coded "/admin/clients/client/…": a 404 whenever
@@ -42,10 +65,18 @@
     row.className = "rm-linked-row";
     row.dataset.clientPk = cl.pk;
     row.innerHTML =
-      '<a class="rm-linked-name" href="' + clientUrl + '" target="_blank">' + cl.label + "</a>" +
-      (cl.nip ? '<span class="rm-linked-nip mono">NIP ' + cl.nip + "</span>" : "") +
-      '<button type="button" class="rm-linked-edit js-edit-client" data-client="' + cl.pk + '" title="' + escapeHtml(t("tEdit", "Edit")) + '">\u270e</button>' +
-      '<button type="button" class="rm-linked-x js-unlink-client" data-client="' + cl.pk + '" data-url="' + unlinkBase + '" title="' + escapeHtml(t("tUnlink", "Unlink")) + '">\u00d7</button>';
+      '<span class="rm-linked-ava" aria-hidden="true">' + escapeHtml(initials(cl.label)) + "</span>" +
+      '<div class="rm-linked-body">' +
+        '<a class="rm-linked-name" href="' + clientUrl + '" target="_blank" rel="noopener">' + escapeHtml(cl.label) + "</a>" +
+        '<div class="rm-linked-sub">' +
+          '<span class="rm-linked-contact">' + escapeHtml(contactLine(cl.email, cl.phone)) + "</span>" +
+          '<span class="rm-linked-nip mono">' + (cl.nip ? "NIP " + escapeHtml(cl.nip) : "") + "</span>" +
+        "</div>" +
+      "</div>" +
+      '<div class="rm-linked-actions">' +
+        '<button type="button" class="rm-tbtn js-edit-client" data-client="' + cl.pk + '">' + escapeHtml(t("tEdit", "Edit")) + "</button>" +
+        '<button type="button" class="rm-tbtn rm-tbtn--danger js-unlink-client" data-client="' + cl.pk + '" data-url="' + unlinkBase + '">' + escapeHtml(t("tUnlink", "Unlink")) + "</button>" +
+      "</div>";
     return row;
   }
 
@@ -121,6 +152,10 @@
     }
 
     if (linkOpenBtn) linkOpenBtn.addEventListener("click", openLinkModal);
+    // claude — the empty-state button opens the same modal
+    document.querySelectorAll(".js-open-link").forEach(function (b) {
+      b.addEventListener("click", openLinkModal);
+    });
     if (linkModalOverlay) linkModalOverlay.addEventListener("click", closeLinkModal);
     if (linkModalClose) linkModalClose.addEventListener("click", closeLinkModal);
 
@@ -169,6 +204,7 @@
         if (!btn) return;
         var pk  = parseInt(btn.dataset.client, 10);
         if (!pk) return;
+        if (!window.confirm(t("tUnlinkConfirm", "Unlink this client from the request?"))) return;
         var base = card.dataset.unlinkUrl;
         var url  = btn.dataset.url || base.replace("/0/", "/" + pk + "/");
         postJson(url)
@@ -197,6 +233,7 @@
           .then(function (d) {
             if (d.ok) {
               var row = buildLinkedRow(d, card);
+              applyFilled(d.filled);
               if (empty) list.insertBefore(row, empty);
               else list.appendChild(row);
               hideEmpty();
@@ -225,6 +262,7 @@
             if (d.ok) {
               if (!d.created) { closeLinkModal(); showStatus(status, t("tAlreadyLinked", "Already linked."), true); return; }
               var row = buildLinkedRow(d, card);
+              applyFilled(d.filled);
               if (empty) list.insertBefore(row, empty);
               else list.appendChild(row);
               hideEmpty();
@@ -245,6 +283,7 @@
           .then(function (d) {
             if (d.ok) {
               var row = buildLinkedRow(d, card);
+              applyFilled(d.filled);
               if (empty) list.insertBefore(row, empty);
               else list.appendChild(row);
               hideEmpty();
@@ -281,6 +320,8 @@
                 if (nameEl) nameEl.textContent = d.label;
                 var nipEl = row.querySelector(".rm-linked-nip");
                 if (nipEl) nipEl.textContent = d.nip ? "NIP " + d.nip : "";
+                var contactEl = row.querySelector(".rm-linked-contact");
+                if (contactEl) contactEl.textContent = contactLine(d.email, d.phone);
               }
               // claude — phase 3c: sync only person fields to the RequestMain
               // form; the request keeps its own company snapshot (not edited

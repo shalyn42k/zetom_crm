@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 # Django imports
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import (
@@ -176,9 +178,100 @@ class Oferta(RequestTemplate):
         blank=True,
     )
 
+    # claude — fields of the offer document template (Oferta numer … /
+    # dotyczy / pozycje / warunki), see templates/admin/zetom/shared/
+    # document_paper_oferta.html. Defaults are the wording of the company's
+    # own sample offer. `price` stays the net total (items + extra costs),
+    # recomputed on save, so everything that already reads it keeps working.
+    offer_number = models.CharField(max_length=60, blank=True, verbose_name=_("Offer number"))
+    offer_date = models.DateField(null=True, blank=True, verbose_name=_("Offer date"))
+    subject = models.CharField(
+        max_length=255, blank=True, default="wzorcowania przyrządów pomiarowych", verbose_name=_("Regarding"),
+    )
+    # claude — "W odpowiedzi na <e-mail> z dnia <data>": a channel + a date
+    # (picked from a calendar) instead of free text typed every time.
+    class InquiryChannel(models.TextChoices):
+        EMAIL = "email", _("e-mail")
+        PHONE = "phone", _("phone call")
+        LETTER = "letter", _("letter")
+        FORM = "form", _("website form")
+
+    # Polish wording on the sheet — the document is always issued in Polish,
+    # whatever language the person editing it uses.
+    INQUIRY_PHRASES_PL = {
+        "email": "e-mail",
+        "phone": "zapytanie telefoniczne",
+        "letter": "pismo",
+        "form": "zapytanie złożone przez formularz",
+    }
+
+    inquiry_channel = models.CharField(
+        max_length=10, choices=InquiryChannel.choices, default=InquiryChannel.EMAIL, verbose_name=_("Inquiry received by"),
+    )
+    inquiry_date = models.DateField(null=True, blank=True, verbose_name=_("Inquiry date"))
+    extra_costs = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Additional costs (net)"),
+    )
+    vat_rate = models.PositiveSmallIntegerField(default=23, verbose_name=_("VAT rate (%)"))
+    place_of_work = models.CharField(
+        max_length=255, blank=True, default="w miejscu użytkowania", verbose_name=_("Place of work"),
+    )
+    completion_term = models.CharField(max_length=255, blank=True, verbose_name=_("Completion date"))
+    confirmation_document = models.CharField(
+        max_length=255, blank=True, default="„Świadectwo Wzorcowania” z PCA",
+        verbose_name=_("Confirming document"),
+    )
+    payment_terms = models.CharField(
+        max_length=255, blank=True, default="przelew płatny do 14 dni", verbose_name=_("Payment terms"),
+    )
+
     class Meta:
         verbose_name = _("Offer")
         verbose_name_plural = _("Offers")
+
+    # claude
+    @property
+    def inquiry_phrase(self):
+        return self.INQUIRY_PHRASES_PL.get(self.inquiry_channel, "")
+
+    @property
+    def items_total(self):
+        return sum((i.line_total for i in self.items.all()), Decimal("0"))
+
+    @property
+    def net_total(self):
+        return self.items_total + (self.extra_costs or Decimal("0"))
+
+    @property
+    def vat_amount(self):
+        return (self.net_total * Decimal(self.vat_rate) / Decimal(100)).quantize(Decimal("0.01"))
+
+    @property
+    def gross_total(self):
+        return self.net_total + self.vat_amount
+
+
+# claude — one line of the offer table (Lp. / Nazwa / Ilość / cena).
+class OfertaItem(models.Model):
+    oferta = models.ForeignKey(Oferta, on_delete=models.CASCADE, related_name="items", verbose_name=_("Offer"))
+    position = models.PositiveSmallIntegerField(default=0, verbose_name=_("Sort order"))
+    name = models.CharField(max_length=255, verbose_name=_("Instrument name"))
+    details = models.TextField(blank=True, verbose_name=_("Details"))
+    norm = models.CharField(max_length=255, blank=True, verbose_name=_("Standard"))
+    quantity = models.PositiveIntegerField(default=1, verbose_name=_("Quantity"))
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Unit price (net)"))
+
+    class Meta:
+        verbose_name = _("Offer item")
+        verbose_name_plural = _("Offer items")
+        ordering = ["position", "pk"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def line_total(self):
+        return (self.unit_price or Decimal("0")) * self.quantity
 
 
 class Zlecenie(RequestTemplate):
@@ -285,6 +378,17 @@ class RequestAttachment(models.Model):
         blank=True,
         related_name="attachments",
     )
+    # claude — files on the document window ("Pliki i notatki zespołu").
+    # Declared by name because Oferta/Zlecenie/Wniosek are defined above.
+    oferta = models.ForeignKey(
+        "Oferta", on_delete=models.CASCADE, null=True, blank=True, related_name="attachments",
+    )
+    zlecenie = models.ForeignKey(
+        "Zlecenie", on_delete=models.CASCADE, null=True, blank=True, related_name="attachments",
+    )
+    wniosek = models.ForeignKey(
+        "Wniosek", on_delete=models.CASCADE, null=True, blank=True, related_name="attachments",
+    )
     file = models.FileField(upload_to="request_attachments/%Y/%m/")
     uploaded_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.ForeignKey(
@@ -301,6 +405,22 @@ class RequestAttachment(models.Model):
 
     def __str__(self):
         return self.file.name
+
+    # claude — the only link templates should use: goes through
+    # zetom:attachment (login + visibility check), works in production too,
+    # where /media/ isn't served at all.
+    @property
+    def download_url(self):
+        from django.urls import reverse
+        return reverse("zetom:attachment", args=[self.pk])
+
+    @property
+    def display_name(self):
+        return self.file.name.rsplit("/", 1)[-1]
+
+    def owner(self):
+        """The request or document this file belongs to."""
+        return self.request_main or self.oferta or self.zlecenie or self.wniosek or self.request_null
 
 
 # claude — through-таблицы для Oferta/Zlecenie/Wniosek.clients (M2M).
@@ -458,6 +578,39 @@ class StepNote(models.Model):
         verbose_name=_("Done at"),
     )
 
+    # claude — who a reminder is addressed to (Dziennik kontaktów → "Komu
+    # przypomnieć"). Empty = the original behaviour: owners → assignees →
+    # author (notification/services/followup_reminders._resolve_recipients).
+    class Notify(models.TextChoices):
+        SELF = "self", _("Me")
+        USERS = "users", _("Colleagues")
+        ROLES = "roles", _("Role")
+        CLIENT = "client", _("Client by email")
+
+    notify = models.CharField(
+        max_length=10,
+        choices=Notify.choices,
+        blank=True,
+        verbose_name=_("Remind whom"),
+    )
+    notify_users = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name="addressed_reminders",
+        verbose_name=_("Colleagues to remind"),
+    )
+    notify_roles = ArrayField(
+        models.CharField(max_length=50),
+        default=list,
+        blank=True,
+        verbose_name=_("Roles to remind"),
+    )
+    client_email = models.EmailField(
+        max_length=254,
+        blank=True,
+        verbose_name=_("Client email"),
+    )
+
     target_content_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
@@ -500,6 +653,24 @@ class StepNote(models.Model):
     def __str__(self):
         who = self.author.username if self.author_id else "system"
         return f"{who}: {self.action or self.text[:40]}"
+
+    # claude — "→ whom" tag on the work-log timeline (step_notes_modal.html).
+    # Empty for contacts and for reminders that use the default recipients.
+    @property
+    def notify_label(self):
+        if self.kind != self.Kind.REMINDER or not self.notify:
+            return ""
+        if self.notify == self.Notify.SELF:
+            return str(_("me"))
+        if self.notify == self.Notify.CLIENT:
+            return str(_("client · %(email)s") % {"email": self.client_email})
+        if self.notify == self.Notify.ROLES:
+            from crm.users.models import Role
+
+            names = {r.code: str(r) for r in Role.objects.filter(code__in=self.notify_roles)}
+            return str(_("role: %(roles)s") % {"roles": ", ".join(names.get(c, c) for c in self.notify_roles)})
+        people = [u.get_full_name() or u.get_username() for u in self.notify_users.all()]
+        return ", ".join(people)
 
     # claude — дублирует CheckConstraint-ы с переводимыми сообщениями,
     # привязанными к конкретному полю, чтобы админка показывала ошибку

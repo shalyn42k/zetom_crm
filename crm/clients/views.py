@@ -7,8 +7,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.utils.translation import gettext
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext, gettext_lazy
 from django.views import View
 from django.views.decorators.http import require_POST
 from phonenumber_field.phonenumber import to_python as phone_to_python

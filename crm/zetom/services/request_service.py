@@ -48,20 +48,44 @@ def _approve_child(model, main_id, **extra):
         main_obj = get_object_or_404(
             RequestMain.objects.select_for_update(), pk=main_id
         )
+        # claude — the whole "Client information" copy goes over (names were
+        # missing), and so do the linked client records; the document's own
+        # copy is edited from here on.
         child = model.objects.create(
             from_main=main_obj,
+            first_name=main_obj.first_name,
+            last_name=main_obj.last_name,
             phone=main_obj.phone,
             company_name=main_obj.company_name,
             company_nip=main_obj.company_nip,
             email=main_obj.email,
             source=RequestSource.PARENT,
-            **extra,
+            **{**_template_defaults(model, main_obj), **extra},
         )
 
         child.assigned_to.set(main_obj.assigned_to.all())
+        for client in main_obj.clients.all():
+            child.clients.through.objects.get_or_create(request=child, client=client)
 
         update_parent(main_obj)
     return child
+
+
+# claude — offer: "W odpowiedzi na <kanał> z dnia <data>" from the request
+# itself (when it came in and how), so the sheet is filled before anyone types.
+_SOURCE_TO_CHANNEL = {"email": "email", "phone": "phone", "site": "form"}
+
+
+def _template_defaults(model, main_obj):
+    if model is not Oferta:
+        return {}
+    from django.utils import timezone
+
+    defaults = {"inquiry_date": timezone.localtime(main_obj.created_at).date(), "offer_date": timezone.localdate()}
+    channel = _SOURCE_TO_CHANNEL.get(main_obj.source)
+    if channel:
+        defaults["inquiry_channel"] = channel
+    return defaults
 
 
 def approve_oferta_action(main_id):

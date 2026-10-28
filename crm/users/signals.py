@@ -64,6 +64,13 @@ def create_rbac_defaults(sender, **kwargs):
         ("view_clients", _("View clients")),
         ("edit_clients", _("Edit/create clients")),
         ("delete_clients", _("Delete clients")),
+        # claude — who a StepNote reminder may be addressed to (Dziennik
+        # kontaktów: client by email / colleagues / a whole role), plus
+        # changing other users' notification settings.
+        ("send_client_messages", _("Send emails and reminders to clients")),
+        ("send_staff_messages", _("Send messages and reminders to other users")),
+        ("message_roles", _("Send messages to everyone with a role")),
+        ("manage_notification_settings", _("Change other users' notification settings")),
     ]
 
     # Создание permissions
@@ -123,6 +130,10 @@ def create_rbac_defaults(sender, **kwargs):
                 # claude — dep_head создаёт Req'ы и видит клиентов в форме.
                 "view_clients",
                 "edit_clients",
+                # claude — сообщения/напоминания, включая рассылку по ролям.
+                "send_client_messages",
+                "send_staff_messages",
+                "message_roles",
             ],
         },
         "specialist": {
@@ -137,6 +148,9 @@ def create_rbac_defaults(sender, **kwargs):
                 # claude — spec'у нужен autofill и search клиентов в форме Req.
                 "view_clients",
                 "edit_clients",
+                # claude — пишет клиенту и коллегам, но не целым ролям.
+                "send_client_messages",
+                "send_staff_messages",
             ],
         },
         "auditor": {

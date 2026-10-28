@@ -19,7 +19,7 @@
 <section class="rm-card rm-card--collapsible" aria-labelledby="rm-users-heading" id="assigned-users" x-data="{ open: $persist(true).as('rm-users-{{ request.user.id }}-{{ original.pk }}') }">
   <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
     <h2 id="rm-users-heading" class="rm-card__title">
-      {% trans "Assigned users" %}
+      {% trans "Team" %}
       <span class="rm-counter">{{ original.assigned_to.count }}</span>
     </h2>
     <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
@@ -91,9 +91,13 @@
 
   {% if assignable_users %}
     <div class="rm-user-add">
-      <select name="user_id" class="rm-select">
+      {# claude — searchable via static/admin/js/combobox.js #}
+      <select name="user_id" class="rm-select" data-combobox
+              data-combobox-placeholder="{% trans 'Search for a person…' %}"
+              data-combobox-empty="{% trans 'Nobody matches' %}">
+        <option value=""></option>
         {% for u in assignable_users %}
-          <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>
+          <option value="{{ u.pk }}" data-sub="{% if u.profile.role %}{% trans u.profile.role.name %}{% endif %}">{{ u.get_full_name|default:u.username }}</option>
         {% endfor %}
       </select>
       <button type="submit"
@@ -101,9 +105,11 @@
               formmethod="post"
               formnovalidate
               class="rm-btn rm-btn--primary rm-btn--sm">
-        + {% trans "Add user" %}
+        + {% trans "Add" %}
       </button>
     </div>
   {% endif %}
+  {# claude — departments used to be a card of their own #}
+  {% include "admin/zetom/requestmain/_partials/departments.html" with embedded=True %}
   </div>
 </section>

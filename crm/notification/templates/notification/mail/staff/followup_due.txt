@@ -1,0 +1,8 @@
+{% load i18n %}{% comment %}Email-копия follow-up напоминания (claude). Первая строка — тема.
+   Контекст — тот же payload, что у inapp/staff/followup_due.txt.
+{% endcomment %}{% autoescape off %}{% blocktrans %}Reminder: contact the client — {{ target_label }}{% endblocktrans %}
+{% blocktrans %}Next client contact: {{ next_contact_at }}{% endblocktrans %}
+{% if note_action %}{% blocktrans %}Action: {{ note_action }}{% endblocktrans %}
+{% endif %}{% if note_text %}{% blocktrans %}Note: {{ note_text }}{% endblocktrans %}
+{% endif %}
+{% blocktrans %}Author: {{ author }}{% endblocktrans %}{% endautoescape %}
