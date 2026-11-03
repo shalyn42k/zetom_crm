@@ -30,6 +30,9 @@ class DepartmentsVariants(models.TextChoices):
     DEPARTMENT_4 = "DEPARTMENT_4", _("Mechanical Lab")
     DEPARTMENT_5 = "DEPARTMENT_5", _("Heating Equipment Lab")
     DEPARTMENT_6 = "DEPARTMENT_6", _("Technical Office")
+    DEPARTMENT_7 = "DEPARTMENT_7", _("Training")
+    DEPARTMENT_8 = "DEPARTMENT_8", _("Certification")
+    DEPARTMENT_9 = "DEPARTMENT_9", _("Economic")
 
 class RequestSource(models.TextChoices):
     PHONE = "phone", _("Phone")
