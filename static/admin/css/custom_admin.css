@@ -145,6 +145,9 @@ select[multiple] {
     color: var(--custom-input-text) !important;
     padding: 6px !important;
     font-size: 0.875rem !important;
+    /* claude — once the list hits its top/bottom, the wheel used to carry
+       on scrolling the whole page; keep the scroll inside the list. */
+    overscroll-behavior: contain;
 }
 
 select[multiple] option {

@@ -472,6 +472,9 @@ button.up-perm-group__summary {
   list-style: none; margin: 0; padding: 0;
   display: grid; gap: 2px;
   max-height: 240px; overflow: auto;
+  /* claude — scrolling the department picker to its end no longer
+     scrolls the page behind it. */
+  overscroll-behavior: contain;
 }
 .up-picker-row {
   display: flex; align-items: center; gap: 10px;
