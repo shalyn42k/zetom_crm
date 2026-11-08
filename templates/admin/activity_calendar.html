@@ -4,6 +4,7 @@
 {% block extrahead %}
     {{ block.super }}
     <link rel="stylesheet" href="{% static 'admin/css/activity_calendar.css' %}">
+    <script src="{% static 'admin/js/activity_calendar.js' %}" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -25,9 +26,31 @@
     <div class="activity-calendar__layout">
         <section class="activity-calendar__panel" aria-label="{% translate 'Calendar' %}">
             <div class="activity-calendar__navigation">
-                {% if previous %}<a class="activity-calendar__button" href="?date={{ previous|date:'Y-m-d' }}" aria-label="{% translate 'Previous month' %}">‹</a>{% else %}<span></span>{% endif %}
-                <h2>{{ month|date:"F Y" }}</h2>
-                {% if next %}<a class="activity-calendar__button" href="?date={{ next|date:'Y-m-d' }}" aria-label="{% translate 'Next month' %}">›</a>{% else %}<span></span>{% endif %}
+                {% if previous %}<a class="activity-calendar__arrow" href="?date={{ previous|date:'Y-m-d' }}" aria-label="{% translate 'Previous month' %}">‹</a>{% else %}<span class="activity-calendar__arrow-placeholder"></span>{% endif %}
+                <details class="activity-calendar__period" data-period-picker>
+                    <summary class="activity-calendar__period-toggle">
+                        <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                        <span>{{ month|date:"F Y" }}</span>
+                        <span class="activity-calendar__period-chevron" aria-hidden="true">⌄</span>
+                    </summary>
+                    <form method="get" class="activity-calendar__month-picker" data-month-picker>
+                        <div class="activity-calendar__picker-heading">
+                            <span>{% translate "Choose month and year" %}</span>
+                            <div class="activity-calendar__year-field">
+                                <label for="activity-calendar-year">{% translate "Year" %}</label>
+                                <input id="activity-calendar-year" type="number" name="year" value="{{ month|date:'Y' }}" min="1900" max="9998" required>
+                            </div>
+                        </div>
+                        <input type="hidden" name="month" value="{{ month|date:'m' }}">
+                        <div class="activity-calendar__month-grid">
+                            {% for option in month_options %}
+                                <button type="submit" name="month" value="{{ option|date:'m' }}" class="activity-calendar__month-option{% if option.month == month.month %} is-selected{% endif %}"{% if option.month == month.month %} aria-current="date"{% endif %}>{{ option|date:"M" }}</button>
+                            {% endfor %}
+                        </div>
+                        <noscript><button type="submit" class="activity-calendar__button activity-calendar__year-submit">{% translate "Show month" %}</button></noscript>
+                    </form>
+                </details>
+                {% if next %}<a class="activity-calendar__arrow" href="?date={{ next|date:'Y-m-d' }}" aria-label="{% translate 'Next month' %}">›</a>{% else %}<span class="activity-calendar__arrow-placeholder"></span>{% endif %}
             </div>
             <div class="activity-calendar__grid">
                 <span class="activity-calendar__weekday">{% translate "Mon" %}</span>

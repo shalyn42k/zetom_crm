@@ -5279,3 +5279,12 @@ msgstr[1] "%(count)s events"
 
 msgid "Only saved activity with a recorded author is shown. Past actions without an author and deleted records may be unavailable."
 msgstr "Only saved activity with a recorded author is shown. Past actions without an author and deleted records may be unavailable."
+
+msgid "Choose month and year"
+msgstr "Choose month and year"
+
+msgid "Show month"
+msgstr "Show month"
+
+msgid "Year"
+msgstr "Year"

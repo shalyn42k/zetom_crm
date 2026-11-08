@@ -146,6 +146,47 @@ class ActivityCalendarTests(TestCase):
         self.assertEqual(response.context["day_count"], 0)
         self.assertContains(response, "No recorded activity on this day.")
 
+    def test_select_month_directly(self):
+        response = self.client.get(reverse("activity_calendar"), {"month": "2024-02"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["month"].isoformat(), "2024-02-01")
+        self.assertEqual(response.context["selected"].isoformat(), "2024-02-01")
+        self.assertEqual(response.context["previous"].isoformat(), "2024-01-01")
+        self.assertEqual(response.context["next"].isoformat(), "2024-03-01")
+        self.assertContains(response, 'value="02" class="activity-calendar__month-option is-selected"')
+        self.assertContains(response, 'name="year" value="2024"')
+        self.assertContains(response, 'data-period-picker')
+        self.assertContains(response, '<noscript><button type="submit"')
+        self.assertContains(response, 'href="?date=2024-02-29"')
+
+    def test_select_month_and_year_separately(self):
+        response = self.client.get(reverse("activity_calendar"), {"month": "12", "year": "2021"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected"].isoformat(), "2021-12-01")
+        self.assertContains(response, 'value="12" class="activity-calendar__month-option is-selected"')
+        self.assertContains(response, 'name="year" value="2021"')
+        for data in (
+            {"month": "02", "year": ""},
+            {"month": "02", "year": "202"},
+            {"month": "02", "year": "9999"},
+            {"month": "13", "year": "2021"},
+            {"year": "2021"},
+        ):
+            with self.subTest(data=data):
+                self.assertEqual(self.client.get(reverse("activity_calendar"), data).status_code, 400)
+
+    def test_month_button_overrides_hidden_current_month(self):
+        response = self.client.get(
+            reverse("activity_calendar"), {"year": "2024", "month": ["02", "12"]}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["selected"].isoformat(), "2024-12-01")
+
+    def test_reject_invalid_months(self):
+        for value in ("", "2024-00", "2024-13", "2024-2", "202402", "0001-01", "9999-12", "2024-02-01"):
+            with self.subTest(value=value):
+                self.assertEqual(self.client.get(reverse("activity_calendar"), {"month": value}).status_code, 400)
+
     def test_access_and_bad_dates(self):
         for value in ("not-a-date", "2026-02-30", "0001-01-01", "9999-12-01", "20261008"):
             self.assertEqual(self.client.get(reverse("activity_calendar"), {"date": value}).status_code, 400)

@@ -5420,3 +5420,12 @@ msgstr[3] "%(count)s zdarzenia"
 
 msgid "Only saved activity with a recorded author is shown. Past actions without an author and deleted records may be unavailable."
 msgstr "Widoczna jest tylko zapisana aktywność z określonym autorem. Wcześniejsze działania bez autora oraz usunięte zapisy mogą być niedostępne."
+
+msgid "Choose month and year"
+msgstr "Wybierz miesiąc i rok"
+
+msgid "Show month"
+msgstr "Pokaż miesiąc"
+
+msgid "Year"
+msgstr "Rok"
