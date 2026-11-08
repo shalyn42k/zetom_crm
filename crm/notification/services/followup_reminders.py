@@ -48,7 +48,7 @@ def _create_for_note(note: StepNote, now):
             locked.save(update_fields=["reminder_sent_at", "done_at"])
             return sent
 
-        recipients = _resolve_recipients(locked, target)
+        recipients = resolve_followup_recipients(locked, target)
         if not recipients:
             return 0
 
@@ -77,7 +77,7 @@ def _create_for_note(note: StepNote, now):
         return len(notifications) + emailed
 
 
-def _resolve_recipients(note: StepNote, target):
+def resolve_followup_recipients(note: StepNote, target):
     # claude — explicit addressee chosen in the work-log modal wins over the
     # default cascade below.
     addressed = _addressed_recipients(note)

@@ -5308,3 +5308,115 @@ msgstr "Profil użytkownika"
 
 #~ msgid "The saved version is sent — save your changes first."
 #~ msgstr "Wysyłana jest zapisana wersja — najpierw zapisz zmiany."
+
+msgid "Open activity calendar"
+msgstr "Otwórz kalendarz aktywności"
+
+msgid "My activity calendar"
+msgstr "Mój kalendarz aktywności"
+
+msgid "Back to dashboard"
+msgstr "Powrót do pulpitu"
+
+msgid "Your recorded activity on requests you can currently access."
+msgstr "Twoja zapisana aktywność w zgłoszeniach, do których masz obecnie dostęp."
+
+msgid "Requests this month"
+msgstr "Zgłoszenia w tym miesiącu"
+
+msgid "Recorded events"
+msgstr "Zapisane zdarzenia"
+
+msgid "Requests on selected day"
+msgstr "Zgłoszenia w wybranym dniu"
+
+msgid "Calendar"
+msgstr "Kalendarz"
+
+msgid "Previous month"
+msgstr "Poprzedni miesiąc"
+
+msgid "Next month"
+msgstr "Następny miesiąc"
+
+msgid "requests"
+msgstr "zgłoszeń"
+
+msgid "Each number counts distinct requests with recorded activity that day."
+msgstr "Każda liczba oznacza liczbę różnych zgłoszeń z zapisaną aktywnością tego dnia."
+
+msgid "Selected day"
+msgstr "Wybrany dzień"
+
+msgid "No recorded activity on this day."
+msgstr "Brak zapisanej aktywności w tym dniu."
+
+msgid "Only saved events with a recorded author are shown. Past actions without an author and deleted records may be unavailable."
+msgstr "Widoczne są tylko zapisane zdarzenia z określonym autorem. Wcześniejsze działania bez autora oraz usunięte zapisy mogą być niedostępne."
+
+msgid "Request created"
+msgstr "Utworzono zgłoszenie"
+
+msgid "Request updated"
+msgstr "Zaktualizowano zgłoszenie"
+
+msgid "Request deleted"
+msgstr "Usunięto zgłoszenie"
+
+msgid "Status changed"
+msgstr "Zmieniono status"
+
+msgid "Reminder created"
+msgstr "Utworzono przypomnienie"
+
+msgid "Contact recorded"
+msgstr "Zapisano kontakt"
+
+msgid "Document activity"
+msgstr "Aktywność w dokumencie"
+
+msgid "Request administration"
+msgstr "Działania administracyjne w zgłoszeniu"
+
+msgid "Document deleted"
+msgstr "Usunięto dokument"
+
+msgid "Invalid date."
+msgstr "Nieprawidłowa data."
+
+msgid "Your recorded activity and planned reminders on requests you can currently access."
+msgstr "Twoja zapisana aktywność i zaplanowane przypomnienia w zgłoszeniach, do których masz obecnie dostęp."
+
+msgid "Requests with recorded activity"
+msgstr "Zgłoszenia z zapisaną aktywnością"
+
+msgid "Open reminders due on this date"
+msgstr "Otwarte przypomnienia na ten dzień"
+
+msgid "Planned reminders"
+msgstr "Zaplanowane przypomnienia"
+
+msgid "No planned reminders on this day."
+msgstr "Brak zaplanowanych przypomnień na ten dzień."
+
+msgid "Recorded activity"
+msgstr "Zapisana aktywność"
+
+msgid "Scheduled client email"
+msgstr "Zaplanowany e-mail do klienta"
+
+msgid "Open request"
+msgstr "Otwórz zgłoszenie"
+
+msgid "latest"
+msgstr "ostatnie"
+
+msgid "%(count)s event"
+msgid_plural "%(count)s events"
+msgstr[0] "%(count)s zdarzenie"
+msgstr[1] "%(count)s zdarzenia"
+msgstr[2] "%(count)s zdarzeń"
+msgstr[3] "%(count)s zdarzenia"
+
+msgid "Only saved activity with a recorded author is shown. Past actions without an author and deleted records may be unavailable."
+msgstr "Widoczna jest tylko zapisana aktywność z określonym autorem. Wcześniejsze działania bez autora oraz usunięte zapisy mogą być niedostępne."

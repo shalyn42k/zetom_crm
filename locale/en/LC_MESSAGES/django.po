@@ -5169,3 +5169,113 @@ msgstr ""
 #: templates/unfold/helpers/userlinks.html:30
 msgid "Your profile"
 msgstr ""
+
+msgid "Open activity calendar"
+msgstr "Open activity calendar"
+
+msgid "My activity calendar"
+msgstr "My activity calendar"
+
+msgid "Back to dashboard"
+msgstr "Back to dashboard"
+
+msgid "Your recorded activity on requests you can currently access."
+msgstr "Your recorded activity on requests you can currently access."
+
+msgid "Requests this month"
+msgstr "Requests this month"
+
+msgid "Recorded events"
+msgstr "Recorded events"
+
+msgid "Requests on selected day"
+msgstr "Requests on selected day"
+
+msgid "Calendar"
+msgstr "Calendar"
+
+msgid "Previous month"
+msgstr "Previous month"
+
+msgid "Next month"
+msgstr "Next month"
+
+msgid "requests"
+msgstr "requests"
+
+msgid "Each number counts distinct requests with recorded activity that day."
+msgstr "Each number counts distinct requests with recorded activity that day."
+
+msgid "Selected day"
+msgstr "Selected day"
+
+msgid "No recorded activity on this day."
+msgstr "No recorded activity on this day."
+
+msgid "Only saved events with a recorded author are shown. Past actions without an author and deleted records may be unavailable."
+msgstr "Only saved events with a recorded author are shown. Past actions without an author and deleted records may be unavailable."
+
+msgid "Request created"
+msgstr "Request created"
+
+msgid "Request updated"
+msgstr "Request updated"
+
+msgid "Request deleted"
+msgstr "Request deleted"
+
+msgid "Status changed"
+msgstr "Status changed"
+
+msgid "Reminder created"
+msgstr "Reminder created"
+
+msgid "Contact recorded"
+msgstr "Contact recorded"
+
+msgid "Document activity"
+msgstr "Document activity"
+
+msgid "Request administration"
+msgstr "Request administration"
+
+msgid "Document deleted"
+msgstr "Document deleted"
+
+msgid "Invalid date."
+msgstr "Invalid date."
+
+msgid "Your recorded activity and planned reminders on requests you can currently access."
+msgstr "Your recorded activity and planned reminders on requests you can currently access."
+
+msgid "Requests with recorded activity"
+msgstr "Requests with recorded activity"
+
+msgid "Open reminders due on this date"
+msgstr "Open reminders due on this date"
+
+msgid "Planned reminders"
+msgstr "Planned reminders"
+
+msgid "No planned reminders on this day."
+msgstr "No planned reminders on this day."
+
+msgid "Recorded activity"
+msgstr "Recorded activity"
+
+msgid "Scheduled client email"
+msgstr "Scheduled client email"
+
+msgid "Open request"
+msgstr "Open request"
+
+msgid "latest"
+msgstr "latest"
+
+msgid "%(count)s event"
+msgid_plural "%(count)s events"
+msgstr[0] "%(count)s event"
+msgstr[1] "%(count)s events"
+
+msgid "Only saved activity with a recorded author is shown. Past actions without an author and deleted records may be unavailable."
+msgstr "Only saved activity with a recorded author is shown. Past actions without an author and deleted records may be unavailable."

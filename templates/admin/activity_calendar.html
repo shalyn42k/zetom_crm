@@ -1,0 +1,102 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'admin/css/activity_calendar.css' %}">
+{% endblock %}
+
+{% block content %}
+<main class="activity-calendar">
+    <a class="activity-calendar__back" href="{% url 'admin:index' %}">← {% translate "Back to dashboard" %}</a>
+    <div class="activity-calendar__heading">
+        <div>
+            <p class="activity-calendar__eyebrow">{% translate "My work" %}</p>
+            <h1>{% translate "My activity calendar" %}</h1>
+            <p>{% translate "Your recorded activity and planned reminders on requests you can currently access." %}</p>
+        </div>
+        <a class="activity-calendar__button" href="{% url 'activity_calendar' %}">{% translate "Today" %}</a>
+    </div>
+    <div class="activity-calendar__summary">
+        <div><strong>{{ month_count }}</strong><span>{% translate "Requests this month" %}</span></div>
+        <div><strong>{{ event_count }}</strong><span>{% translate "Recorded events" %}</span></div>
+        <div><strong>{{ day_count }}</strong><span>{% translate "Requests on selected day" %}</span></div>
+    </div>
+    <div class="activity-calendar__layout">
+        <section class="activity-calendar__panel" aria-label="{% translate 'Calendar' %}">
+            <div class="activity-calendar__navigation">
+                {% if previous %}<a class="activity-calendar__button" href="?date={{ previous|date:'Y-m-d' }}" aria-label="{% translate 'Previous month' %}">‹</a>{% else %}<span></span>{% endif %}
+                <h2>{{ month|date:"F Y" }}</h2>
+                {% if next %}<a class="activity-calendar__button" href="?date={{ next|date:'Y-m-d' }}" aria-label="{% translate 'Next month' %}">›</a>{% else %}<span></span>{% endif %}
+            </div>
+            <div class="activity-calendar__grid">
+                <span class="activity-calendar__weekday">{% translate "Mon" %}</span>
+                <span class="activity-calendar__weekday">{% translate "Tue" %}</span>
+                <span class="activity-calendar__weekday">{% translate "Wed" %}</span>
+                <span class="activity-calendar__weekday">{% translate "Thu" %}</span>
+                <span class="activity-calendar__weekday">{% translate "Fri" %}</span>
+                <span class="activity-calendar__weekday">{% translate "Sat" %}</span>
+                <span class="activity-calendar__weekday">{% translate "Sun" %}</span>
+                {% for week in weeks %}{% for day in week %}
+                    {% if day.in_month %}
+                        <a href="?date={{ day.date|date:'Y-m-d' }}" class="activity-calendar__day{% if day.selected %} is-selected{% endif %}{% if day.today %} is-today{% endif %}"{% if day.selected %} aria-current="date"{% endif %}>
+                            <span>{{ day.date.day }}</span>
+                            <span class="activity-calendar__day-counts">
+                                {% if day.count %}<strong><span class="activity-calendar__count-icon" aria-hidden="true">●</span> {{ day.count }} <span class="activity-calendar__count-label">{% translate "requests" %}</span></strong>{% endif %}
+                                {% if day.reminder_count %}<strong class="activity-calendar__day-reminders"><span class="activity-calendar__count-icon" aria-hidden="true">◷</span> {{ day.reminder_count }} <span class="activity-calendar__count-label">{% translate "reminders" %}</span></strong>{% endif %}
+                            </span>
+                        </a>
+                    {% else %}<span class="activity-calendar__day is-outside" aria-hidden="true">{{ day.date.day }}</span>{% endif %}
+                {% endfor %}{% endfor %}
+            </div>
+            <p class="activity-calendar__hint">{% translate "Each number counts distinct requests with recorded activity that day." %}</p>
+            <p class="activity-calendar__hint">● {% translate "Requests with recorded activity" %} · ◷ {% translate "Open reminders due on this date" %}</p>
+        </section>
+        <section class="activity-calendar__panel activity-calendar__details" aria-live="polite">
+            <p class="activity-calendar__eyebrow">{% translate "Selected day" %}</p>
+            <h2>{{ selected|date:"j F Y" }}</h2>
+            <h3 class="activity-calendar__section-title">{% translate "Planned reminders" %}</h3>
+            {% for item in reminders %}
+                <article class="activity-calendar__reminder">
+                    <time>{{ item.note.next_contact_at|date:"H:i" }}</time>
+                    <div>
+                        <a href="{{ item.url }}"><strong>{{ item.request }}</strong> · #{{ item.request.pk }} ↗</a>
+                        <p class="activity-calendar__status">{{ item.note.target_content_type.name }}{% if item.note.notify == "client" %} · {% translate "Scheduled client email" %}{% endif %}</p>
+                        {% if item.note.action %}<p>{{ item.note.action }}</p>{% endif %}
+                        {% if item.note.text %}<p>{{ item.note.text|linebreaksbr }}</p>{% endif %}
+                    </div>
+                </article>
+            {% empty %}
+                <p class="activity-calendar__hint">{% translate "No planned reminders on this day." %}</p>
+            {% endfor %}
+            <h3 class="activity-calendar__section-title">{% translate "Recorded activity" %}</h3>
+            {% for row in rows %}
+                <details class="activity-calendar__request">
+                    <summary>
+                        <span>
+                            <strong>{{ row.request }} · #{{ row.request.pk }}</strong>
+                            <span class="activity-calendar__request-summary">
+                                {% blocktranslate count count=row.events|length %}{{ count }} event{% plural %}{{ count }} events{% endblocktranslate %}
+                                · {% translate "latest" %} {{ row.events.0.time|date:"H:i" }}
+                            </span>
+                        </span>
+                    </summary>
+                    <p class="activity-calendar__status">{{ row.request.get_status_display }}</p>
+                    <a class="activity-calendar__request-link" href="{{ row.url }}">{% translate "Open request" %} ↗</a>
+                    <ol>
+                        {% for event in row.events %}
+                            <li>
+                                <time>{{ event.time|date:"H:i" }}</time>
+                                <div><strong>{{ event.label }}</strong>{% if event.details %}<p>{{ event.details|linebreaksbr }}</p>{% endif %}</div>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                </details>
+            {% empty %}
+                <p class="activity-calendar__hint">{% translate "No recorded activity on this day." %}</p>
+            {% endfor %}
+        </section>
+    </div>
+    <p class="activity-calendar__hint">{% translate "Only saved activity with a recorded author is shown. Past actions without an author and deleted records may be unavailable." %}</p>
+</main>
+{% endblock %}

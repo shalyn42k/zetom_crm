@@ -1405,6 +1405,7 @@
                                 <p class="crm-dashboard__section-eyebrow">{% translate "This week" %}</p>
                                 <p class="crm-dashboard__week-range">{{ weekly.week_start|date:"d M" }} – {{ weekly.week_end|date:"d M" }}</p>
                             </div>
+                            <a href="{% url 'activity_calendar' %}" class="crm-dashboard__text-link">{% translate "Open activity calendar" %}</a>
                             <div class="crm-dashboard__week-hero">
                                 <strong class="crm-dashboard__week-hero-num">{{ weekly.updated }}</strong>
                                 <div class="crm-dashboard__week-hero-meta">

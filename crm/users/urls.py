@@ -1,8 +1,10 @@
 from django.urls import path
+from django.contrib import admin
 
-from . import views
+from . import activity_views, views
 
 urlpatterns = [
+    path("activity-calendar/", admin.site.admin_view(activity_views.activity_calendar), name="activity_calendar"),
     path("", views.UserListView.as_view(), name="user_list"),
     path("create/", views.UserCreateView.as_view(), name="user_create"),
     path("<int:pk>/edit/", views.UserEditView.as_view(), name="user_edit"),

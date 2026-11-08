@@ -580,7 +580,7 @@ class StepNote(models.Model):
 
     # claude — who a reminder is addressed to (Dziennik kontaktów → "Komu
     # przypomnieć"). Empty = the original behaviour: owners → assignees →
-    # author (notification/services/followup_reminders._resolve_recipients).
+    # author (notification/services/followup_reminders.resolve_followup_recipients).
     class Notify(models.TextChoices):
         SELF = "self", _("Me")
         USERS = "users", _("Colleagues")
