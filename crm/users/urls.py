@@ -1,10 +1,17 @@
 from django.urls import path
 from django.contrib import admin
+from django.views.generic import RedirectView
 
-from . import activity_views, views
+from . import views
 
 urlpatterns = [
-    path("activity-calendar/", admin.site.admin_view(activity_views.activity_calendar), name="activity_calendar"),
+    path(
+        "activity-calendar/",
+        admin.site.admin_view(RedirectView.as_view(
+            pattern_name="admin:zetom_requestmain_activity_calendar", query_string=True,
+        )),
+        name="activity_calendar",
+    ),
     path("", views.UserListView.as_view(), name="user_list"),
     path("create/", views.UserCreateView.as_view(), name="user_create"),
     path("<int:pk>/edit/", views.UserEditView.as_view(), name="user_edit"),

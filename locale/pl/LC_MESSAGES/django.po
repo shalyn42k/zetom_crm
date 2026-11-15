@@ -5429,3 +5429,17 @@ msgstr "Pokaż miesiąc"
 
 msgid "Year"
 msgstr "Rok"
+
+msgid "request"
+msgid_plural "requests"
+msgstr[0] "zgłoszenie"
+msgstr[1] "zgłoszenia"
+msgstr[2] "zgłoszeń"
+msgstr[3] "zgłoszenia"
+
+msgid "reminder"
+msgid_plural "reminders"
+msgstr[0] "przypomnienie"
+msgstr[1] "przypomnienia"
+msgstr[2] "przypomnień"
+msgstr[3] "przypomnienia"

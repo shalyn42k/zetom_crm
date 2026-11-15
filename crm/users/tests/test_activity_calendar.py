@@ -4,11 +4,14 @@ from zoneinfo import ZoneInfo
 from django.contrib.admin.models import ADDITION, LogEntry
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.db import connection
 from django.test import TestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import override
 
+from crm.notification.services.followup_reminders import resolve_followup_recipients
 from crm.status_manager.models import ChildDocumentDeletion, StatusHistory
 from crm.users.models import Role
 from crm.zetom.models import Oferta, RequestMain, StepNote
@@ -87,7 +90,7 @@ class ActivityCalendarTests(TestCase):
         )
         LogEntry.objects.filter(pk=main_log.pk).update(action_time=self.when)
 
-        response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-08"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["day_count"], 1)
         self.assertEqual(response.context["month_count"], 1)
@@ -103,7 +106,7 @@ class ActivityCalendarTests(TestCase):
         self.note(self.visible, self.user, "Day one")
         after_midnight = datetime(2026, 10, 8, 22, 30, tzinfo=datetime_timezone.utc)
         self.note(self.visible, self.user, "Day two", after_midnight)
-        response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-09"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-09"})
         self.assertEqual(response.context["month_count"], 1)
         self.assertEqual(response.context["day_count"], 1)
         self.assertContains(response, "Day two")
@@ -123,7 +126,7 @@ class ActivityCalendarTests(TestCase):
             document_repr="Old offer", reason="Duplicate",
         )
         ChildDocumentDeletion.objects.filter(pk=deletion.pk).update(deleted_at=self.when)
-        response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-08"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
         self.assertEqual(response.context["day_count"], 1)
         self.assertEqual(response.context["event_count"], 1)
         self.assertContains(response, "Old offer")
@@ -135,19 +138,19 @@ class ActivityCalendarTests(TestCase):
         self.visible.save()
         history = self.visible.history.first()
         self.visible.history.filter(pk=history.pk).update(history_user=self.user, history_date=self.when)
-        response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-08"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
         self.assertContains(response, "Visible request")
         self.assertContains(response, "Changed company")
 
     def test_navigation_and_empty_date(self):
-        response = self.client.get(reverse("activity_calendar"), {"date": "2026-01-15"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-01-15"})
         self.assertEqual(response.context["previous"].isoformat(), "2025-12-01")
         self.assertEqual(response.context["next"].isoformat(), "2026-02-01")
         self.assertEqual(response.context["day_count"], 0)
         self.assertContains(response, "No recorded activity on this day.")
 
     def test_select_month_directly(self):
-        response = self.client.get(reverse("activity_calendar"), {"month": "2024-02"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"month": "2024-02"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["month"].isoformat(), "2024-02-01")
         self.assertEqual(response.context["selected"].isoformat(), "2024-02-01")
@@ -160,7 +163,7 @@ class ActivityCalendarTests(TestCase):
         self.assertContains(response, 'href="?date=2024-02-29"')
 
     def test_select_month_and_year_separately(self):
-        response = self.client.get(reverse("activity_calendar"), {"month": "12", "year": "2021"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"month": "12", "year": "2021"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["selected"].isoformat(), "2021-12-01")
         self.assertContains(response, 'value="12" class="activity-calendar__month-option is-selected"')
@@ -173,11 +176,11 @@ class ActivityCalendarTests(TestCase):
             {"year": "2021"},
         ):
             with self.subTest(data=data):
-                self.assertEqual(self.client.get(reverse("activity_calendar"), data).status_code, 400)
+                self.assertEqual(self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), data).status_code, 400)
 
     def test_month_button_overrides_hidden_current_month(self):
         response = self.client.get(
-            reverse("activity_calendar"), {"year": "2024", "month": ["02", "12"]}
+            reverse("admin:zetom_requestmain_activity_calendar"), {"year": "2024", "month": ["02", "12"]}
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["selected"].isoformat(), "2024-12-01")
@@ -185,34 +188,149 @@ class ActivityCalendarTests(TestCase):
     def test_reject_invalid_months(self):
         for value in ("", "2024-00", "2024-13", "2024-2", "202402", "0001-01", "9999-12", "2024-02-01"):
             with self.subTest(value=value):
-                self.assertEqual(self.client.get(reverse("activity_calendar"), {"month": value}).status_code, 400)
+                self.assertEqual(self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"month": value}).status_code, 400)
 
     def test_access_and_bad_dates(self):
         for value in ("not-a-date", "2026-02-30", "0001-01-01", "9999-12-01", "20261008"):
-            self.assertEqual(self.client.get(reverse("activity_calendar"), {"date": value}).status_code, 400)
+            self.assertEqual(self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": value}).status_code, 400)
         self.user.profile.role = None
         self.user.profile.save()
-        self.assertEqual(self.client.get(reverse("activity_calendar")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("admin:zetom_requestmain_activity_calendar")).status_code, 403)
         self.client.logout()
-        self.assertEqual(self.client.get(reverse("activity_calendar")).status_code, 302)
+        self.assertEqual(self.client.get(reverse("admin:zetom_requestmain_activity_calendar")).status_code, 302)
 
     def test_cancelled_request_uses_archive_link(self):
         self.visible.status = "cancelled"
         self.visible.save()
         self.note(self.visible, self.user, "Cancelled note")
-        response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-08"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
         self.assertContains(response, reverse("admin:zetom_cancelledrequest_change", args=[self.visible.pk]))
 
     def test_dashboard_links_to_calendar(self):
         response = self.client.get(reverse("admin:index"))
-        self.assertContains(response, reverse("activity_calendar"))
+        self.assertContains(response, reverse("admin:zetom_requestmain_activity_calendar"))
+
+    def test_calendar_url_and_legacy_redirect_preserve_query(self):
+        url = reverse("admin:zetom_requestmain_activity_calendar")
+        self.assertIn("/zetom/requestmain/activity-calendar/", url)
+        response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-08"})
+        self.assertRedirects(response, url + "?date=2026-10-08", fetch_redirect_response=False)
+        self.client.logout()
+        self.assertEqual(self.client.get(url).status_code, 302)
+
+    def test_history_translates_departments_and_choice_values(self):
+        self.visible.history.update(history_date=self.when - timedelta(days=1))
+        self.visible.departments = ["DEPARTMENT_1"]
+        self.visible.source = "phone"
+        self.visible.save()
+        record = self.visible.history.first()
+        self.visible.history.filter(pk=record.pk).update(history_user=self.user, history_date=self.when)
+        self.user.profile.departments = ["DEPARTMENT_0", "DEPARTMENT_1"]
+        self.user.profile.save()
+        self.client.cookies["django_language"] = "pl"
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
+        with override("pl"):
+            department = str(dict(self.visible._meta.get_field("departments").base_field.choices)["DEPARTMENT_1"])
+        self.assertContains(response, department)
+        self.assertNotContains(response, "DEPARTMENT_1")
+
+    def test_polish_counts_use_correct_plural_forms(self):
+        self.client.cookies["django_language"] = "pl"
+        for index in range(5):
+            obj = RequestMain.objects.create(
+                company_name=f"Plural {index}", phone="+48501600300",
+                email="test@example.com", departments=["DEPARTMENT_0"],
+            )
+            for count in (1, 2, 5):
+                if index < count:
+                    when = self.when + timedelta(days=count)
+                    self.note(obj, self.user, "Test", when)
+                    reminder = self.reminder(obj, self.user, "Test", notify=StepNote.Notify.SELF)
+                    StepNote.objects.filter(pk=reminder.pk).update(next_contact_at=when)
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
+        for noun in ("zgłoszenie", "zgłoszenia", "zgłoszeń", "przypomnienie", "przypomnienia", "przypomnień"):
+            self.assertContains(response, f">{noun}</span>")
+
+    def test_reminder_queries_do_not_scale_with_number_of_reminders(self):
+        url = reverse("admin:zetom_requestmain_activity_calendar")
+        self.visible.owners.add(self.user)
+        self.reminder(self.doc, self.other, "Baseline")
+        with CaptureQueriesContext(connection) as baseline:
+            response = self.client.get(url, {"date": "2026-10-08"})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.context["reminders"]), 1)
+        for index in range(20):
+            self.reminder(self.doc, self.other, f"Extra {index}")
+        with CaptureQueriesContext(connection) as more:
+            response = self.client.get(url, {"date": "2026-10-08"})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.context["reminders"]), 21)
+        self.assertLessEqual(len(more), len(baseline) + 1)
+
+    def test_calendar_recipients_match_notification_cascade(self):
+        reminder = self.reminder(self.doc, self.other, "Cascade")
+        url = reverse("admin:zetom_requestmain_activity_calendar")
+
+        def verify():
+            recipients = resolve_followup_recipients(reminder, self.doc)
+            response = self.client.get(url, {"date": "2026-10-08"})
+            self.assertEqual(
+                bool(response.context["reminders"]),
+                any(person.pk == self.user.pk for person in recipients),
+            )
+
+        verify()
+        self.visible.assigned_to.add(self.user)
+        verify()
+        self.doc.assigned_to.add(self.other)
+        verify()
+        self.visible.owners.add(self.user)
+        verify()
+        self.user.is_active = False
+        self.user.save()
+        from crm.users.services.calendar_reminders import reminders_for_calendar
+        from crm.zetom.models import Wniosek, Zlecenie
+        from crm.zetom.services.visibility import visible_requests_for
+        models = (RequestMain, Oferta, Zlecenie, Wniosek)
+        filtered = reminders_for_calendar(
+            self.user, self.when.date(), self.when.date(),
+            visible_requests_for(self.user, RequestMain.objects.all()), models,
+            ContentType.objects.get_for_models(*models),
+        )
+        self.assertFalse(filtered.exists())
+
+    def test_inactive_assignees_do_not_block_author_fallback(self):
+        reminder = self.reminder(self.doc, self.user, "Author fallback")
+        self.other.is_active = False
+        self.other.save()
+        self.visible.owners.add(self.other)
+        self.doc.assigned_to.add(self.other)
+        self.visible.assigned_to.add(self.other)
+        expected = resolve_followup_recipients(reminder, self.doc)
+        response = self.client.get(
+            reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"}
+        )
+        self.assertIn(self.user, expected)
+        self.assertEqual([item["note"].pk for item in response.context["reminders"]], [reminder.pk])
+
+    def test_superuser_receives_admin_role_reminders_except_own(self):
+        root = get_user_model().objects.create_superuser("calendar_root", "root@example.com", "x")
+        root.profile.otp_exempt = True
+        root.profile.save()
+        self.client.force_login(root)
+        note = self.reminder(self.visible, self.other, "Admin role", notify=StepNote.Notify.ROLES, notify_roles=["admin"])
+        self.reminder(self.visible, root, "Own role reminder", notify=StepNote.Notify.ROLES, notify_roles=["admin"])
+        response = self.client.get(
+            reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"}
+        )
+        self.assertEqual([item["note"].pk for item in response.context["reminders"]], [note.pk])
 
     def test_polish_translation(self):
         self.note(self.visible, self.user, "First event", self.when)
         self.note(self.visible, self.user, "Second event", self.when)
         self.client.cookies["django_language"] = "pl"
         with override("pl"):
-            response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-08"})
+            response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
         self.assertContains(response, "Mój kalendarz aktywności")
         self.assertContains(response, "Zaplanowane przypomnienia")
         self.assertContains(response, "2 zdarzenia")
@@ -220,7 +338,7 @@ class ActivityCalendarTests(TestCase):
     def test_activity_is_collapsed_with_count_latest_time_and_link(self):
         self.note(self.visible, self.user, "First event", self.when)
         self.note(self.visible, self.user, "Latest event", self.when + timedelta(minutes=30))
-        response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-08"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
         self.assertContains(response, '<details class="activity-calendar__request">')
         self.assertContains(response, "2 events")
         self.assertContains(response, "12:30")
@@ -234,7 +352,7 @@ class ActivityCalendarTests(TestCase):
         StepNote.objects.filter(pk=reminder.pk).update(
             created_at=self.when - timedelta(days=1), next_contact_at=due,
         )
-        response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-09"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-09"})
         self.assertEqual(response.context["day_count"], 0)
         self.assertEqual(response.context["event_count"], 1)
         self.assertEqual(len(response.context["reminders"]), 1)
@@ -244,7 +362,7 @@ class ActivityCalendarTests(TestCase):
         day = next(day for week in response.context["weeks"] for day in week if day["date"].isoformat() == "2026-10-09")
         self.assertEqual(day["count"], 0)
         self.assertEqual(day["reminder_count"], 1)
-        created_day = self.client.get(reverse("activity_calendar"), {"date": "2026-10-07"})
+        created_day = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-07"})
         self.assertEqual(created_day.context["day_count"], 1)
         self.assertEqual(len(created_day.context["reminders"]), 0)
 
@@ -264,7 +382,7 @@ class ActivityCalendarTests(TestCase):
         self.reminder(self.visible, self.user, "Client message", notify=StepNote.Notify.CLIENT, client_email="client@example.com")
         self.reminder(self.visible, self.other, "Other client message", notify=StepNote.Notify.CLIENT, client_email="client@example.com")
 
-        response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-08"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
         texts = {item["note"].text for item in response.context["reminders"]}
         self.assertEqual(texts, {"Assigned to me", "For my role", "Client message"})
         self.assertContains(response, "Scheduled client email")
@@ -274,20 +392,20 @@ class ActivityCalendarTests(TestCase):
     def test_default_recipients_use_owner_then_assignees_then_author(self):
         self.reminder(self.doc, self.other, "Default reminder")
         self.visible.owners.add(self.user)
-        response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-08"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
         self.assertEqual([item["note"].text for item in response.context["reminders"]], ["Default reminder"])
         self.visible.owners.clear()
         self.doc.assigned_to.add(self.other)
-        response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-08"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
         self.assertEqual(response.context["reminders"], [])
         self.doc.assigned_to.clear()
         self.visible.assigned_to.add(self.user)
-        response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-08"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
         self.assertEqual([item["note"].text for item in response.context["reminders"]], ["Default reminder"])
 
     def test_done_reminder_disappears_from_plan_but_creation_remains(self):
         reminder = self.reminder(self.visible, self.user, "Done later", notify=StepNote.Notify.SELF)
         StepNote.objects.filter(pk=reminder.pk).update(created_at=self.when, done_at=self.when)
-        response = self.client.get(reverse("activity_calendar"), {"date": "2026-10-08"})
+        response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
         self.assertEqual(response.context["reminders"], [])
         self.assertContains(response, "Done later")
