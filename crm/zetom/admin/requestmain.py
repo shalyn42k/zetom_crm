@@ -30,6 +30,7 @@ from crm.zetom.models import (
     RequestSource,
 )
 from crm.zetom.services.duplicate_matcher import find_candidates
+from crm.zetom.services.history_labels import history_field_label, history_value_label
 from crm.zetom.services.per_req_perms import (
     can_assign_anyone, can_assign_target, can_manage_owners,
     can_resolve_review, can_unassign_target, is_owner_of_req,
@@ -50,43 +51,9 @@ from .requestmain_resolve_review import (
 )
 from .requestmain_review import RequestReviewMixin
 
-# claude — the "Field changes" history card renders django-simple-history
-# diffs verbatim: c.field was the raw model attribute name ("status",
-# "source", "departments", ...) and c.old/c.new were raw stored values —
-# for choice fields that's the internal code ("active", "site",
-# "DEPARTMENT_1"), not its translated label, so the Polish UI showed a mix
-# of translated field labels (from other fixes) next to literally untranslated
-# English/code values. Resolved at render time, same pattern as
-# status_labels.py's request_status_label filter, rather than baked at
-# history-write time (simple_history writes once, at save time, and the
-# viewer's language is only known when the card is rendered).
-_HISTORY_CHOICE_MAPS = {
-    "status": dict(RequestStatus.choices),
-    "source": dict(RequestSource.choices),
-}
-_HISTORY_DEPARTMENT_LABELS = dict(DepartmentsVariants.choices)
-
 # claude — JSON 403 body for the client-link endpoints; was a bare
 # "permission" code that requestmain_client_link.js shows verbatim.
 _NO_PERMISSION = _("You do not have permission to perform this action.")
-
-
-def _history_field_label(field_name):
-    try:
-        return str(RequestMain._meta.get_field(field_name).verbose_name)
-    except Exception:
-        return field_name
-
-
-def _history_value_label(field_name, value):
-    if value in (None, ""):
-        return value
-    choices = _HISTORY_CHOICE_MAPS.get(field_name)
-    if choices is not None:
-        return str(choices.get(value, value))
-    if field_name == "departments" and isinstance(value, (list, tuple)):
-        return ", ".join(str(_HISTORY_DEPARTMENT_LABELS.get(v, v)) for v in value)
-    return value
 
 
 @admin.register(RequestMain)
@@ -407,9 +374,9 @@ class RequestMainAdmin(
                     delta = record.diff_against(record.prev_record)
                     changes = [
                         {
-                            "field": _history_field_label(c.field),
-                            "old": _history_value_label(c.field, c.old),
-                            "new": _history_value_label(c.field, c.new),
+                            "field": history_field_label(c.field),
+                            "old": history_value_label(c.field, c.old),
+                            "new": history_value_label(c.field, c.new),
                         }
                         for c in delta.changes
                     ]
@@ -537,9 +504,16 @@ class RequestMainAdmin(
     # ---------- Custom URL endpoints ----------
 
     def get_urls(self):
+        from crm.users.activity_views import activity_calendar
+
         urls = super().get_urls()
         view = self.admin_site.admin_view
         custom = [
+            path(
+                "activity-calendar/",
+                view(activity_calendar),
+                name="zetom_requestmain_activity_calendar",
+            ),
             path(
                 "<path:object_id>/apply-status/",
                 view(self.apply_status_action),

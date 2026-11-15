@@ -8,11 +8,11 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
-from crm.notification.services.followup_reminders import resolve_followup_recipients
 from crm.status_manager.models import ChildDocumentDeletion, StatusHistory
 from crm.status_manager.services.statuses import RequestStatus
+from crm.users.services.calendar_reminders import reminders_for_calendar
 from crm.zetom.models import Oferta, RequestMain, StepNote, Wniosek, Zlecenie
-from crm.zetom.services.step_notes import OPEN_REMINDER_FILTER
+from crm.zetom.services.history_labels import history_field_label, history_value_label
 from crm.zetom.services.visibility import visible_requests_for
 
 
@@ -33,6 +33,10 @@ def calendar_activity(user, month, selected):
                 {"time": timestamp, "label": label, "details": details}
             )
 
+    def format_value(field, value):
+        formatted = history_value_label(field, value)
+        return "—" if formatted in (None, "") else formatted
+
     for history in RequestMain.history.filter(
         id__in=visible_ids, history_user=user,
         history_date__date__range=(first, last),
@@ -43,9 +47,9 @@ def calendar_activity(user, month, selected):
             previous = history.prev_record
             if previous:
                 details = "\n".join(
-                    f"{RequestMain._meta.get_field(change.field).verbose_name}: "
-                    f"{change.old if change.old is not None else '—'} → "
-                    f"{change.new if change.new is not None else '—'}"
+                    f"{history_field_label(change.field)}: "
+                    f"{format_value(change.field, change.old)} → "
+                    f"{format_value(change.field, change.new)}"
                     for change in history.diff_against(previous).changes
                 )
         add(history.id, history.history_date, labels[history.history_type], details)
@@ -65,19 +69,12 @@ def calendar_activity(user, month, selected):
         author=user, created_at__date__range=(first, last),
         target_content_type_id__in=[types[model].pk for model in models],
     ).select_related("target_content_type"))
-    planned_notes = list(
-        StepNote.objects.filter(
-            OPEN_REMINDER_FILTER,
-            next_contact_at__date__range=(first, last),
-            target_content_type_id__in=[types[model].pk for model in models],
-        ).select_related("author", "target_content_type")
-    )
+    planned_notes = list(reminders_for_calendar(user, first, last, visible, models, types))
     logs = list(LogEntry.objects.filter(
         user=user, content_type_id__in=[types[model].pk for model in models],
         action_time__date__range=(first, last),
     ).select_related("content_type"))
     target_map = {}
-    targets = {}
     for model in models:
         ct_id = types[model].pk
         ids = {
@@ -96,19 +93,12 @@ def calendar_activity(user, month, selected):
             ).select_related("from_main")
         for obj in objects:
             key = (ct_id, obj.pk)
-            targets[key] = obj
             target_map[key] = obj.pk if model is RequestMain else obj.from_main_id
 
     reminders = defaultdict(list)
     for note in planned_notes:
         key = (note.target_content_type_id, note.target_object_id)
-        target = targets.get(key)
-        if target is None:
-            continue
-        if note.notify == StepNote.Notify.CLIENT:
-            if note.author_id != user.pk:
-                continue
-        elif not any(recipient.pk == user.pk for recipient in resolve_followup_recipients(note, target)):
+        if key not in target_map:
             continue
         day = timezone.localtime(note.next_contact_at).date()
         reminders[day].append({"note": note, "request_id": target_map[key]})
