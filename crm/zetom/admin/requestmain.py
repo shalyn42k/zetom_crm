@@ -27,8 +27,8 @@ from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
 from crm.zetom.forms import AddRequestFormMain
 from crm.zetom.models import (
-    DepartmentsVariants, RequestAttachment, RequestClientLink, RequestMain,
-    RequestSource,
+    Department, RequestAttachment, RequestClientLink, RequestMain,
+    RequestSource, department_choices,
 )
 from crm.zetom.services.duplicate_matcher import find_candidates
 from crm.zetom.services.per_req_perms import (
@@ -65,7 +65,6 @@ _HISTORY_CHOICE_MAPS = {
     "status": dict(RequestStatus.choices),
     "source": dict(RequestSource.choices),
 }
-_HISTORY_DEPARTMENT_LABELS = dict(DepartmentsVariants.choices)
 
 # claude — JSON 403 body for the client-link endpoints; was a bare
 # "permission" code that requestmain_client_link.js shows verbatim.
@@ -86,7 +85,8 @@ def _history_value_label(field_name, value):
     if choices is not None:
         return str(choices.get(value, value))
     if field_name == "departments" and isinstance(value, (list, tuple)):
-        return ", ".join(str(_HISTORY_DEPARTMENT_LABELS.get(v, v)) for v in value)
+        labels = dict(department_choices())
+        return ", ".join(str(labels.get(v, v)) for v in value)
     return value
 
 
@@ -401,12 +401,12 @@ class RequestMainAdmin(
                 .order_by("username")
             )
             assigned_codes = list(obj.departments or [])
-            dept_labels = dict(DepartmentsVariants.choices)
+            dept_labels = dict(department_choices())
             context["assigned_departments"] = [
                 (code, dept_labels.get(code, code)) for code in assigned_codes
             ]
             context["available_departments"] = [
-                (code, label) for code, label in DepartmentsVariants.choices
+                (code, label) for code, label in department_choices()
                 if code not in assigned_codes
             ]
         else:
@@ -501,7 +501,7 @@ class RequestMainAdmin(
             # Add-form popup step 04 needs users + departments.
             from crm.zetom.admin.requestnull_validate import _eligible_users
             context["eligible_users_popup"] = _eligible_users()
-            context["departments_choices"] = DepartmentsVariants.choices
+            context["departments_choices"] = department_choices()
 
         return super().render_change_form(request, context, *args, **kwargs)
 
@@ -947,7 +947,7 @@ class RequestMainAdmin(
             return denied
 
         code = request.POST.get("dept_code")
-        if code not in DepartmentsVariants.values:
+        if not Department.objects.filter(code=code).exists():
             messages.error(request, _("Invalid department."))
             return redirect("admin:zetom_requestmain_change", object_id)
         if code in (obj.departments or []):
@@ -956,7 +956,7 @@ class RequestMainAdmin(
 
         obj.departments = list(obj.departments or []) + [code]
         obj.save(update_fields=["departments"])
-        label = dict(DepartmentsVariants.choices).get(code, code)
+        label = dict(department_choices()).get(code, code)
         messages.success(request, _("Added %(label)s.") % {"label": label})
         return redirect("admin:zetom_requestmain_change", object_id)
 
@@ -970,7 +970,7 @@ class RequestMainAdmin(
         if dept_code in (obj.departments or []):
             obj.departments = [c for c in obj.departments if c != dept_code]
             obj.save(update_fields=["departments"])
-            label = dict(DepartmentsVariants.choices).get(dept_code, dept_code)
+            label = dict(department_choices()).get(dept_code, dept_code)
             messages.success(request, _("Removed %(label)s.") % {"label": label})
         return redirect("admin:zetom_requestmain_change", object_id)
 

@@ -47,7 +47,7 @@ from crm.status_manager.services.status_service import cancel_request
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
 from crm.zetom.models import (
-    DepartmentsVariants, RequestClientLink, RequestMain, RequestNull,
+    RequestClientLink, RequestMain, RequestNull, department_choices,
 )
 from crm.zetom.services.duplicate_matcher import find_candidates
 from crm.zetom.services.request_duplicate_finder import find_request_duplicates
@@ -78,7 +78,7 @@ class ValidationWindowForm(forms.Form):
 
     departments = forms.MultipleChoiceField(
         label=_("Departments"),
-        choices=DepartmentsVariants.choices,
+        choices=department_choices,
         required=True,
     )
     owners = forms.ModelMultipleChoiceField(
@@ -506,7 +506,7 @@ class ValidationWindowMixin:
             "candidates": candidates,
             "request_dupes": request_dupes,
             "has_strong_dupe": any(c.is_strong for c in request_dupes),
-            "departments_choices": DepartmentsVariants.choices,
+            "departments_choices": department_choices(),
             "eligible_users": eligible_users,
             "form": form,
             "selected_depts": selected_depts,

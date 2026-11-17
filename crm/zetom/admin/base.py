@@ -20,7 +20,7 @@ from unfold.decorators import display
 from crm.clients.models import Client, CompanyPersonLink
 from crm.users.utils import user_has_perm
 from crm.zetom.models import (
-    DepartmentsVariants, Oferta, RequestMain, StepNote, Wniosek, Zlecenie,
+    Oferta, RequestMain, StepNote, Wniosek, Zlecenie, department_choices,
 )
 from crm.zetom.services.step_notes import (
     HISTORY_FILTER, OPEN_REMINDER_FILTER, create_step_note, mark_reminder_done,
@@ -78,7 +78,7 @@ class DepartmentsDisplayMixin:
 
     @admin.display(description=_("Departments"))
     def display_departments(self, obj):
-        labels = dict(DepartmentsVariants.choices)
+        labels = dict(department_choices())
         return ", ".join(str(labels.get(code, code)) for code in obj.departments) or "—"
 
 

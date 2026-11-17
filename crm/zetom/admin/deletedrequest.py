@@ -16,8 +16,8 @@ from crm.status_manager.models import StatusHistory
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
 from crm.zetom.models import (
-    DeletedRequest, DepartmentsVariants, Oferta, RequestMain, Wniosek,
-    Zlecenie,
+    DeletedRequest, Oferta, RequestMain, Wniosek, Zlecenie,
+    department_choices,
 )
 from crm.zetom.services.visibility import visible_requests_for
 
@@ -80,7 +80,7 @@ class DeletedRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
             context["wnioski"] = (
                 Wniosek.all_objects.filter(from_main=obj).order_by("-created_at")
             )
-            dept_labels = dict(DepartmentsVariants.choices)
+            dept_labels = dict(department_choices())
             context["assigned_departments"] = [
                 (code, dept_labels.get(code, code)) for code in (obj.departments or [])
             ]

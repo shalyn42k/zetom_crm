@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 # Other imports
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
 # Other imports
 from safedelete.config import SOFT_DELETE_CASCADE
@@ -33,6 +33,32 @@ class DepartmentsVariants(models.TextChoices):
     DEPARTMENT_7 = "DEPARTMENT_7", _("Training")
     DEPARTMENT_8 = "DEPARTMENT_8", _("Certification")
     DEPARTMENT_9 = "DEPARTMENT_9", _("Economic")
+
+
+class Department(models.Model):
+    code = models.CharField(max_length=30, unique=True, verbose_name=_("Department code"))
+    name = models.CharField(max_length=100, verbose_name=_("Department name"))
+
+    class Meta:
+        verbose_name = _("Department")
+        verbose_name_plural = _("Departments")
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            super().save(*args, **kwargs)
+            self.code = f"DEPARTMENT_{self.id}"
+            super().save(update_fields=["name", "code"])
+        else:
+            super().save(*args, **kwargs)
+
+    def __str__(self):
+        return gettext(self.name)
+
+
+def department_choices():
+    departs = Department.objects.all().order_by("id")
+    return [(depart.code, str(depart)) for depart in departs]
+
 
 class RequestSource(models.TextChoices):
     PHONE = "phone", _("Phone")
@@ -72,7 +98,7 @@ class RequestTemplate(SafeDeleteModel):
     )
     message = models.TextField(null=True, blank=True, verbose_name=_("Message"))
     departments = ArrayField(
-        models.CharField(max_length=30, choices=DepartmentsVariants.choices),
+        models.CharField(max_length=30),
         default=list,
         blank=True,
         verbose_name=_("Departments"),

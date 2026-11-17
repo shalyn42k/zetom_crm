@@ -1,4 +1,5 @@
 # Django imports
+from django.contrib.auth import get_user_model
 from django import forms
 from django.utils.translation import gettext_lazy as _
 # Other imports
@@ -10,8 +11,10 @@ from crm.clients.fields import ClientField
 from crm.clients.validators import normalize_nip, validate_nip
 # Zetom app imports
 from crm.zetom.models import (
-    DepartmentsVariants, Oferta, RequestMain, RequestNull, Wniosek, Zlecenie,
+    Department, Oferta, RequestMain, RequestNull, Wniosek, Zlecenie, department_choices,
 )
+
+User = get_user_model()
 
 
 # claude — Oferta/Zlecenie/Wniosek list "departments" in their ModelAdmin.fields
@@ -25,11 +28,33 @@ from crm.zetom.models import (
 def _departments_field():
     return forms.TypedMultipleChoiceField(
         label=_("Departments"),
-        choices=DepartmentsVariants.choices,
+        choices=department_choices,
         required=False,
         coerce=str,
         widget=forms.SelectMultiple,
     )
+
+
+class DepartmentForm(forms.ModelForm):
+    # Membership lives on UserProfile.departments, not on Department, so this
+    # field is not a model field: DepartmentAdmin.save_model writes it back.
+    users = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(profile__isnull=False).order_by("username"),
+        required=False,
+        label=_("Users"),
+    )
+
+    class Meta:
+        model = Department
+        fields = ["name"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Pre-tick the people already in this department.
+        if self.instance.pk:
+            self.fields["users"].initial = User.objects.filter(
+                profile__departments__contains=[self.instance.code],
+            )
 
 
 class TemplateForm(forms.ModelForm):

@@ -240,6 +240,14 @@ UNFOLD = {
                         ),
                     },
                     {
+                        "title": _("Departments"),
+                        "icon": "groups",
+                        "link": reverse_lazy("admin:zetom_department_changelist"),
+                        "permission": lambda request: user_has_perm(
+                            request.user, "view_users"
+                        ),
+                    },
+                    {
                         "title": _("Roles"),
                         "icon": "shield",
                         "link": reverse_lazy("admin:users_role_changelist"),

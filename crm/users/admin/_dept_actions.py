@@ -22,7 +22,7 @@ from django.utils.translation import gettext, gettext_lazy as _
 
 from crm.users.models import UserProfile
 from crm.users.utils import user_has_perm
-from crm.zetom.models import DepartmentsVariants
+from crm.zetom.models import Department, department_choices
 
 
 # claude
@@ -94,7 +94,7 @@ class DepartmentActionsMixin:
         main_codes = set(profile.main_departments) if profile and profile.main_departments else set()
         # claude
         head_codes = set(profile.head_of_departments) if profile and profile.head_of_departments else set()
-        dept_labels = dict(DepartmentsVariants.choices)
+        dept_labels = dict(department_choices())
 
         members_by_code: dict[str, list[dict]] = {}
         if assigned_codes:
@@ -136,7 +136,7 @@ class DepartmentActionsMixin:
 
         available_departments = [
             {"code": code, "label": label}
-            for code, label in DepartmentsVariants.choices
+            for code, label in department_choices()
             if code not in assigned_codes
         ]
 
@@ -165,7 +165,7 @@ class DepartmentActionsMixin:
             return HttpResponseForbidden(gettext("Permission denied"))
         user = get_object_or_404(User, pk=object_id)
         code = request.POST.get("code")
-        if code not in DepartmentsVariants.values:
+        if not Department.objects.filter(code=code).exists():
             return HttpResponseBadRequest(gettext("Invalid department code"))
         profile, _created = UserProfile.objects.get_or_create(user=user)
         if code not in (profile.departments or []):
@@ -179,7 +179,7 @@ class DepartmentActionsMixin:
         if not self._can_edit_departments(request):
             return HttpResponseForbidden(gettext("Permission denied"))
         user = get_object_or_404(User, pk=object_id)
-        if dept_code not in DepartmentsVariants.values:
+        if not Department.objects.filter(code=dept_code).exists():
             return HttpResponseBadRequest(gettext("Invalid department code"))
         profile, _created = UserProfile.objects.get_or_create(user=user)
         # Safety: removing a primary department would invalidate the
@@ -208,7 +208,7 @@ class DepartmentActionsMixin:
         if not self._can_edit_departments(request):
             return HttpResponseForbidden(gettext("Permission denied"))
         user = get_object_or_404(User, pk=object_id)
-        if dept_code not in DepartmentsVariants.values:
+        if not Department.objects.filter(code=dept_code).exists():
             return HttpResponseBadRequest(gettext("Invalid department code"))
         profile, _created = UserProfile.objects.get_or_create(user=user)
         if dept_code not in (profile.departments or []):
@@ -224,7 +224,7 @@ class DepartmentActionsMixin:
         if not self._can_edit_departments(request):
             return HttpResponseForbidden(gettext("Permission denied"))
         user = get_object_or_404(User, pk=object_id)
-        if dept_code not in DepartmentsVariants.values:
+        if not Department.objects.filter(code=dept_code).exists():
             return HttpResponseBadRequest(gettext("Invalid department code"))
         profile, _created = UserProfile.objects.get_or_create(user=user)
         if dept_code in (profile.main_departments or []):
@@ -242,7 +242,7 @@ class DepartmentActionsMixin:
             # file, which all return 403.
             return HttpResponseForbidden(gettext("Only admins can grant head status"))
         user = get_object_or_404(User, pk=object_id)
-        if dept_code not in DepartmentsVariants.values:
+        if not Department.objects.filter(code=dept_code).exists():
             return HttpResponseBadRequest(gettext("Invalid department code"))
         profile, _created = UserProfile.objects.get_or_create(user=user)
         if dept_code not in (profile.departments or []):
@@ -259,7 +259,7 @@ class DepartmentActionsMixin:
         if not self._can_grant_head(request):
             return HttpResponseForbidden(gettext("Only admins can revoke head status"))
         user = get_object_or_404(User, pk=object_id)
-        if dept_code not in DepartmentsVariants.values:
+        if not Department.objects.filter(code=dept_code).exists():
             return HttpResponseBadRequest(gettext("Invalid department code"))
         profile, _created = UserProfile.objects.get_or_create(user=user)
         if dept_code in (profile.head_of_departments or []):

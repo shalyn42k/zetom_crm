@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext, gettext_lazy as _
 
-from crm.zetom.models import DepartmentsVariants
+from crm.zetom.models import department_choices
 
 User = get_user_model()
 
@@ -53,20 +53,20 @@ class UserProfile(models.Model):
     # и выдаётся админом. Инварианты `main_departments ⊆ departments` и
     # `head_of_departments ⊆ departments` валидируются в clean() (см. ниже).
     main_departments = ArrayField(
-        models.CharField(max_length=30, choices=DepartmentsVariants.choices),
+        models.CharField(max_length=30),
         default=list,
         blank=True,
         verbose_name=_("Main departments"),
     )
     # claude
     head_of_departments = ArrayField(
-        models.CharField(max_length=30, choices=DepartmentsVariants.choices),
+        models.CharField(max_length=30),
         default=list,
         blank=True,
         verbose_name=_("Head of departments"),
     )
     departments = ArrayField(
-        models.CharField(max_length=30, choices=DepartmentsVariants.choices),
+        models.CharField(max_length=30),
         default=list,
         blank=True,
         verbose_name=_("Departments"),
@@ -149,7 +149,7 @@ class UserProfile(models.Model):
         codes = list(self.departments or [])
         if not codes:
             return ""
-        labels = dict(DepartmentsVariants.choices)
+        labels = dict(department_choices())
         main_set = set(self.main_departments or [])
         ordered = sorted(
             codes,

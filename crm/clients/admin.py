@@ -12,7 +12,7 @@ from django.utils.translation import gettext_lazy as _
 
 from crm.status_manager.services.statuses import RequestStatus, Status
 from crm.users.utils import user_has_perm
-from crm.zetom.models import DepartmentsVariants, RequestMain, StepNote
+from crm.zetom.models import RequestMain, StepNote, department_choices
 from crm.zetom.services.step_notes import create_step_note, mark_reminder_done
 
 from . import views
@@ -75,7 +75,7 @@ def _zgloszenie_label(req: RequestMain) -> str:
 def _zgloszenie_dept_label(codes) -> str:
     if not codes:
         return ""
-    labels = dict(DepartmentsVariants.choices)
+    labels = dict(department_choices())
     return str(labels.get(codes[0], codes[0]))
 
 
