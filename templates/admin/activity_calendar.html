@@ -16,7 +16,7 @@
             <h1>{% translate "My activity calendar" %}</h1>
             <p>{% translate "Your recorded activity and planned reminders on requests you can currently access." %}</p>
         </div>
-        <a class="activity-calendar__button" href="{% url 'activity_calendar' %}">{% translate "Today" %}</a>
+        <a class="activity-calendar__button" href="{% url 'admin:zetom_requestmain_activity_calendar' %}">{% translate "Today" %}</a>
     </div>
     <div class="activity-calendar__summary">
         <div><strong>{{ month_count }}</strong><span>{% translate "Requests this month" %}</span></div>
@@ -65,8 +65,8 @@
                         <a href="?date={{ day.date|date:'Y-m-d' }}" class="activity-calendar__day{% if day.selected %} is-selected{% endif %}{% if day.today %} is-today{% endif %}"{% if day.selected %} aria-current="date"{% endif %}>
                             <span>{{ day.date.day }}</span>
                             <span class="activity-calendar__day-counts">
-                                {% if day.count %}<strong><span class="activity-calendar__count-icon" aria-hidden="true">●</span> {{ day.count }} <span class="activity-calendar__count-label">{% translate "requests" %}</span></strong>{% endif %}
-                                {% if day.reminder_count %}<strong class="activity-calendar__day-reminders"><span class="activity-calendar__count-icon" aria-hidden="true">◷</span> {{ day.reminder_count }} <span class="activity-calendar__count-label">{% translate "reminders" %}</span></strong>{% endif %}
+                                {% if day.count %}<strong><span class="activity-calendar__count-icon" aria-hidden="true">●</span> {{ day.count }} <span class="activity-calendar__count-label">{% blocktranslate count count=day.count %}request{% plural %}requests{% endblocktranslate %}</span></strong>{% endif %}
+                                {% if day.reminder_count %}<strong class="activity-calendar__day-reminders"><span class="activity-calendar__count-icon" aria-hidden="true">◷</span> {{ day.reminder_count }} <span class="activity-calendar__count-label">{% blocktranslate count count=day.reminder_count %}reminder{% plural %}reminders{% endblocktranslate %}</span></strong>{% endif %}
                             </span>
                         </a>
                     {% else %}<span class="activity-calendar__day is-outside" aria-hidden="true">{{ day.date.day }}</span>{% endif %}

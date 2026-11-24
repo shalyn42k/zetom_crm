@@ -5288,3 +5288,13 @@ msgstr "Show month"
 
 msgid "Year"
 msgstr "Year"
+
+msgid "request"
+msgid_plural "requests"
+msgstr[0] "request"
+msgstr[1] "requests"
+
+msgid "reminder"
+msgid_plural "reminders"
+msgstr[0] "reminder"
+msgstr[1] "reminders"
