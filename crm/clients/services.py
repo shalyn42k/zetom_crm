@@ -6,7 +6,7 @@ from django.urls import reverse
 from crm.clients.models import Client, Company, CompanyPersonLink
 from crm.clients.validators import normalize_nip, validate_nip
 from crm.status_manager.services.statuses import RequestStatus
-from crm.zetom.models import DepartmentsVariants
+from crm.zetom.models import department_choices
 
 # claude — avatar background palette (CSS class suffix). Stable per user so the
 # same person keeps the same colour across requests/tabs.
@@ -36,7 +36,7 @@ def _dept_label(codes) -> str:
     """First department label of a request (ArrayField of codes)."""
     if not codes:
         return ""
-    labels = dict(DepartmentsVariants.choices)
+    labels = dict(department_choices())
     return str(labels.get(codes[0], codes[0]))
 
 

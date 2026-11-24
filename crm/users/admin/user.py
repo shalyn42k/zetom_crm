@@ -22,7 +22,7 @@ from crm.users.forms import CustomUserChangeForm, CustomUserCreateForm
 from crm.users.models import Permission, Role, UserProfile
 from crm.users.services.deactivation import deactivate_user, reactivate_user
 from crm.users.utils import PRIVILEGED_ROLE_CODES, user_has_perm
-from crm.zetom.models import DepartmentsVariants
+from crm.zetom.models import department_choices
 
 from ._dept_actions import DepartmentActionsMixin
 
@@ -359,7 +359,7 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
     def get_departments(self, obj):
         if not hasattr(obj, "profile") or not obj.profile.departments:
             return None
-        labels = dict(DepartmentsVariants.choices)
+        labels = dict(department_choices())
         return ", ".join(str(labels.get(code, code)) for code in obj.profile.departments)
     get_departments.short_description = _("Departments")
 
