@@ -7,7 +7,6 @@ brings the lead back into the Validation Window (not the RequestMain change page
 from django.contrib import admin
 from django.shortcuts import redirect
 from django.urls import path
-from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 
 from crm.status_manager.services.statuses import RequestStatus

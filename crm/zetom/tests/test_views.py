@@ -26,7 +26,6 @@ from django.urls import reverse
 from crm.notification.services.notification_service import (
     send_notification_to_staff,
 )
-from crm.notification.services.notification_service import send_notification_to_staff
 from crm.zetom.models import RequestNull
 
 # Валидные данные для AddRequestFormNull:
@@ -132,7 +131,7 @@ class NotificationServiceIntegrationTests(TestCase):
         складываются в список mail.outbox. Это стандартный способ
         тестировать email в Django.
 
-    Получателей резолвит services/recipients.dep_heads_or_admins_emails:
+    Получателей резолвит services/recipients.default_recipients_emails:
     он ищет активных юзеров с role.code == "department_head", иначе fallback
     на role.code == "admin". Поэтому в setUpTestData мы заводим одного
     admin'а с валидным email — иначе письмо никому не уйдёт.

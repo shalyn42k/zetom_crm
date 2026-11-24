@@ -58,6 +58,24 @@ from .requestmain_review import RequestReviewMixin
 _NO_PERMISSION = _("You do not have permission to perform this action.")
 
 
+# claude — fields of the "Client information" card on an existing request.
+_CLIENT_CARD_FIELDS = (
+    "first_name", "last_name", "company_name", "company_nip",
+    "email", "phone", "address", "message",
+)
+
+
+def _show_client_data_read_only(form, obj):
+    """View-only user: Django drops the model fields from the admin form and
+    leaves the declared ones unfilled, so the card lost the name and showed
+    empty inputs. Put every card field back, filled from obj and disabled."""
+    for name in _CLIENT_CARD_FIELDS:
+        if name not in form.fields:
+            form.fields[name] = RequestMain._meta.get_field(name).formfield()
+        form.fields[name].disabled = True
+        form.initial[name] = getattr(obj, name)
+
+
 @admin.register(RequestMain)
 class RequestMainAdmin(
     RequestMailMixin,
@@ -308,6 +326,8 @@ class RequestMainAdmin(
             # this request (never written back to the client base), and
             # copied into Oferta / Zlecenie / Wniosek when one is created.
             if obj is not None and obj.pk:
+                if not self.has_change_permission(request, obj):
+                    _show_client_data_read_only(form, obj)
                 helper.layout = Layout(
                     Row(
                         Column("first_name", css_class="rm-col-6"),

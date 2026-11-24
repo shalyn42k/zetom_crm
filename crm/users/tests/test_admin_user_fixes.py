@@ -137,7 +137,7 @@ class AddFormDepartmentsAppliedTests(TestCase):
 
     def test_departments_selected_at_creation_are_saved(self):
         dept = DepartmentsVariants.values[0]
-        response = self.client.post(reverse("admin:auth_user_add"), data={
+        self.client.post(reverse("admin:auth_user_add"), data={
             "username": "newhire",
             "email": "newhire@zetom.pl",
             "first_name": "New",

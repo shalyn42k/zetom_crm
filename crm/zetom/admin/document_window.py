@@ -340,7 +340,6 @@ class DocumentWindowMixin:
         )
         from crm.status_manager.services.statuses import Status
         from crm.users.utils import user_has_perm
-        from crm.zetom.services.reminder_targets import client_email_choices
 
         if request.method != "POST":
             return redirect(self._change_url(object_id))

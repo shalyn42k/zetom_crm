@@ -30,7 +30,7 @@ from unfold.admin import StackedInline
 from unfold.widgets import UnfoldAdminTextInputWidget
 
 from crm.status_manager.services.status_service import (
-    delete_child_document, save_child_with_status, update_parent,
+    delete_child_document, save_child_with_status,
 )
 from crm.users.utils import user_has_perm
 from crm.zetom.forms import AddOferta, AddWniosek, AddZlecenie
