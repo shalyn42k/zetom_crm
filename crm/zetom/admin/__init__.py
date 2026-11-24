@@ -9,6 +9,7 @@ from . import cancelledvalidationrequest  # noqa: F401
 from . import children  # noqa: F401
 from . import deletedrequest  # noqa: F401
 from . import deletedvalidationrequest  # noqa: F401
+from . import department  # noqa: F401
 from . import log  # noqa: F401
 from . import requestmain  # noqa: F401
 from . import requestnull  # noqa: F401

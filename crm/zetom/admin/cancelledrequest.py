@@ -6,7 +6,7 @@ from unfold.admin import ModelAdmin
 from crm.status_manager.models import StatusHistory
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
-from crm.zetom.models import CancelledRequest, DepartmentsVariants, RequestMain
+from crm.zetom.models import CancelledRequest, RequestMain
 from crm.zetom.services.visibility import visible_requests_for
 
 from .base import DepartmentsDisplayMixin

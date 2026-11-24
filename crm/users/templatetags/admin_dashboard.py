@@ -13,8 +13,8 @@ from crm.notification.utils import unread_count
 from crm.status_manager.services.statuses import RequestStatus
 from crm.users.utils import user_has_perm
 from crm.zetom.models import (
-    DepartmentsVariants, Oferta, RequestMain, RequestNull, StepNote, Wniosek,
-    Zlecenie,
+    Oferta, RequestMain, RequestNull, StepNote, Wniosek, Zlecenie,
+    department_choices,
 )
 from crm.zetom.services.visibility import visible_requests_for
 
@@ -104,7 +104,7 @@ def dashboard_personal_requests(user, limit=30):
     )
 
     open_reminder_ids = set(reminder_request_ids)
-    department_labels = dict(DepartmentsVariants.choices)
+    department_labels = dict(department_choices())
     items = []
     for request in requests:
         contact_name = request.full_name

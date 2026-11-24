@@ -102,11 +102,11 @@ def _send_message(obj, paper):
 def signature(user):
     """The sender's mail signature: their own lines from the user profile,
     the company's from settings.COMPANY_SIGNATURE."""
-    from crm.zetom.models import DepartmentsVariants
+    from crm.zetom.models import department_choices
 
     profile = getattr(user, "profile", None)
     codes = (profile.main_departments or profile.departments) if profile else []
-    labels = dict(DepartmentsVariants.choices)
+    labels = dict(department_choices())
     return {
         **settings.COMPANY_SIGNATURE,
         "name": user.get_full_name() or user.get_username(),

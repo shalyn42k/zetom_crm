@@ -17,7 +17,7 @@ from unfold.admin import ModelAdmin
 
 from crm.users.utils import user_has_perm
 from crm.zetom.models import (
-    DeletedValidationRequest, DepartmentsVariants, RequestNull,
+    DeletedValidationRequest, RequestNull, department_choices,
 )
 from crm.zetom.services.visibility import visible_requests_for
 
@@ -65,7 +65,7 @@ class DeletedValidationRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
     def render_change_form(self, request, context, *args, **kwargs):
         obj = context.get("original")
         if obj is not None:
-            dept_labels = dict(DepartmentsVariants.choices)
+            dept_labels = dict(department_choices())
             context["assigned_departments"] = [
                 (code, dept_labels.get(code, code)) for code in (obj.departments or [])
             ]

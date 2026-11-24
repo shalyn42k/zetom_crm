@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
 
 from crm.users.models import Role, UserProfile
-from crm.zetom.models import DepartmentsVariants
+from crm.zetom.models import department_choices
 
 # Базовый Tailwind стиль
 INPUT_CLASS = "w-full px-3 py-2 rounded border border-gray-700 bg-gray-900 text-white"
@@ -30,7 +30,7 @@ class CustomUserCreateForm(forms.ModelForm):
     )
 
     departments = forms.MultipleChoiceField(
-        choices=DepartmentsVariants.choices,
+        choices=department_choices,
         label=_("Departments"),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": INPUT_CLASS})

@@ -11,10 +11,12 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import override
 
-from crm.notification.services.followup_reminders import resolve_followup_recipients
+from crm.notification.services.followup_reminders import (
+    resolve_followup_recipients,
+)
 from crm.status_manager.models import ChildDocumentDeletion, StatusHistory
 from crm.users.models import Role
-from crm.zetom.models import Oferta, RequestMain, StepNote
+from crm.zetom.models import Oferta, RequestMain, StepNote, department_choices
 
 
 @override_settings(STORAGES={
@@ -230,7 +232,7 @@ class ActivityCalendarTests(TestCase):
         self.client.cookies["django_language"] = "pl"
         response = self.client.get(reverse("admin:zetom_requestmain_activity_calendar"), {"date": "2026-10-08"})
         with override("pl"):
-            department = str(dict(self.visible._meta.get_field("departments").base_field.choices)["DEPARTMENT_1"])
+            department = dict(department_choices())["DEPARTMENT_1"]
         self.assertContains(response, department)
         self.assertNotContains(response, "DEPARTMENT_1")
 
@@ -288,7 +290,9 @@ class ActivityCalendarTests(TestCase):
         verify()
         self.user.is_active = False
         self.user.save()
-        from crm.users.services.calendar_reminders import reminders_for_calendar
+        from crm.users.services.calendar_reminders import (
+            reminders_for_calendar,
+        )
         from crm.zetom.models import Wniosek, Zlecenie
         from crm.zetom.services.visibility import visible_requests_for
         models = (RequestMain, Oferta, Zlecenie, Wniosek)
