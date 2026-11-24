@@ -1,0 +1,52 @@
+{% load i18n %}
+{% comment %}
+  Profile tab — личные данные. Берём bound-поля из adminform.form
+  (это CustomUserChangeForm). Save-кнопка от Unfold внизу страницы,
+  отдельную не нужно.
+{% endcomment %}
+<div class="up-card" aria-labelledby="up-profile-heading">
+  <h2 id="up-profile-heading" class="up-card__title">{% trans "Personal information" %}</h2>
+
+  <div class="up-row">
+    {% with f=adminform.form.username %}
+      <label class="up-field up-col-6">
+        <span class="up-field__label">{{ f.label }}</span>
+        {{ f }}
+        {% if f.help_text %}<span class="up-field__help">{{ f.help_text }}</span>{% endif %}
+        {% if f.errors %}<ul class="up-field__errors">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </label>
+    {% endwith %}
+
+    {% with f=adminform.form.email %}
+      <label class="up-field up-col-6">
+        <span class="up-field__label">{{ f.label }}</span>
+        {{ f }}
+        {% if f.errors %}<ul class="up-field__errors">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </label>
+    {% endwith %}
+
+    {% with f=adminform.form.first_name %}
+      <label class="up-field up-col-6">
+        <span class="up-field__label">{{ f.label }}</span>
+        {{ f }}
+        {% if f.errors %}<ul class="up-field__errors">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </label>
+    {% endwith %}
+
+    {% with f=adminform.form.last_name %}
+      <label class="up-field up-col-6">
+        <span class="up-field__label">{{ f.label }}</span>
+        {{ f }}
+        {% if f.errors %}<ul class="up-field__errors">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </label>
+    {% endwith %}
+
+    {% with f=adminform.form.job_title %}
+      <label class="up-field up-col-12">
+        <span class="up-field__label">{{ f.label }}</span>
+        {{ f }}
+        {% if f.errors %}<ul class="up-field__errors">{% for e in f.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </label>
+    {% endwith %}
+  </div>
+</div>

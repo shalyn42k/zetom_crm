@@ -1,0 +1,471 @@
+{% load i18n %}
+{% comment %}
+  Actions-карточка для формы RequestMain.
+
+  Состоит из двух частей:
+    1) Сама карточка-дропдаун в правой колонке (rm-card + Alpine).
+    2) Модалка, телепортируемая в <body>, чтобы НЕ оказаться вложенной
+       формой внутри основной <form class="rm-grid">. Внутри модалки —
+       две формы (документ / свободное сообщение).
+
+  Контекст из RequestMainAdmin.render_change_form:
+    original, ofertas, zlecenia, wnioski.
+
+  URL'ы подключены через RequestMailMixin (crm/zetom/admin/requestmain_mail.py):
+    - admin:zetom_requestmain_mail_document
+    - admin:zetom_requestmain_mail_freeform
+{% endcomment %}
+
+{% comment %}
+  claude — redesign (docs/superpowers/specs/2026-10-27-requests-declutter-
+  design.md): the Actions card became this row of small buttons in the page
+  header. Same rmActions() state and the same teleported modals below; the
+  history card moved into a modal of its own (historyOpen). "Zapisz"
+  submits the main form via form=, the bottom submit row is gone on this
+  page; Cancel/Delete moved into the ⋯ menu.
+{% endcomment %}
+<div class="rm-toolbar" id="actions"
+     x-data="rmActions()"
+     @keydown.escape.window="(modal.open && (modal.open = false)) || (reviewModal.open && (reviewModal.open = false)) || (resolveModal.open && (resolveModal.open = false)) || (historyOpen && (historyOpen = false))">
+  {% if step_notes_enabled %}
+    <button type="button" class="rm-tbtn" @click="$dispatch('open-step-notes')">
+      {% trans "Step notes" %}{% if step_notes|length %} <span class="rm-tcount">{{ step_notes|length }}</span>{% endif %}
+    </button>
+  {% endif %}
+  <button type="button" class="rm-tbtn" @click="historyOpen = true">{% trans "History" %}</button>
+  {% if can_resolve_review and has_open_review %}
+    <details class="rm-tmore">
+      <summary class="rm-tbtn rm-tbtn--attn">{% trans "Review" %} ▾</summary>
+      <div class="rm-tmore__menu">
+        <button type="button" class="rm-tmore__item" @click="openResolve(); $el.closest('details').open = false">{% trans "Resolve review" %}</button>
+        <button type="button" class="rm-tmore__item" @click="openReview(); $el.closest('details').open = false">{% trans "Request review" %}</button>
+      </div>
+    </details>
+  {% else %}
+    <button type="button" class="rm-tbtn" @click="openReview()">{% trans "Request review" %}</button>
+  {% endif %}
+  <button type="button" class="rm-tbtn" @click="openMail()">{% trans "Send email" %}</button>
+  {% url "admin:zetom_requestmain_cancel" original.pk as cancel_url %}
+  {% url "admin:zetom_requestmain_delete" original.pk as delete_url %}
+  {% if can_change_request_status and original.status != "cancelled" or has_delete_permission %}
+    <details class="rm-tmore">
+      <summary class="rm-tbtn" aria-label="{% trans 'More actions' %}">⋯</summary>
+      <div class="rm-tmore__menu">
+        {% if can_change_request_status and original.status != "cancelled" %}
+          <a class="rm-tmore__item" href="{{ cancel_url }}">{% trans "Cancel request" %}</a>
+        {% endif %}
+        {% if has_delete_permission %}
+          <a class="rm-tmore__item rm-tmore__item--danger" href="{{ delete_url }}">{% trans "Delete" %}</a>
+        {% endif %}
+      </div>
+    </details>
+  {% endif %}
+  {% if has_change_permission %}
+    <button type="submit" form="{{ opts.model_name }}_form" name="_continue" value="1" class="rm-tbtn rm-tbtn--primary">{% trans "Save" %}</button>
+  {% endif %}
+
+  {# ----------- Модалка: история (была карточкой в правой колонке) ----------- #}
+  <template x-teleport="body">
+    <div class="rm-modal" x-show="historyOpen" x-cloak
+         role="dialog" aria-modal="true" aria-labelledby="rm-history-heading">
+      <div class="rm-modal__backdrop" @click="historyOpen = false"></div>
+      <div class="rm-modal__panel rm-modal__panel--wide" @click.stop>
+        <button type="button" class="rm-modal__close rm-modal__close--float"
+                @click="historyOpen = false" aria-label='{% trans "Close" %}'>×</button>
+        {% include "admin/zetom/requestmain/_partials/history_card.html" with history_in_modal=True %}
+      </div>
+    </div>
+  </template>
+
+  {# ----------- Модалка ----------- #}
+  <template x-teleport="body">
+    <div class="rm-modal" x-show="modal.open" x-cloak
+         role="dialog" aria-modal="true" aria-labelledby="rm-mail-modal-title">
+      <div class="rm-modal__backdrop" @click="modal.open = false"></div>
+
+      <div class="rm-modal__panel" @click.stop>
+        <header class="rm-modal__header">
+          <h2 id="rm-mail-modal-title" class="rm-modal__title">
+            {% trans "Send mail" %}
+          </h2>
+          <button type="button" class="rm-modal__close"
+                  @click="modal.open = false" aria-label='{% trans "Close" %}'>×</button>
+        </header>
+
+        {# Переключатель режима: документ / свободное сообщение #}
+        <div class="rm-tabs" role="tablist">
+          <button type="button" class="rm-tabs__tab"
+                  :class="{ 'rm-tabs__tab--active': modal.mode === 'document' }"
+                  role="tab" :aria-selected="modal.mode === 'document'"
+                  @click="modal.mode = 'document'">
+            {% trans "Document" %}
+          </button>
+          <button type="button" class="rm-tabs__tab"
+                  :class="{ 'rm-tabs__tab--active': modal.mode === 'freeform' }"
+                  role="tab" :aria-selected="modal.mode === 'freeform'"
+                  @click="modal.mode = 'freeform'">
+            {% trans "Free message" %}
+          </button>
+        </div>
+
+        {# ------- Режим: документ ------- #}
+        <form method="post"
+              action="{% url 'admin:zetom_requestmain_mail_document' original.pk %}"
+              class="rm-modal__form"
+              data-send-overlay
+              x-show="modal.mode === 'document'" x-cloak>
+          {% csrf_token %}
+
+          <p class="rm-modal__hint">
+            {% trans "The selected document will be e-mailed to staff. Its status will flip from In progress → Waiting." %}
+          </p>
+
+          <fieldset class="rm-modal__group">
+            <legend class="rm-modal__legend">{% trans "Document type" %}</legend>
+            <label class="rm-radio">
+              <input type="radio" name="kind" value="zlecenie"
+                     x-model="modal.kind"
+                     {% if not zlecenia %}disabled{% endif %}>
+              <span>{% trans "Order (Zlecenie)" %}</span>
+              {% if not zlecenia %}<span class="rm-radio__hint">{% trans "none yet" %}</span>{% endif %}
+            </label>
+            <label class="rm-radio">
+              <input type="radio" name="kind" value="oferta"
+                     x-model="modal.kind"
+                     {% if not ofertas %}disabled{% endif %}>
+              <span>{% trans "Offer (Oferta)" %}</span>
+              {% if not ofertas %}<span class="rm-radio__hint">{% trans "none yet" %}</span>{% endif %}
+            </label>
+            <label class="rm-radio">
+              <input type="radio" name="kind" value="wniosek"
+                     x-model="modal.kind"
+                     {% if not wnioski %}disabled{% endif %}>
+              <span>{% trans "Application (Wniosek)" %}</span>
+              {% if not wnioski %}<span class="rm-radio__hint">{% trans "none yet" %}</span>{% endif %}
+            </label>
+          </fieldset>
+
+          {% comment %}Селект конкретного документа этого типа.
+             Показывается только когда выбран соответствующий радио.{% endcomment %}
+          {% comment %}Все три селекта дублируют имя document_id. Чтобы submit'ил только
+             нужный — выключаем неактивные через :disabled. Disabled-поля
+             браузер не сериализует в POST.{% endcomment %}
+          <div class="rm-modal__group" x-show="modal.kind === 'zlecenie'" x-cloak>
+            <label class="rm-label" for="rm-mail-zlecenie">{% trans "Pick order" %}</label>
+            <select name="document_id" id="rm-mail-zlecenie" class="rm-select"
+                    :disabled="modal.kind !== 'zlecenie'"
+                    :required="modal.kind === 'zlecenie'">
+              {% for z in zlecenia %}
+                <option value="{{ z.pk }}">
+                  ZLC-{{ z.created_at|date:"Y" }}-{{ z.pk|stringformat:"04d" }}
+                  · {{ z.get_status_display }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="rm-modal__group" x-show="modal.kind === 'oferta'" x-cloak>
+            <label class="rm-label" for="rm-mail-oferta">{% trans "Pick offer" %}</label>
+            <select name="document_id" id="rm-mail-oferta" class="rm-select"
+                    :disabled="modal.kind !== 'oferta'"
+                    :required="modal.kind === 'oferta'">
+              {% for o in ofertas %}
+                <option value="{{ o.pk }}">
+                  OFR-{{ o.created_at|date:"Y" }}-{{ o.pk|stringformat:"04d" }}
+                  · {{ o.get_status_display }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="rm-modal__group" x-show="modal.kind === 'wniosek'" x-cloak>
+            <label class="rm-label" for="rm-mail-wniosek">{% trans "Pick application" %}</label>
+            <select name="document_id" id="rm-mail-wniosek" class="rm-select"
+                    :disabled="modal.kind !== 'wniosek'"
+                    :required="modal.kind === 'wniosek'">
+              {% for w in wnioski %}
+                <option value="{{ w.pk }}">
+                  WNI-{{ w.created_at|date:"Y" }}-{{ w.pk|stringformat:"04d" }}
+                  · {{ w.get_status_display }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <footer class="rm-modal__footer">
+            <button type="button" class="rm-btn"
+                    @click="modal.open = false">{% trans "Cancel" %}</button>
+            <button type="submit" class="rm-btn rm-btn--primary"
+                    :disabled="!modal.kind">{% trans "Send to staff" %}</button>
+          </footer>
+        </form>
+
+        {# ------- Режим: свободное сообщение ------- #}
+        <form method="post"
+              action="{% url 'admin:zetom_requestmain_mail_freeform' original.pk %}"
+              class="rm-modal__form"
+              data-send-overlay
+              x-show="modal.mode === 'freeform'" x-cloak>
+          {% csrf_token %}
+
+          <p class="rm-modal__hint">
+            {% blocktrans with email=original.email %}
+              Message will be sent to client: <strong>{{ email }}</strong>
+            {% endblocktrans %}
+          </p>
+
+          <div class="rm-modal__group">
+            <label class="rm-label" for="rm-mail-subject">{% trans "Subject" %}</label>
+            <input id="rm-mail-subject" name="subject" type="text"
+                   class="rm-input" maxlength="200" required
+                   x-model="modal.subject">
+          </div>
+
+          <div class="rm-modal__group">
+            <label class="rm-label" for="rm-mail-body">{% trans "Message" %}</label>
+            <textarea id="rm-mail-body" name="body" class="rm-textarea"
+                      rows="8" required x-model="modal.body"></textarea>
+          </div>
+
+          <footer class="rm-modal__footer">
+            <button type="button" class="rm-btn"
+                    @click="modal.open = false">{% trans "Cancel" %}</button>
+            <button type="submit" class="rm-btn rm-btn--primary"
+                    :disabled="!modal.subject.trim() || !modal.body.trim()">
+              {% trans "Send to client" %}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  </template>
+
+  {# ----------- Модалка: решение по запросу проверки ----------- #}
+  {% if can_resolve_review %}
+  <template x-teleport="body">
+    <div class="rm-modal" x-show="resolveModal.open" x-cloak
+         role="dialog" aria-modal="true" aria-labelledby="rm-resolve-modal-title">
+      <div class="rm-modal__backdrop" @click="resolveModal.open = false"></div>
+
+      <div class="rm-modal__panel" @click.stop>
+        <header class="rm-modal__header">
+          <h2 id="rm-resolve-modal-title" class="rm-modal__title">
+            {% trans "Resolve review" %}
+          </h2>
+          <button type="button" class="rm-modal__close"
+                  @click="resolveModal.open = false" aria-label='{% trans "Close" %}'>×</button>
+        </header>
+
+        <form method="post"
+              action="{% url 'admin:zetom_requestmain_resolve_review' original.pk %}"
+              class="rm-modal__form"
+              data-send-overlay>
+          {% csrf_token %}
+
+          {% if open_review %}
+          <div class="rm-modal__group rm-modal__quote">
+            <div class="rm-modal__quote-head">
+              <strong>
+                {% if open_review.actor %}
+                  {{ open_review.actor.get_full_name|default:open_review.actor.username }}
+                {% else %}
+                  {% trans "Unknown specialist" %}
+                {% endif %}
+              </strong>
+              <span class="rm-modal__quote-meta">
+                · {{ open_review.created_at|date:"Y-m-d H:i" }}
+              </span>
+            </div>
+            {% if open_review.payload.document_label %}
+              <div class="rm-modal__quote-meta">
+                {% blocktrans with doc=open_review.payload.document_label %}Document: {{ doc }}{% endblocktrans %}
+              </div>
+            {% endif %}
+            <div class="rm-modal__quote-body">
+              {% if open_review.payload.note %}
+                {{ open_review.payload.note|linebreaksbr }}
+              {% else %}
+                <em>{% trans "(no comment provided)" %}</em>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+
+          <p class="rm-modal__hint">
+            {% trans "Notification will be sent in-app to the specialist who requested this review." %}
+          </p>
+
+          <fieldset class="rm-modal__group">
+            <legend class="rm-modal__legend">{% trans "Decision" %}</legend>
+            <label class="rm-radio">
+              <input type="radio" name="decision" value="approved"
+                     x-model="resolveModal.decision">
+              <span>{% trans "Approve" %}</span>
+            </label>
+            <label class="rm-radio">
+              <input type="radio" name="decision" value="rejected"
+                     x-model="resolveModal.decision">
+              <span>{% trans "Reject" %}</span>
+            </label>
+          </fieldset>
+
+          <div class="rm-modal__group">
+            <label class="rm-label" for="rm-resolve-note">{% trans "Comment (optional)" %}</label>
+            <textarea id="rm-resolve-note" name="note" class="rm-textarea"
+                      rows="6" maxlength="1000"
+                      placeholder='{% trans "Anything the requester should know?" %}'
+                      x-model="resolveModal.note"></textarea>
+          </div>
+
+          <footer class="rm-modal__footer">
+            <button type="button" class="rm-btn"
+                    @click="resolveModal.open = false">{% trans "Cancel" %}</button>
+            <button type="submit" class="rm-btn rm-btn--primary"
+                    :disabled="!resolveModal.decision">
+              {% trans "Submit decision" %}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  </template>
+  {% endif %}
+
+  {# ----------- Модалка: запрос на проверку ----------- #}
+  <template x-teleport="body">
+    <div class="rm-modal" x-show="reviewModal.open" x-cloak
+         role="dialog" aria-modal="true" aria-labelledby="rm-review-modal-title">
+      <div class="rm-modal__backdrop" @click="reviewModal.open = false"></div>
+
+      <div class="rm-modal__panel" @click.stop>
+        <header class="rm-modal__header">
+          <h2 id="rm-review-modal-title" class="rm-modal__title">
+            {% trans "Request review" %}
+          </h2>
+          <button type="button" class="rm-modal__close"
+                  @click="reviewModal.open = false" aria-label='{% trans "Close" %}'>×</button>
+        </header>
+
+        <form method="post"
+              action="{% url 'admin:zetom_requestmain_request_review' original.pk %}"
+              class="rm-modal__form"
+              data-send-overlay>
+          {% csrf_token %}
+
+          <p class="rm-modal__hint">
+            {% trans "Owners are notified automatically. You can also add or remove other recipients below." %}
+          </p>
+
+          {% if review_default_locked %}
+            <div class="rm-modal__group">
+              <span class="rm-label">{% trans "Always notified (owners)" %}</span>
+              <ul class="rm-recipient-list">
+                {% for u in review_default_locked %}
+                  <li class="rm-recipient rm-recipient--locked">
+                    <span class="rm-recipient__name">{{ u.get_full_name|default:u.username }}</span>
+                    {% if u.profile.role %}<span class="rm-recipient__role">{% trans u.profile.role.name %}</span>{% endif %}
+                    <span class="rm-badge rm-badge--owner">{% trans "Owner" %}</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+
+          {% if review_default_optional %}
+            <fieldset class="rm-modal__group">
+              <legend class="rm-modal__legend">{% trans "Default recipients" %}</legend>
+              {% for u in review_default_optional %}
+                <label class="rm-checkbox">
+                  <input type="checkbox" name="recipient_ids" value="{{ u.pk }}" checked>
+                  <span class="rm-recipient__name">{{ u.get_full_name|default:u.username }}</span>
+                  {% if u.profile.role %}<span class="rm-recipient__role">{% trans u.profile.role.name %}</span>{% endif %}
+                </label>
+              {% endfor %}
+            </fieldset>
+          {% endif %}
+
+          {% if review_extras %}
+            <fieldset class="rm-modal__group">
+              <legend class="rm-modal__legend">{% trans "Additional recipients" %}</legend>
+              {% for u in review_extras %}
+                <label class="rm-checkbox">
+                  <input type="checkbox" name="recipient_ids" value="{{ u.pk }}">
+                  <span class="rm-recipient__name">{{ u.get_full_name|default:u.username }}</span>
+                  {% if u.profile.role %}<span class="rm-recipient__role">{% trans u.profile.role.name %}</span>{% endif %}
+                </label>
+              {% endfor %}
+            </fieldset>
+          {% endif %}
+
+          {% if not review_default_locked and not review_default_optional and not review_extras %}
+            <p class="rm-modal__hint">
+              {% trans "No reviewers available to notify." %}
+            </p>
+          {% endif %}
+
+          <div class="rm-modal__group">
+            <label class="rm-label" for="rm-review-note">{% trans "Comment (optional)" %}</label>
+            <textarea id="rm-review-note" name="note" class="rm-textarea"
+                      rows="6" maxlength="1000"
+                      placeholder='{% trans "What needs reviewing?" %}'
+                      x-model="reviewModal.note"></textarea>
+          </div>
+
+          <footer class="rm-modal__footer">
+            <button type="button" class="rm-btn"
+                    @click="reviewModal.open = false">{% trans "Cancel" %}</button>
+            <button type="submit" class="rm-btn rm-btn--primary"
+                    {% if not review_default_locked and not review_default_optional and not review_extras %}disabled{% endif %}>
+              {% trans "Send request" %}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  </template>
+</div>
+
+<script>
+  // Регистрируется ровно один раз на страницу. Если карточка
+  // встретится повторно — Alpine просто переиспользует функцию.
+  if (!window.rmActions) {
+    window.rmActions = function () {
+      return {
+        // claude — history modal (the history card lives inside it now).
+        historyOpen: false,
+        modal: {
+          open: false,
+          mode: 'document',  // 'document' | 'freeform'
+          kind: '',          // 'zlecenie' | 'oferta' | 'wniosek'
+          subject: '',
+          body: '',
+        },
+        reviewModal: {
+          open: false,
+          note: '',
+        },
+        resolveModal: {
+          open: false,
+          decision: '',
+          note: '',
+        },
+        openMail() {
+          this.modal.open = true;
+          this.modal.mode = 'document';
+          this.modal.kind = '';
+        },
+        openReview() {
+          this.reviewModal.open = true;
+          this.reviewModal.note = '';
+        },
+        openResolve() {
+          this.resolveModal.open = true;
+          this.resolveModal.decision = '';
+          this.resolveModal.note = '';
+        },
+      };
+    };
+  }
+</script>
+
+{% include "notification/_send_overlay.html" %}

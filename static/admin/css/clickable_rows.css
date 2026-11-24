@@ -1,0 +1,11 @@
+/* claude — clickable changelist rows. Pairs with admin/js/clickable_rows.js. */
+
+#result_list tbody tr.clickable-row {
+    cursor: pointer;
+}
+
+/* Checkbox column shouldn't look clickable as a row trigger. */
+#result_list tbody tr.clickable-row .action-checkbox-column,
+#result_list tbody tr.clickable-row .action-checkbox-column * {
+    cursor: default;
+}

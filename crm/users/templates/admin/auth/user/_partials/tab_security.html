@@ -1,0 +1,93 @@
+{% load i18n %}
+{% comment %}
+  Security tab — поля смены пароля встроены в основную форму юзера.
+  Save-кнопка снизу (от Django/Unfold) сабмитит всё вместе:
+  identity + role + password. Если поля пароля пустые — пароль не трогается.
+{% endcomment %}
+<div class="up-card up-card--narrow" id="sec-tab" aria-labelledby="up-sec-heading">
+  <h2 id="up-sec-heading" class="up-card__title">{% trans "Security" %}</h2>
+
+  {% comment %}
+    claude — статус доступа. Сама кнопка Deactivate/Reactivate живёт в
+    нижней панели рядом с «Delete user» (admin/auth/user/submit_line.html):
+    там её ищут, и там она вне основной формы, поэтому не утаскивает с
+    собой несохранённый payload. Здесь только состояние словами.
+  {% endcomment %}
+  {% if not original.is_active %}
+    <p class="up-callout">
+      {% trans "This account is deactivated: the user cannot log in. Use “Reactivate user” at the bottom of the page to restore access — role and departments are still in place, only 2FA has to be set up again." %}
+    </p>
+  {% endif %}
+
+  {% comment %}
+    2FA обязателен всем, кроме юзеров с otp_exempt. Статус устройства —
+    read-only; сброс (при утере телефона) — bulk-action "Reset 2FA" в
+    списке Users, он же отзывает доверенные браузеры. claude — тумблер
+    вместо чекбокса (.up-toggle, чистый CSS) + одна строка вместо
+    заголовка + подписи + отдельного help_text, дублировавших друг друга.
+  {% endcomment %}
+  {% comment %}
+    claude — вся карточка целиком один <label> (не только внутренняя
+    строка) — клик в любом месте рамки, включая статус-текст, переключает
+    otp_exempt. Внутри ровно один <label>, вложенных нет (невалидный HTML,
+    риск двойного срабатывания клика).
+  {% endcomment %}
+  <label class="up-card up-card--glass up-card--toggle-btn">
+    <p class="up-callout" style="background:transparent;border:none;padding:0;">
+      {% trans "Two-factor authentication:" %}
+      {% if original.totpdevice_set.exists %}
+        <strong>{% trans "configured" %}</strong>
+      {% else %}
+        <strong>{% trans "not configured yet" %}</strong>
+      {% endif %}
+      — {% trans "lost device? use “Reset 2FA” in the Users list." %}
+    </p>
+
+    <span class="up-toggle-row">
+      <span class="up-toggle-row__meta">
+        <span class="up-toggle-row__title">{{ adminform.form.otp_exempt.label }}</span>
+        <span class="up-toggle-row__sub">{% trans "Skips the 2FA requirement for this user only." %}</span>
+      </span>
+      <span class="up-toggle">
+        {{ adminform.form.otp_exempt }}
+        <span class="up-toggle__track"></span>
+      </span>
+    </span>
+  </label>
+
+  {% comment %}
+    claude — статичный список правил пароля убран (висел целиком даже без
+    единого введённого символа). Показываем только реальную ошибку —
+    Django-валидатор пишет её в f1.errors ("This password is too common."
+    и т.п.) лишь когда пароль правда не проходит проверку.
+  {% endcomment %}
+  <div class="up-card up-card--glass">
+    <p class="up-toggle-row__sub" style="margin:0;">
+      {% trans "Leave empty to keep the current password." %}
+    </p>
+
+    {% with f1=adminform.form.new_password1 %}
+      <label class="up-field">
+        <span class="up-field__label">{{ f1.label }}</span>
+        {{ f1 }}
+        {% if f1.errors %}
+          <ul class="up-field__errors">
+            {% for e in f1.errors %}<li>{{ e }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+      </label>
+    {% endwith %}
+
+    {% with f2=adminform.form.new_password2 %}
+      <label class="up-field">
+        <span class="up-field__label">{{ f2.label }}</span>
+        {{ f2 }}
+        {% if f2.errors %}
+          <ul class="up-field__errors">
+            {% for e in f2.errors %}<li>{{ e }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+      </label>
+    {% endwith %}
+  </div>
+</div>

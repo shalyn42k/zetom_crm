@@ -1,0 +1,1569 @@
+{% extends "admin/base.html" %}
+
+{% load static i18n log admin_dashboard %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'admin/css/custom_admin.css' %}">
+    <style>
+        .crm-dashboard {
+            max-width: 1600px;
+            margin: 0 auto;
+            height: calc(100vh - 110px);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .crm-dashboard__topbar,
+        .crm-dashboard__panel,
+        .crm-dashboard__primary-card,
+        .crm-dashboard__workspace-card,
+        .crm-dashboard__activity-item,
+        .crm-dashboard__hint-item,
+        .crm-dashboard__stat {
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(15, 23, 42, 0.52);
+            border-radius: 18px;
+        }
+
+        .crm-dashboard__topbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background:
+                radial-gradient(circle at top right, rgba(34, 197, 94, 0.16), transparent 42%),
+                linear-gradient(150deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 23, 0.94));
+        }
+
+        .crm-dashboard__topbar-label {
+            color: #7ee49b;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+
+        .crm-dashboard__topbar-name {
+            color: #f8fafc;
+            font-size: 0.875rem;
+        }
+
+        .crm-dashboard__topbar-meta {
+            color: rgba(226, 232, 240, 0.72);
+            font-size: 0.75rem;
+        }
+
+        .crm-dashboard__eyebrow,
+        .crm-dashboard__section-eyebrow,
+        .crm-dashboard__workspace-kicker,
+        .crm-dashboard__card-kicker,
+        .crm-dashboard__stat-label {
+            margin: 0;
+            color: #7ee49b;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+
+        .crm-dashboard__hero-title {
+            margin: 8px 0 0;
+            font-size: clamp(1.8rem, 3vw, 2.8rem);
+            line-height: 1.1;
+        }
+
+        .crm-dashboard__hero-text,
+        .crm-dashboard__section-copy,
+        .crm-dashboard__card-copy,
+        .crm-dashboard__workspace-copy,
+        .crm-dashboard__step p,
+        .crm-dashboard__hint-item p,
+        .crm-dashboard__stat-note,
+        .crm-dashboard__activity-time,
+        .crm-dashboard__empty-note {
+            margin: 0;
+            color: rgba(226, 232, 240, 0.86);
+            line-height: 1.6;
+            font-size: 0.875rem;
+        }
+
+        .crm-dashboard__kpi-square {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .crm-dashboard__kpi-square .crm-dashboard__stat {
+            min-height: 88px;
+        }
+
+        .crm-dashboard__kpi-flow {
+            grid-column: 1 / -1;
+            margin-top: 6px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .crm-dashboard__kpi-flow .crm-dashboard__link-row {
+            margin-top: 10px;
+        }
+
+        .crm-dashboard__stat {
+            display: flex;
+            padding: 10px;
+            min-height: 64px;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .crm-dashboard__stat-link {
+            color: inherit;
+            text-decoration: none;
+            transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
+        }
+
+        .crm-dashboard__stat-link:hover {
+            border-color: rgba(34, 197, 94, 0.58);
+            background: rgba(34, 197, 94, 0.12);
+            color: inherit;
+            transform: translateY(-1px);
+        }
+
+        .crm-dashboard__stat-value {
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+
+        .crm-dashboard__layout {
+            display: grid;
+            grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.1fr) minmax(260px, 0.85fr);
+            gap: 12px;
+            align-items: stretch;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        .crm-dashboard__main,
+        .crm-dashboard__aside {
+            display: grid;
+            gap: 12px;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .crm-dashboard__main {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .crm-dashboard__main > .crm-dashboard__panel {
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        .crm-dashboard__request-flow .crm-dashboard__link-row {
+            flex-direction: column;
+        }
+
+        .crm-dashboard__flow-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            border-color: rgba(34, 197, 94, 0.42);
+            background: rgba(20, 83, 45, 0.3);
+            color: #bbf7d0;
+        }
+
+        .crm-dashboard__flow-link:hover {
+            border-color: rgba(34, 197, 94, 0.78);
+            background: rgba(22, 101, 52, 0.42);
+            color: #f0fdf4;
+        }
+
+        .crm-dashboard__flow-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, 0.35);
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__personal {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .crm-dashboard__personal-list {
+            display: grid;
+            gap: 8px;
+            max-height: min(300px, 38vh);
+            margin-top: 10px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .crm-dashboard__personal-dropdown {
+            margin-top: 14px;
+        }
+
+        .crm-dashboard__personal-dropdown summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 40px;
+            padding: 0 12px;
+            border: 1px solid rgba(34, 197, 94, 0.38);
+            border-radius: 10px;
+            background: rgba(20, 83, 45, 0.22);
+            color: #bbf7d0;
+            cursor: pointer;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            list-style: none;
+        }
+
+        .crm-dashboard__personal-dropdown summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .crm-dashboard__personal-dropdown summary::after {
+            content: "▾";
+            color: #86efac;
+            font-size: 1rem;
+        }
+
+        .crm-dashboard__personal-dropdown[open] summary::after {
+            content: "▴";
+        }
+
+        .crm-dashboard__personal-dropdown summary span {
+            margin-left: auto;
+            margin-right: 10px;
+            color: #f0fdf4;
+        }
+
+        .crm-dashboard__personal-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 42px;
+            padding: 9px 11px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 10px;
+            background: rgba(2, 6, 23, 0.36);
+            color: #e2e8f0;
+            text-decoration: none;
+        }
+
+        .crm-dashboard__personal-item:hover {
+            border-color: rgba(34, 197, 94, 0.62);
+            background: rgba(34, 197, 94, 0.12);
+            color: #fff;
+        }
+
+        .crm-dashboard__personal-meta {
+            color: rgba(226, 232, 240, 0.68);
+            font-size: 0.6875rem;
+            white-space: nowrap;
+        }
+
+        .crm-dashboard__personal-empty {
+            margin: 14px 0 0;
+            color: rgba(226, 232, 240, 0.72);
+            font-size: 0.8125rem;
+        }
+
+        .crm-dashboard__personal-tools {
+            display: grid;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .crm-dashboard__personal-search,
+        .crm-dashboard__personal-select {
+            width: 100%;
+            min-height: 36px;
+            padding: 0 12px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            border-radius: 10px;
+            background: rgba(2, 6, 23, 0.5);
+            color: #f8fafc;
+            font-size: 0.8125rem;
+        }
+
+        .crm-dashboard__personal-search:focus,
+        .crm-dashboard__personal-select:focus {
+            outline: none;
+            border-color: rgba(34, 197, 94, 0.66);
+        }
+
+        .crm-dashboard__personal-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .crm-dashboard__personal-chip {
+            min-height: 30px;
+            padding: 0 12px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.36);
+            color: #e2e8f0;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color .16s ease, border-color .16s ease;
+        }
+
+        .crm-dashboard__personal-chip:hover {
+            border-color: rgba(34, 197, 94, 0.66);
+        }
+
+        .crm-dashboard__personal-chip.is-active {
+            border-color: rgba(34, 197, 94, 0.6);
+            background: rgba(34, 197, 94, 0.22);
+            color: #fff;
+        }
+
+        .crm-dashboard__personal-select {
+            flex: 1 1 120px;
+            min-height: 30px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__personal-item {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 4px;
+        }
+
+        .crm-dashboard__personal-item-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .crm-dashboard__personal-item-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .crm-dashboard__personal-item-line {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px 6px;
+            color: rgba(226, 232, 240, 0.75);
+            font-size: 0.75rem;
+        }
+
+        .crm-dashboard__personal-item-line .material-symbols-outlined {
+            font-size: 0.875rem;
+            color: #86efac;
+            flex: 0 0 auto;
+        }
+
+        .crm-dashboard__status-badge {
+            flex: 0 0 auto;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            color: #cbd5e1;
+            font-size: 0.625rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            white-space: nowrap;
+        }
+
+        .crm-dashboard__status-badge--active {
+            border-color: rgba(34, 197, 94, 0.6);
+            background: rgba(34, 197, 94, 0.18);
+            color: #bbf7d0;
+        }
+
+        .crm-dashboard__status-badge--open {
+            border-color: rgba(59, 130, 246, 0.6);
+            background: rgba(59, 130, 246, 0.16);
+            color: #bfdbfe;
+        }
+
+        .crm-dashboard__status-badge--closed,
+        .crm-dashboard__status-badge--inactive {
+            border-color: rgba(148, 163, 184, 0.45);
+            background: rgba(148, 163, 184, 0.12);
+            color: #cbd5e1;
+        }
+
+        .crm-dashboard__status-badge--cancelled,
+        .crm-dashboard__status-badge--deleted {
+            border-color: rgba(239, 68, 68, 0.55);
+            background: rgba(239, 68, 68, 0.14);
+            color: #fecaca;
+        }
+
+        .crm-dashboard__personal-reminder {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: #fde68a;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__personal-reminder .material-symbols-outlined {
+            color: #fbbf24;
+        }
+
+        .crm-dashboard__personal .is-hidden {
+            display: none;
+        }
+
+        .crm-dashboard__week {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+            min-height: 0;
+        }
+
+        .crm-dashboard__week-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .crm-dashboard__week-range {
+            margin: 0;
+            color: rgba(226, 232, 240, 0.6);
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+
+        .crm-dashboard__week-hero {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .crm-dashboard__week-hero-num {
+            color: #f8fafc;
+            font-size: 2.1rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .crm-dashboard__week-hero-meta {
+            display: grid;
+            gap: 2px;
+        }
+
+        .crm-dashboard__week-hero-label {
+            color: rgba(226, 232, 240, 0.88);
+            font-size: 0.8125rem;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__week-hero-prev {
+            color: rgba(226, 232, 240, 0.55);
+            font-size: 0.6875rem;
+        }
+
+        .crm-dashboard__week-delta {
+            margin-left: auto;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .crm-dashboard__week-delta--up {
+            border: 1px solid rgba(34, 197, 94, 0.55);
+            background: rgba(34, 197, 94, 0.16);
+            color: #86efac;
+        }
+
+        .crm-dashboard__week-delta--down {
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.12);
+            color: #fca5a5;
+        }
+
+        .crm-dashboard__week-delta--flat {
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            background: rgba(148, 163, 184, 0.1);
+            color: #cbd5e1;
+        }
+
+        .crm-dashboard__week-chart {
+            display: flex;
+            flex: 1 1 auto;
+            align-items: stretch;
+            gap: 8px;
+            min-height: 90px;
+            max-height: 150px;
+            padding-top: 6px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+        }
+
+        .crm-dashboard__week-col {
+            display: grid;
+            grid-template-rows: 16px minmax(0, 1fr) auto;
+            gap: 4px;
+            flex: 1 1 0;
+            min-width: 0;
+        }
+
+        .crm-dashboard__week-val {
+            color: #bbf7d0;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            text-align: center;
+            line-height: 16px;
+        }
+
+        .crm-dashboard__week-barbox {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            min-height: 0;
+        }
+
+        .crm-dashboard__week-bar {
+            width: 72%;
+            min-height: 4px;
+            border-radius: 6px 6px 2px 2px;
+            background: linear-gradient(180deg, rgba(74, 222, 128, 0.85), rgba(20, 83, 45, 0.6));
+            transition: filter .16s ease;
+        }
+
+        .crm-dashboard__week-bar--empty {
+            background: rgba(148, 163, 184, 0.18);
+        }
+
+        .crm-dashboard__week-col:hover .crm-dashboard__week-bar {
+            filter: brightness(1.18);
+        }
+
+        .crm-dashboard__week-col--today .crm-dashboard__week-bar {
+            background: linear-gradient(180deg, #4ade80, rgba(34, 197, 94, 0.65));
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.35);
+        }
+
+        .crm-dashboard__week-daylabel {
+            color: rgba(226, 232, 240, 0.6);
+            font-size: 0.6875rem;
+            text-align: center;
+        }
+
+        .crm-dashboard__week-col--today .crm-dashboard__week-daylabel {
+            color: #9df2b7;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__week-footer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 16px;
+        }
+
+        .crm-dashboard__week-foot {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(226, 232, 240, 0.78);
+            font-size: 0.75rem;
+        }
+
+        .crm-dashboard__week-foot .material-symbols-outlined {
+            font-size: 1rem;
+            color: #9df2b7;
+        }
+
+        .crm-dashboard__week-foot strong {
+            color: #f8fafc;
+        }
+
+        .crm-dashboard__personal-list,
+        .crm-dashboard__main,
+        .crm-dashboard__aside,
+        .crm-dashboard__client-workspace,
+        .crm-dashboard__panel--aside .crm-dashboard__activity-list {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(34, 197, 94, 0.38) rgba(2, 6, 23, 0.35);
+        }
+
+        .crm-dashboard__personal-list::-webkit-scrollbar,
+        .crm-dashboard__main::-webkit-scrollbar,
+        .crm-dashboard__aside::-webkit-scrollbar,
+        .crm-dashboard__client-workspace::-webkit-scrollbar,
+        .crm-dashboard__panel--aside .crm-dashboard__activity-list::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .crm-dashboard__personal-list::-webkit-scrollbar-track,
+        .crm-dashboard__main::-webkit-scrollbar-track,
+        .crm-dashboard__aside::-webkit-scrollbar-track,
+        .crm-dashboard__client-workspace::-webkit-scrollbar-track,
+        .crm-dashboard__panel--aside .crm-dashboard__activity-list::-webkit-scrollbar-track {
+            background: rgba(2, 6, 23, 0.35);
+            border-radius: 999px;
+        }
+
+        .crm-dashboard__personal-list::-webkit-scrollbar-thumb,
+        .crm-dashboard__main::-webkit-scrollbar-thumb,
+        .crm-dashboard__aside::-webkit-scrollbar-thumb,
+        .crm-dashboard__client-workspace::-webkit-scrollbar-thumb,
+        .crm-dashboard__panel--aside .crm-dashboard__activity-list::-webkit-scrollbar-thumb {
+            background: rgba(34, 197, 94, 0.32);
+            border-radius: 999px;
+            border: 2px solid rgba(2, 6, 23, 0.35);
+        }
+
+        .crm-dashboard__personal-list::-webkit-scrollbar-thumb:hover,
+        .crm-dashboard__main::-webkit-scrollbar-thumb:hover,
+        .crm-dashboard__aside::-webkit-scrollbar-thumb:hover,
+        .crm-dashboard__client-workspace::-webkit-scrollbar-thumb:hover,
+        .crm-dashboard__panel--aside .crm-dashboard__activity-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 197, 94, 0.55);
+        }
+
+        .crm-dashboard__client-workspace--nested {
+            margin-top: 18px;
+            padding: 18px 0 0;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .crm-dashboard__client-workspace {
+            display: grid;
+            gap: 10px;
+            align-content: start;
+            align-items: start;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .crm-dashboard__client-actions {
+            display: grid;
+            gap: 8px;
+        }
+
+        .crm-dashboard__panel {
+            padding: 18px;
+        }
+
+        .crm-dashboard__section-header,
+        .crm-dashboard__workspace-head,
+        .crm-dashboard__activity-top {
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .crm-dashboard__section-header {
+            align-items: end;
+            margin-bottom: 16px;
+        }
+
+        .crm-dashboard__section-title {
+            margin: 6px 0 0;
+            font-size: 1.7rem;
+            line-height: 1.15;
+        }
+
+        .crm-dashboard__section-title--small {
+            font-size: 1.25rem;
+        }
+
+        .crm-dashboard__top-panel {
+            padding: 18px 20px;
+        }
+
+        .crm-dashboard__top-grid {
+            margin-top: 14px;
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .crm-dashboard__top-action {
+            display: grid;
+            gap: 8px;
+            min-height: 82px;
+            padding: 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            background: rgba(2, 6, 23, 0.44);
+            color: #f8fafc;
+            text-decoration: none;
+            transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
+        }
+
+        .crm-dashboard__top-order {
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(34, 197, 94, 0.2);
+            color: #9df2b7;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__top-title {
+            font-size: 0.9375rem;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .crm-dashboard__top-copy {
+            color: rgba(226, 232, 240, 0.84);
+            font-size: 0.75rem;
+            line-height: 1.45;
+        }
+
+        .crm-dashboard__top-action:hover {
+            border-color: rgba(34, 197, 94, 0.6);
+            background: rgba(34, 197, 94, 0.18);
+            transform: translateY(-1px);
+        }
+
+        /* Keep the homepage focused on actions and live CRM numbers. */
+        .crm-dashboard__hero-text,
+        .crm-dashboard__section-copy,
+        .crm-dashboard__workspace-copy,
+        .crm-dashboard__top-copy,
+        .crm-dashboard__card-copy,
+        .crm-dashboard__workspace-kicker {
+            display: none;
+        }
+
+        .crm-dashboard__aside {
+            display: grid;
+            gap: 12px;
+        }
+
+        .crm-dashboard__panel--aside {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            height: 100%;
+            padding: 14px;
+        }
+
+        .crm-dashboard__panel--aside .crm-dashboard__section-title {
+            font-size: 1.05rem;
+        }
+
+        .crm-dashboard__panel--aside .crm-dashboard__activity-list {
+            gap: 6px;
+            margin-top: 10px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .crm-dashboard__panel--aside .crm-dashboard__activity-item {
+            padding: 9px 11px;
+            border-radius: 10px;
+        }
+
+        .crm-dashboard__panel--aside .crm-dashboard__activity-title {
+            margin-top: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .crm-dashboard__panel--aside .crm-dashboard__activity-time {
+            margin-top: 3px;
+            font-size: 0.6875rem;
+        }
+
+        .crm-dashboard__panel--aside .crm-dashboard__card-actions {
+            margin-top: 10px;
+        }
+
+        .crm-dashboard__hero-title {
+            max-width: none;
+            font-size: 2rem;
+        }
+
+        .crm-dashboard__top-action {
+            min-height: 78px;
+        }
+
+        .crm-dashboard__workspace-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .crm-dashboard__workspace-title {
+            margin-top: 0;
+            font-size: 1.15rem;
+        }
+
+        .crm-dashboard__workspace-card {
+            padding: 14px;
+        }
+
+        .crm-dashboard__link-row {
+            margin-top: 10px;
+        }
+
+        .crm-dashboard__primary-grid,
+        .crm-dashboard__workspace-grid {
+            display: grid;
+            gap: 14px;
+        }
+
+        .crm-dashboard__primary-grid {
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        }
+
+        .crm-dashboard__workspace-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .crm-dashboard__primary-card,
+        .crm-dashboard__workspace-card,
+        .crm-dashboard__activity-item,
+        .crm-dashboard__hint-item {
+            padding: 18px;
+        }
+
+        .crm-dashboard__icon-wrap {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(34, 197, 94, 0.14);
+            color: #9df2b7;
+        }
+
+        .crm-dashboard__icon-wrap .material-symbols-outlined {
+            font-size: 1.375rem;
+        }
+
+        .crm-dashboard__card-title,
+        .crm-dashboard__workspace-title {
+            margin: 8px 0 0;
+            font-size: 1.45rem;
+            line-height: 1.2;
+        }
+
+        .crm-dashboard__card-actions,
+        .crm-dashboard__link-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .crm-dashboard__button,
+        .crm-dashboard__text-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 36px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(15, 23, 42, 0.36);
+            color: #e2e8f0;
+            text-decoration: none;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            transition: background-color .16s ease, border-color .16s ease, transform .16s ease;
+        }
+
+        .crm-dashboard__button--primary {
+            border-color: rgba(34, 197, 94, 0.5);
+            background: rgba(34, 197, 94, 0.2);
+            color: #fff;
+        }
+
+        .crm-dashboard__button:hover,
+        .crm-dashboard__text-link:hover,
+        .crm-dashboard__activity-title a:hover {
+            border-color: rgba(34, 197, 94, 0.66);
+            background: rgba(34, 197, 94, 0.22);
+            transform: translateY(-1px);
+            color: #fff;
+        }
+
+        .crm-dashboard__workspace-badge {
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.34);
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+
+        .crm-dashboard__steps,
+        .crm-dashboard__activity-list,
+        .crm-dashboard__hint-list {
+            margin: 14px 0 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 10px;
+        }
+
+        .crm-dashboard__step {
+            display: grid;
+            grid-template-columns: 26px minmax(0, 1fr);
+            gap: 10px;
+            align-items: start;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(2, 6, 23, 0.4);
+        }
+
+        .crm-dashboard__step-index {
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: rgba(34, 197, 94, 0.18);
+            color: #9df2b7;
+        }
+
+        .crm-dashboard__activity-item {
+            padding: 10px 12px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+        }
+
+        .crm-dashboard__activity-type,
+        .crm-dashboard__activity-state {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: rgba(226, 232, 240, 0.82);
+        }
+
+        .crm-dashboard__activity-title {
+            margin-top: 8px;
+            font-weight: 700;
+        }
+
+        .crm-dashboard__activity-title a {
+            color: #f1f5f9;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.34);
+        }
+
+        .crm-dashboard__empty-state {
+            margin-top: 10px;
+        }
+
+        @media (max-width: 1200px) {
+            .crm-dashboard {
+                height: auto;
+                overflow: visible;
+            }
+
+            .crm-dashboard__layout {
+                grid-template-columns: 1fr;
+            }
+
+            .crm-dashboard__main,
+            .crm-dashboard__aside,
+            .crm-dashboard__client-workspace,
+            .crm-dashboard__panel--aside {
+                overflow: visible;
+                height: auto;
+            }
+
+            .crm-dashboard__kpi-square {
+                max-width: none;
+            }
+
+            .crm-dashboard__top-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .crm-dashboard {
+                gap: 14px;
+            }
+
+            .crm-dashboard__topbar,
+            .crm-dashboard__panel,
+            .crm-dashboard__primary-card,
+            .crm-dashboard__workspace-card,
+            .crm-dashboard__activity-item,
+            .crm-dashboard__hint-item {
+                border-radius: 14px;
+            }
+
+            .crm-dashboard__topbar,
+            .crm-dashboard__panel {
+                padding: 16px;
+            }
+
+            .crm-dashboard__section-title {
+                font-size: 1.35rem;
+            }
+
+            .crm-dashboard__section-header,
+            .crm-dashboard__workspace-head,
+            .crm-dashboard__activity-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .crm-dashboard__top-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* claude — light theme. Everything above (and the .crm-dashboard__*
+           block in custom_admin.css) was drawn for a dark page only:
+           translucent near-black card fills + near-white text. On the light
+           page those fills composite into a muddy mid-grey with pale,
+           unreadable text. html.dark keeps the original design untouched;
+           without it every colour is repointed onto the theme roles from
+           static/css/tokens.css. */
+        html:not(.dark) .crm-dashboard__panel,
+        html:not(.dark) .crm-dashboard__primary-card,
+        html:not(.dark) .crm-dashboard__workspace-card,
+        html:not(.dark) .crm-dashboard__activity-item,
+        html:not(.dark) .crm-dashboard__hint-item,
+        html:not(.dark) .crm-dashboard__stat {
+            border-color: var(--border);
+            background: var(--surface);
+            box-shadow: var(--shadow-sm);
+        }
+
+        html:not(.dark) .crm-dashboard__topbar {
+            border-color: var(--border);
+            background:
+                radial-gradient(circle at top right, color-mix(in srgb, var(--green) 12%, transparent), transparent 42%),
+                var(--surface);
+            box-shadow: var(--shadow-sm);
+        }
+
+        html:not(.dark) .crm-dashboard__topbar-label,
+        html:not(.dark) .crm-dashboard__eyebrow,
+        html:not(.dark) .crm-dashboard__section-eyebrow,
+        html:not(.dark) .crm-dashboard__workspace-kicker,
+        html:not(.dark) .crm-dashboard__card-kicker,
+        html:not(.dark) .crm-dashboard__stat-label {
+            color: var(--accent);
+        }
+
+        html:not(.dark) .crm-dashboard__topbar-name,
+        html:not(.dark) .crm-dashboard__hero-title,
+        html:not(.dark) .crm-dashboard__section-title,
+        html:not(.dark) .crm-dashboard__card-title,
+        html:not(.dark) .crm-dashboard__workspace-title,
+        html:not(.dark) .crm-dashboard__stat-value,
+        html:not(.dark) .crm-dashboard__step strong,
+        html:not(.dark) .crm-dashboard__hint-item strong,
+        html:not(.dark) .crm-dashboard__activity-title,
+        html:not(.dark) .crm-dashboard__activity-title a,
+        html:not(.dark) .crm-dashboard__week-hero-num,
+        html:not(.dark) .crm-dashboard__week-foot strong,
+        html:not(.dark) .crm-dashboard__personal-dropdown summary span {
+            color: var(--text);
+        }
+
+        html:not(.dark) .crm-dashboard__topbar-meta,
+        html:not(.dark) .crm-dashboard__hero-text,
+        html:not(.dark) .crm-dashboard__section-copy,
+        html:not(.dark) .crm-dashboard__card-copy,
+        html:not(.dark) .crm-dashboard__workspace-copy,
+        html:not(.dark) .crm-dashboard__step p,
+        html:not(.dark) .crm-dashboard__hint-item p,
+        html:not(.dark) .crm-dashboard__stat-note,
+        html:not(.dark) .crm-dashboard__empty-note,
+        html:not(.dark) .crm-dashboard__personal-empty,
+        html:not(.dark) .crm-dashboard__personal-item-line,
+        html:not(.dark) .crm-dashboard__week-hero-label,
+        html:not(.dark) .crm-dashboard__week-foot,
+        html:not(.dark) .crm-dashboard__activity-type,
+        html:not(.dark) .crm-dashboard__activity-state,
+        html:not(.dark) .crm-dashboard__workspace-badge {
+            color: var(--text-muted);
+        }
+
+        html:not(.dark) .crm-dashboard__activity-time,
+        html:not(.dark) .crm-dashboard__personal-meta,
+        html:not(.dark) .crm-dashboard__week-range,
+        html:not(.dark) .crm-dashboard__week-hero-prev,
+        html:not(.dark) .crm-dashboard__week-daylabel {
+            color: var(--text-subtle);
+        }
+
+        html:not(.dark) .crm-dashboard__activity-title a {
+            border-bottom-color: var(--border-strong);
+        }
+
+        html:not(.dark) .crm-dashboard__kpi-flow,
+        html:not(.dark) .crm-dashboard__week,
+        html:not(.dark) .crm-dashboard__week-chart,
+        html:not(.dark) .crm-dashboard__client-workspace--nested,
+        html:not(.dark) .crm-dashboard__workspace-badge {
+            border-color: var(--border);
+        }
+
+        /* Green "accent" surfaces: a light tint with dark-green text instead
+           of a dark-green fill with mint text. */
+        html:not(.dark) .crm-dashboard__flow-link,
+        html:not(.dark) .crm-dashboard__personal-dropdown summary {
+            border-color: color-mix(in srgb, var(--green) 35%, transparent);
+            background: color-mix(in srgb, var(--green) 7%, var(--surface));
+            color: var(--accent);
+        }
+
+        html:not(.dark) .crm-dashboard__flow-link:hover {
+            border-color: color-mix(in srgb, var(--green) 60%, transparent);
+            background: color-mix(in srgb, var(--green) 13%, var(--surface));
+            color: var(--accent);
+        }
+
+        html:not(.dark) .crm-dashboard__flow-count {
+            background: color-mix(in srgb, var(--green) 18%, transparent);
+        }
+
+        html:not(.dark) .crm-dashboard__personal-dropdown summary::after,
+        html:not(.dark) .crm-dashboard__personal-item-line .material-symbols-outlined,
+        html:not(.dark) .crm-dashboard__icon-wrap,
+        html:not(.dark) .crm-dashboard__step-index,
+        html:not(.dark) .crm-dashboard__top-order,
+        html:not(.dark) .crm-dashboard__week-val,
+        html:not(.dark) .crm-dashboard__week-col--today .crm-dashboard__week-daylabel,
+        html:not(.dark) .crm-dashboard__week-foot .material-symbols-outlined {
+            color: var(--accent);
+        }
+
+        html:not(.dark) .crm-dashboard__personal-item,
+        html:not(.dark) .crm-dashboard__top-action,
+        html:not(.dark) .crm-dashboard__step {
+            border-color: var(--border);
+            background: var(--surface-soft);
+            color: var(--text);
+        }
+
+        html:not(.dark) .crm-dashboard__personal-item:hover,
+        html:not(.dark) .crm-dashboard__top-action:hover {
+            border-color: color-mix(in srgb, var(--green) 55%, transparent);
+            background: color-mix(in srgb, var(--green) 8%, var(--surface));
+            color: var(--text);
+        }
+
+        html:not(.dark) .crm-dashboard__personal-search,
+        html:not(.dark) .crm-dashboard__personal-select {
+            border-color: var(--input-border);
+            background: var(--input-bg);
+            color: var(--text);
+        }
+
+        html:not(.dark) .crm-dashboard__personal-chip,
+        html:not(.dark) .crm-dashboard__button,
+        html:not(.dark) .crm-dashboard__text-link {
+            border-color: var(--border-strong);
+            background: var(--surface);
+            color: var(--text-muted);
+        }
+
+        html:not(.dark) .crm-dashboard__personal-chip.is-active,
+        html:not(.dark) .crm-dashboard__button--primary {
+            border-color: color-mix(in srgb, var(--green) 55%, transparent);
+            background: color-mix(in srgb, var(--green) 12%, var(--surface));
+            color: var(--accent);
+        }
+
+        html:not(.dark) .crm-dashboard__button:hover,
+        html:not(.dark) .crm-dashboard__text-link:hover {
+            border-color: color-mix(in srgb, var(--green) 60%, transparent);
+            background: color-mix(in srgb, var(--green) 12%, var(--surface));
+            color: var(--accent);
+        }
+
+        html:not(.dark) .crm-dashboard__status-badge,
+        html:not(.dark) .crm-dashboard__status-badge--closed,
+        html:not(.dark) .crm-dashboard__status-badge--inactive,
+        html:not(.dark) .crm-dashboard__week-delta--flat {
+            color: var(--slate);
+        }
+
+        html:not(.dark) .crm-dashboard__status-badge--active,
+        html:not(.dark) .crm-dashboard__week-delta--up {
+            color: var(--accent);
+        }
+
+        html:not(.dark) .crm-dashboard__status-badge--open {
+            color: var(--blue);
+        }
+
+        html:not(.dark) .crm-dashboard__status-badge--cancelled,
+        html:not(.dark) .crm-dashboard__status-badge--deleted,
+        html:not(.dark) .crm-dashboard__week-delta--down {
+            color: var(--red);
+        }
+
+        html:not(.dark) .crm-dashboard__personal-reminder,
+        html:not(.dark) .crm-dashboard__personal-reminder .material-symbols-outlined {
+            color: var(--amber);
+        }
+
+        html:not(.dark) .crm-dashboard__week-bar {
+            background: linear-gradient(180deg, color-mix(in srgb, var(--green) 85%, transparent), color-mix(in srgb, var(--green) 45%, transparent));
+        }
+
+        html:not(.dark) .crm-dashboard__week-col--today .crm-dashboard__week-bar {
+            background: var(--green);
+            box-shadow: none;
+        }
+
+        html:not(.dark) .crm-dashboard__personal-list,
+        html:not(.dark) .crm-dashboard__main,
+        html:not(.dark) .crm-dashboard__aside,
+        html:not(.dark) .crm-dashboard__client-workspace,
+        html:not(.dark) .crm-dashboard__panel--aside .crm-dashboard__activity-list {
+            scrollbar-color: color-mix(in srgb, var(--green) 40%, transparent) var(--surface-soft);
+        }
+    </style>
+{% endblock extrahead %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_("Django site admin") }}{% endblock title %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock branding %}
+
+{% block content %}
+    {% has_crm_perm user "view_requests" as can_view_requests %}
+    {% has_crm_perm user "view_clients" as can_view_clients %}
+    {% has_crm_perm user "view_users" as can_view_users %}
+    {% has_crm_perm user "view_roles" as can_view_roles %}
+    {% has_crm_perm user "view_logs" as can_view_logs %}
+    {% has_crm_perm user "view_notification_log" as can_view_notification_log %}
+    {% has_crm_perm user "view_email_log" as can_view_email_log %}
+    {% unread_inapp_count user as inbox_count %}
+    {% dashboard_summary user as dashboard %}
+    {% dashboard_personal_requests user as personal_requests %}
+    {% dashboard_weekly_stats user as weekly %}
+    {% get_admin_log 3 as admin_log for_user user %}
+
+    <div class="crm-dashboard">
+        <section class="crm-dashboard__topbar">
+            <span class="crm-dashboard__topbar-label">{% translate "Signed in as" %}</span>
+            <strong class="crm-dashboard__topbar-name">{{ user.get_full_name|default:user.username }}</strong>
+            <span class="crm-dashboard__topbar-meta">
+                {% if user.userprofile.job_title %}{{ user.userprofile.job_title }} · {% endif %}{{ user.userprofile.departments_summary|default:_("No department") }}
+            </span>
+        </section>
+
+        <div class="crm-dashboard__layout">
+            <main class="crm-dashboard__main">
+                <section class="crm-dashboard__panel crm-dashboard__kpi-square">
+                    <a href="{% url 'notification:inbox' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
+                        <span class="crm-dashboard__stat-label">{% translate "Inbox" %}</span>
+                        <strong class="crm-dashboard__stat-value">{{ dashboard.inbox }}</strong>
+                        <span class="crm-dashboard__stat-note">{% translate "Needs your attention" %}</span>
+                    </a>
+                    {% if can_view_requests %}
+                        <a href="{% url 'admin:zetom_requestnull_changelist' %}" class="crm-dashboard__stat crm-dashboard__stat-link">
+                            <span class="crm-dashboard__stat-label">{% translate "Validation" %}</span>
+                            <strong class="crm-dashboard__stat-value">{{ dashboard.validation }}</strong>
+                            <span class="crm-dashboard__stat-note">{% translate "New requests to check" %}</span>
+                        </a>
+                        <div class="crm-dashboard__request-flow crm-dashboard__kpi-flow">
+                            <h2 class="crm-dashboard__stat-label">{% translate "Request flow" %}</h2>
+                            <div class="crm-dashboard__link-row">
+                                <a href="{% url 'admin:zetom_requestmain_changelist' %}" class="crm-dashboard__flow-link">{% translate "Information" %} <span class="crm-dashboard__flow-count">{{ dashboard.active_requests }}</span></a>
+                                <a href="{% url 'admin:zetom_oferta_changelist' %}" class="crm-dashboard__flow-link">{% translate "Offers" %} <span class="crm-dashboard__flow-count">{{ dashboard.offers }}</span></a>
+                                <a href="{% url 'admin:zetom_zlecenie_changelist' %}" class="crm-dashboard__flow-link">{% translate "Orders" %} <span class="crm-dashboard__flow-count">{{ dashboard.orders }}</span></a>
+                                <a href="{% url 'admin:zetom_wniosek_changelist' %}" class="crm-dashboard__flow-link">{% translate "Applications" %} <span class="crm-dashboard__flow-count">{{ dashboard.applications }}</span></a>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if can_view_clients %}
+                        <section class="crm-dashboard__client-workspace crm-dashboard__kpi-flow">
+                            <h2 class="crm-dashboard__stat-label">{% translate "Client workspace" %}</h2>
+                            <div class="crm-dashboard__link-row">
+                                <a href="{% url 'admin:clients_client_changelist' %}" class="crm-dashboard__text-link">{% translate "Clients" %}</a>
+                                {# claude — the stock Company changelist was replaced by the Klienci list; link its firms filter instead #}
+                                <a href="{% url 'admin:clients_client_changelist' %}?rodzaj=firmy" class="crm-dashboard__text-link">{% translate "Companies" %}</a>
+                            </div>
+                            <div class="crm-dashboard__client-actions">
+                                {% if can_view_requests %}
+                                    <a href="{% url 'admin:zetom_requestmain_add' %}" class="crm-dashboard__button crm-dashboard__button--primary">{% translate "Create request" %}</a>
+                                {% endif %}
+                            </div>
+                        </section>
+                    {% endif %}
+                </section>
+
+                {% if not can_view_requests and not can_view_clients %}
+                    {% trans "You don’t have permission to view or edit anything." as error_message %}
+                    <section class="crm-dashboard__panel crm-dashboard__empty-state">
+                        {% include "unfold/helpers/messages/error.html" with error=error_message %}
+                    </section>
+                {% endif %}
+            </main>
+
+            {% if can_view_requests %}
+                <section class="crm-dashboard__panel crm-dashboard__personal" data-personal-root>
+                    <div class="crm-dashboard__section-header">
+                        <div>
+                            <p class="crm-dashboard__section-eyebrow">{% translate "My work" %}</p>
+                            <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "My tasks / My requests" %}</h2>
+                        </div>
+                        <span class="crm-dashboard__workspace-badge">{{ personal_requests|length }}</span>
+                    </div>
+                    {% if personal_requests %}
+                        {% personal_request_statuses personal_requests as personal_statuses %}
+                        <details class="crm-dashboard__personal-dropdown" open>
+                            <summary>{% translate "Show my requests" %}<span>{{ personal_requests|length }}</span></summary>
+                            <div class="crm-dashboard__personal-tools">
+                                <input type="search" class="crm-dashboard__personal-search" data-personal-search
+                                       placeholder='{% translate "Search by name, company, phone…" %}'>
+                                <div class="crm-dashboard__personal-filters">
+                                    <button type="button" class="crm-dashboard__personal-chip is-active" data-personal-filter="all">{% translate "All" %}</button>
+                                    <button type="button" class="crm-dashboard__personal-chip" data-personal-filter="assigned">{% translate "Assigned to me" %}</button>
+                                    <button type="button" class="crm-dashboard__personal-chip" data-personal-filter="reminder">{% translate "Reminders" %}</button>
+                                    <select class="crm-dashboard__personal-select" data-personal-status>
+                                        <option value="">{% translate "All statuses" %}</option>
+                                        {% for code, label in personal_statuses %}
+                                            <option value="{{ code }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="crm-dashboard__personal-list">
+                                {% for item in personal_requests %}
+                                    <a href="{{ item.url }}" class="crm-dashboard__personal-item"
+                                       data-personal-item
+                                       data-search="{{ item.search }}"
+                                       data-status="{{ item.status }}"
+                                       data-assigned="{{ item.is_assigned|yesno:'1,0' }}"
+                                       data-reminder="{{ item.has_reminder|yesno:'1,0' }}">
+                                        <span class="crm-dashboard__personal-item-head">
+                                            <strong class="crm-dashboard__personal-item-name">{{ item.name }}</strong>
+                                            <span class="crm-dashboard__status-badge crm-dashboard__status-badge--{{ item.status }}">{{ item.status_label }}</span>
+                                        </span>
+                                        {% if item.company %}
+                                            <span class="crm-dashboard__personal-item-line">
+                                                <span class="material-symbols-outlined">business</span>{{ item.company }}
+                                            </span>
+                                        {% endif %}
+                                        <span class="crm-dashboard__personal-item-line">
+                                            <span class="material-symbols-outlined">call</span>{{ item.phone }}
+                                            {% if item.email %}<span class="material-symbols-outlined">mail</span>{{ item.email }}{% endif %}
+                                        </span>
+                                        <span class="crm-dashboard__personal-item-line">
+                                            <span class="material-symbols-outlined">schedule</span>{{ item.updated_at|date:"d M Y, H:i" }}
+                                            · {{ item.source_label }}
+                                            {% if item.has_reminder %}
+                                                <span class="crm-dashboard__personal-reminder"><span class="material-symbols-outlined">alarm</span>{% translate "Reminder" %}</span>
+                                            {% endif %}
+                                        </span>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                            <p class="crm-dashboard__personal-empty is-hidden" data-personal-empty-filtered>{% translate "Nothing matches the current search or filters." %}</p>
+                        </details>
+                    {% else %}
+                        <p class="crm-dashboard__personal-empty">{% translate "No requests are assigned to you yet." %}</p>
+                    {% endif %}
+                    {% if weekly.has_data %}
+                        <section class="crm-dashboard__week" data-weekly>
+                            <div class="crm-dashboard__week-head">
+                                <p class="crm-dashboard__section-eyebrow">{% translate "This week" %}</p>
+                                <p class="crm-dashboard__week-range">{{ weekly.week_start|date:"d M" }} – {{ weekly.week_end|date:"d M" }}</p>
+                            </div>
+                            <a href="{% url 'admin:zetom_requestmain_activity_calendar' %}" class="crm-dashboard__text-link">{% translate "Open activity calendar" %}</a>
+                            <div class="crm-dashboard__week-hero">
+                                <strong class="crm-dashboard__week-hero-num">{{ weekly.updated }}</strong>
+                                <div class="crm-dashboard__week-hero-meta">
+                                    <span class="crm-dashboard__week-hero-label">{% translate "Requests updated" %}</span>
+                                    <span class="crm-dashboard__week-hero-prev">{{ weekly.updated_prev }} {% translate "last week" %}</span>
+                                </div>
+                                {% if weekly.delta_dir == "up" %}
+                                    <span class="crm-dashboard__week-delta crm-dashboard__week-delta--up">▲ +{{ weekly.delta_abs }}</span>
+                                {% elif weekly.delta_dir == "down" %}
+                                    <span class="crm-dashboard__week-delta crm-dashboard__week-delta--down">▼ −{{ weekly.delta_abs }}</span>
+                                {% else %}
+                                    <span class="crm-dashboard__week-delta crm-dashboard__week-delta--flat">±0</span>
+                                {% endif %}
+                            </div>
+                            <div class="crm-dashboard__week-chart">
+                                {% for day in weekly.days %}
+                                    <div class="crm-dashboard__week-col{% if day.is_today %} crm-dashboard__week-col--today{% endif %}">
+                                        <span class="crm-dashboard__week-val">{% if day.count %}{{ day.count }}{% endif %}</span>
+                                        <div class="crm-dashboard__week-barbox">
+                                            <div class="crm-dashboard__week-bar{% if not day.count %} crm-dashboard__week-bar--empty{% endif %}" style="height: {{ day.percent }}%"></div>
+                                        </div>
+                                        <span class="crm-dashboard__week-daylabel">{{ day.label }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="crm-dashboard__week-footer">
+                                <span class="crm-dashboard__week-foot">
+                                    <span class="material-symbols-outlined">edit_note</span>
+                                    <strong>{{ weekly.notes }}</strong> {% translate "notes" %}
+                                </span>
+                                <span class="crm-dashboard__week-foot">
+                                    <span class="material-symbols-outlined">alarm</span>
+                                    <strong>{{ weekly.reminders }}</strong> {% translate "reminders" %}
+                                </span>
+                                {% if weekly.best %}
+                                    <span class="crm-dashboard__week-foot">
+                                        <span class="material-symbols-outlined">bolt</span>
+                                        {% translate "Peak" %}: {{ weekly.best.label }} · <strong>{{ weekly.best.count }}</strong>
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </section>
+                    {% endif %}
+                </section>
+            {% endif %}
+
+            <aside class="crm-dashboard__aside">
+                <section class="crm-dashboard__panel crm-dashboard__panel--aside">
+                    <p class="crm-dashboard__section-eyebrow">{% translate "Recent activity" %}</p>
+                    <h2 class="crm-dashboard__section-title crm-dashboard__section-title--small">{% translate "Latest changes" %}</h2>
+
+                    {% if admin_log %}
+                        <div class="crm-dashboard__activity-list">
+                            {% for entry in admin_log %}
+                                <article class="crm-dashboard__activity-item">
+                                    <div class="crm-dashboard__activity-top">
+                                        <span class="crm-dashboard__activity-type">
+                                            {% if entry.content_type %}
+                                                {% filter capfirst %}{{ entry.content_type.name }}{% endfilter %}
+                                            {% else %}
+                                                {% translate "Unknown content" %}
+                                            {% endif %}
+                                        </span>
+                                        <span class="crm-dashboard__activity-state">
+                                            {% if entry.is_addition %}
+                                                {% translate "Created" %}
+                                            {% elif entry.is_change %}
+                                                {% translate "Updated" %}
+                                            {% elif entry.is_deletion %}
+                                                {% translate "Deleted" %}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="crm-dashboard__activity-title">
+                                        {% if entry.is_deletion or not entry.get_admin_url %}
+                                            {{ entry.object_repr }}
+                                        {% else %}
+                                            <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+                                        {% endif %}
+                                    </div>
+                                    <p class="crm-dashboard__activity-time">{{ entry.action_time }}</p>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="crm-dashboard__empty-note">{% translate "No recent actions yet." %}</p>
+                    {% endif %}
+                    {% if can_view_logs %}
+                        <div class="crm-dashboard__card-actions">
+                            <a href="{% url 'admin:admin_logentry_changelist' %}" class="crm-dashboard__text-link">{% translate "Open full activity log" %}</a>
+                        </div>
+                    {% endif %}
+                </section>
+            </aside>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const root = document.querySelector("[data-personal-root]");
+            if (!root) {
+                return;
+            }
+            const searchInput = root.querySelector("[data-personal-search]");
+            const statusSelect = root.querySelector("[data-personal-status]");
+            const chips = root.querySelectorAll("[data-personal-filter]");
+            const items = root.querySelectorAll("[data-personal-item]");
+            const emptyFiltered = root.querySelector("[data-personal-empty-filtered]");
+            const dropdown = root.querySelector(".crm-dashboard__personal-dropdown");
+            const weekly = root.querySelector("[data-weekly]");
+            let activeFilter = "all";
+
+            function syncWeekly() {
+                if (weekly && dropdown) {
+                    weekly.classList.toggle("is-hidden", dropdown.open);
+                }
+            }
+            if (dropdown) {
+                dropdown.addEventListener("toggle", syncWeekly);
+                syncWeekly();
+            }
+
+            function applyFilters() {
+                const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+                const status = statusSelect ? statusSelect.value : "";
+                let visibleCount = 0;
+                items.forEach((item) => {
+                    const matchesQuery = !query || item.dataset.search.indexOf(query) !== -1;
+                    const matchesStatus = !status || item.dataset.status === status;
+                    let matchesChip = true;
+                    if (activeFilter === "assigned") {
+                        matchesChip = item.dataset.assigned === "1";
+                    } else if (activeFilter === "reminder") {
+                        matchesChip = item.dataset.reminder === "1";
+                    }
+                    const visible = matchesQuery && matchesStatus && matchesChip;
+                    item.classList.toggle("is-hidden", !visible);
+                    if (visible) {
+                        visibleCount += 1;
+                    }
+                });
+                if (emptyFiltered) {
+                    emptyFiltered.classList.toggle("is-hidden", visibleCount !== 0);
+                }
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener("input", applyFilters);
+            }
+            if (statusSelect) {
+                statusSelect.addEventListener("change", applyFilters);
+            }
+            chips.forEach((chip) => {
+                chip.addEventListener("click", () => {
+                    activeFilter = chip.dataset.personalFilter;
+                    chips.forEach((other) => other.classList.toggle("is-active", other === chip));
+                    applyFilters();
+                });
+            });
+        })();
+    </script>
+{% endblock content %}

@@ -1,0 +1,15 @@
+{% load i18n status_labels %}{% comment %}Inapp-уведомление стаффу: RequestMain сменил статус.
+   Шаблон рендерится при отображении в UI, не в момент создания записи —
+   old_status/new_status идут через request_status_label (status_manager
+   templatetags) ИМЕННО тут, а не переводятся в payload при создании, чтобы
+   каждый получатель видел метку на своём активном языке, а не на том,
+   что был активен в момент создания уведомления.
+   Контекст рендера (из Notification.payload):
+       request_id     — pk RequestMain
+       request_label  — короткая строка-заголовок, e.g. "REQ-2026-0042 — Acme"
+       old_status     — старое значение RequestStatus (raw code)
+       new_status     — новое значение RequestStatus (raw code)
+       actor_name     — кто инициировал (или "system")
+   Первая строка — title уведомления.{% endcomment %}{% autoescape off %}{% blocktrans %}Request {{ request_label }}: status changed{% endblocktrans %}
+
+{% blocktrans with old_label=old_status|request_status_label new_label=new_status|request_status_label %}{{ actor_name }} changed status from "{{ old_label }}" to "{{ new_label }}".{% endblocktrans %}{% endautoescape %}

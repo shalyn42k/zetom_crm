@@ -1,0 +1,231 @@
+import logging
+
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission as DjangoPermission
+from django.contrib.contenttypes.models import ContentType
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
+from django.utils.translation import gettext_lazy as _
+
+from crm.users.models import Permission, Role
+
+User = get_user_model()
+logger = logging.getLogger(__name__)
+
+
+@receiver(post_migrate)
+def create_rbac_defaults(sender, **kwargs):
+    # Запускаем только для приложения crm.users
+    if sender.name != "crm.users":
+        return
+
+    # Проверяем, что таблицы существуют
+    try:
+        Permission.objects.exists()
+        Role.objects.exists()
+        User.objects.exists()
+    except Exception:
+        return
+
+    # claude — permission-каталог. Каждый код должен иметь гейт в коде;
+    # «мёртвые» коды помечены * рядом со статусом в DOCS/rbac.md.
+    # Расширения (manage_owners / view_inbox / view_*_log) — для notification
+    # и per-Req owner-флоу; их гейты см. в crm/notification/views.py,
+    # crm/notification/admin.py, crm/zetom/services/per_req_perms.py.
+    # claude — строки обёрнуты в _() для makemessages; при post_migrate
+    # LANGUAGE_CODE="en" → хранится в БД как английский текст.
+    # Шаблоны используют {% trans perm.name %} для перевода при отображении.
+    permissions_data = [
+        ("view_users", _("View users")),
+        ("edit_users", _("Edit users (profile fields)")),
+        ("view_roles", _("View roles")),
+        ("edit_roles", _("Assign role and individual permissions to users")),
+        ("view_requests", _("View requests")),
+        ("edit_requests", _("Edit requests")),
+        ("delete_requests", _("Delete requests")),
+        ("view_logs", _("View logs")),
+        ("change_request_status", _("Change request status")),
+        ("send_documents", _("Send document emails (oferta/zlecenie/wniosek)")),
+        ("assign_requests", _("Assign/unassign users to requests")),
+        ("grant_head", _("Grant/revoke department head")),
+        ("request_review", _("Request review from a higher role")),
+        ("resolve_review", _("Resolve review (approve/reject)")),
+        # claude — per-Req owners (см. memory project_per_req_permissions.md).
+        # Контекстный fallback admin/dep_head-of-Req сохраняется в коде;
+        # этот perm позволяет ДЕЛЕГИРОВАТЬ право через extra_permissions.
+        ("manage_owners", _("Set/unset owner on a request")),
+        # claude — gates для inapp-канала и админ-логов.
+        ("view_inbox", _("Open the in-app notifications inbox")),
+        ("view_notification_log", _("View the in-app notification audit log (admin)")),
+        ("view_email_log", _("View the email notification audit log (admin)")),
+        # claude — clients module gates. Раньше ClientAdmin + search/autofill
+        # views были без проверок; любой staff (а search вообще аноним) мог
+        # выгрузить базу клиентов.
+        ("view_clients", _("View clients")),
+        ("edit_clients", _("Edit/create clients")),
+        ("delete_clients", _("Delete clients")),
+        # claude — who a StepNote reminder may be addressed to (Dziennik
+        # kontaktów: client by email / colleagues / a whole role), plus
+        # changing other users' notification settings.
+        ("send_client_messages", _("Send emails and reminders to clients")),
+        ("send_staff_messages", _("Send messages and reminders to other users")),
+        ("message_roles", _("Send messages to everyone with a role")),
+        ("manage_notification_settings", _("Change other users' notification settings")),
+    ]
+
+    # Создание permissions
+    # claude — update_or_create (not get_or_create): with get_or_create,
+    # `defaults` only applied on INSERT, so renaming a permission's display
+    # text here (e.g. "Edit users" -> "Edit users (profile fields)") never
+    # reached rows already in the DB — they kept the old name forever, and
+    # since that old string wasn't a msgid anywhere anymore, {% trans %}
+    # had nothing to translate and it rendered in raw English regardless of
+    # locale. update_or_create keeps every row's name/category in sync with
+    # permissions_data on every post_migrate run, matching how roles_data
+    # below should behave too.
+    perm_objects = {}
+    for code, name in permissions_data:
+        perm, _created = Permission.objects.update_or_create(
+            code=code,
+            defaults={
+                "name": name,
+                "category": "system",  # claude — обязательная категория для UI-группировки
+            }
+        )
+        perm_objects[code] = perm
+
+    # claude — чистим Permission-записи, которые ушли из permissions_data
+    # (например, удалённые декоративные view_dashboard / view_admin_panel).
+    # Иначе они продолжают висеть в БД мёртвым грузом, появляются в админ-UI
+    # как доступные для extra_permissions и путают команду.
+    valid_codes = {code for code, _name in permissions_data}
+    Permission.objects.exclude(code__in=valid_codes).delete()
+
+    # claude — наборы по матрице DOCS/rbac.md §5.
+    # all_seeing по дизайну пустая роль-шаблон, права раздаются индивидуально
+    # через extra_permissions.
+    # claude — имена ролей обёрнуты в _() для makemessages;
+    # шаблоны используют {% trans role.name %} для перевода.
+    roles_data = {
+        "admin": {
+            "name": _("Administrator"),
+            "perms": [p[0] for p in permissions_data],
+        },
+        "department_head": {
+            "name": _("Department Head"),
+            "perms": [
+                "view_users",
+                "view_requests",
+                "edit_requests",
+                "delete_requests",
+                "view_logs",
+                "change_request_status",
+                "send_documents",
+                "assign_requests",
+                "resolve_review",
+                # claude — dep_head управляет owner-флагом на «своих» Req'ах
+                # (контекст dep_head-of-Req проверяется отдельно в коде).
+                "manage_owners",
+                "view_inbox",
+                # claude — dep_head создаёт Req'ы и видит клиентов в форме.
+                "view_clients",
+                "edit_clients",
+                # claude — сообщения/напоминания, включая рассылку по ролям.
+                "send_client_messages",
+                "send_staff_messages",
+                "message_roles",
+            ],
+        },
+        "specialist": {
+            "name": _("Specialist"),
+            "perms": [
+                "view_requests",
+                "edit_requests",
+                "send_documents",
+                "assign_requests",
+                "request_review",
+                "view_inbox",
+                # claude — spec'у нужен autofill и search клиентов в форме Req.
+                "view_clients",
+                "edit_clients",
+                # claude — пишет клиенту и коллегам, но не целым ролям.
+                "send_client_messages",
+                "send_staff_messages",
+            ],
+        },
+        "auditor": {
+            "name": _("Auditor"),
+            "perms": [
+                "view_users",
+                "view_roles",
+                "view_requests",
+                "view_logs",
+                # claude — read-only аудит логов уведомлений.
+                "view_inbox",
+                "view_notification_log",
+                "view_email_log",
+                "view_clients",
+            ],
+        },
+        "all_seeing": {
+            "name": _("All Seeing"),
+            "perms": [],
+        },
+    }
+
+    # Создание ролей
+    # claude — update_or_create, same reasoning as permissions above: a role
+    # renamed in roles_data must actually reach rows already in the DB.
+    for code, data in roles_data.items():
+        role, _created = Role.objects.update_or_create(
+            code=code,
+            defaults={"name": data["name"]}
+        )
+        role.permissions.set([perm_objects[p] for p in data["perms"]])
+
+    # claude — старый общий Role(code=custom) больше не используется.
+    # Индивидуальные права теперь живут в UserProfile.extra_permissions.
+    # Чистим, чтобы не висел осиротевший ряд (юзеров с этой ролью
+    # отвязываем на NULL — есть on_delete=SET_NULL).
+    Role.objects.filter(code="custom").delete()
+
+    # Map custom permissions → Django permissions
+    django_perm_map = {
+        "view_requests": ("zetom", "requestmain"),
+        "edit_requests": ("zetom", "requestmain"),
+        "delete_requests": ("zetom", "requestmain"),
+
+        "view_users": ("users", "userprofile"),
+        "edit_users": ("users", "userprofile"),
+
+        "view_roles": ("users", "role"),
+        "edit_roles": ("users", "role"),
+    }
+
+    # 4. Assign Django permissions to users based on roles
+    for user in User.objects.all():
+        profile = getattr(user, "profile", None)
+        if not profile or not profile.role:
+            continue
+
+        if user.is_superuser:
+            continue
+
+        role = profile.role
+
+        for perm_code in role.permissions.values_list("code", flat=True):
+            if perm_code not in django_perm_map:
+                continue
+
+            app_label, model_name = django_perm_map[perm_code]
+
+            try:
+                ct = ContentType.objects.get(app_label=app_label, model=model_name)
+            except ContentType.DoesNotExist:
+                logger.warning(
+                    "RBAC: ContentType not found for %s.%s", app_label, model_name
+                )
+                continue
+
+            perms = DjangoPermission.objects.filter(content_type=ct)
+            user.user_permissions.add(*perms)

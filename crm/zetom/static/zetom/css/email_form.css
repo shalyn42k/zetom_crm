@@ -1,0 +1,320 @@
+/* claude — Task 5 (visual-tokens-unification): this file's own --zf-*
+   custom properties are already namespaced (no name collides with a
+   static/css/tokens.css role), so there's no shadowing here to fix. 34 of
+   its 39 colour values were already oklch(...) functions — not hex, so
+   the "no hex outside tokens.css" invariant never flagged them — leaving
+   only 5 real hex literals to convert. Decided NOT to repoint the rest of
+   --zf-* at the shared roles (spec §9 allows either): that set is a
+   self-consistent, hand-tuned light/dark palette (matching hue across
+   primary/hover/ring/notice/error) built for this one card, and this
+   file isn't in Task 5's screenshot set to verify a wholesale repoint
+   against.
+
+   claude — fix round: the first pass converted 3 of the 5 literals to
+   rgb()/rgba() with the same hardcoded channel values, which is the same
+   bug in a notation the old regex didn't catch — still doesn't track the
+   token layer. --zf-input-bg now points straight at var(--input-bg)
+   (identical role to validation_window.css's --vw-input-bg), and the
+   focus-ring pair (was a fixed indigo shade, unrelated to --zf-primary's
+   green hue) now uses var(--blue) — not --accent, which is green. Only
+   the plain-white literal becoming the `white` keyword was a real
+   driftless conversion (a universal keyword, not a project colour); it
+   stays. --zf-shadow-lg's light-mode
+   channel values were also a hardcoded slate-900-ish tint (not the
+   pure-black the dark-mode half already used) — recoloured to match,
+   same blur/spread geometry, colour only.
+
+   claude — Task 7 fix-round (root cause, not the symptom): the previous
+   attempt above reverted a repoint of the 22 base/primary-matching
+   literals because on this page (rendered by a bare `render()` call,
+   outside any ModelAdmin changeform) var(--color-base-900) etc. computed
+   to an EMPTY string — Unfold never injects those custom properties here,
+   and tokens.css's own roles were built straight on top of them with no
+   fallback, so the roles were exactly as unusable here. That included
+   --zf-input-bg: var(--input-bg) (Task 5, already shipped) — this page's
+   inputs were rendering with no background or border at all, a real
+   user-facing regression, not just a missed repoint.
+
+   Fixed at the root instead: every role in static/css/tokens.css now
+   carries a var()-fallback colour as the second argument to var(), so
+   roles resolve everywhere — Unfold's live scale on admin pages,
+   tokens.css's own fallback here. --zf-input-bg needs no further change;
+   it already pointed at the role, and the role now works.
+
+   With roles now self-sufficient, the values below that are an EXACT
+   byte-for-byte match to both a base/primary-N step AND the specific role
+   tokens.css assigns that same step consume the role instead of repeating
+   the literal: --zf-border/--zf-text/--zf-text-muted/--zf-text-subtle
+   (light) and --zf-surface/--zf-text/--zf-text-muted/--zf-text-subtle
+   (dark) onto --border/--text/--text-muted/--text-subtle/--surface;
+   --zf-primary (light) onto --accent (both are exactly primary-600). The
+   remaining literals stay literal on purpose, not by omission: several
+   base/primary-N steps this card uses (dark --zf-border/
+   --zf-border-strong, --zf-primary-hover, --zf-primary-ring,
+   --zf-notice-*, dark --zf-primary) don't correspond to any role
+   tokens.css actually defines at that exact step — e.g. dark --zf-border
+   is base-800, but tokens.css's --border role is base-700 — so repointing
+   those would silently shift this card's colour rather than reproduce it.
+   Same as before for the hue-25 --zf-error-* values: no equivalent step
+   exists in Unfold's scale for that hue at all. All remaining literals
+   are listed as a deliberate, narrow, per-file exemption in
+   test_visual_tokens.py's OKLCH_EXEMPT_BY_FILE — the check still catches
+   a literal oklch() anywhere else, including any *new* one added to this
+   file beyond the known list. */
+.email-page {
+    min-height: calc(100vh - 64px);
+    padding: 40px 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.email-form-card {
+    --zf-radius: 6px;
+    --zf-surface: white;
+    --zf-border: var(--border);
+    --zf-border-strong: var(--border-strong);
+    --zf-text: var(--text);
+    --zf-text-muted: var(--text-muted);
+    --zf-text-subtle: var(--text-subtle);
+    --zf-primary: var(--accent);
+    --zf-primary-hover: oklch(42% .18 145);
+    --zf-primary-ring: oklch(70% .2 145 / 0.35);
+    --zf-notice-bg: oklch(94% .05 145);
+    --zf-notice-text: oklch(28% .12 145);
+    --zf-notice-border: oklch(80% .15 145);
+    --zf-error-bg: oklch(96% .03 25);
+    --zf-error-text: oklch(45% .2 25);
+    --zf-error-border: oklch(80% .15 25);
+    --zf-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.06);
+    --zf-input-bg: var(--input-bg);
+
+    width: 100%;
+    max-width: 560px;
+    margin: 0;
+    background: var(--zf-surface);
+    padding: 32px;
+    border: 1px solid var(--zf-border);
+    border-radius: var(--zf-radius);
+    box-shadow: var(--zf-shadow-lg);
+    color: var(--zf-text);
+}
+
+html.dark .email-form-card {
+    --zf-surface: var(--surface);
+    --zf-border: oklch(27.8% .033 256.848);
+    --zf-border-strong: oklch(37.3% .034 259.733);
+    --zf-text: var(--text);
+    --zf-text-muted: var(--text-muted);
+    --zf-text-subtle: var(--text-subtle);
+    --zf-primary: oklch(60% .22 145);
+    --zf-primary-hover: oklch(70% .2 145);
+    --zf-notice-bg: oklch(28% .12 145);
+    --zf-notice-text: oklch(94% .05 145);
+    --zf-notice-border: oklch(42% .18 145);
+    --zf-error-bg: oklch(28% .12 25);
+    --zf-error-text: oklch(94% .05 25);
+    --zf-error-border: oklch(45% .2 25);
+    --zf-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+}
+
+.email-form-card .email-form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.email-form-card h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--zf-text);
+}
+
+.email-form-card .return-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--zf-text-muted);
+    text-decoration: none;
+    background-color: transparent;
+    border: 1px solid var(--zf-border-strong);
+    border-radius: var(--zf-radius);
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.email-form-card .return-btn:hover {
+    border-color: var(--zf-text-subtle);
+    color: var(--zf-text);
+}
+
+.email-form-card .return-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--zf-primary-ring);
+}
+
+.email-form-card .subtitle {
+    margin: 0 0 24px 0;
+    font-size: 0.875rem;
+    color: var(--zf-text-subtle);
+}
+
+.email-form-card .notice {
+    padding: 12px 14px;
+    margin-bottom: 20px;
+    border-radius: var(--zf-radius);
+    background-color: var(--zf-notice-bg);
+    color: var(--zf-notice-text);
+    border: 1px solid var(--zf-notice-border);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.email-form-card .errorlist {
+    padding: 12px 14px;
+    margin: 0 0 20px 0;
+    border-radius: var(--zf-radius);
+    background-color: var(--zf-error-bg);
+    color: var(--zf-error-text);
+    border: 1px solid var(--zf-error-border);
+    list-style: none;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+}
+
+.email-form-card .errorlist li {
+    margin: 0;
+}
+
+.email-form-card .form-group {
+    margin-bottom: 18px;
+}
+
+.email-form-card .email-form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 0;
+}
+.email-form-card .email-form-row .form-group {
+    flex: 1;
+    min-width: 0;
+}
+@media (max-width: 600px) {
+    .email-form-card .email-form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}
+
+.email-form-card .form-group label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--zf-text-muted);
+}
+
+.email-form-card .form-group input,
+.email-form-card .form-group textarea {
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    color: var(--zf-text);
+    background-color: var(--zf-input-bg);
+    border: 1px solid var(--zf-border-strong);
+    border-radius: var(--zf-radius);
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+    outline: none;
+    box-sizing: border-box;
+}
+
+body .email-form-card .form-group input:-webkit-autofill,
+body .email-form-card .form-group input:-webkit-autofill:hover,
+body .email-form-card .form-group input:-webkit-autofill:focus,
+body .email-form-card .form-group input:-webkit-autofill:active,
+body .email-form-card .form-group textarea:-webkit-autofill,
+body .email-form-card .form-group textarea:-webkit-autofill:hover,
+body .email-form-card .form-group textarea:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--zf-input-bg) inset !important;
+    box-shadow: 0 0 0 1000px var(--zf-input-bg) inset !important;
+    -webkit-text-fill-color: var(--zf-text) !important;
+    caret-color: var(--zf-text) !important;
+    transition: background-color 9999s ease-in-out 0s !important;
+}
+
+.email-form-card .form-group input::placeholder,
+.email-form-card .form-group textarea::placeholder {
+    color: var(--zf-text-subtle);
+}
+
+.email-form-card .form-group input:hover,
+.email-form-card .form-group textarea:hover {
+    border-color: var(--zf-text-subtle);
+}
+
+.email-form-card .form-group input:focus,
+.email-form-card .form-group input:focus-visible,
+.email-form-card .form-group textarea:focus,
+.email-form-card .form-group textarea:focus-visible {
+    border-color: var(--blue) !important;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--blue) 25%, transparent) !important;
+    outline: none !important;
+}
+
+html.dark .email-form-card .form-group input:focus,
+html.dark .email-form-card .form-group input:focus-visible,
+html.dark .email-form-card .form-group textarea:focus,
+html.dark .email-form-card .form-group textarea:focus-visible {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--blue) 30%, transparent) !important;
+}
+
+.email-form-card .form-group textarea {
+    resize: vertical;
+    min-height: 110px;
+    line-height: 1.5;
+}
+
+.email-form-card .form-group .errorlist {
+    margin-top: 8px;
+    margin-bottom: 0;
+    padding: 8px 10px;
+    font-size: 0.75rem;
+}
+
+.email-form-card button[type="submit"] {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: inherit;
+    color: white;
+    background-color: var(--zf-primary);
+    border: 1px solid var(--zf-primary);
+    border-radius: var(--zf-radius);
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    margin-top: 8px;
+}
+
+.email-form-card button[type="submit"]:hover {
+    background-color: var(--zf-primary-hover);
+    border-color: var(--zf-primary-hover);
+}
+
+.email-form-card button[type="submit"]:focus-visible {
+    box-shadow: 0 0 0 3px var(--zf-primary-ring);
+    outline: none;
+}
+
+.email-form-card button[type="submit"]:active {
+    transform: translateY(1px);
+}

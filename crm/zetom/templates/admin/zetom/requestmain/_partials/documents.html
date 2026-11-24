@@ -1,0 +1,36 @@
+{% load i18n %}
+{% comment %}claude — Fix-round: the create buttons below had
+onclick="this.disabled=true" as a double-click guard. That synchronously
+disables the element INSIDE its own click handler, which Chromium/Firefox
+then treat as "this control was disabled before the submit default action
+ran" — the click is swallowed and the form is never actually submitted.
+No server request ever fires, so every "Utwórz"/"+" click here was a
+silent no-op (found by clicking through as a specialist: Oferta/Zlecenie/
+Wniosek stayed "Nie utworzono" no matter how many times the button was
+clicked). Deferred the disable one tick via setTimeout so the browser
+dispatches the submit first — same double-click protection, without
+cancelling the very click it's attached to.{% endcomment %}
+{% comment %}claude — docs_count comes from the view: the old filter chain
+ofertas|length|add:zlecenia|length applied |length to the sum and always showed 0.{% endcomment %}
+<section class="rm-card rm-card--collapsible" aria-labelledby="rm-docs-heading" id="documents" x-data="{ open: $persist(true).as('rm-documents-v2-{{ request.user.id }}-{{ original.pk }}') }">
+  <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+    <h2 id="rm-docs-heading" class="rm-card__title">
+      {% trans "Documents" %}
+      <span class="rm-counter">{{ docs_count }}</span>
+    </h2>
+    <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+  </header>
+
+  <div x-show="open" x-cloak>
+  <div class="rm-docs">
+    {% url "admin:zetom_requestmain_oferta_action" original.pk as oferta_new %}
+    {% url "admin:zetom_requestmain_zlecenie_action" original.pk as zlecenie_new %}
+    {% url "admin:zetom_requestmain_wniosek_action" original.pk as wniosek_new %}
+    {% trans "Offer" as t_offer %}{% trans "Order" as t_order %}{% trans "Application" as t_app %}
+    {% include "admin/zetom/requestmain/_partials/_doc_group.html" with title=t_offer letter="O" docs=ofertas prefix="OFR" change_url_name="admin:zetom_oferta_change" action_url=oferta_new %}
+    {% include "admin/zetom/requestmain/_partials/_doc_group.html" with title=t_order letter="Z" docs=zlecenia prefix="ZLC" change_url_name="admin:zetom_zlecenie_change" action_url=zlecenie_new %}
+    {% include "admin/zetom/requestmain/_partials/_doc_group.html" with title=t_app letter="W" docs=wnioski prefix="WNI" change_url_name="admin:zetom_wniosek_change" action_url=wniosek_new %}
+  </div>
+  </div>
+</section>
+

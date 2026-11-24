@@ -1,0 +1,267 @@
+# Django imports
+from django import forms
+from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
+# Other imports
+from phonenumber_field.formfields import PhoneNumberField
+
+# Client module import
+from crm.clients.fields import ClientField
+# claude
+from crm.clients.validators import normalize_nip, validate_nip
+# Zetom app imports
+from crm.zetom.models import (
+    Department, Oferta, RequestMain, RequestNull, Wniosek, Zlecenie,
+    department_choices,
+)
+
+User = get_user_model()
+
+
+# claude — Oferta/Zlecenie/Wniosek list "departments" in their ModelAdmin.fields
+# without declaring it on the form (unlike price/notes/etc below), so Django
+# auto-generates it from ArrayField.formfield() — that default is
+# SimpleArrayField, a plain textarea expecting hand-typed comma-separated
+# codes, with no indication of which codes are valid. Declared explicitly
+# here (same pattern as elsewhere in this file) so it's a real multi-select
+# instead; TypedMultipleChoiceField.clean() returns a plain list of strings,
+# which is exactly what ArrayField stores — no widget/data-shape mismatch.
+def _departments_field():
+    return forms.TypedMultipleChoiceField(
+        label=_("Departments"),
+        choices=department_choices,
+        required=False,
+        coerce=str,
+        widget=forms.SelectMultiple,
+    )
+
+
+class DepartmentForm(forms.ModelForm):
+    # Membership lives on UserProfile.departments, not on Department, so this
+    # field is not a model field: DepartmentAdmin.save_model writes it back.
+    users = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(profile__isnull=False).order_by("username"),
+        required=False,
+        label=_("Users"),
+    )
+
+    class Meta:
+        model = Department
+        fields = ["name"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Pre-tick the people already in this department.
+        if self.instance.pk:
+            self.fields["users"].initial = User.objects.filter(
+                profile__departments__contains=[self.instance.code],
+            )
+
+
+class TemplateForm(forms.ModelForm):
+    # NEW FIELD
+    client = ClientField()
+
+    phone = PhoneNumberField(
+        label=_("Phone"),
+        region="PL",
+        required=True,
+        widget=forms.TextInput(attrs={"placeholder": "+48 501 600 300"}),
+    )
+
+    company_name = forms.CharField(
+        label=_("Company name"),
+        required=False, widget=forms.TextInput(attrs={"placeholder": "Zetom"})
+    )
+
+    email = forms.EmailField(
+        label=_("Email"),
+        required=True, widget=forms.TextInput(attrs={"placeholder": "email@gmail.com"})
+    )
+
+    # claude
+    company_nip = forms.CharField(
+        label=_("Company NIP"),
+        required=False,
+        max_length=20,
+        validators=[validate_nip],
+        widget=forms.TextInput(attrs={"placeholder": "7322215365"}),
+    )
+
+    # claude
+    def clean_company_nip(self):
+        value = self.cleaned_data.get("company_nip")
+        if not value:
+            return value
+        return normalize_nip(value)
+
+    message = forms.CharField(
+        label=_("Message"),
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "placeholder": _("Additional information or notes about the request")
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        for field in self.fields.values():
+            field.widget.attrs.update({"class": "form-control"})
+
+
+class AddRequestFormNull(TemplateForm):
+    class Meta:
+        model = RequestNull
+        fields = (
+            "client",          # NEW
+            "first_name",
+            "last_name",
+           "phone",
+            "email",
+            "company_name",
+            "message",
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop("company_nip", None)
+        # claude — Django admin drops editable fields from self.fields for a
+        # view-only user (no change permission), so these keys don't always
+        # exist; unconditional access 500'd for e.g. the read-only auditor role.
+        if "first_name" in self.fields:
+            self.fields["first_name"].required = True
+            self.fields["first_name"].widget.attrs.setdefault("placeholder", "Jan")
+        if "last_name" in self.fields:
+            self.fields["last_name"].required = True
+            self.fields["last_name"].widget.attrs.setdefault("placeholder", "Kowalski")
+
+
+class AddRequestFormMain(TemplateForm):
+    address = forms.CharField(
+        label=_("Address"),
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "placeholder": "ulica Gen. Jozefa Hallera 76/49",
+                "rows": 2,
+            }
+        ),
+    )
+
+    class Meta:
+        model = RequestMain
+        fields = (
+            "client",          # NEW
+            "first_name",
+            "last_name",
+            "phone",
+            "company_name",
+            "email",
+            "company_nip",
+            "address",
+            "message",
+            "source",
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "first_name" in self.fields:
+            self.fields["first_name"].widget.attrs.setdefault("placeholder", "Jan")
+        if "last_name" in self.fields:
+            self.fields["last_name"].widget.attrs.setdefault("placeholder", "Kowalski")
+
+
+class AddOferta(TemplateForm):
+    departments = _departments_field()
+    # claude — price is computed from the offer items now (OfertaAdmin.save_related);
+    # kept declared for any other form use, not shown on the document window.
+    price = forms.DecimalField(
+        label=_("Price"),
+        required=False, widget=forms.NumberInput(attrs={"placeholder": "0"})
+    )
+    notes = forms.CharField(
+        label=_("Notes"),
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "placeholder": _("Additional information or notes about the request"),
+            }
+        ),
+    )
+
+    class Meta:
+        model = Oferta
+        fields = (
+            "client",          # NEW
+            "from_main",
+            "phone",
+            "departments",
+            "email",
+            "company_name",
+            "company_nip",
+            "price",
+            "notes",
+            "source",
+        )
+
+
+class AddZlecenie(TemplateForm):
+    departments = _departments_field()
+    price = forms.DecimalField(
+        label=_("Price"),
+        required=False, widget=forms.NumberInput(attrs={"placeholder": "0"})
+    )
+    notes = forms.CharField(
+        label=_("Notes"),
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "placeholder": _("Additional information or notes about the request"),
+            }
+        ),
+    )
+
+    class Meta:
+        model = Zlecenie
+        fields = (
+            "client",          # NEW
+            "from_main",
+            "phone",
+            "departments",
+            "email",
+            "company_name",
+            "company_nip",
+            "price",
+            "notes",
+            "source",
+        )
+
+
+class AddWniosek(TemplateForm):
+    departments = _departments_field()
+    notes = forms.CharField(
+        label=_("Notes"),
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "placeholder": _("Additional information or notes about the request"),
+            }
+        ),
+    )
+
+    class Meta:
+        model = Wniosek
+        fields = (
+            "client",          # NEW
+            "from_main",
+            "phone",
+            "departments",
+            "email",
+            "company_name",
+            "company_nip",
+            "notes",
+            "source",
+        )

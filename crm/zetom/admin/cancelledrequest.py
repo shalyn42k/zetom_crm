@@ -1,0 +1,93 @@
+from django.contrib import admin
+from django.shortcuts import redirect
+from django.utils.translation import gettext_noop
+from unfold.admin import ModelAdmin
+
+from crm.status_manager.models import StatusHistory
+from crm.status_manager.services.statuses import RequestStatus
+from crm.users.utils import user_has_perm
+from crm.zetom.models import CancelledRequest, RequestMain
+from crm.zetom.services.visibility import visible_requests_for
+
+from .base import DepartmentsDisplayMixin
+
+
+@admin.register(CancelledRequest)
+class CancelledRequestAdmin(DepartmentsDisplayMixin, ModelAdmin):
+    change_form_template = "admin/zetom/cancelledrequest/change_form.html"
+    list_display = ("created_at", "company_name", "display_departments", "source")
+    list_filter = ("source",)
+    # claude — display_departments (DepartmentsDisplayMixin) renders the
+    # ArrayField as translated labels; the raw "departments" field here
+    # rendered as literal codes ("DEPARTMENT_0, DEPARTMENT_1, ...") despite
+    # the mixin's own docstring saying it's meant for readonly_fields too.
+    readonly_fields = (
+        "status", "first_name", "last_name", "phone", "display_departments", "assigned_to",
+        "company_name", "company_nip", "email", "address", "message", "source",
+    )
+    fields = (
+        "status", "first_name", "last_name", "phone", "display_departments", "assigned_to",
+        "company_name", "company_nip", "email", "address", "message", "source",
+    )
+
+    # claude — переопределённый queryset (вместо super().get_queryset()) терял
+    # фильтр видимости из BaseRequestAdmin; без `visible_requests_for` спец
+    # видел чужие cancelled-Req.
+    def get_queryset(self, request):
+        qs = RequestMain.objects.filter(status=RequestStatus.cancelled)
+        return visible_requests_for(request.user, qs)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return user_has_perm(request.user, "view_requests")
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["show_save"] = False
+        extra_context["show_save_and_continue"] = False
+        extra_context["show_save_and_add_another"] = False
+        extra_context["show_delete"] = False
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+    def get_urls(self):
+        from django.urls import path
+        urls = super().get_urls()
+        custom = [
+            path(
+                "<path:object_id>/restore/",
+                self.admin_site.admin_view(self.restore_action),
+                name="zetom_cancelledrequest_restore",
+            ),
+        ]
+        return custom + urls
+
+    # claude — то же ужесточение, что в RequestMainAdmin POST-вью: perm-гейт +
+    # visibility, иначе спец мог дёрнуть restore по чужому id через прямой POST.
+    def restore_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_cancelledrequest_change", object_id)
+        if not user_has_perm(request.user, "change_request_status"):
+            return redirect("admin:zetom_cancelledrequest_change", object_id)
+        qs = visible_requests_for(
+            request.user,
+            RequestMain.objects.filter(status=RequestStatus.cancelled),
+        )
+        obj = qs.filter(pk=object_id).first()
+        if obj is None:
+            return redirect("admin:zetom_cancelledrequest_changelist")
+        old_status = obj.status
+        obj.status = RequestStatus.active
+        obj.save()
+        StatusHistory.objects.create(
+            request=obj,
+            old_status=old_status,
+            new_status=RequestStatus.active,
+            reason=gettext_noop("Restored from cancelled"),
+            changed_by=request.user,
+        )
+        return redirect("admin:zetom_requestmain_change", object_id)

@@ -1,0 +1,59 @@
+{% load i18n %}
+{% comment %}claude — embedded=True: rendered inside the team card (assigned_users.html), no card of its own.{% endcomment %}
+{% if embedded %}
+<div class="rm-team-depts" id="departments">
+  <h3 class="rm-history-section-title">{% trans "Departments" %}</h3>
+{% else %}
+<section class="rm-card rm-card--collapsible" aria-labelledby="rm-dept-heading" id="departments" x-data="{ open: $persist(false).as('rm-departments-{{ request.user.id }}-{{ original.pk }}') }">
+  <header class="rm-card__header rm-card__toggle" role="button" tabindex="0" :aria-expanded="open" @click="open = !open" @keydown.enter.prevent="open = !open" @keydown.space.prevent="open = !open">
+    <h2 id="rm-dept-heading" class="rm-card__title">
+      {% trans "Departments" %}
+      <span class="rm-counter">{{ assigned_departments|length }}</span>
+    </h2>
+    <svg class="rm-card__chevron" :class="{ 'rm-card__chevron--open': open }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+  </header>
+
+  <div x-show="open" x-cloak>
+{% endif %}
+  <ul class="rm-dept-list">
+    {% for code, label in assigned_departments %}
+      <li class="rm-dept-row {% if code in user_departments %}rm-dept-row--mine{% endif %}">
+        <span class="rm-avatar" aria-hidden="true">{{ label|slice:":1"|upper }}</span>
+        <span class="rm-dept-row__name">{{ label }}</span>
+        <button type="submit"
+                formaction='{% url "admin:zetom_requestmain_remove_department" original.pk code %}'
+                formmethod="post"
+                formnovalidate
+                class="rm-iconbtn"
+                aria-label='{% trans "Remove department" %}'>×</button>
+      </li>
+    {% empty %}
+      <li class="rm-empty">{% trans "No departments assigned yet." %}</li>
+    {% endfor %}
+  </ul>
+
+  {% if available_departments %}
+    <div class="rm-dept-add">
+      <select name="dept_code" class="rm-select" data-combobox
+              data-combobox-placeholder="{% trans 'Search for a department…' %}"
+              data-combobox-empty="{% trans 'No matching departments' %}">
+        <option value=""></option>
+        {% for code, label in available_departments %}
+          <option value="{{ code }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit"
+              formaction='{% url "admin:zetom_requestmain_add_department" original.pk %}'
+              formmethod="post"
+              formnovalidate
+              class="rm-btn rm-btn--primary rm-btn--sm">
+        + {% trans "Add" %}
+      </button>
+    </div>
+  {% endif %}
+{% if embedded %}
+</div>
+{% else %}
+  </div>
+</section>
+{% endif %}

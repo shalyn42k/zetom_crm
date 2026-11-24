@@ -1,0 +1,29 @@
+{% extends "admin/delete_confirmation.html" %}
+{% load i18n %}
+
+{% comment %}
+  claude — hard-delete юзера доступен только суперюзеру и является
+  аварийным выходом (см. CustomUserAdmin.has_delete_permission).
+  Обычный способ убрать человека — деактивация.
+
+  Цену нужно назвать вслух прямо здесь: `LogEntry.user` и
+  `Notification.recipient` — это CASCADE, поэтому вместе с юзером
+  безвозвратно исчезает его Activity Log. В обычном списке каскада
+  ниже эти строки теряются среди прочих.
+{% endcomment %}
+
+{% block content %}
+  {% if not perms_lacking and not protected %}
+    <div class="border border-red-200 rounded-default shadow-xs mb-6 dark:border-red-800">
+      <p class="font-semibold p-4 text-font-important-light dark:text-font-important-dark">
+        {% trans "This permanently destroys the audit trail for this user." %}
+      </p>
+      <div class="border-t border-red-200 p-4 dark:border-red-800">
+        <p class="leading-relaxed">
+          {% blocktranslate %}Their Activity Log entries and in-app notifications are deleted along with the account and cannot be restored. If you only need to revoke access, cancel and use “Deactivate” instead — that keeps the history and can be undone.{% endblocktranslate %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

@@ -1,0 +1,23 @@
+/* claude
+   Own notification settings page (notification/settings.html) and the
+   switch rows shared with the admin user tab. Colours only from tokens.css.
+*/
+
+/* ---- settings page + switches ----------------------------------------- */
+.ns-stage { max-width: 760px; padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; }
+.ns-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px; }
+.ns-h1 { margin: 0; font-size: 22px; font-weight: 700; color: var(--text); }
+.ns-h2 { margin: 0 0 8px; font-size: 15px; font-weight: 700; color: var(--text); }
+.ns-link { font-size: 13px; color: var(--accent); }
+.ns-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); padding: 16px 18px; }
+.ns-hint { margin: 0 0 10px; font-size: 13px; color: var(--text-subtle); }
+.ns-group { margin: 0 0 14px; padding: 0; border: 0; }
+.ns-group__title { padding: 0; margin-bottom: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
+.ns-switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--border); cursor: pointer; }
+.ns-switch__title { font-size: 14px; color: var(--text); }
+.ns-switch input { width: 18px; height: 18px; accent-color: var(--accent); }
+.ns-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+.ns-btn { padding: 7px 16px; font-size: 13px; font-weight: 600; color: var(--text); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--r-md); cursor: pointer; }
+.ns-btn--primary { color: white; background: var(--accent); border-color: var(--accent); }
+.ns-btn--sm { padding: 4px 10px; font-size: 12px; }
+.up-notif-actions { display: flex; justify-content: flex-end; margin-top: 8px; }

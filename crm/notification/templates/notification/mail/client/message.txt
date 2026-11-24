@@ -1,0 +1,8 @@
+{% load i18n %}{% comment %}Письмо клиенту:
+   напоминание из «Dziennik kontaktów» (StepNote.notify=client, claude).
+   Тема — StepNote.action, тут только тело (StepNote.text) + подпись.
+{% endcomment %}{% autoescape off %}{{ body }}
+
+{% trans "Kind regards," %}
+{{ author }}
+{% trans "Zetom team" %}{% endautoescape %}

@@ -1,0 +1,364 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# ТЕСТЫ ADMIN
+#
+# Что тут тестируется:
+#   • approve_action (RequestNull → RequestMain + уведомление)
+#   • oferta/zlecenie/wniosek actions (создание дочерних документов)
+#   • apply_status_action (смена статуса с/без reason)
+#   • ChildSaveModelTests (save_model через admin change-форму)
+#
+# Почему @patch("crm.zetom.admin.base.user_has_perm"):
+#   BaseRequestAdmin.has_*_permission() вызывает user_has_perm() из base.py.
+#   Супер-юзер проходит is_superuser=True → True, но user_has_perm делает
+#   дополнительные проверки profile/role. Патчим в точке ИСПОЛЬЗОВАНИЯ (base.py).
+#
+# @override_settings(STATICFILES_STORAGE=...):
+#   Unfold шаблоны используют {% static %} с ManifestStaticFilesStorage,
+#   которому нужен staticfiles.json от collectstatic. В тестах его нет.
+# ──────────────────────────────────────────────────────────────────────────────
+
+from unittest.mock import patch
+
+from django.contrib.auth import get_user_model
+from django.test import TestCase, override_settings
+from django.urls import reverse
+
+from crm.status_manager.services.statuses import RequestStatus, Status
+from crm.users.models import Role
+from crm.zetom.models import (
+    DepartmentsVariants, Oferta, RequestMain, RequestNull, Wniosek, Zlecenie,
+)
+
+BASE_DATA = {
+    "phone": "+48501600300",
+    "email": "contact@zetom.pl",
+}
+
+
+def always_true(*args, **kwargs):
+    """Заглушка для user_has_perm — всегда возвращает True."""
+    return True
+
+
+# ─────────────────────────── RequestNull approve ──────────────────────────────
+
+_SIMPLE_STATIC = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+
+@override_settings(STORAGES=_SIMPLE_STATIC)
+@patch("crm.zetom.admin.base.user_has_perm", side_effect=always_true)
+class ApproveNullAdminActionTests(TestCase):
+    """Approve в валидационном окне RequestNull.
+
+    POST в окно:
+    1. Создаёт RequestMain из данных RequestNull
+    2. Отправляет уведомление
+    3. Редиректит на страницу нового RequestMain
+
+    # claude — тест адресовался в `zetom_requestnull_approve_action` и патчил
+    # `crm.zetom.admin.requestnull.send_notification_approve_null`. Обоих нет:
+    # отдельная кнопка Approve и её URL исчезли вместе с a72f792
+    # («validation window for RequestNull»), approve переехал в
+    # requestnull_validate.validation_window_view. Патч падал с AttributeError
+    # раньше, чем reverse() успевал упасть с NoReverseMatch. Проверяемое
+    # поведение осталось тем же — переадресован на живой флоу.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.user = User.objects.create_superuser(
+            username="admin", email="a@a.com", password="x"
+        )
+
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    @patch("crm.zetom.admin.requestnull_validate.send_notification_approve_null")
+    def test_approve_creates_main_sends_notification_and_redirects(
+        self, send_mock, _perm_mock
+    ):
+        # Обрати внимание на порядок аргументов: сначала идут патчи снизу вверх.
+        # @patch на методе (send_mock) → первый аргумент после self.
+        # @patch на классе (_perm_mock) → второй аргумент.
+        null = RequestNull.objects.create(**BASE_DATA)
+        url = reverse("admin:zetom_requestnull_validate", args=[null.pk])
+
+        # departments/owners — единственные required-поля ValidationWindowForm;
+        # create_new не ставим, клиента здесь не заводим.
+        response = self.client.post(url, {
+            "departments": [DepartmentsVariants.choices[0][0]],
+            "owners": [self.user.pk],
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(RequestMain.objects.count(), 1)
+        main = RequestMain.objects.first()
+        self.assertEqual(main.email, null.email)
+        self.assertEqual(
+            response["Location"],
+            reverse("admin:zetom_requestmain_change", args=[main.pk]),
+        )
+        send_mock.assert_called_once_with(main)
+
+
+# ─────────────────────────── RequestMain actions ──────────────────────────────
+
+@override_settings(STORAGES=_SIMPLE_STATIC)
+@patch("crm.zetom.admin.base.user_has_perm", side_effect=always_true)
+class MainAdminActionTests(TestCase):
+    """Кастомные действия на странице RequestMain.
+
+    oferta/zlecenie/wniosek action — создают дочерние документы.
+    apply_status_action — меняет статус заявки (с логикой reason для cancelled/deleted).
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.user = User.objects.create_superuser(
+            username="admin", email="a@a.com", password="x"
+        )
+
+    def setUp(self):
+        self.client.force_login(self.user)
+        self.main = RequestMain.objects.create(**BASE_DATA)
+
+    def test_oferta_action_creates_oferta_and_redirects(self, _):
+        url = reverse("admin:zetom_requestmain_oferta_action", args=[self.main.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Oferta.objects.filter(from_main=self.main).count(), 1)
+
+    def test_zlecenie_action_creates_zlecenie_and_redirects(self, _):
+        url = reverse("admin:zetom_requestmain_zlecenie_action", args=[self.main.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Zlecenie.objects.filter(from_main=self.main).count(), 1)
+
+    def test_wniosek_action_creates_wniosek_and_redirects(self, _):
+        url = reverse("admin:zetom_requestmain_wniosek_action", args=[self.main.pk])
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Wniosek.objects.filter(from_main=self.main).count(), 1)
+
+    def test_apply_status_open_is_rejected(self, _):
+        # active → open вручную запрещено: open — automatический статус,
+        # его выставляет только update_parent. apply_status_change отклоняет
+        # (ValueError → messages.error → редирект), статус не меняется.
+        url = reverse("admin:zetom_requestmain_apply_status", args=[self.main.pk])
+        response = self.client.post(url, data={"new_status": RequestStatus.open})
+        self.assertEqual(response.status_code, 302)
+        self.main.refresh_from_db()
+        self.assertEqual(self.main.status, RequestStatus.active)
+
+    def test_apply_same_status_keeps_status_unchanged(self, _):
+        # active → active = ValueError → messages.error → редирект без изменений
+        url = reverse("admin:zetom_requestmain_apply_status", args=[self.main.pk])
+        response = self.client.post(url, data={"new_status": RequestStatus.active})
+        self.assertEqual(response.status_code, 302)
+        self.main.refresh_from_db()
+        self.assertEqual(self.main.status, RequestStatus.active)
+
+    @patch("crm.zetom.admin.requestmain.user_has_perm")
+    def test_cancel_button_hidden_without_change_status_perm(self, perm_mock, _):
+        # "Cancel request" sits next to Delete in the submit row (see
+        # submit_line.html) and is gated by can_change_request_status.
+        perm_mock.side_effect = lambda user, perm: perm != "change_request_status"
+        url = reverse("admin:zetom_requestmain_change", args=[self.main.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Cancel request")
+
+    def test_cancel_button_shown_with_change_status_perm(self, _):
+        url = reverse("admin:zetom_requestmain_change", args=[self.main.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Cancel request")
+        self.assertContains(
+            response,
+            reverse("admin:zetom_requestmain_cancel", args=[self.main.pk]),
+        )
+
+    def test_apply_cancelled_without_reason_renders_reason_form(self, _):
+        # cancelled требует reason → ReasonRequired → рендерит форму для ввода причины.
+        # Это паттерн «попросить доп. данные» вместо немедленного действия.
+        url = reverse("admin:zetom_requestmain_apply_status", args=[self.main.pk])
+        response = self.client.post(url, data={"new_status": RequestStatus.cancelled})
+        # 200 = рендер формы reason (не редирект)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("form", response.context)
+
+    def test_apply_cancelled_with_reason_changes_status(self, _):
+        url = reverse("admin:zetom_requestmain_apply_status", args=[self.main.pk])
+        response = self.client.post(
+            url, data={"new_status": RequestStatus.cancelled, "reason": "client request"}
+        )
+        self.assertEqual(response.status_code, 302)
+        self.main.refresh_from_db()
+        self.assertEqual(self.main.status, RequestStatus.cancelled)
+
+    def test_cancel_view_get_renders_reason_form(self, _):
+        url = reverse("admin:zetom_requestmain_cancel", args=[self.main.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("form", response.context)
+
+    def test_cancel_view_post_without_reason_rerenders_form(self, _):
+        url = reverse("admin:zetom_requestmain_cancel", args=[self.main.pk])
+        response = self.client.post(url, data={})
+        self.assertEqual(response.status_code, 200)
+        self.main.refresh_from_db()
+        self.assertEqual(self.main.status, RequestStatus.active)
+
+    def test_cancel_view_post_with_reason_redirects_to_cancelled_archive(self, _):
+        url = reverse("admin:zetom_requestmain_cancel", args=[self.main.pk])
+        response = self.client.post(url, data={"reason": "Client asked to cancel"})
+        self.assertRedirects(
+            response, reverse("admin:zetom_cancelledrequest_changelist")
+        )
+        self.main.refresh_from_db()
+        self.assertEqual(self.main.status, RequestStatus.cancelled)
+
+    def test_cancel_view_already_cancelled_redirects_back(self, _):
+        # fetch_redirect_response=False — RequestMainAdmin.get_queryset excludes
+        # cancelled/deleted, so the change view itself would redirect again
+        # (unrelated to this view); we only assert cancel_view's own redirect.
+        self.main.status = RequestStatus.cancelled
+        self.main.save(update_fields=["status"])
+        url = reverse("admin:zetom_requestmain_cancel", args=[self.main.pk])
+        response = self.client.get(url)
+        self.assertRedirects(
+            response,
+            reverse("admin:zetom_requestmain_change", args=[self.main.pk]),
+            fetch_redirect_response=False,
+        )
+
+    @patch("crm.zetom.admin.requestmain_mail.user_has_perm", return_value=False)
+    def test_mail_freeform_returns_403_without_send_documents_permission(
+        self, mail_perm_mock, _
+    ):
+        self.main.assigned_to.add(self.user)
+        url = reverse("admin:zetom_requestmain_mail_freeform", args=[self.main.pk])
+        response = self.client.post(url, data={"subject": "test", "body": "test message"})
+        self.assertEqual(response.status_code, 403)
+
+    @patch("crm.zetom.admin.requestmain_mail.user_has_perm", return_value=False)
+    def test_mail_document_returns_403_without_send_documents_permission(
+        self, mail_perm_mock, _
+    ):
+        self.main.assigned_to.add(self.user)
+        oferta = Oferta.objects.create(
+            **BASE_DATA,
+            from_main=self.main,
+            status=Status.in_progress,
+        )
+        url = reverse("admin:zetom_requestmain_mail_document", args=[self.main.pk])
+        response = self.client.post(
+            url,
+            data={"kind": "oferta", "document_id": oferta.pk},
+        )
+        self.assertEqual(response.status_code, 403)
+
+    @patch("crm.zetom.admin.requestmain_review.user_has_perm", return_value=False)
+    def test_request_review_returns_403_without_request_review_permission(
+        self, perm_mock, _
+    ):
+        url = reverse("admin:zetom_requestmain_request_review", args=[self.main.pk])
+        response = self.client.post(
+            url,
+            data={"note": "test", "recipient_ids": [self.user.pk]},
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_mail_freeform_returns_403_for_hidden_request(self, _):
+        hidden = get_user_model().objects.create_user(
+            username="hidden", email="hidden@example.com", password="x", is_staff=True
+        )
+        self.client.force_login(hidden)
+        url = reverse("admin:zetom_requestmain_mail_freeform", args=[self.main.pk])
+        response = self.client.post(url, data={"subject": "test", "body": "test message"})
+        self.assertEqual(response.status_code, 403)
+
+    def test_request_review_returns_403_for_hidden_request(self, _):
+        specialist_role = Role.objects.get(code="specialist")
+        hidden = get_user_model().objects.create_user(
+            username="hidden_spec", email="hidden_spec@example.com", password="x", is_staff=True
+        )
+        hidden.profile.role = specialist_role
+        hidden.profile.departments = []
+        hidden.profile.save(update_fields=["role", "departments"])
+        self.client.force_login(hidden)
+
+        url = reverse("admin:zetom_requestmain_request_review", args=[self.main.pk])
+        response = self.client.post(url, data={"note": "test", "recipient_ids": [self.user.pk]})
+        self.assertEqual(response.status_code, 403)
+
+
+# ─────────────────────────── ChildSaveModel (Oferta) ──────────────────────────
+
+@override_settings(STORAGES=_SIMPLE_STATIC)
+@patch("crm.zetom.admin.base.user_has_perm", side_effect=always_true)
+class ChildSaveModelTests(TestCase):
+    """OfertaAdmin.save_model делегирует в save_child_with_status.
+
+    "status" больше не поле формы (сотрудник не может менять его руками) —
+    любое значение "status" в POST игнорируется Django-формой. Единственное,
+    что реально двигает статус при сохранении — bump_new_to_in_progress:
+    любое сохранение документа, который был "new", автоматически поднимает
+    его в "in_progress".
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.user = User.objects.create_superuser(
+            username="admin", email="a@a.com", password="x"
+        )
+
+    def setUp(self):
+        self.client.force_login(self.user)
+        self.main = RequestMain.objects.create(**BASE_DATA)
+        self.oferta = Oferta.objects.create(**BASE_DATA, from_main=self.main)
+
+    def _change_url(self):
+        return reverse("admin:zetom_oferta_change", args=[self.oferta.pk])
+
+    def _form_data(self, status):
+        # Все обязательные поля admin-формы Oferta.
+        # departments — пустой список (не обязательное).
+        return {
+            **BASE_DATA,
+            "company_nip": "7322215365",
+            "status": status,
+            "price": "0",
+            "notes": "",
+            "source": "other",
+            "departments": [],
+            # claude — the offer window now carries the OfertaItem inline;
+            # its management form must be present or the whole form is invalid.
+            "vat_rate": "23", "inquiry_channel": "email",
+            # claude — company_nip differs from the stored one: a client-data
+            # change, which needs its source (DocumentWindowMixin).
+            "source_channel": "other",
+            "items-TOTAL_FORMS": "0", "items-INITIAL_FORMS": "0",
+            "items-MIN_NUM_FORMS": "0", "items-MAX_NUM_FORMS": "1000",
+        }
+
+    def test_saving_new_document_auto_advances_to_in_progress(self, _):
+        response = self.client.post(self._change_url(), data=self._form_data(Status.in_progress))
+        # 302 — сохранилось и редиректнуло; 200 — форма с ошибками (оба валидны в тесте)
+        self.assertIn(response.status_code, (302, 200))
+        self.oferta.refresh_from_db()
+        self.assertEqual(self.oferta.status, Status.in_progress)
+
+    def test_status_value_in_post_is_ignored(self, _):
+        # "status" больше не поле формы — что бы тут ни отправили (даже
+        # заведомо недопустимое "waiting"), это игнорируется. Единственное,
+        # что происходит — automatический new -> in_progress.
+        self.client.post(self._change_url(), data=self._form_data(Status.waiting))
+        self.oferta.refresh_from_db()
+        self.assertEqual(self.oferta.status, Status.in_progress)

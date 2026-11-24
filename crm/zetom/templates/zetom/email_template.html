@@ -1,0 +1,183 @@
+{% extends "admin/base_site.html" %}
+{% load static i18n %}
+
+{% block title %}{% trans "Submit Request" %}{% endblock title %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'zetom/css/email_form.css' %}">
+    <style>
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background-image:
+                linear-gradient(rgba(8, 12, 22, 0.62), rgba(8, 12, 22, 0.62)),
+                url("{% static 'zetom/img/bg.png' %}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* Remove Unfold/Admin backgrounds */
+        html, body, body * {
+            background-color: transparent !important;
+            border-color: transparent !important;
+            box-shadow: none !important;
+        }
+
+        /* Hide Unfold topbar / breadcrumbs */
+        body header,
+        body nav,
+        body div.container.h-16 {
+            display: none !important;
+        }
+
+        /* Restore card styling */
+        body .email-form-card { background-color: var(--zf-surface) !important; }
+        body .email-form-card .form-group input,
+        body .email-form-card .form-group textarea {
+            background-color: var(--zf-input-bg) !important;
+            border-color: var(--zf-border-strong) !important;
+        }
+
+        body .email-form-card .form-group input:focus,
+        body .email-form-card .form-group textarea:focus {
+            border-color: #5a5aff !important;
+            box-shadow: 0 0 0 2px rgba(90, 90, 255, 0.25) !important;
+        }
+
+        html.dark body .email-form-card .form-group input:focus,
+        html.dark body .email-form-card .form-group textarea:focus {
+            border-color: #7a7aff !important;
+            box-shadow: 0 0 0 2px rgba(122, 122, 255, 0.3) !important;
+        }
+
+        body .email-form-card button[type="submit"] {
+            background-color: var(--zf-primary) !important;
+        }
+
+        body .email-form-card button[type="submit"]:hover {
+            background-color: var(--zf-primary-hover) !important;
+        }
+
+        body .email-form-card,
+        body .email-form-card .return-btn {
+            box-shadow: var(--zf-shadow-lg) !important;
+        }
+    </style>
+{% endblock extrastyle %}
+
+{% block breadcrumbs %}{% endblock breadcrumbs %}
+
+{% block content %}
+<div class="email-page">
+<div class="email-form-card">
+
+    {% if submitted %}
+        {% comment %}
+          Thank-you state — анонимный юзер раньше редиректился в
+          /admin/login/?next=..., что выглядело как поломка. Теперь
+          остаётся на той же странице с подтверждением.
+        {% endcomment %}
+        <div class="email-form-header">
+            <h2>{% trans "Thank you!" %}</h2>
+            <a href="{% url 'admin:index' %}" class="return-btn">← {% trans "Return" %}</a>
+        </div>
+        <p class="subtitle">
+            {% trans "Your request has been received. We will get back to you shortly." %}
+        </p>
+        <a href="{% url 'zetom:index' %}" class="return-btn">
+            {% trans "Submit another request" %}
+        </a>
+    {% else %}
+
+    <div class="email-form-header">
+        <h2>{% trans "Submit your request" %}</h2>
+        <a href="{% url 'admin:index' %}" class="return-btn">← {% trans "Return" %}</a>
+    </div>
+
+    <p class="subtitle">{% trans "Fill in the details below and we will get back to you shortly." %}</p>
+
+    {% if message %}
+        <div class="notice">{{ message }}</div>
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        <ul class="errorlist">
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" novalidate data-send-overlay>
+        {% csrf_token %}
+
+        <div class="email-form-row">
+            <div class="form-group">
+                <label for="id_first_name">{% trans "First name" %}</label>
+                <input type="text" id="id_first_name" name="first_name" required
+                       placeholder="{% trans "John" %}"
+                       value="{{ form.first_name.value|default:'' }}">
+                {{ form.first_name.errors }}
+            </div>
+
+            <div class="form-group">
+                <label for="id_last_name">{% trans "Last name" %}</label>
+                <input type="text" id="id_last_name" name="last_name" required
+                       placeholder="{% trans "Johnson" %}"
+                       value="{{ form.last_name.value|default:'' }}">
+                {{ form.last_name.errors }}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="id_company_name">{% trans "Company name" %}</label>
+            <input type="text" id="id_company_name" name="company_name"
+                   placeholder="Zetom Sp. z o.o."
+                   value="{{ form.company_name.value|default:'' }}">
+            {{ form.company_name.errors }}
+        </div>
+
+        <div class="email-form-row">
+            <div class="form-group">
+                <label for="id_phone">{% trans "Phone" %}</label>
+                <input type="tel" id="id_phone" name="phone" required
+                       placeholder="+48 000 000 000"
+                       value="{{ form.phone.value|default:'' }}">
+                {{ form.phone.errors }}
+            </div>
+
+            <div class="form-group">
+                <label for="id_email">{% trans "Email" %}</label>
+                <input type="email" id="id_email" name="email" required
+                       placeholder="example@zetom.pl"
+                       value="{{ form.email.value|default:'' }}">
+                {{ form.email.errors }}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="id_message">{% trans "Message" %}</label>
+            <textarea id="id_message" name="message"
+                      placeholder="{% trans "Your message here" %}">{{ form.message.value|default:'' }}</textarea>
+            {{ form.message.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="id_attachments">{% trans "Attachments" %} ({% trans "optional" %})</label>
+            <input type="file" id="id_attachments" name="attachments" multiple>
+        </div>
+
+        <button type="submit">{% trans "Submit request" %}</button>
+    </form>
+
+    {% endif %}
+
+</div>
+</div>
+
+{% include "notification/_send_overlay.html" %}
+{% endblock content %}

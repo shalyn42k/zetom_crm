@@ -1,0 +1,219 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static crispy_forms_tags unfold %}
+
+{% comment %}
+Custom change-view for RequestMain.
+Two columns: left = client info, right = users/status/depts.
+Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
+{% endcomment %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'zetom/css/requestmain_detail.css' %}?v={% now "U" %}">
+  {% comment %}
+  claude — Fix-round: company_card.css also loads here via
+  RequestMainAdmin.Media, but Django's forms.Media has no hook to
+  cache-bust that link (it's a static tuple, rendered the same on every
+  request) — so it was the one stylesheet on this page with a bare,
+  cacheable URL, unlike everything else here. Reloaded explicitly with
+  ?v=… so an edit to it is guaranteed visible on next page load, same
+  guarantee custom_admin.css/requestmain_detail.css already have. Loading
+  it twice (Media's copy + this one) is harmless — same rules, and this
+  one wins any tie on source order if a stale cached copy of the first
+  is still in play.
+  {% endcomment %}
+  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}?v={% now "U" %}">
+  <link rel="stylesheet" href="{% static 'zetom/css/requestmain_toolbar.css' %}?v={% now "U" %}">
+{% endblock extrastyle %}
+
+{% block extrahead %}
+  {{ block.super }}
+{% endblock extrahead %}
+
+{% block content %}
+<div id="content-main">
+<div class="rm-page">
+
+  {% if errors or adminform.form.non_field_errors %}
+    <div class="flex flex-col gap-4">
+      {% include "unfold/helpers/messages/errornote.html" with errors=errors %}
+      {% include "unfold/helpers/messages/error.html" with errors=adminform.form.non_field_errors %}
+    </div>
+  {% endif %}
+
+  {% if adminform.form.errors %}
+    <ul class="rm-form-errors">
+      {% for field, errs in adminform.form.errors.items %}
+        <li><strong>{{ field }}:</strong> {{ errs|join:", " }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {# -------- Header strip -------- #}
+  <header class="rm-header">
+    <div class="rm-header__title">
+      {% if original.pk %}
+        <h1 class="rm-h1">
+          {% trans "Request" %} — {{ original.company_name|default:"—" }}
+        </h1>
+        <span class="rm-tag">REQ-{{ original.created_at|date:"Y" }}-{{ original.pk|stringformat:"04d" }}</span>
+        <span class="rm-status-pill rm-status-pill--{{ original.status }}">
+          <span class="rm-dot rm-dot--{{ original.status }}"></span>
+          {{ original.get_status_display }}
+        </span>
+        {% if source_display %}
+          <span class="rm-tag rm-tag--source">{{ source_display }}</span>
+        {% endif %}
+      {% else %}
+        <h1 class="rm-h1">{% trans "New request" %}</h1>
+      {% endif %}
+    </div>
+    {% comment %}claude — redesign: the former Actions card, as small buttons.{% endcomment %}
+    {% if original.pk %}
+      {% include "admin/zetom/requestmain/_partials/actions_card.html" %}
+    {% endif %}
+  </header>
+
+  {% if original.from_null %}
+    <p class="rm-callout">
+      {% blocktrans with ref=original.from_null %}
+        Originated from validation window: <strong>{{ ref }}</strong>
+      {% endblocktrans %}
+    </p>
+  {% endif %}
+
+  {% if original.deleted %}
+    <p class="rm-callout rm-callout--danger">
+      {% trans "This request is soft-deleted. Restore it before editing." %}
+    </p>
+  {% endif %}
+
+  {# -------- Pre-save duplicate popup (add view only) -------- #}
+  {% if not original.pk %}
+    {% include "admin/zetom/requestmain/_partials/dupe_popup.html" %}
+  {% endif %}
+
+  {# -------- Form (client card contains linked clients + linker) -------- #}
+  {% comment %}
+  claude — redesign: on an existing request three columns — client (left,
+  Klienci-card look), the request's own info (middle), team / documents /
+  files (right). The add page keeps the original two-column layout.
+  {% endcomment %}
+  <form method="post" enctype="multipart/form-data" class="rm-grid{% if original.pk %} rm-grid--3{% endif %}"
+        id="{{ opts.model_name }}_form" novalidate>
+    {% csrf_token %}
+
+    {% if original.pk %}
+    <div class="rm-col rm-col--client">
+      {% include "admin/zetom/requestmain/_partials/client_card.html" %}
+    </div>
+    <div class="rm-col rm-col--info">
+      {% include "admin/zetom/requestmain/_partials/client_information.html" %}
+    </div>
+    {% endif %}
+
+    <div class="rm-col rm-col--left"{% if original.pk %} hidden{% endif %}>
+      {% if not original.pk %}
+      {% include "admin/zetom/requestmain/_partials/client_card.html" %}
+      {% include "admin/zetom/requestmain/_partials/client_information.html" %}
+      {% endif %}
+      {% if not original.pk %}
+        {% include "admin/zetom/requestmain/_partials/source_picker.html" %}
+        <section class="rm-card" style="margin-top:1rem;">
+          <div class="rm-card__header">
+            <h2 class="rm-card__title">
+              <svg class="rm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.41 17.41a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              </svg>
+              {% trans "Attachments" %}
+            </h2>
+          </div>
+          <div style="padding:0.75rem 1rem 1rem;"
+               x-data="{
+                 files: [],
+                 active: false,
+                 onDrop(e) {
+                   this.active = false;
+                   const dt = e.dataTransfer.files;
+                   this.files = Array.from(dt);
+                   this.$refs.inp.files = dt;
+                 },
+                 onPick(e) { this.files = Array.from(e.target.files); },
+                 fmt(n) {
+                   if (n < 1024) return n + ' B';
+                   if (n < 1048576) return (n/1024).toFixed(1) + ' KB';
+                   return (n/1048576).toFixed(1) + ' MB';
+                 }
+               }">
+            <div class="rm-dropzone"
+                 :class="{ 'rm-dropzone--active': active }"
+                 @dragover.prevent="active = true"
+                 @dragleave.prevent="active = false"
+                 @drop.prevent="onDrop($event)"
+                 @click="$refs.inp.click()">
+              <template x-if="!files.length">
+                <div class="rm-dropzone__idle">
+                  <svg class="rm-dropzone__icon" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="1.5"
+                       stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  <span class="rm-dropzone__label">{% trans "Drop files here or click to browse" %}</span>
+                </div>
+              </template>
+              <template x-if="files.length">
+                <ul class="rm-dropzone__filelist" @click.stop>
+                  <template x-for="f in files" :key="f.name">
+                    <li class="rm-dropzone__file">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                           stroke-linecap="round" stroke-linejoin="round"
+                           style="width:14px;height:14px;flex-shrink:0;color:var(--rm-text-muted)">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                      </svg>
+                      <span x-text="f.name" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+                      <span x-text="fmt(f.size)" style="flex-shrink:0;color:var(--rm-text-muted);"></span>
+                    </li>
+                  </template>
+                </ul>
+              </template>
+              <input type="file" name="attachments" multiple
+                     x-ref="inp" @change="onPick($event)"
+                     style="display:none;" tabindex="-1">
+            </div>
+            <button type="button" class="rm-btn rm-btn--sm" x-show="files.length"
+                    @click="files = []; $refs.inp.value = ''"
+                    style="margin-top:0.4rem;">
+              {% trans "Clear" %}
+            </button>
+          </div>
+        </section>
+      {% endif %}
+    </div>
+
+    {% if original.pk %}
+      {% comment %}
+      claude — redesign: Actions → header buttons, History → modal behind
+      the "History" button, Departments → inside the team card.
+      {% endcomment %}
+      <aside class="rm-col rm-col--right">
+        {% include "admin/zetom/requestmain/_partials/assigned_users.html" %}
+        {% include "admin/zetom/requestmain/_partials/documents.html" %}
+        {% include "admin/zetom/requestmain/_partials/files_compact.html" %}
+      </aside>
+    {% endif %}
+  </form>
+</div>
+</div>
+{% include "admin/zetom/shared/step_notes_modal.html" with step_notes_hide_inline_trigger=True %}
+{% endblock content %}
+
+{% comment %}claude — "Save" lives in the header on an existing request; the
+bottom submit row stays only on the add page.{% endcomment %}
+{% block footer %}{% if not original.pk %}{{ block.super }}{% endif %}{% endblock footer %}
+
+{% block extra_js %}
+  {{ block.super }}
+{% endblock extra_js %}

@@ -1,0 +1,14 @@
+{% load admin_list unfold %}
+{% comment %}
+  claude — переопределение unfold/helpers/pagination.html: тот же рендер,
+  только обёртка помечена классом zt-pagination-bar, чтобы в
+  custom_admin.css подтянуть её под стиль футера таблицы на Klienci
+  (/admin/clients/client/) — скругления и мягкая граница вместо плоской
+  sticky-полосы. Пагинация/подсчёт count не тронуты.
+{% endcomment %}
+
+{% if cl %}
+    <div class="zt-pagination-bar px-4 lg:backdrop-blur-xs lg:bg-white/80 lg:flex lg:items-center lg:dark:bg-base-900/80 lg:left-0 lg:right-0 lg:bottom-0 lg:sticky relative z-40 lg:border-t lg:border-base-200 lg:relative lg:scrollable-top lg:dark:border-base-800 {% element_classes 'pagination' %}">
+        {% pagination cl %}
+    </div>
+{% endif %}

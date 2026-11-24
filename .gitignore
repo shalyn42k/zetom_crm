@@ -60,6 +60,9 @@ cover/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+staticfiles/
+media/
+request_attachments/
 
 # Flask stuff:
 instance/
@@ -136,6 +139,7 @@ celerybeat.pid
 
 # Environments
 .env
+.env.db
 .envrc
 .venv
 env/
@@ -205,3 +209,18 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Local design handoff packages — kept for reference, not tracked
+handoff/
+design_handoff_client_pages/
+design_handoff_add_client/
+design_handoff_clients_unified/
+
+# Lab2 — временно, не трекать
+DOCS/lab2/
+
+# Claude Code settings
+.claude/
+
+# SDD scratch workspace (superpowers)
+.superpowers/

@@ -1,0 +1,247 @@
+{% load i18n %}
+{% comment %}
+  Departments tab — 2-column layout.
+
+  LEFT  : the user's own departments with add/remove + promote/demote
+          controls. Admins additionally see grant/revoke head controls.
+  RIGHT : a tree of those same departments, expanded to show teammates
+          inside each one. The current user is marked with a "You" tag;
+          department heads with a "Head" tag.
+
+  Data model:
+    - `UserProfile.departments`         — ArrayField of codes (all assigned)
+    - `UserProfile.main_departments`    — ArrayField of codes (subset; "primary",
+                                          i.e. user's main department, NOT headship)
+    - `UserProfile.head_of_departments` — ArrayField of codes (subset; headship,
+                                          granted explicitly by an admin)
+
+  is_primary = code in main_departments.
+  is_head    = code in head_of_departments.
+  These are orthogonal: one user can be primary in dept X without being head,
+  or head of dept Y where it's only secondary for them.
+
+  Safety rules: a primary or head department cannot be removed directly —
+  user must demote / revoke first. Enforced in UI (button disabled) and on
+  the server (view rejects).
+{% endcomment %}
+
+<section class="up-dept-grid" id="dept-tab"
+         aria-labelledby="dept-tab-heading"
+         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <h2 id="dept-tab-heading" class="up-visually-hidden">{% trans "Departments" %}</h2>
+
+  {# ---------- LEFT: My departments ---------- #}
+  <article class="up-card" aria-labelledby="my-depts-heading">
+    <header class="up-card__header">
+      <h3 id="my-depts-heading" class="up-card__title">
+        {% trans "My departments" %}
+        <span class="up-counter">{{ my_departments|length }}</span>
+      </h3>
+    </header>
+
+    <div class="up-card__body up-dept-list">
+      {% for dept in my_departments %}
+        <div class="up-dept-card {% if dept.is_primary %}up-dept-card--primary{% endif %}"
+             data-dept-code="{{ dept.code }}">
+          <div class="up-dept-card__icon" aria-hidden="true">
+            {{ dept.label|slice:":1"|upper }}
+          </div>
+          <div class="up-dept-card__main">
+            <div class="up-dept-card__name">
+              {{ dept.label }}
+              {% if dept.is_primary %}
+                <span class="up-badge up-badge--primary">{% trans "Primary" %}</span>
+              {% else %}
+                <span class="up-badge up-badge--muted">{% trans "Secondary" %}</span>
+              {% endif %}
+              {% if dept.is_head %}
+                <span class="up-badge up-badge--head">{% trans "Head" %}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if can_grant_head %}
+            {% if dept.is_head %}
+              <button type="button"
+                      class="up-iconbtn up-iconbtn--ghost"
+                      hx-post="{% url 'admin:auth_user_revoke_head_department' original.pk dept.code %}"
+                      hx-target="#dept-tab" hx-swap="outerHTML"
+                      hx-confirm="{% trans "Revoke head status for this department?" %}"
+                      title="{% trans "Revoke head status" %}"
+                      aria-label="{% trans "Revoke head status" %}">
+                <span aria-hidden="true">♛</span>
+              </button>
+            {% else %}
+              <button type="button"
+                      class="up-iconbtn up-iconbtn--ghost"
+                      hx-post="{% url 'admin:auth_user_grant_head_department' original.pk dept.code %}"
+                      hx-target="#dept-tab" hx-swap="outerHTML"
+                      title="{% trans "Grant head status" %}"
+                      aria-label="{% trans "Grant head status" %}">
+                <span aria-hidden="true">♛</span>
+              </button>
+            {% endif %}
+          {% endif %}
+
+          {% if dept.is_primary %}
+            <button type="button"
+                    class="up-iconbtn up-iconbtn--ghost"
+                    hx-post="{% url 'admin:auth_user_demote_department' original.pk dept.code %}"
+                    hx-target="#dept-tab" hx-swap="outerHTML"
+                    hx-confirm="{% trans "Demote this department from primary?" %}"
+                    title="{% trans "Demote from primary" %}"
+                    aria-label="{% trans "Demote from primary" %}"
+                    {% if not can_edit_departments %}disabled aria-disabled="true"{% endif %}>
+              <span aria-hidden="true">↓</span>
+            </button>
+            <button type="button"
+                    class="up-iconbtn up-iconbtn--ghost"
+                    disabled
+                    aria-disabled="true"
+                    title="{% trans "Primary department cannot be removed. Demote it first." %}">
+              <span aria-hidden="true">×</span>
+              <span class="up-visually-hidden">{% trans "Cannot remove" %}</span>
+            </button>
+          {% elif dept.is_head %}
+            <button type="button"
+                    class="up-iconbtn up-iconbtn--ghost"
+                    hx-post="{% url 'admin:auth_user_promote_department' original.pk dept.code %}"
+                    hx-target="#dept-tab" hx-swap="outerHTML"
+                    title="{% trans "Promote to primary" %}"
+                    aria-label="{% trans "Promote to primary" %}"
+                    {% if not can_edit_departments %}disabled aria-disabled="true"{% endif %}>
+              <span aria-hidden="true">↑</span>
+            </button>
+            <button type="button"
+                    class="up-iconbtn up-iconbtn--ghost"
+                    disabled
+                    aria-disabled="true"
+                    title="{% trans "Head department cannot be removed. Revoke head status first." %}">
+              <span aria-hidden="true">×</span>
+              <span class="up-visually-hidden">{% trans "Cannot remove" %}</span>
+            </button>
+          {% else %}
+            <button type="button"
+                    class="up-iconbtn up-iconbtn--ghost"
+                    hx-post="{% url 'admin:auth_user_promote_department' original.pk dept.code %}"
+                    hx-target="#dept-tab" hx-swap="outerHTML"
+                    title="{% trans "Promote to primary" %}"
+                    aria-label="{% trans "Promote to primary" %}"
+                    {% if not can_edit_departments %}disabled aria-disabled="true"{% endif %}>
+              <span aria-hidden="true">↑</span>
+            </button>
+            <button type="button"
+                    class="up-iconbtn up-iconbtn--danger"
+                    hx-delete="{% url 'admin:auth_user_remove_department' original.pk dept.code %}"
+                    hx-target="#dept-tab" hx-swap="outerHTML"
+                    hx-confirm="{% trans "Remove user from this department?" %}"
+                    aria-label="{% trans "Remove from department" %}"
+                    {% if not can_edit_departments %}disabled aria-disabled="true"{% endif %}>
+              <span aria-hidden="true">×</span>
+            </button>
+          {% endif %}
+        </div>
+      {% empty %}
+        <p class="up-empty">{% trans "No departments assigned." %}</p>
+      {% endfor %}
+
+      {% if available_departments %}
+        {% if can_edit_departments %}
+          <div class="up-dept-add-panel" id="dept-add-panel">
+            <label class="up-search-input" for="dept-search">
+              <span class="up-visually-hidden">{% trans "Search departments" %}</span>
+              <input id="dept-search"
+                     type="search"
+                     autocomplete="off"
+                     name="q"
+                     placeholder="{% trans "Search department by name or code…" %}"
+                     hx-get="{% url 'admin:auth_user_search_departments' original.pk %}"
+                     hx-trigger="keyup changed delay:200ms"
+                     hx-target="#dept-search-results">
+            </label>
+
+            <ul class="up-picker-list" id="dept-search-results" role="listbox">
+              {% include "admin/auth/user/_partials/_dept_search_results.html" %}
+            </ul>
+          </div>
+        {% else %}
+          <div class="up-dept-add-panel up-dept-add-panel--readonly" id="dept-add-panel">
+            <p class="up-help">
+              {% trans "You can view departments, but you need edit_users permission to change them." %}
+            </p>
+          </div>
+        {% endif %}
+      {% endif %}
+
+      <p class="up-help">
+        {% trans "Primary marks the user's main department. Head status is granted separately by an admin and identifies the department lead." %}
+      </p>
+    </div>
+  </article>
+
+  {# ---------- RIGHT: Department tree with teammates ---------- #}
+  <article class="up-card" aria-labelledby="dept-tree-heading">
+    <header class="up-card__header">
+      <h3 id="dept-tree-heading" class="up-card__title">
+        {% trans "Team in your departments" %}
+        <span class="up-counter">{{ my_departments|length }}</span>
+      </h3>
+    </header>
+
+    <div class="up-card__body">
+      {% comment %}claude — было `is-open` хардкодом + JS-toggle. По
+         просьбе юзера дефолт = закрыто, выбор сохраняется per-dept через
+         Alpine $persist. Ключ — slug кода отдела + pk юзера (чтобы у
+         разных user-страниц не делилось состояние).
+      {% endcomment %}
+      <ul class="up-dept-tree" role="tree" aria-label="{% trans "Departments and members" %}">
+        {% for dept in my_departments %}
+          <li class="up-dept-tree__node {% if dept.is_primary %}up-dept-tree__node--primary{% endif %}"
+              x-data="{ open: $persist(false).as('up-dept-tree-{{ original.pk }}-{{ dept.code|slugify }}') }"
+              :class="{ 'is-open': open }"
+              role="treeitem"
+              :aria-expanded="open">
+            <button type="button" class="up-dept-tree__head"
+                    @click="open = !open">
+              <span class="up-dept-tree__caret" aria-hidden="true">▸</span>
+              <span class="up-dept-tree__name">
+                {{ dept.label }}
+                {% if dept.is_primary %}
+                  <span class="up-tag up-tag--primary">{% trans "primary" %}</span>
+                {% endif %}
+              </span>
+              <span class="up-dept-tree__count">{{ dept.members|length }}</span>
+            </button>
+
+            <ul class="up-dept-tree__body" role="group" x-show="open" x-cloak>
+              {% for member in dept.members %}
+                <li class="up-dept-member {% if member.is_you %}up-dept-member--you{% endif %}">
+                  <span class="up-dept-member__avatar {% if member.is_head %}up-dept-member__avatar--head{% endif %}"
+                        aria-hidden="true">
+                    {{ member.initials }}
+                  </span>
+                  <span class="up-dept-member__info">
+                    <span class="up-dept-member__name">{{ member.full_name }}</span>
+                    {% if member.role_label %}
+                      <span class="up-dept-member__role">{% trans member.role_label %}</span>
+                    {% endif %}
+                    {% if member.is_head %}
+                      <span class="up-tag up-tag--head">{% trans "Head" %}</span>
+                    {% endif %}
+                    {% if member.is_you %}
+                      <span class="up-tag up-tag--you">{% trans "You" %}</span>
+                    {% endif %}
+                  </span>
+                </li>
+              {% empty %}
+                <li class="up-empty">{% trans "No other members in this department." %}</li>
+              {% endfor %}
+            </ul>
+          </li>
+        {% empty %}
+          <li class="up-empty">{% trans "Add a department on the left to see teammates." %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </article>
+</section>

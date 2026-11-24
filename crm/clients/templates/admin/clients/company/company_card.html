@@ -1,0 +1,633 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% comment %}
+Company Detail — custom change_form for CompanyAdmin (Phase 3a Task 1).
+Identity hero + Dane podstawowe / Dane szczegółowe panels, plus empty
+scaffolds for Osoby kontaktowe / Powiązane zgłoszenia / Historia kontaktów
+(filled in by later Phase 3a tasks). Reproduces the "Firma" screen from
+design_handoff_clients_unified/Zetom Klienci.html §2.
+{% endcomment %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  {% comment %}
+  claude — Fix-round: was a bare static URL with no cache-busting, unlike
+  every other admin stylesheet (see unfold/layouts/skeleton.html's
+  custom_admin.css, which uses this same `?v={% now "U" %}` pattern
+  precisely because bare static URLs here have been a recurring "my CSS
+  edit isn't showing up" problem). This file changes often during
+  iteration, so it needs the same guarantee.
+  {% endcomment %}
+  <link rel="stylesheet" href="{% static 'clients/css/company_card.css' %}?v={% now "U" %}">
+{% endblock extrastyle %}
+
+{% block content %}
+<svg class="cc-sprite" xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0">
+  <symbol id="cc-i-arrow-l" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+  <symbol id="cc-i-building" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></symbol>
+  <symbol id="cc-i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+  <symbol id="cc-i-map" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></symbol>
+  <symbol id="cc-i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="cc-i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+  <symbol id="cc-i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="cc-i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="cc-i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+  <symbol id="cc-i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="cc-i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+  <symbol id="cc-i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="cc-i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+</svg>
+
+<div class="cc-stage">
+
+  <div class="backrow">
+    {% comment %}
+      claude — back to the Klienci list filtered to firms, not the stock
+      Company changelist (which now redirects here anyway).
+    {% endcomment %}
+    <a class="btn-back" href="{% url 'admin:clients_client_changelist' %}?rodzaj=firmy"><svg class="i"><use href="#cc-i-arrow-l"/></svg> {% trans "Wróć" %}</a>
+    <span class="podglad-tag"><b>{% trans "Klient / Firma" %}</b> · {% trans "podgląd" %}</span>
+  </div>
+
+  <div class="id-hero">
+    <span class="ava">{{ company.name|slice:":2"|upper }}</span>
+    <div>
+      <div class="h-nm">
+        {{ company.name }}
+        <span class="pill company"><svg class="i"><use href="#cc-i-building"/></svg> {% trans "Firma" %}</span>
+      </div>
+      <div class="h-sub">
+        {% if company.type_supplier %}<span class="chip {{ company.type_supplier }}">{{ dane_podstawowe.typ_label }}</span>{% endif %}
+        {% if company.nip %}<span>{% trans "NIP" %} {{ company.nip }}</span>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% comment %}
+  Seeds for the two "Edytuj" modals. Keys are the Company model field names —
+  daneModal() posts the form object straight through and views.company_save
+  reads it by the same names. json_script keeps the seed XSS-safe, same as the
+  Osoby kontaktowe panel below.
+  {% endcomment %}
+  {{ dane_podstawowe_form|json_script:"dane-podstawowe-data" }}
+  {{ dane_szczegolowe_form|json_script:"dane-szczegolowe-data" }}
+
+  <div class="stack">
+    <div class="grid2">
+      {# Dane podstawowe #}
+      <div class="panel" x-data="daneModal('podstawowe', JSON.parse(document.getElementById('dane-podstawowe-data').textContent))">
+        <div class="panel-h">
+          <h2><svg class="i hico"><use href="#cc-i-info"/></svg> {% trans "Dane podstawowe" %}</h2>
+          {% if can_edit %}<button type="button" class="edit-btn" @click="open()" title="{% trans 'Edytuj' %}"><svg class="i"><use href="#cc-i-edit"/></svg></button>{% endif %}
+        </div>
+        <div class="fields">
+          <div class="frow"><span class="fk">{% trans "Nazwa" %}</span><span class="fv{% if not dane_podstawowe.nazwa %} none{% endif %}">{{ dane_podstawowe.nazwa|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "NIP" %}</span><span class="fv{% if not dane_podstawowe.nip %} none{% endif %}">{{ dane_podstawowe.nip|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "REGON" %}</span><span class="fv{% if not dane_podstawowe.regon %} none{% endif %}">{{ dane_podstawowe.regon|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "Typ dostawcy" %}</span><span class="fv">{% if company.type_supplier %}<span class="chip {{ company.type_supplier }}">{{ dane_podstawowe.typ_label }}</span>{% else %}<span class="fv none">—</span>{% endif %}</span></div>
+        </div>
+
+        {% if can_edit %}
+        {# mDanePodstawowe — edycja nazwy / NIP / REGON / typu dostawcy #}
+        <div class="overlay" x-show="modalOpen" x-cloak @click.self="close()" @keydown.escape.window="close()">
+          <div class="modal">
+            <div class="modal-h">
+              <h3>{% trans "Edytuj dane podstawowe" %}</h3>
+              <p>{% trans "Dane identyfikacyjne firmy." %}</p>
+              <button type="button" class="modal-x" @click="close()"><svg class="i"><use href="#cc-i-x"/></svg></button>
+            </div>
+            <form class="modal-b" @submit.prevent="submit()">
+              <template x-if="errors.length"><div class="form-errors"><template x-for="e in errors" :key="e"><div x-text="e"></div></template></div></template>
+              <div class="field"><label>{% trans "Nazwa" %}</label><input type="text" x-model="form.name" placeholder="{% trans 'np. Zetom Sp. z o.o.' %}"></div>
+              {% comment %}claude — NIP on its own row with "Pobierz z rejestru" (MF VAT register, static/clients/js/nip_lookup.js){% endcomment %}
+              <div class="field">
+                <label>{% trans "NIP" %}</label>
+                <div class="nip-row">
+                  <input type="text" x-model="form.nip" placeholder="123-456-32-18" @keydown.enter.prevent="zetomNipLookup($data, '{% url 'clients:nip_lookup' %}', {address: false})">
+                  <button type="button" class="btn sm" :disabled="nipBusy" @click="zetomNipLookup($data, '{% url 'clients:nip_lookup' %}', {address: false})">
+                    <span x-show="!nipBusy">{% trans "Pobierz z rejestru" %}</span><span x-show="nipBusy" x-cloak>…</span>
+                  </button>
+                </div>
+                <p class="nip-msg" x-show="nipMsg" x-cloak :class="nipError ? 'err' : ''" x-text="nipMsg"></p>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>{% trans "REGON" %}</label><input type="text" x-model="form.regon" placeholder="000000000"></div>
+                <div class="field">
+                  <label>{% trans "Typ dostawcy" %}</label>
+                  <select x-model="form.type_supplier">
+                    <option value="">{% trans "— brak —" %}</option>
+                    {% for value, label in supplier_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                  </select>
+                </div>
+              </div>
+            </form>
+            <div class="modal-f">
+              <button type="button" class="btn" @click="close()">{% trans "Anuluj" %}</button>
+              <button type="button" class="btn primary" :disabled="saving" @click="submit()">{% trans "Zapisz" %}</button>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      {# Dane szczegółowe #}
+      <div class="panel" x-data="daneModal('szczegolowe', JSON.parse(document.getElementById('dane-szczegolowe-data').textContent))">
+        <div class="panel-h">
+          <h2><svg class="i hico"><use href="#cc-i-map"/></svg> {% trans "Dane szczegółowe" %}</h2>
+          {% if can_edit %}<button type="button" class="edit-btn" @click="open()" title="{% trans 'Edytuj' %}"><svg class="i"><use href="#cc-i-edit"/></svg></button>{% endif %}
+        </div>
+        <div class="fields">
+          <div class="frow"><span class="fk">{% trans "Kraj" %}</span><span class="fv{% if not dane_szczegolowe.kraj %} none{% endif %}">{{ dane_szczegolowe.kraj|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "Miasto" %}</span><span class="fv{% if not dane_szczegolowe.miasto %} none{% endif %}">{{ dane_szczegolowe.miasto|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "Województwo" %}</span><span class="fv{% if not dane_szczegolowe.wojewodztwo %} none{% endif %}">{{ dane_szczegolowe.wojewodztwo|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "Kod pocztowy" %}</span><span class="fv{% if not dane_szczegolowe.kod %} none{% endif %}">{{ dane_szczegolowe.kod|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "Ulica" %}</span><span class="fv{% if not dane_szczegolowe.ulica %} none{% endif %}">{{ dane_szczegolowe.ulica|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "E-mail" %}</span><span class="fv{% if not dane_szczegolowe.email %} none{% endif %}">{{ dane_szczegolowe.email|default:"—" }}</span></div>
+          <div class="frow"><span class="fk">{% trans "Telefon" %}</span><span class="fv{% if not dane_szczegolowe.telefon %} none{% endif %}">{{ dane_szczegolowe.telefon|default:"—" }}</span></div>
+        </div>
+
+        {% if can_edit %}
+        {# mDaneSzczegolowe — adres + dane kontaktowe firmy #}
+        <div class="overlay" x-show="modalOpen" x-cloak @click.self="close()" @keydown.escape.window="close()">
+          <div class="modal">
+            <div class="modal-h">
+              <h3>{% trans "Edytuj dane szczegółowe" %}</h3>
+              <p>{% trans "Adres i dane kontaktowe firmy." %}</p>
+              <button type="button" class="modal-x" @click="close()"><svg class="i"><use href="#cc-i-x"/></svg></button>
+            </div>
+            <form class="modal-b" @submit.prevent="submit()">
+              <template x-if="errors.length"><div class="form-errors"><template x-for="e in errors" :key="e"><div x-text="e"></div></template></div></template>
+              <div class="field-row">
+                <div class="field"><label>{% trans "Kraj" %}</label><input type="text" x-model="form.country" placeholder="{% trans 'np. Polska' %}"></div>
+                <div class="field"><label>{% trans "Województwo" %}</label><input type="text" x-model="form.voivodeship" placeholder="{% trans 'np. mazowieckie' %}"></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>{% trans "Kod pocztowy" %}</label><input type="text" x-model="form.post_code" placeholder="00-000"></div>
+                <div class="field"><label>{% trans "Miasto" %}</label><input type="text" x-model="form.city" placeholder="{% trans 'np. Warszawa' %}"></div>
+              </div>
+              <div class="field"><label>{% trans "Ulica" %}</label><input type="text" x-model="form.street" placeholder="{% trans 'np. Przemysłowa 12' %}"></div>
+              <div class="field-row">
+                <div class="field"><label>{% trans "Telefon" %}</label><input type="text" x-model="form.phone" placeholder="+48 …"></div>
+                <div class="field"><label>{% trans "E-mail" %}</label><input type="email" x-model="form.email" placeholder="biuro@firma.pl"></div>
+              </div>
+            </form>
+            <div class="modal-f">
+              <button type="button" class="btn" @click="close()">{% trans "Anuluj" %}</button>
+              <button type="button" class="btn primary" :disabled="saving" @click="submit()">{% trans "Zapisz" %}</button>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% comment %}
+    Osoby kontaktowe — table + add/edit/delete are client-side via Alpine
+    (personPanel(), defined in the <script> block below); the server only
+    seeds the initial rows (json_script keeps this XSS-safe) so the panel
+    renders real data on first paint.
+    {% endcomment %}
+    {{ osoby_data|json_script:"osoby-data" }}
+    <div class="panel" x-data="personPanel(JSON.parse(document.getElementById('osoby-data').textContent), {{ can_edit|yesno:'true,false' }})">
+      <div class="panel-h">
+        <h2><svg class="i hico"><use href="#cc-i-users"/></svg> {% trans "Osoby kontaktowe" %} <span class="count" x-show="rows.length" x-text="rows.length" x-cloak></span></h2>
+        {% if can_edit %}<button type="button" class="btn sm" @click="openAdd()"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Dodaj osobę kontaktową" %}</button>{% endif %}
+      </div>
+      <table class="inner" x-show="rows.length" x-cloak>
+        <thead>
+          <tr>
+            <th>{% trans "Imię" %}</th><th>{% trans "Nazwisko" %}</th><th>{% trans "E-mail" %}</th>
+            <th>{% trans "Telefon" %}</th><th>{% trans "Stanowisko" %}</th>
+            {% if can_edit %}<th class="act">{% trans "Operacje" %}</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="row in rows" :key="row.link_pk">
+            <tr>
+              <td><span class="pname"><svg class="i i-sm primary-star" title="{% trans 'Główny kontakt' %}" x-show="row.glowny"><use href="#cc-i-star"/></svg> <span x-text="row.imie"></span></span></td>
+              <td x-text="row.nazwisko"></td>
+              <td class="muted" x-text="row.email || '—'"></td>
+              <td x-text="row.telefon || '—'"></td>
+              <td class="stan" x-text="row.stanowisko || '—'"></td>
+              {% if can_edit %}
+              <td>
+                <div class="ops">
+                  <button type="button" class="opbtn" @click="openEdit(row)" title="{% trans 'Edytuj' %}"><svg class="i i-sm"><use href="#cc-i-edit"/></svg></button>
+                  <button type="button" class="opbtn del" @click="del(row)" title="{% trans 'Usuń' %}"><svg class="i i-sm"><use href="#cc-i-trash"/></svg></button>
+                </div>
+              </td>
+              {% endif %}
+            </tr>
+          </template>
+        </tbody>
+      </table>
+      <div class="empty" x-show="!rows.length" x-cloak>
+        <span class="ring"><svg class="i"><use href="#cc-i-users"/></svg></span>
+        <p>{% trans "Brak osób kontaktowych przypisanych do tej firmy." %}</p>
+        {% if can_edit %}<button type="button" class="btn" @click="openAdd()"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Dodaj osobę" %}</button>{% endif %}
+      </div>
+
+      {% if can_edit %}
+      {# mPerson — add/edit modal, reproduces design_handoff_clients_unified §4 #}
+      <div class="overlay" x-show="modalOpen" x-cloak @click.self="close()" @keydown.escape.window="close()">
+        <div class="modal">
+          <div class="modal-h">
+            <h3 x-text="mode === 'edit' ? '{% trans "Edytuj osobę kontaktową" %}' : '{% trans "Dodaj osobę kontaktową" %}'"></h3>
+            <p>{% trans "Osoba kontaktowa powiązana z firmą." %}</p>
+            <button type="button" class="modal-x" @click="close()"><svg class="i"><use href="#cc-i-x"/></svg></button>
+          </div>
+          <form class="modal-b" @submit.prevent="submit()">
+            <template x-if="errors.length"><div class="form-errors"><template x-for="e in errors" :key="e"><div x-text="e"></div></template></div></template>
+            {% comment %}claude — add mode: pick someone already in the client base, or create a new person{% endcomment %}
+            <div class="type-opt" x-show="mode === 'add'">
+              <button type="button" :class="source === 'existing' ? 'active person' : ''" @click="source = 'existing'">
+                <span><b>{% trans "Z bazy klientów" %}</b>{% trans "Osoba, która już jest w bazie" %}</span>
+              </button>
+              <button type="button" :class="source === 'new' ? 'active company' : ''" @click="source = 'new'">
+                <span><b>{% trans "Nowa osoba" %}</b>{% trans "Dodaj nową osobę do bazy" %}</span>
+              </button>
+            </div>
+            <div x-show="mode === 'add' && source === 'existing'" x-cloak>
+              <div class="field">
+                <label for="cp-search">{% trans "Znajdź osobę" %}</label>
+                <div class="cbx cbx--search">
+                  <input id="cp-search" type="text" class="cbx__input" autocomplete="off" x-model="q"
+                         @input.debounce.250ms="search()" @focus="search()"
+                         placeholder="{% trans 'Imię, nazwisko, e-mail lub telefon…' %}">
+                  <ul class="cbx__list" x-show="results !== null && !picked" x-cloak>
+                    <template x-for="p in results" :key="p.id">
+                      <li class="cbx__opt" @mousedown.prevent="pick(p)">
+                        <span class="cbx__opt-main" x-text="p.name"></span>
+                        <span class="cbx__opt-sub" x-text="[p.company, p.email, p.phone].filter(Boolean).join(' · ')"></span>
+                      </li>
+                    </template>
+                    <li class="cbx__empty" x-show="results && !results.length">{% trans "Nie znaleziono — dodaj jako nową osobę." %}</li>
+                  </ul>
+                </div>
+                <p class="nip-msg" x-show="picked" x-cloak x-text="picked && [picked.name, picked.email, picked.phone].filter(Boolean).join(' · ')"></p>
+              </div>
+            </div>
+            <div x-show="mode === 'edit' || source === 'new'">
+            <div class="field-row">
+              <div class="field"><label>{% trans "Imię" %}</label><input type="text" x-model="form.first_name" placeholder="{% trans 'np. Marek' %}"></div>
+              <div class="field"><label>{% trans "Nazwisko" %}</label><input type="text" x-model="form.last_name" placeholder="{% trans 'np. Wiśniewski' %}"></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>{% trans "Telefon" %}</label><input type="text" x-model="form.phone" placeholder="+48 …"></div>
+              <div class="field"><label>{% trans "E-mail" %}</label><input type="email" x-model="form.email" placeholder="nazwa@firma.pl"></div>
+            </div>
+            </div>
+            <div class="field"><label>{% trans "Stanowisko" %}</label><input type="text" x-model="form.position" placeholder="{% trans 'np. Dyrektor techniczny' %}"></div>
+            <label class="check">
+              <input type="checkbox" x-model="form.is_primary">
+              <span><span class="ct">{% trans "Główny kontakt" %}</span><span class="cd" style="display:block">{% trans "Główna osoba do kontaktu w tej firmie." %}</span></span>
+            </label>
+          </form>
+          <div class="modal-f">
+            <button type="button" class="btn" @click="close()">{% trans "Anuluj" %}</button>
+            <button type="button" class="btn primary" :disabled="saving" @click="submit()"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Zapisz" %}</button>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="grid2">
+      {# Powiązane zgłoszenia #}
+      <div class="panel">
+        <div class="panel-h">
+          <h2><svg class="i hico"><use href="#cc-i-doc"/></svg> {% trans "Powiązane zgłoszenia" %}{% if zgloszenia %} <span class="count">{{ zgloszenia|length }}</span>{% endif %}</h2>
+        </div>
+        {% if zgloszenia %}
+        <div class="reqs">
+          {% for r in zgloszenia %}
+          <a class="req" href="{{ r.url }}">
+            <span class="req-ico"><svg class="i"><use href="#cc-i-doc"/></svg></span>
+            <div class="req-main">
+              <div class="req-title">{{ r.label }}</div>
+              <div class="req-meta">{{ r.data|date:"d.m.Y" }}{% if r.dept %} · {{ r.dept }}{% endif %}</div>
+            </div>
+            <span class="st {{ r.status_class }}">{{ r.status_label }}</span>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty">
+          <span class="ring"><svg class="i"><use href="#cc-i-doc"/></svg></span>
+          <p>{% trans "Brak zgłoszeń powiązanych z tą firmą." %}</p>
+        </div>
+        {% endif %}
+      </div>
+
+      {% comment %}
+      claude — Task 13: "Zaplanowane" stacks above "Historia kontaktów" in
+      the same grid2 cell (brief: the section goes ABOVE the history panel),
+      reusing .stack for the vertical gap rather than a new wrapper class.
+      Both panels reuse the .hist/.hev timeline primitives Task 12 already
+      styled for the shared step-notes modal. Reminders here can belong to
+      different persons of this company (see services_contacts.py's
+      reminder_rows_for_company), so each row's checkmark posts to its own
+      owning person's pk — never the company's.
+      {% endcomment %}
+      <div class="stack">
+        {# Zaplanowane — open reminders of every person linked to this company #}
+        <div class="panel">
+          <div class="panel-h">
+            <h2><svg class="i hico"><use href="#cc-i-clock"/></svg> {% trans "Zaplanowane" %}{% if zaplanowane %} <span class="count">{{ zaplanowane|length }}</span>{% endif %}</h2>
+          </div>
+          {% if zaplanowane %}
+          <div class="hist">
+            {% for r in zaplanowane %}
+            <div class="hev{% if r.is_overdue %} overdue{% endif %}">
+              <div class="dotcol"><span class="dot"></span><span class="line"></span></div>
+              <div class="hbody">
+                <div class="hmeta">
+                  <span class="hdate">{{ r.due_at|date:"d.m.Y H:i" }}</span>
+                  {% if can_edit %}
+                  <form method="post" action="{% url 'admin:clients_client_step_note_done' r.person_pk r.note_pk %}" style="margin-left:auto">
+                    {% csrf_token %}
+                    <button type="submit" class="opbtn" title="{% trans 'Oznacz jako wykonane' %}"><svg class="i i-sm"><use href="#cc-i-check"/></svg></button>
+                  </form>
+                  {% endif %}
+                </div>
+                {% comment %}
+                claude — Final-fix-round: action ("What to do") is the lead
+                input in reminder mode and text is optional there, so a
+                reminder can legitimately have only one of the two. Guard
+                each div independently — a row with neither must not leave
+                behind an empty <div class="htext"></div>.
+                {% endcomment %}
+                {% if r.action %}<div class="htext"><strong>{{ r.action }}</strong></div>{% endif %}
+                {% if r.summary %}<div class="htext">{{ r.summary }}</div>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty">
+            <span class="ring"><svg class="i"><use href="#cc-i-clock"/></svg></span>
+            <p>{% trans "Brak zaplanowanych przypomnień." %}</p>
+          </div>
+          {% endif %}
+        </div>
+
+        {# Historia kontaktów #}
+        <div class="panel">
+          <div class="panel-h">
+            <h2><svg class="i hico"><use href="#cc-i-clock"/></svg> {% trans "Historia kontaktów" %}</h2>
+            {% if can_edit %}
+            {% if step_notes_persons %}
+            {% comment %}
+            claude — Task 13: the company card has no step-notes url of its
+            own (task-9-brief.md) — its create flow always posts to a
+            PERSON's url. The picker below chooses which of this company's
+            persons the note is filed under; openCompanyStepNotes() (see the
+            <script> block) rewrites the shared modal's form action to that
+            person's create url before opening it.
+            {% endcomment %}
+            <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+              <select id="cc-step-note-person" class="dropdown">
+                {% for p in step_notes_persons %}<option value="{{ p.pk }}">{{ p }}</option>{% endfor %}
+              </select>
+              <button type="button" class="btn sm" onclick="openCompanyStepNotes()"><svg class="i i-sm"><use href="#cc-i-plus"/></svg> {% trans "Dodaj kontakt" %}</button>
+            </div>
+            {% else %}
+            <span class="fv none" style="margin-left:auto" title="{% trans 'Najpierw dodaj osobę kontaktową do tej firmy.' %}">{% trans "Brak osób do wyboru" %}</span>
+            {% endif %}
+            {% endif %}
+          </div>
+          {% if historia %}
+          <div class="hist">
+            {% for h in historia %}
+            <div class="hev">
+              <div class="dotcol"><span class="dot"></span><span class="line"></span></div>
+              <div class="hbody">
+                <div class="hmeta">
+                  <span class="hdate">{{ h.data|date:"d.m.Y H:i" }}</span>·<span class="hwho">{{ h.kanal_label }}</span>·<span class="hwho">{{ h.sotrudnik|default:"—" }} → {{ h.kontakt_osoba|default:"—" }}</span>{% if h.zaglowek %}·<span class="hwho">{{ h.zaglowek }}</span>{% endif %}
+                </div>
+                {% if h.action %}<div class="htext"><strong>{{ h.action }}</strong></div>{% endif %}
+                {% if h.summary %}<div class="htext">{{ h.summary }}</div>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty">
+            <span class="ring"><svg class="i"><use href="#cc-i-clock"/></svg></span>
+            <p>{% trans "Brak historii kontaktów." %}</p>
+          </div>
+          {% endif %}
+          {% comment %}
+          claude — Task 13: shared work-log modal (Task 12). step_notes_create_url
+          from _build_company_context carries a `0` placeholder pk
+          (".../0/step-notes/create/") — openCompanyStepNotes() below rewrites
+          it to the picked person's pk before the modal opens, exactly like
+          firmyPanel()'s linkBase pattern elsewhere on this card.
+          {% endcomment %}
+          {% include "admin/zetom/shared/step_notes_modal.html" with step_notes_hide_inline_trigger=True %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% comment %}
+claude — personPanel() must be defined unconditionally: x-data="personPanel(...)"
+on the Osoby kontaktowe panel evaluates for every viewer (view-only users just
+never get the add/edit/delete controls rendered, per can_edit checks above).
+{% endcomment %}
+<script>
+// claude — Dane podstawowe / Dane szczegółowe edit modals. One factory drives
+// both panels; `section` decides which field set views.company_save reads, so
+// saving one panel can never blank the other. On success the page reloads
+// rather than patching the DOM — the id-hero (name, NIP, typ chip) mirrors
+// these fields too, and re-rendering it here would duplicate server logic.
+function daneModal(section, initial) {
+  const saveUrl = "{% url 'admin:clients_company_save' company.pk %}";
+  const csrfToken = '{{ csrf_token }}';
+
+  return {
+    modalOpen: false,
+    saving: false,
+    errors: [],
+    form: { ...initial },
+
+    open() {
+      this.form = { ...initial };
+      this.errors = [];
+      this.modalOpen = true;
+    },
+    close() { this.modalOpen = false; },
+
+    async submit() {
+      this.saving = true;
+      this.errors = [];
+      const body = new FormData();
+      body.set('section', section);
+      Object.entries(this.form).forEach(([key, value]) => body.set(key, value ?? ''));
+      try {
+        const r = await fetch(saveUrl, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken },
+          body,
+        });
+        const j = await r.json();
+        if (!j.ok) {
+          this.errors = [j.error || "{% trans 'Nie udało się zapisać.' %}"];
+          return;
+        }
+        window.location.reload();
+      } catch (e) {
+        this.errors = ["{% trans 'Błąd sieci — spróbuj ponownie.' %}"];
+      } finally {
+        this.saving = false;
+      }
+    },
+  };
+}
+
+// claude — Osoby kontaktowe panel (Phase 3a Task 2). Alpine component that
+// drives the mPerson modal and redraws the table from the add/edit/delete
+// JSON endpoints (CompanyAdmin.get_urls: clients_company_person_add/edit/
+// delete), without a full page reload. Mirrors the fetch/CSRF pattern
+// already used by addClientModal() in the Client change_list template.
+function personPanel(initialRows, canEdit) {
+  const addUrl = "{% url 'admin:clients_company_person_add' company.pk %}";
+  // claude — existing person from the client base
+  const searchUrl = "{% url 'admin:clients_company_person_search' company.pk %}";
+  const attachUrl = "{% url 'admin:clients_company_person_attach' company.pk %}";
+  const personBase = addUrl.replace(/add\/$/, '');
+  const csrfToken = '{{ csrf_token }}';
+  const confirmMsg = "{% trans 'Czy na pewno chcesz usunąć tę osobę kontaktową?' %}";
+  const emptyForm = () => ({
+    first_name: '', last_name: '', phone: '', email: '', position: '', is_primary: false,
+  });
+
+  return {
+    rows: initialRows,
+    canEdit: canEdit,
+    modalOpen: false,
+    mode: 'add',
+    editingPk: null,
+    saving: false,
+    errors: [],
+    form: emptyForm(),
+    source: 'existing',
+    q: '',
+    results: null,
+    picked: null,
+
+    async search() {
+      this.picked = null;
+      const r = await fetch(searchUrl + '?q=' + encodeURIComponent(this.q.trim()));
+      const j = await r.json();
+      this.results = j.results || [];
+    },
+    pick(p) { this.picked = p; this.q = p.name; },
+
+    openAdd() {
+      this.source = 'existing';
+      this.q = '';
+      this.results = null;
+      this.picked = null;
+      this.mode = 'add';
+      this.editingPk = null;
+      this.form = emptyForm();
+      this.errors = [];
+      this.modalOpen = true;
+    },
+    openEdit(row) {
+      this.mode = 'edit';
+      this.editingPk = row.link_pk;
+      this.form = {
+        first_name: row.imie, last_name: row.nazwisko, phone: row.telefon,
+        email: row.email, position: row.stanowisko, is_primary: row.glowny,
+      };
+      this.errors = [];
+      this.modalOpen = true;
+    },
+    close() { this.modalOpen = false; },
+
+    sortRows() {
+      this.rows.sort((a, b) => (b.glowny - a.glowny) || a.nazwisko.localeCompare(b.nazwisko));
+    },
+
+    async submit() {
+      this.saving = true;
+      this.errors = [];
+      const data = new FormData();
+      data.set('first_name', this.form.first_name);
+      data.set('last_name', this.form.last_name);
+      data.set('phone', this.form.phone);
+      data.set('email', this.form.email);
+      data.set('position', this.form.position);
+      if (this.form.is_primary) data.set('is_primary', '1');
+
+      let url = this.mode === 'add' ? addUrl : (personBase + this.editingPk + '/edit/');
+      if (this.mode === 'add' && this.source === 'existing') {
+        if (!this.picked) {
+          this.errors = ["{% trans 'Wybierz osobę z listy.' %}"];
+          this.saving = false;
+          return;
+        }
+        data.set('person_id', this.picked.id);
+        url = attachUrl;
+      }
+      try {
+        const r = await fetch(url, {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken },
+          body: data,
+        });
+        const j = await r.json();
+        if (!j.ok) {
+          this.errors = [j.error || "{% trans 'Nie udało się zapisać.' %}"];
+          return;
+        }
+        if (j.row.glowny) {
+          this.rows.forEach((row) => { if (row.link_pk !== j.row.link_pk) row.glowny = false; });
+        }
+        const idx = this.rows.findIndex((row) => row.link_pk === j.row.link_pk);
+        if (idx === -1) this.rows.push(j.row); else this.rows[idx] = j.row;
+        this.sortRows();
+        this.modalOpen = false;
+      } catch (e) {
+        this.errors = ["{% trans 'Błąd sieci — spróbuj ponownie.' %}"];
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    async del(row) {
+      if (!window.confirm(confirmMsg)) return;
+      const url = personBase + row.link_pk + '/delete/';
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrfToken },
+      });
+      const j = await r.json();
+      if (j.ok) this.rows = this.rows.filter((r2) => r2.link_pk !== row.link_pk);
+    },
+  };
+}
+
+// claude — Task 13: the Historia panel's add-a-contact person picker. The
+// company card has no step-notes url of its own (task-9-brief.md — the
+// create endpoint is addressed by PERSON pk); step_notes_create_url from
+// _build_company_context carries a `0` placeholder pk
+// (".../0/step-notes/create/"). Before opening the shared modal (Task 12),
+// rewrite the form's action to the picked person's own create url — same
+// "0" placeholder + regex-replace pattern firmyPanel() above uses for
+// clients_client_company_link_save/_detach.
+function openCompanyStepNotes() {
+  const select = document.getElementById('cc-step-note-person');
+  if (!select || !select.value) return;
+  const base = "{{ step_notes_create_url }}";
+  const form = document.getElementById('step-note-form');
+  form.action = base.replace(/0\/step-notes\/create\/$/, select.value + '/step-notes/create/');
+  window.dispatchEvent(new CustomEvent('open-step-notes'));
+}
+</script>
+<script src="{% static 'clients/js/nip_lookup.js' %}"></script>
+{% endblock content %}

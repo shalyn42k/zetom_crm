@@ -1,0 +1,38 @@
+{% load i18n %}
+{% comment %}
+  Навигация по табам. Простые <a href="?tab=…"> без HTMX — клик =
+  перезагрузка страницы с новым query-параметром. HTMX-апгрейд
+  внесён в TODO.md.
+{% endcomment %}
+<nav class="up-tabs" role="tablist" aria-label='{% trans "User profile sections" %}'>
+  <a id="tab-btn-profile" role="tab"
+     class="up-tab {% if active_tab == "profile" %}is-active{% endif %}"
+     aria-selected="{% if active_tab == "profile" %}true{% else %}false{% endif %}"
+     href="?tab=profile">
+    {% trans "Profile" %}
+  </a>
+  <a id="tab-btn-permissions" role="tab"
+     class="up-tab {% if active_tab == "permissions" %}is-active{% endif %}"
+     aria-selected="{% if active_tab == "permissions" %}true{% else %}false{% endif %}"
+     href="?tab=permissions">
+    {% trans "Permissions" %}
+  </a>
+  <a id="tab-btn-departments" role="tab"
+     class="up-tab {% if active_tab == "departments" %}is-active{% endif %}"
+     aria-selected="{% if active_tab == "departments" %}true{% else %}false{% endif %}"
+     href="?tab=departments">
+    {% trans "Departments" %}
+  </a>
+  <a id="tab-btn-notifications" role="tab"
+     class="up-tab {% if active_tab == "notifications" %}is-active{% endif %}"
+     aria-selected="{% if active_tab == "notifications" %}true{% else %}false{% endif %}"
+     href="?tab=notifications">
+    {% trans "Notifications" %}
+  </a>
+  <a id="tab-btn-security" role="tab"
+     class="up-tab {% if active_tab == "security" %}is-active{% endif %}"
+     aria-selected="{% if active_tab == "security" %}true{% else %}false{% endif %}"
+     href="?tab=security">
+    {% trans "Security" %}
+  </a>
+</nav>

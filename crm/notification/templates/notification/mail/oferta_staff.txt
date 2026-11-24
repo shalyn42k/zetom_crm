@@ -1,0 +1,24 @@
+{% load i18n %}{% comment %}Письмо стаффу: пользователь нажал "Mail" по существующей Oferta.
+   Контекст рендера:
+       document  — Oferta
+       parent    — document.from_main (RequestMain)
+       sender    — request.user
+   Первая строка — тема.{% endcomment %}{% autoescape off %}{% trans "Offer ready for review:" %} OFR-{{ document.created_at|date:"Y" }}-{{ document.pk|stringformat:"04d" }} ({{ parent.company_name|default:"—" }})
+
+{% trans "Hello," %}
+
+{% trans "An offer has been prepared for request" %} REQ-{{ parent.created_at|date:"Y" }}-{{ parent.pk|stringformat:"04d" }} {% trans "from" %} {{ parent.company_name|default:"the client" }}.
+
+{% trans "Offer details:" %}
+  {% trans "Number:" %} OFR-{{ document.created_at|date:"Y" }}-{{ document.pk|stringformat:"04d" }}
+  {% trans "Contact:" %} {{ document.full_name|default:parent.full_name }}
+  {% trans "Phone:" %} {{ document.phone|default:parent.phone }}
+  {% trans "Client email:" %} {{ document.email|default:parent.email }}
+{% if document.price %}  {% trans "Amount:" %} {{ document.price }} PLN{% endif %}
+
+{% trans "Notes:" %}
+{{ document.notes|default:"—" }}
+
+{% trans "After this email is sent, the offer status in CRM changes to \"waiting\"." %}
+
+{% trans "Sent by:" %} {% if sender %}{{ sender.get_full_name|default:sender.username }}{% else %}{% trans "system" %}{% endif %}{% endautoescape %}

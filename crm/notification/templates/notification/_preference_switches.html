@@ -1,0 +1,18 @@
+{% load i18n %}
+{% comment %}
+claude — switch rows for NotificationPreference. Context: `groups` from
+views_messages.preference_rows(); `prefix` is "" on the own settings page
+and "notif_" on the admin user tab (that tab lives inside the user form,
+so its inputs need a prefix that can't clash with user fields).
+{% endcomment %}
+{% for key, group_label, items in groups %}
+  <fieldset class="ns-group">
+    <legend class="ns-group__title">{{ group_label }}</legend>
+    {% for field, label, value in items %}
+      <label class="ns-switch">
+        <span class="ns-switch__title">{{ label }}</span>
+        <input type="checkbox" name="{{ prefix }}{{ field }}" {% if value %}checked{% endif %}{% if disabled %} disabled{% endif %}>
+      </label>
+    {% endfor %}
+  </fieldset>
+{% endfor %}

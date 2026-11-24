@@ -1,0 +1,185 @@
+from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
+from django.db import models
+from django.utils.translation import gettext, gettext_lazy as _
+
+from crm.zetom.models import department_choices
+
+User = get_user_model()
+
+
+class Permission(models.Model):
+    code = models.CharField(max_length=100, unique=True, verbose_name=_("Code"))
+    name = models.CharField(max_length=255, verbose_name=_("Name"))
+
+    # claude — категории прав для группировки в UI и логике RBAC
+    category = models.CharField(max_length=100, default="system", verbose_name=_("Category"))
+
+    class Meta:
+        # claude — neither model had a Meta, so Django auto-generated
+        # verbose_name/verbose_name_plural from the class name (plain
+        # strings, no gettext) — e.g. the Roles list page's "N Roles"
+        # counter rendered in English regardless of active locale.
+        verbose_name = _("Permission")
+        verbose_name_plural = _("Permissions")
+
+    # claude — name is stored in English (seeded by users.signals with _()
+    # msgids); translate on display so admin widgets/titles/lists that call
+    # str(obj) follow the active locale, like {% trans perm.name %} does.
+    def __str__(self):
+        return gettext(self.name)
+
+
+class Role(models.Model):
+    code = models.CharField(max_length=50, unique=True, verbose_name=_("Code"))
+    name = models.CharField(max_length=100, verbose_name=_("Name"))
+    permissions = models.ManyToManyField(Permission, blank=True, verbose_name=_("Permissions"))
+
+    class Meta:
+        verbose_name = _("Role")
+        verbose_name_plural = _("Roles")
+
+    # claude — same as Permission.__str__: translate the seeded English name.
+    def __str__(self):
+        return gettext(self.name)
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile", verbose_name=_("User"))
+    # tymir — заменил одиночное `department` (CharField) на `departments` (ArrayField)
+    # и завёл `main_departments` для отметки primary-отделов (просто "основные
+    # отделы юзера", НЕ headship). Headship хранится отдельно в `head_of_departments`
+    # и выдаётся админом. Инварианты `main_departments ⊆ departments` и
+    # `head_of_departments ⊆ departments` валидируются в clean() (см. ниже).
+    main_departments = ArrayField(
+        models.CharField(max_length=30),
+        default=list,
+        blank=True,
+        verbose_name=_("Main departments"),
+    )
+    # claude
+    head_of_departments = ArrayField(
+        models.CharField(max_length=30),
+        default=list,
+        blank=True,
+        verbose_name=_("Head of departments"),
+    )
+    departments = ArrayField(
+        models.CharField(max_length=30),
+        default=list,
+        blank=True,
+        verbose_name=_("Departments"),
+    )
+    job_title = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("Job title"))
+    role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, verbose_name=_("Role"))
+    # claude — индивидуальные права поверх role.permissions (аддитивно).
+    # Заменяет прежний «общий Role(code=custom)», который один на всех.
+    extra_permissions = models.ManyToManyField(
+        Permission,
+        blank=True,
+        related_name="extra_users",
+        verbose_name=_("Extra permissions"),
+    )
+    # claude — 2FA обязателен всем (crm.users.middleware) КРОМЕ юзеров с этим
+    # флагом. Единственная ручка для админа отключить 2FA конкретному человеку.
+    otp_exempt = models.BooleanField(
+        default=False,
+        verbose_name=_("2FA exempt"),
+        help_text=_("If enabled, this user is not required to use two-factor authentication."),
+    )
+    # claude — если пусто, User.avatar_url (см. crm.users.apps) отдаёт
+    # заглушку по умолчанию — используется везде, где Unfold уже рисует
+    # аватар (сайдбар и т.д.), своего шаблона под это заводить не пришлось.
+    avatar = models.ImageField(
+        upload_to="avatars/",
+        null=True,
+        blank=True,
+        verbose_name=_("Avatar"),
+    )
+
+    # claude — no Meta before: Django derived "user profile(s)" from the
+    # class name as a plain, untranslatable string.
+    class Meta:
+        verbose_name = _("User profile")
+        verbose_name_plural = _("User profiles")
+
+    def __str__(self):
+        return f"{self.user.username} - {self.role}"
+
+    def is_role(self, code):
+        return self.role and self.role.code == code
+
+    # claude — единая точка для проверок прав: union роли и extras.
+    def effective_permissions(self):
+        if self.role_id:
+            return Permission.objects.filter(
+                models.Q(role=self.role) | models.Q(extra_users=self)
+            ).distinct()
+        return self.extra_permissions.all()
+
+    # claude
+    def clean(self):
+        super().clean()
+        depts = set(self.departments or [])
+        invalid_main = set(self.main_departments or []) - depts
+        if invalid_main:
+            raise ValidationError({
+                "main_departments": _(
+                    "A department can be marked as main only if the user already "
+                    "belongs to it."
+                ),
+            })
+        invalid_head = set(self.head_of_departments or []) - depts
+        if invalid_head:
+            raise ValidationError({
+                "head_of_departments": _(
+                    "A department can be marked as head-of only if the user "
+                    "already belongs to it."
+                ),
+            })
+
+    # claude
+    def departments_summary(self, limit=3):
+        """Short human-readable list of departments for headers/lists.
+
+        Primary departments come first, then the rest sorted alphabetically by label.
+        If there are more than `limit`, append "+N" suffix.
+        """
+        codes = list(self.departments or [])
+        if not codes:
+            return ""
+        labels = dict(department_choices())
+        main_set = set(self.main_departments or [])
+        ordered = sorted(
+            codes,
+            key=lambda c: (0 if c in main_set else 1, str(labels.get(c, c)).lower()),
+        )
+        head = ordered[:limit]
+        extra = len(ordered) - limit
+        text = ", ".join(str(labels.get(c, c)) for c in head)
+        if extra > 0:
+            text = f"{text}, +{extra}"
+        return text
+
+
+# claude — "remember this browser" для 2FA: crm.users.otp_trust.remember()
+# выдаёт подписанную cookie после реальной проверки кода, чтобы тот же
+# браузер не спрашивал код заново TRUST_DAYS дней. В базе хранится только
+# хэш токена (как со сбросом пароля) — сама cookie никогда не пишется в БД.
+class TrustedDevice(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="trusted_devices",
+    )
+    token_hash = models.CharField(max_length=64, unique=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        verbose_name = _("Trusted device")
+        verbose_name_plural = _("Trusted devices")
+
+    def __str__(self):
+        return f"{self.user.username} · {self.user_agent[:40] or '—'}"

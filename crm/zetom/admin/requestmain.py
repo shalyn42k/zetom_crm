@@ -1,0 +1,1309 @@
+"""Main RequestMain admin — custom change-view with status flow,
+reason form routing, departments / assignee management, document
+creation actions, and a flatter submit bar.
+
+Largest admin in the project; lives in its own module so the rest of
+the package stays scannable.
+"""
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Column, Field, Layout, Row
+from django.contrib import admin, messages
+from django.contrib.auth.models import User
+from django.db import transaction
+from django.http import HttpResponseForbidden, JsonResponse
+from django.shortcuts import redirect, render
+from django.urls import path, reverse
+from django.utils.translation import gettext, gettext_lazy as _, gettext_noop
+from unfold.decorators import display
+
+from crm.clients.models import Client
+from crm.clients.services import create_person_with_company
+from crm.notification.services.inapp_service import (
+    dismiss_pending_review_requests,
+)
+from crm.status_manager.models import StatusHistory
+from crm.status_manager.services.statuses import RequestStatus
+from crm.users.utils import user_has_perm
+from crm.zetom.forms import AddRequestFormMain
+from crm.zetom.models import (
+    Department, RequestAttachment, RequestClientLink, RequestMain,
+    RequestSource, department_choices,
+)
+from crm.zetom.services.duplicate_matcher import find_candidates
+from crm.zetom.services.history_labels import (
+    history_field_label, history_value_label,
+)
+from crm.zetom.services.per_req_perms import (
+    can_assign_anyone, can_assign_target, can_manage_owners,
+    can_resolve_review, can_unassign_target, is_owner_of_req,
+)
+from crm.zetom.services.request_duplicate_finder import find_request_duplicates
+from crm.zetom.services.request_service import (
+    approve_oferta_action, approve_wniosek_action, approve_zlecenie_action,
+)
+from crm.zetom.services.status_orchestration import (
+    ReasonRequired, apply_status_change,
+)
+from crm.zetom.services.visibility import visible_requests_for
+
+from .base import BaseRequestAdmin, ReasonForm
+from .requestmain_mail import RequestMailMixin
+from .requestmain_resolve_review import (
+    RequestResolveReviewMixin, latest_open_review,
+)
+from .requestmain_review import RequestReviewMixin
+
+# claude — JSON 403 body for the client-link endpoints; was a bare
+# "permission" code that requestmain_client_link.js shows verbatim.
+_NO_PERMISSION = _("You do not have permission to perform this action.")
+
+
+@admin.register(RequestMain)
+class RequestMainAdmin(
+    RequestMailMixin,
+    RequestReviewMixin,
+    RequestResolveReviewMixin,
+    BaseRequestAdmin,
+):
+    
+    form = AddRequestFormMain
+    change_form_template = "admin/zetom/requestmain/change_form.html"
+    list_display = (
+        "created_at", "updated_at", "company_name",
+        "display_departments", "assignees_display", "colored_status", "source",
+    )
+    search_fields = (
+      "first_name",
+      "last_name",
+      "company_name",
+      "company_nip",
+      "email",
+    )
+    list_filter = ("source", "status")
+    fields = (
+        "first_name",
+        "last_name",
+        "phone",
+        "departments",
+        "company_name",
+        "company_nip",
+        "email",
+        "address",
+        "message",
+        "source",
+    )
+    warn_unsaved_form = True
+
+    class Media:
+        # claude — Task 12: RequestMainAdmin declares its own Media (fully
+        # overriding BaseRequestAdmin.Media, not merging with it), so the
+        # switch to company_card.css has to happen here too — see base.py's
+        # Media for the same change with the full rationale.
+        css = {
+            "all": ("clients/css/company_card.css",),
+        }
+        js = [
+            "client/client_autofill.js",
+            "client/client_search.js",
+            # claude — drives the #id_client picker (see crm/clients/fields.py);
+            # replaced the select-change branch that used to live in
+            # client_autofill.js.
+            "client/client_picker.js",
+            "zetom/js/requestmain_dupe_check.js",
+            "zetom/js/requestmain_client_link.js",
+        ]
+
+    def get_queryset(self, request):
+       qs = super().get_queryset(request)
+       return qs.exclude(status__in=[RequestStatus.cancelled, RequestStatus.deleted])
+
+    # claude — Fix-round: BaseRequestAdmin.colored_status (base.py) is
+    # shared by every admin in this module, but its `label` dict only has
+    # keys for the child-doc Status enum (new/in_progress/waiting/done) —
+    # RequestMain uses the entirely different RequestStatus enum
+    # (active/open/closed/inactive/cancelled/deleted), none of which match,
+    # so every row silently fell through unfold's default (gray) badge
+    # regardless of status. Same bug hit the display TEXT too: it did
+    # `Status(obj.status).label if obj.status in Status.values else
+    # obj.status` — since a RequestStatus value is never in Status.values,
+    # every row showed the raw lowercase code, not a real translated label.
+    # This override replaces both for RequestMain specifically.
+    #
+    # claude — every RequestStatus value MUST have a dict entry, even the
+    # ones meant to render as the plain gray badge ("secondary" below isn't
+    # one of label.html's recognised keywords — info/danger/warning/
+    # success/primary — so it falls through to gray same as an absent key
+    # would). Found the hard way: unfold.utils.display_for_label does
+    # `label[value[0]]` in a try/except, and on KeyError it doesn't just
+    # skip the color — it also replaces the display text with the RAW
+    # value[0] (the lowercase status code) instead of the translated
+    # value[1] this method returns. Omitting "closed" here reproduced
+    # exactly that: an untranslated "closed" badge sitting next to properly
+    # colored, properly translated "Aktywne"/"Otwarte" ones.
+    @display(
+        label={
+            RequestStatus.active: "success",
+            RequestStatus.open: "warning",
+            RequestStatus.cancelled: "danger",
+            RequestStatus.closed: "secondary",
+            RequestStatus.inactive: "secondary",
+            RequestStatus.deleted: "secondary",
+        },
+        description=_("Status"),
+    )
+    def colored_status(self, obj):
+        return obj.status, str(RequestStatus(obj.status).label)
+
+
+    def get_changeform_initial_data(self, request):
+        # claude — keep the default source, plus client prefill from BaseRequestAdmin.
+        initial = super().get_changeform_initial_data(request)
+        initial.setdefault("source", RequestSource.PHONE)
+        return initial
+
+    def get_fields(self, request, obj=None):
+        # source выбирается только при создании; на странице редактирования
+        # для него нет виджета в шаблоне, поэтому убираем поле из формы,
+        # иначе оно валится с "This field is required" при каждом Save.
+        fields = list(super().get_fields(request, obj))
+        if obj is not None and "source" in fields:
+            fields.remove("source")
+        return fields
+
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["show_save_and_add_another"] = False
+        extra_context["show_save_and_continue"] = False
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+    def response_change(self, request, obj):
+        return redirect("admin:zetom_requestmain_change", obj.pk)
+
+    @transaction.atomic
+    def response_add(self, request, obj, post_url_continue=None):
+        # claude — popup mini-VW choices: link several existing clients and/or
+        # create a new one, then assign. Empty selection = leave unlinked.
+        for raw_pk in request.POST.getlist("popup_client_ids"):
+            try:
+                client_pk = int(raw_pk)
+            except (TypeError, ValueError):
+                continue
+            cl = Client.objects.filter(pk=client_pk).first()
+            if cl:
+                RequestClientLink.objects.get_or_create(
+                    request=obj, client=cl, defaults={"linked_by": request.user}
+                )
+        if request.POST.get("popup_create_new"):
+            # claude — человек + (опц.) нормализованная Company вместо company_* на Client.
+            cl, company = create_person_with_company(
+                first_name=request.POST.get("first_name") or obj.first_name,
+                last_name=request.POST.get("last_name") or obj.last_name,
+                phone=request.POST.get("phone") or obj.phone,
+                email=request.POST.get("email") or obj.email,
+                company_name=request.POST.get("company_name") or obj.company_name,
+                company_nip=request.POST.get("company_nip") or obj.company_nip or None,
+                linked_by=request.user,
+            )
+            RequestClientLink.objects.get_or_create(
+                request=obj, client=cl, defaults={"linked_by": request.user}
+            )
+            if company is not None and obj.company_id is None:
+                obj.company = company
+                obj.save(update_fields=["company"])
+        departments = request.POST.getlist("popup_departments")
+        owners_raw = request.POST.getlist("popup_owners")
+        if departments:
+            obj.departments = list(departments)
+            obj.save(update_fields=["departments"])
+        if owners_raw:
+            owner_users = list(User.objects.filter(pk__in=owners_raw, is_active=True))
+            obj._actor = request.user  # claude — skip self in the assignment notification
+            obj.assigned_to.set(owner_users)
+            obj.owners.set(owner_users)
+        for f in request.FILES.getlist("attachments"):
+            RequestAttachment.objects.create(request_main=obj, file=f, uploaded_by=request.user)
+        return redirect("admin:zetom_requestmain_change", obj.pk)
+
+    # ---------- Delete (status flip + safedelete) ----------
+
+    def _flip_to_deleted(self, request, obj):
+        if obj.status != RequestStatus.deleted:
+            old_status = obj.status
+            obj.status = RequestStatus.deleted
+            obj.save(update_fields=["status"])
+            # claude — single-object delete (`delete_view`) stashes the reason
+            # on the instance; bulk `delete_queryset` doesn't have a reason
+            # form, so it falls back to a generic label.
+            reason = getattr(obj, "_delete_reason", None) or gettext_noop("Deleted via admin")
+            StatusHistory.objects.create(
+                request=obj,
+                old_status=old_status,
+                new_status=RequestStatus.deleted,
+                reason=reason,
+                changed_by=request.user,
+            )
+            dismiss_pending_review_requests(obj.pk)
+
+    @transaction.atomic
+    def delete_model(self, request, obj):
+        self._flip_to_deleted(request, obj)
+        super().delete_model(request, obj)
+
+    @transaction.atomic
+    def delete_queryset(self, request, queryset):
+        for obj in queryset:
+            self._flip_to_deleted(request, obj)
+        super().delete_queryset(request, queryset)
+
+    # claude — bottom "Delete" button on the change form now goes through
+    # the same reason-form flow as the right-side Status → Delete action,
+    # instead of silently using "Deleted via admin" as the reason.
+    def delete_view(self, request, object_id, extra_context=None):
+        obj = self.get_object(request, object_id)
+        if obj is None or not self.has_delete_permission(request, obj):
+            return super().delete_view(request, object_id, extra_context)
+
+        if request.method == "POST":
+            reason = (request.POST.get("reason") or "").strip()
+            if reason:
+                obj._delete_reason = reason
+                self.delete_model(request, obj)
+                messages.success(request, _("Request deleted."))
+                return redirect("admin:zetom_requestmain_changelist")
+            messages.error(request, _("Reason is required."))
+
+        form = ReasonForm()
+        return render(
+            request,
+            "admin/zetom/requestmain/reason_form.html",
+            {
+                "form": form,
+                "obj": obj,
+                # claude — see cancel_view's identical fix below: without
+                # opts/original, Unfold's header falls back to a generic
+                # "Welcome {username}" instead of the normal breadcrumb
+                # trail, and the page reads as disconnected from the rest
+                # of the app.
+                "opts": self.model._meta,
+                "original": obj,
+                "title": _("Delete request"),
+                **self.admin_site.each_context(request),
+            },
+        )
+
+    # ---------- Custom layout context ----------
+
+    def render_change_form(self, request, context, *args, **kwargs):
+        obj = context.get("original")
+
+        adminform = context.get("adminform")
+        if adminform is not None:
+            form = adminform.form
+            helper = FormHelper()
+            helper.form_tag = False
+            helper.disable_csrf = True
+            # claude — the request's own copy of the client data: prefilled
+            # from the linked client / company, edited here, saved only on
+            # this request (never written back to the client base), and
+            # copied into Oferta / Zlecenie / Wniosek when one is created.
+            if obj is not None and obj.pk:
+                helper.layout = Layout(
+                    Row(
+                        Column("first_name", css_class="rm-col-6"),
+                        Column("last_name", css_class="rm-col-6"),
+                        css_class="rm-row",
+                    ),
+                    Row(
+                        Column("company_name", css_class="rm-col-6"),
+                        Column("company_nip", css_class="rm-col-6"),
+                        css_class="rm-row",
+                    ),
+                    Row(
+                        Column("email", css_class="rm-col-6"),
+                        Column("phone", css_class="rm-col-6"),
+                        css_class="rm-row",
+                    ),
+                    Field("address"),
+                    Field("message"),
+                )
+            else:
+                helper.layout = Layout(
+                    Row(
+                        Column("email", css_class="rm-col-6"),
+                        Column("phone", css_class="rm-col-6"),
+                        css_class="rm-row",
+                    ),
+                    Field("address"),
+                    Field("message"),
+                )
+            form.helper = helper
+            context["form"] = form
+
+        context["status_choices"] = [(RequestStatus.cancelled, RequestStatus.cancelled.label)]
+        has_obj = obj is not None and obj.pk is not None
+        context["attachments"] = (
+            list(obj.attachments.order_by("-uploaded_at")) if has_obj else []
+        )
+        context["ofertas"] = obj.oferta_set.order_by("-created_at") if has_obj else []
+        context["zlecenia"] = obj.zlecenie_set.order_by("-created_at") if has_obj else []
+        context["wnioski"] = obj.wniosek_set.order_by("-created_at") if has_obj else []
+        # claude — total for the Documents card header.
+        context["docs_count"] = (
+            len(context["ofertas"]) + len(context["zlecenia"]) + len(context["wnioski"])
+        )
+        context["history_entries"] = (
+            list(obj.status_history.select_related("changed_by").order_by("-changed_at"))
+            if has_obj else []
+        )
+        # claude — system reasons are stored as their English msgid
+        # (gettext_noop at every write site) and translated here, at render
+        # time, so a row reads in the viewer's language rather than in the
+        # language of whoever clicked the button. Free-text reasons typed by
+        # users have no catalog entry and pass through unchanged.
+        for entry in context["history_entries"]:
+            entry.reason_display = gettext(entry.reason) if entry.reason else ""
+        # БАГ-2: полная история изменений полей через django-simple-history.
+        # Диффы считаем здесь — в шаблоне нельзя вызывать методы с аргументами.
+        if has_obj:
+            field_history = []
+            records = list(
+                obj.history.select_related("history_user").order_by("-history_date")[:50]
+            )
+            for record in records:
+                changes = []
+                if record.prev_record:
+                    delta = record.diff_against(record.prev_record)
+                    changes = [
+                        {
+                            "field": history_field_label(c.field),
+                            "old": history_value_label(c.field, c.old),
+                            "new": history_value_label(c.field, c.new),
+                        }
+                        for c in delta.changes
+                    ]
+                field_history.append({
+                    "history_type": record.history_type,
+                    "history_user": record.history_user,
+                    "history_date": record.history_date,
+                    "changes": changes,
+                })
+            context["field_history"] = field_history
+        else:
+            context["field_history"] = []
+        if has_obj:
+            assigned_ids = obj.assigned_to.values_list("id", flat=True)
+            context["available_users"] = (
+                User.objects.filter(is_active=True)
+                .exclude(id__in=assigned_ids)
+                .order_by("username")
+            )
+            assigned_codes = list(obj.departments or [])
+            dept_labels = dict(department_choices())
+            context["assigned_departments"] = [
+                (code, dept_labels.get(code, code)) for code in assigned_codes
+            ]
+            context["available_departments"] = [
+                (code, label) for code, label in department_choices()
+                if code not in assigned_codes
+            ]
+        else:
+            context["available_users"] = User.objects.none()
+            context["assigned_departments"] = []
+            context["available_departments"] = []
+        profile = getattr(request.user, "profile", None)
+        # claude — было user_department (одиночка). Стало списком, шаблон
+        # подсвечивает «свои» чипы через `{% if code in user_departments %}`.
+        context["user_departments"] = profile.departments if profile else []
+        context["source_display"] = obj.get_source_display() if has_obj else ""
+
+        # claude — picker для "Request review". default = каскад owners →
+        # dep_heads → admins, фильтрованный правилом «sender может слать
+        # target'у». extras = все active dep_heads + admins, которых нет в
+        # default. owners-из-default рендерятся read-only в шаблоне.
+        if has_obj:
+            from crm.notification.services.recipients import (
+                review_candidates_for,
+            )
+            review_default, review_extras = review_candidates_for(obj, request.user)
+            owner_ids_in_default = {u.pk for u in review_default if u.pk in obj.owners.values_list("id", flat=True)}
+            context["review_default_locked"] = [u for u in review_default if u.pk in owner_ids_in_default]
+            context["review_default_optional"] = [u for u in review_default if u.pk not in owner_ids_in_default]
+            context["review_extras"] = review_extras
+        else:
+            context["review_default_locked"] = []
+            context["review_default_optional"] = []
+            context["review_extras"] = []
+
+        # claude — гейтинг "Resolve review" в actions_card:
+        #   can_resolve_review — per-Req пермишена (роль resolve_review ИЛИ owner);
+        #   open_review        — Notification(REVIEW_REQUEST) если открыт, иначе None.
+        # Сам Notification пробрасываем в шаблон, чтобы модалка показала
+        # автора, дату и комментарий специалиста до принятия решения.
+        context["can_resolve_review"] = (
+            has_obj and can_resolve_review(request.user, obj)
+        )
+        context["open_review"] = latest_open_review(obj) if has_obj else None
+        context["has_open_review"] = context["open_review"] is not None
+        context["can_change_request_status"] = user_has_perm(
+            request.user, "change_request_status"
+        )
+
+        # claude — контекст для assigned_users.html: per-Req флаги owner +
+        # права на управление списком. Список assigned сортируем owners-first,
+        # потом по username, чтобы UI был стабильным.
+        if has_obj:
+            owner_ids = set(obj.owners.values_list("id", flat=True))
+            assigned = list(
+                obj.assigned_to.select_related("profile__role").order_by("username")
+            )
+            assigned.sort(key=lambda u: (u.id not in owner_ids, u.username))
+            context["assigned_users_ordered"] = assigned
+            context["owner_ids"] = owner_ids
+            context["can_manage_owners"] = can_manage_owners(request.user, obj)
+            context["can_assign_anyone"] = can_assign_anyone(request.user, obj)
+            context["is_owner_self"] = is_owner_of_req(request.user, obj)
+            # Per-юзер права на × unassign (нужно в шаблоне на каждую строку).
+            context["assign_target_rights"] = {
+                u.pk: {
+                    "can_unassign": can_unassign_target(request.user, u, obj),
+                }
+                for u in assigned
+            }
+            # Доступные для add: и фильтруем по can_assign_target на каждом.
+            context["assignable_users"] = [
+                u for u in context["available_users"]
+                if can_assign_target(request.user, u, obj)
+            ]
+        else:
+            context["assigned_users_ordered"] = []
+            context["owner_ids"] = set()
+            context["can_manage_owners"] = False
+            context["can_assign_anyone"] = False
+            context["is_owner_self"] = False
+            context["assign_target_rights"] = {}
+            context["assignable_users"] = []
+
+        # claude — linked clients (M2M) + suggestions when none linked.
+        # Add view: eligible_users_popup + departments_choices for popup step 04.
+        if has_obj:
+            context["linked_clients"] = list(obj.clients.all())
+            # Show client suggestions in card only when no client linked yet.
+            if not context["linked_clients"]:
+                context["suggested_clients"] = find_candidates(obj)
+            else:
+                context["suggested_clients"] = []
+        else:
+            context["linked_clients"] = []
+            context["suggested_clients"] = []
+            # Add-form popup step 04 needs users + departments.
+            from crm.zetom.admin.requestnull_validate import _eligible_users
+            context["eligible_users_popup"] = _eligible_users()
+            context["departments_choices"] = department_choices()
+
+        return super().render_change_form(request, context, *args, **kwargs)
+
+    # ---------- Custom URL endpoints ----------
+
+    def get_urls(self):
+        from crm.users.activity_views import activity_calendar
+
+        urls = super().get_urls()
+        view = self.admin_site.admin_view
+        custom = [
+            path(
+                "activity-calendar/",
+                view(activity_calendar),
+                name="zetom_requestmain_activity_calendar",
+            ),
+            path(
+                "<path:object_id>/apply-status/",
+                view(self.apply_status_action),
+                name="zetom_requestmain_apply_status",
+            ),
+            path(
+                "<path:object_id>/cancel/",
+                view(self.cancel_view),
+                name="zetom_requestmain_cancel",
+            ),
+            path(
+                "<path:object_id>/oferta/",
+                view(self.oferta_action),
+                name="zetom_requestmain_oferta_action",
+            ),
+            path(
+                "<path:object_id>/zlecenie/",
+                view(self.zlecenie_action),
+                name="zetom_requestmain_zlecenie_action",
+            ),
+            path(
+                "<path:object_id>/wniosek/",
+                view(self.wniosek_action),
+                name="zetom_requestmain_wniosek_action",
+            ),
+            path(
+                "<path:object_id>/assign-user/",
+                view(self.assign_user_action),
+                name="zetom_requestmain_assign_user",
+            ),
+            path(
+                "<path:object_id>/unassign-user/<int:user_id>/",
+                view(self.unassign_user_action),
+                name="zetom_requestmain_unassign_user",
+            ),
+            path(
+                "<path:object_id>/set-owner/<int:user_id>/",
+                view(self.set_owner_action),
+                name="zetom_requestmain_set_owner",
+            ),
+            path(
+                "<path:object_id>/unset-owner/<int:user_id>/",
+                view(self.unset_owner_action),
+                name="zetom_requestmain_unset_owner",
+            ),
+            path(
+                "<path:object_id>/add-department/",
+                view(self.add_department_action),
+                name="zetom_requestmain_add_department",
+            ),
+            path(
+                "<path:object_id>/remove-department/<str:dept_code>/",
+                view(self.remove_department_action),
+                name="zetom_requestmain_remove_department",
+            ),
+            path(
+                "<path:object_id>/link-client/",
+                view(self.link_client_action),
+                name="zetom_requestmain_link_client",
+            ),
+            path(
+                "<path:object_id>/create-client/",
+                view(self.create_client_action),
+                name="zetom_requestmain_create_client",
+            ),
+            path(
+                "<path:object_id>/unlink-client/<int:client_id>/",
+                view(self.unlink_client_action),
+                name="zetom_requestmain_unlink_client",
+            ),
+            path(
+                "check-duplicates/",
+                view(self.check_duplicates_action),
+                name="zetom_requestmain_check_duplicates",
+            ),
+            path(
+                "dup-request-action/",
+                view(self.dup_request_action),
+                name="zetom_requestmain_dup_request_action",
+            ),
+            path(
+                "<path:object_id>/link-client-json/<int:client_id>/",
+                view(self.link_client_json),
+                name="zetom_requestmain_link_client_json",
+            ),
+            path(
+                "<path:object_id>/unlink-client-json/<int:client_id>/",
+                view(self.unlink_client_json),
+                name="zetom_requestmain_unlink_client_json",
+            ),
+            path(
+                "<path:object_id>/create-client-json/",
+                view(self.create_client_json),
+                name="zetom_requestmain_create_client_json",
+            ),
+            path(
+                "<path:object_id>/upload-attachment/",
+                view(self.upload_attachment_action),
+                name="zetom_requestmain_upload_attachment",
+            ),
+            path(
+                "<path:object_id>/delete-attachment/<int:attachment_id>/",
+                view(self.delete_attachment_action),
+                name="zetom_requestmain_delete_attachment",
+            ),
+            path(
+                "<path:object_id>/edit-client-json/<int:client_id>/",
+                view(self.edit_client_json),
+                name="zetom_requestmain_edit_client_json",
+            ),
+            path(
+                "<path:object_id>/save-client-json/<int:client_id>/",
+                view(self.save_client_json),
+                name="zetom_requestmain_save_client_json",
+            ),
+        ]
+        return custom + urls
+
+    # ---------- JSON client-link endpoints (for card JS) ----------
+
+    # claude — phase 3c: Client is person-only, so its company (name/NIP shown
+    # in the card + editor) comes from the first CompanyPersonLink → Company.
+    @staticmethod
+    def _client_company(cl):
+        link = cl.company_links.select_related("company").first()
+        return link.company if link else None
+
+    def link_client_json(self, request, object_id, client_id):
+        if request.method != "POST":
+            return JsonResponse({"ok": False}, status=405)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied:
+            return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
+        cl = Client.objects.filter(pk=client_id).first()
+        if not cl:
+            return JsonResponse({"ok": False, "error": _("not found")}, status=404)
+        # claude — was `_, created = …`: binding `_` in this function made the
+        # `_("not found")` above an unbound local → 500 instead of 404.
+        _link, created = RequestClientLink.objects.get_or_create(
+            request=obj, client=cl, defaults={"linked_by": request.user}
+        )
+        company = self._client_company(cl)
+        # claude — fill the request's empty "Client information" fields from
+        # this client and its company; the page puts them into the form too.
+        from crm.zetom.services.client_snapshot import fill_empty_from_client
+        filled = fill_empty_from_client(obj, cl)
+        return JsonResponse({
+            "ok": True, "created": created, "label": str(cl), "pk": cl.pk, "nip": company.nip if company else "",
+            # claude — contact line on the linked-client row
+            "email": cl.email or "", "phone": str(cl.phone or ""),
+            "filled": filled,
+        })
+
+    def unlink_client_json(self, request, object_id, client_id):
+        if request.method != "POST":
+            return JsonResponse({"ok": False}, status=405)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied:
+            return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
+        RequestClientLink.objects.filter(request=obj, client_id=client_id).delete()
+        return JsonResponse({"ok": True})
+
+    def create_client_json(self, request, object_id):
+        if request.method != "POST":
+            return JsonResponse({"ok": False}, status=405)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied:
+            return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
+        # claude — phase 3c: person + deduped Company + link (Client.company_*
+        # dropped). Company data comes from the request's own snapshot.
+        cl, company = create_person_with_company(
+            first_name=obj.first_name,
+            last_name=obj.last_name,
+            phone=obj.phone,
+            email=obj.email,
+            company_name=obj.company_name or "",
+            company_nip=obj.company_nip or None,
+            address=obj.address or "",
+            linked_by=request.user,
+        )
+        RequestClientLink.objects.create(request=obj, client=cl, linked_by=request.user)
+        return JsonResponse({
+            "ok": True, "label": str(cl), "pk": cl.pk, "nip": company.nip if company else "",
+            # claude — contact line on the linked-client row
+            "email": cl.email or "", "phone": str(cl.phone or ""),
+        })
+
+    def edit_client_json(self, request, object_id, client_id):
+        """Returns client data in JSON format for inline editing in a modal."""
+        if request.method != "GET":
+            return JsonResponse({"ok": False}, status=405)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied:
+            return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
+        cl = Client.objects.filter(pk=client_id).first()
+        if not cl:
+            return JsonResponse({"ok": False, "error": _("not found")}, status=404)
+        # claude — phase 3c: person fields are editable; company_name/company_nip
+        # are read-only, derived from the linked Company (edit them on the
+        # Company card, not here).
+        company = self._client_company(cl)
+        return JsonResponse({
+            "ok": True,
+            "pk": cl.pk,
+            "first_name": cl.first_name or "",
+            "last_name": cl.last_name or "",
+            "company_name": company.name if company else "",
+            "company_nip": company.nip if company else "",
+            "phone": str(cl.phone) if cl.phone else "",
+            "email": cl.email or "",
+            "address": cl.address or "",
+        })
+
+    def save_client_json(self, request, object_id, client_id):
+        """Saves client data from the modal form."""
+        if request.method != "POST":
+            return JsonResponse({"ok": False}, status=405)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied:
+            return JsonResponse({"ok": False, "error": _NO_PERMISSION}, status=403)
+        cl = Client.objects.filter(pk=client_id).first()
+        if not cl:
+            return JsonResponse({"ok": False, "error": _("not found")}, status=404)
+        
+        # claude — phase 3c: person-only save. Company (name/NIP) belongs to the
+        # linked Company and is not edited here.
+        cl.first_name = (request.POST.get("first_name") or "").strip() or None
+        cl.last_name = (request.POST.get("last_name") or "").strip() or None
+        phone_raw = (request.POST.get("phone") or "").strip()
+        cl.phone = phone_raw or None
+        cl.email = (request.POST.get("email") or "").strip() or None
+        cl.address = (request.POST.get("address") or "").strip() or None
+
+        try:
+            cl.clean()
+            cl.save(update_fields=[
+                "first_name", "last_name", "phone", "email", "address",
+            ])
+            company = self._client_company(cl)
+            return JsonResponse({
+                "ok": True,
+                "pk": cl.pk,
+                "label": cl.short_label(),
+                "nip": company.nip if company else "",
+                "first_name": cl.first_name or "",
+                "last_name": cl.last_name or "",
+                "company_name": company.name if company else "",
+                "company_nip": company.nip if company else "",
+                "phone": str(cl.phone) if cl.phone else "",
+                "email": cl.email or "",
+                "address": cl.address or "",
+            })
+        except Exception as e:
+            return JsonResponse({
+                "ok": False,
+                "error": str(e)
+            }, status=400)
+
+    # ---------- Pre-save duplicate check (JSON, for the add-form popup) ----------
+
+    # claude — JSON-эндпоинт: возвращает возможные дубликаты (клиенты + заявки)
+    # для значений add-формы. JS-попап дёргает его при нажатии Save и, если
+    # хоть что-то похоже, показывает предупреждение до отправки формы.
+    # claude — was reachable by any staff account (only admin_view's
+    # is_staff check applied), returning name/phone/email/NIP for clients
+    # and requests across the whole DB, unfiltered by department. Same perm
+    # this class requires for viewing requests at all.
+    def check_duplicates_action(self, request):
+        if not user_has_perm(request.user, "view_requests"):
+            return HttpResponseForbidden(
+                _("You don't have permission for this action.")
+            )
+        probe = RequestMain(
+            first_name=request.GET.get("first_name") or None,
+            last_name=request.GET.get("last_name") or None,
+            phone=request.GET.get("phone") or None,
+            email=request.GET.get("email") or None,
+            company_name=request.GET.get("company_name") or None,
+            company_nip=request.GET.get("company_nip") or None,
+        )
+        items = []
+        for c in find_candidates(probe):
+            cl = c.client
+            # claude — company data lives on Company via company_links since
+            # phase 2c (Client.company_* dropped); find_candidates prefetches
+            # company_links__company, so .all()[0] hits the cache, no N+1.
+            _links = list(cl.company_links.all())
+            _company = _links[0].company if _links else None
+            items.append({
+                "type": "client",
+                "pk": cl.pk,
+                "label": str(cl),
+                "first_name": cl.first_name or "",
+                "last_name": cl.last_name or "",
+                "company_name": _company.name if _company else "",
+                "company_nip": _company.nip if _company else "",
+                "phone": str(cl.phone) if cl.phone else "",
+                "email": cl.email or "",
+                "score": c.score,
+                "badges": [[b.kind, str(b.label)] for b in c.badges],
+                "highlights": {k: True for k in c.highlights},
+                "url": reverse("admin:clients_client_change", args=[cl.pk]),
+            })
+        for d in find_request_duplicates(probe):
+            name = d.obj.full_name or "—"
+            if d.obj.company_name:
+                name = f"{name} · {d.obj.company_name}"
+            items.append({
+                "type": d.kind,
+                "pk": d.obj.pk,
+                "label": f"#{d.obj.pk} {name}",
+                "first_name": d.obj.first_name or "",
+                "last_name": d.obj.last_name or "",
+                "company_name": d.obj.company_name or "",
+                "phone": str(d.obj.phone) if d.obj.phone else "",
+                "email": d.obj.email or "",
+                "score": d.score,
+                "badges": [[b.kind, str(b.label)] for b in d.badges],
+                "strong": d.is_strong,
+                "url": (
+                    reverse("admin:zetom_requestmain_change", args=[d.obj.pk])
+                    if d.kind == "main" else None
+                ),
+            })
+        return JsonResponse({"count": len(items), "items": items})
+
+    # claude — generic duplicate-request action for the add-form popup
+    # (no new RequestMain pk needed — acts on existing records only).
+    # claude — was reachable by any staff account with zero permission check
+    # (only admin_view's is_staff), and looked objects up by raw pk with no
+    # visibility filter — a user without edit_requests, or one who couldn't
+    # even see a given department's requests, could cancel/soft-delete any
+    # RequestMain/RequestNull in the DB by id. Gated the same as every other
+    # mutating POST action on this admin (edit_requests), and both lookups
+    # now go through visible_requests_for so a department-hidden object
+    # can't be reached by id either.
+    def dup_request_action(self, request):
+        if request.method != "POST":
+            return JsonResponse({"ok": False, "error": _("POST required")}, status=405)
+        if not user_has_perm(request.user, "edit_requests"):
+            return JsonResponse(
+                {"ok": False, "error": _NO_PERMISSION}, status=403
+            )
+        from crm.status_manager.services.status_service import (
+            cancel_request as _cancel,
+        )
+        from crm.zetom.models import RequestNull as RN
+        from crm.zetom.services.request_duplicate_finder import KIND_NULL
+
+        # claude — soft-delete one existing duplicate, type-aware:
+        # RequestMain → soft-cancel (auditable); RequestNull → safedelete soft
+        # (SOFT_DELETE_CASCADE → trash). Both recoverable. Returns error string
+        # or None.
+        def _soft_delete_existing(kind, pk):
+            if kind == KIND_NULL:
+                obj = visible_requests_for(request.user, RN.objects.all()).filter(pk=pk).first()
+                if obj:
+                    obj.delete()  # default policy = SOFT_DELETE_CASCADE → trash
+            else:
+                obj = visible_requests_for(request.user, RequestMain.objects.all()).filter(pk=pk).first()
+                if obj:
+                    try:
+                        _cancel(obj, request.user,
+                                reason=gettext_noop("Cancelled as duplicate from the add form."))
+                    except ValueError as exc:
+                        return str(exc)
+            return None
+
+        action = request.POST.get("action", "")
+
+        # Bulk: soft-delete every rendered duplicate. The popup JS posts the
+        # "<kind>:<pk>" identifiers it already has as repeated `targets` values.
+        if action == "delete_all_dupes":
+            count = 0
+            for raw in request.POST.getlist("targets"):
+                kind, _sep, raw_pk = raw.partition(":")
+                try:
+                    pk = int(raw_pk)
+                except ValueError:
+                    continue
+                _soft_delete_existing(kind, pk)
+                count += 1
+            return JsonResponse({"ok": True, "count": count})
+
+        if ":" not in action:
+            return JsonResponse({"ok": False, "error": _("bad action")}, status=400)
+        op, kind, raw_pk = (action.split(":", 2) + ["", ""])[:3]
+        try:
+            pk = int(raw_pk)
+        except ValueError:
+            return JsonResponse({"ok": False, "error": _("bad pk")}, status=400)
+        if op == "delete_existing":
+            err = _soft_delete_existing(kind, pk)
+            if err:
+                return JsonResponse({"ok": False, "error": err}, status=400)
+            return JsonResponse({"ok": True})
+        return JsonResponse({"ok": False, "error": _("unknown op")}, status=400)
+
+    # ---------- POST-action gate ----------
+
+    # claude
+    def _get_req_for_action(self, request, object_id, perm):
+        """Resolve RequestMain for a custom POST endpoint guarded by a
+        role-permission code (например, edit_requests / assign_requests).
+
+        Returns (obj, None) on success, or (None, HttpResponse) when the
+        caller should bail out — either missing permission, hidden by
+        visibility filter, or pk not found. The redirect target differs
+        on purpose: perm-denied lands back on the same Req (so the user
+        sees the error message in context), whereas a missing/hidden pk
+        lands on the changelist (the Req either doesn't exist or the
+        user has no business seeing it).
+        """
+        if not user_has_perm(request.user, perm):
+            messages.error(request, _("You don't have permission for this action."))
+            return None, redirect("admin:zetom_requestmain_change", object_id)
+        qs = visible_requests_for(request.user, RequestMain.objects.all())
+        obj = qs.filter(pk=object_id).first()
+        if obj is None:
+            messages.error(request, _("Request not found."))
+            return None, redirect("admin:zetom_requestmain_changelist")
+        return obj, None
+
+    # claude
+    def _get_req_visible(self, request, object_id):
+        """Same as `_get_req_for_action`, но без role-perm-чека.
+
+        Используется там, где гейт контекстный (per-Req): assign/unassign,
+        set/unset owner. Право решает уже сам action через
+        `services.per_req_perms.*`.
+        """
+        qs = visible_requests_for(request.user, RequestMain.objects.all())
+        obj = qs.filter(pk=object_id).first()
+        if obj is None:
+            messages.error(request, _("Request not found."))
+            return None, redirect("admin:zetom_requestmain_changelist")
+        return obj, None
+
+    # ---------- Department actions ----------
+
+    def add_department_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+
+        code = request.POST.get("dept_code")
+        if not Department.objects.filter(code=code).exists():
+            messages.error(request, _("Invalid department."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        if code in (obj.departments or []):
+            messages.info(request, _("Already assigned."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        obj.departments = list(obj.departments or []) + [code]
+        obj.save(update_fields=["departments"])
+        label = dict(department_choices()).get(code, code)
+        messages.success(request, _("Added %(label)s.") % {"label": label})
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    def remove_department_action(self, request, object_id, dept_code):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+
+        if dept_code in (obj.departments or []):
+            obj.departments = [c for c in obj.departments if c != dept_code]
+            obj.save(update_fields=["departments"])
+            label = dict(department_choices()).get(dept_code, dept_code)
+            messages.success(request, _("Removed %(label)s.") % {"label": label})
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    # ---------- Client link actions ----------
+
+    # claude — привязка существующего Client к заявке (M2M через
+    # RequestClientLink). Идемпотентно: повторный линк не дублируется.
+    def link_client_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+
+        client_id = request.POST.get("client_id")
+        client = Client.objects.filter(pk=client_id).first()
+        if client is None:
+            messages.error(request, _("Client not found."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        _link, created = RequestClientLink.objects.get_or_create(
+            request=obj, client=client, defaults={"linked_by": request.user},
+        )
+        if created:
+            messages.success(request, _("Linked client %(c)s.") % {"c": client})
+        else:
+            messages.info(request, _("Client already linked."))
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    # claude — создать нового Client из данных заявки и сразу привязать.
+    def create_client_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+
+        # claude — phase 2c: person + Company + link (Client.company_* dropped).
+        # create_person_with_company dedups the firm by NIP/name and wires the
+        # CompanyPersonLink; the request's company data comes from its snapshot.
+        client, _company = create_person_with_company(
+            first_name=obj.first_name,
+            last_name=obj.last_name,
+            phone=obj.phone,
+            email=obj.email,
+            company_name=obj.company_name or "",
+            company_nip=obj.company_nip or None,
+            address=obj.address or "",
+            linked_by=request.user,
+        )
+        RequestClientLink.objects.create(
+            request=obj, client=client, linked_by=request.user,
+        )
+        messages.success(request, _("Created and linked client %(c)s.") % {"c": client})
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    def unlink_client_action(self, request, object_id, client_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+
+        deleted, _n = RequestClientLink.objects.filter(
+            request=obj, client_id=client_id
+        ).delete()
+        if deleted:
+            messages.success(request, _("Client unlinked."))
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    # ---------- User actions ----------
+
+    # claude — per-Req пермишена: admin/dep_head-of-Req могут любого,
+    # owner может только specialist'ов. Подробно см.
+    # memory/project_per_req_permissions.md.
+    def assign_user_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_visible(request, object_id)
+        if denied is not None:
+            return denied
+
+        user_id = request.POST.get("user_id")
+        if not user_id:
+            messages.error(request, _("No user selected."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        try:
+            user = User.objects.get(pk=user_id, is_active=True)
+        except User.DoesNotExist:
+            messages.error(request, _("User not found."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        if not can_assign_target(request.user, user, obj):
+            messages.error(request, _("You can't assign this user."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        obj._actor = request.user  # claude — skip self in the assignment notification
+        obj.assigned_to.add(user)
+        messages.success(
+            request,
+            _("Assigned %(name)s.") % {"name": user.get_full_name() or user.username},
+        )
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    def unassign_user_action(self, request, object_id, user_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_visible(request, object_id)
+        if denied is not None:
+            return denied
+
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            messages.error(request, _("User not found."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        if not can_unassign_target(request.user, user, obj):
+            messages.error(request, _("You can't unassign this user."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        # claude — unassign снимает и owner-флаг (owners ⊆ assigned).
+        obj.assigned_to.remove(user)
+        obj.owners.remove(user)
+        messages.success(
+            request,
+            _("Removed %(name)s.") % {"name": user.get_full_name() or user.username},
+        )
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    # claude — per-Req пермишена на owners: только admin / dep_head-of-Req.
+    def set_owner_action(self, request, object_id, user_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_visible(request, object_id)
+        if denied is not None:
+            return denied
+        if not can_manage_owners(request.user, obj):
+            messages.error(request, _("You don't have permission for this action."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        try:
+            user = User.objects.get(pk=user_id, is_active=True)
+        except User.DoesNotExist:
+            messages.error(request, _("User not found."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        # Owner ⊆ assigned — нельзя сделать овнером того, кого нет в assigned.
+        if not obj.assigned_to.filter(pk=user.pk).exists():
+            messages.error(request, _("User must be assigned before becoming owner."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj.owners.add(user)
+        messages.success(
+            request,
+            _("%(name)s is now an owner.") % {"name": user.get_full_name() or user.username},
+        )
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    def unset_owner_action(self, request, object_id, user_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_visible(request, object_id)
+        if denied is not None:
+            return denied
+        if not can_manage_owners(request.user, obj):
+            messages.error(request, _("You don't have permission for this action."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        try:
+            user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            messages.error(request, _("User not found."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj.owners.remove(user)
+        messages.success(
+            request,
+            _("%(name)s is no longer an owner.") % {"name": user.get_full_name() or user.username},
+        )
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    # ---------- Status flow ----------
+
+    def apply_status_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(
+            request, object_id, "change_request_status"
+        )
+        if denied is not None:
+            return denied
+
+        new_status = request.POST.get("new_status")
+        reason = request.POST.get("reason") or None
+
+        try:
+            apply_status_change(obj, request.user, new_status, reason=reason)
+        except ReasonRequired:
+            form = ReasonForm()
+            return render(request, "admin/zetom/requestmain/reason_form.html", {
+                "form": form,
+                "obj": obj,
+                "new_status": new_status,
+                "opts": self.model._meta,
+                "original": obj,
+                "title": _("Reason required"),
+                **self.admin_site.each_context(request),
+            })
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        messages.success(
+            request,
+            _("Status changed to %(status)s.") % {"status": new_status},
+        )
+        if new_status == RequestStatus.deleted:
+            return redirect("admin:zetom_requestmain_changelist")
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    # claude — "Cancel request" button lives next to Delete in the submit
+    # row (submit_line.html override). Same shape as delete_view: GET shows
+    # the reason form, POST processes it and lands on the Cancelled archive.
+    def cancel_view(self, request, object_id):
+        obj, denied = self._get_req_for_action(
+            request, object_id, "change_request_status"
+        )
+        if denied is not None:
+            return denied
+
+        if obj.status == RequestStatus.cancelled:
+            messages.info(request, _("This request is already cancelled."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+
+        if request.method == "POST":
+            reason = (request.POST.get("reason") or "").strip()
+            if reason:
+                apply_status_change(obj, request.user, RequestStatus.cancelled, reason=reason)
+                messages.success(request, _("Request cancelled."))
+                return redirect("admin:zetom_cancelledrequest_changelist")
+            messages.error(request, _("Reason is required."))
+
+        form = ReasonForm()
+        return render(
+            request,
+            "admin/zetom/requestmain/reason_form.html",
+            {
+                "form": form,
+                "obj": obj,
+                # claude — see delete_view's identical fix above.
+                "opts": self.model._meta,
+                "original": obj,
+                "title": _("Cancel request"),
+                **self.admin_site.each_context(request),
+            },
+        )
+
+    # ---------- Document creation actions ----------
+
+    def oferta_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        _obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+        doc = approve_oferta_action(object_id)
+        messages.success(request, _("Offer created."))
+        # claude — straight into the new document, data already copied over
+        return redirect("admin:zetom_oferta_change", doc.pk)
+
+    def zlecenie_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        _obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+        doc = approve_zlecenie_action(object_id, user=request.user)
+        messages.success(request, _("Order created."))
+        # claude — straight into the new document, data already copied over
+        return redirect("admin:zetom_zlecenie_change", doc.pk)
+
+    def wniosek_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        _obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+        doc = approve_wniosek_action(object_id, user=request.user)
+        messages.success(request, _("Application created."))
+        # claude — straight into the new document, data already copied over
+        return redirect("admin:zetom_wniosek_change", doc.pk)
+
+    # ---------- File attachment actions ----------
+
+    def upload_attachment_action(self, request, object_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+        files = request.FILES.getlist("attachments")
+        if not files:
+            messages.error(request, _("No files selected."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        for f in files:
+            RequestAttachment.objects.create(
+                request_main=obj, file=f, uploaded_by=request.user
+            )
+        messages.success(request, _("%(n)d file(s) uploaded.") % {"n": len(files)})
+        return redirect("admin:zetom_requestmain_change", object_id)
+
+    def delete_attachment_action(self, request, object_id, attachment_id):
+        if request.method != "POST":
+            return redirect("admin:zetom_requestmain_change", object_id)
+        obj, denied = self._get_req_for_action(request, object_id, "edit_requests")
+        if denied is not None:
+            return denied
+        att = RequestAttachment.objects.filter(pk=attachment_id, request_main=obj).first()
+        if att:
+            att.file.delete(save=False)
+            att.delete()
+            messages.success(request, _("Attachment deleted."))
+        return redirect("admin:zetom_requestmain_change", object_id)

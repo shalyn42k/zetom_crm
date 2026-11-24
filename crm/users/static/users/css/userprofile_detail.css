@@ -1,0 +1,695 @@
+/* =============================================================
+   UserProfile admin detail — page-scoped styles (header-tabs).
+
+   All classes prefixed `up-` (UserProfile).
+   Status / role colors live as CSS custom properties so dark mode
+   adapts via [data-theme="dark"] (set by Unfold).
+   ============================================================= */
+
+/* claude — these are used as TEXT colour on their own 14% tint (role /
+   permission badges, the active tab). #16a34a / #f59e0b measured 2.8:1 and
+   ~2:1 there on the light page; the light theme uses the -700 shades and
+   html.dark below keeps the original brighter ones. */
+:root {
+  --up-role-admin:    #15803d;
+  --up-role-staff:    #3b82f6;
+  --up-role-viewer:   #6b7280;
+  --up-perm-allowed:  #15803d;
+  --up-perm-limited:  #b45309;
+  --up-perm-denied:   #ef4444;
+
+  --up-card-bg:       #ffffff;
+  --up-card-border:   #e2e8f0;
+  --up-card-radius:   10px;
+  --up-text:          #0f172a;
+  --up-text-muted:    #64748b;
+  --up-bg-soft:       #f8fafc;
+  --up-accent:        var(--up-role-admin);
+}
+
+html.dark,
+[data-theme="dark"] {
+  --up-role-admin:    #16a34a;
+  --up-perm-allowed:  #16a34a;
+  --up-perm-limited:  #f59e0b;
+  --up-card-bg:       #0f172a;
+  --up-card-border:   #1e293b;
+  --up-text:          #e2e8f0;
+  --up-text-muted:    #94a3b8;
+  --up-bg-soft:       #1e293b;
+}
+
+/* ---------- Page layout ---------- */
+.up-page { display: grid; gap: 16px; }
+
+/* ---------- Profile strip ---------- */
+.up-strip {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--up-card-bg);
+  border: 1px solid var(--up-card-border);
+  border-radius: var(--up-card-radius);
+  padding: 16px;
+}
+.up-strip__meta { flex: 1; min-width: 0; }
+.up-strip__title-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.up-strip__name { margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--up-text); }
+.up-strip__sub {
+  margin: 6px 0 0; font-size: 0.8125rem; color: var(--up-text-muted);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+/* claude — не было ни одного правила для .up-strip__dates: дата вступления
+   и последний вход рендерились с дефолтным браузерным <p>-отступом прямо
+   под .up-strip__sub, поэтому весь блок читался как одна нерасчленённая
+   "куча" текста. Меньше размер + явный верхний отступ отделяют её как
+   вторичные метаданные. */
+.up-strip__dates {
+  margin: 6px 0 0; font-size: 0.75rem; color: var(--up-text-muted); opacity: .8;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.up-sep { color: var(--up-card-border); }
+
+/* ---------- Avatar ---------- */
+.up-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--up-bg-soft); color: var(--up-text);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 0.875rem; flex-shrink: 0;
+}
+.up-avatar--xl { width: 56px; height: 56px; font-size: 1.25rem; border-radius: 12px; }
+
+/* ---------- Tabs nav ---------- */
+.up-tabs {
+  display: flex; gap: 2px;
+  border-bottom: 1px solid var(--up-card-border);
+  background: var(--up-card-bg);
+  padding: 0 8px;
+  border-radius: var(--up-card-radius) var(--up-card-radius) 0 0;
+}
+.up-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 12px 14px;
+  font-size: 0.8125rem; font-weight: 500;
+  color: var(--up-text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+  transition: color .12s ease, border-color .12s ease;
+}
+.up-tab:hover { color: var(--up-text); }
+.up-tab.is-active {
+  color: var(--up-accent);
+  border-bottom-color: var(--up-accent);
+}
+.up-tab:focus-visible {
+  outline: 2px solid var(--up-accent); outline-offset: 2px;
+}
+.up-tab__counter {
+  font-size: 0.6875rem; font-weight: 600;
+  padding: 1px 6px; border-radius: 100px;
+  background: var(--up-bg-soft); color: var(--up-text-muted);
+}
+.up-tab.is-active .up-tab__counter {
+  background: color-mix(in oklab, var(--up-accent) 14%, transparent);
+  color: var(--up-accent);
+}
+
+/* ---------- Tab body / cards ---------- */
+.up-tab-body { display: grid; gap: 16px; }
+.up-card {
+  background: var(--up-card-bg);
+  border: 1px solid var(--up-card-border);
+  border-radius: var(--up-card-radius);
+  padding: 16px;
+  display: grid; gap: 12px;
+}
+.up-card__title { margin: 0; font-size: 0.9375rem; font-weight: 600; color: var(--up-text); }
+.up-card__subtitle {
+  font-size: 0.75rem; font-weight: 600; color: var(--up-text-muted);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+
+/* claude — стеклянная карточка: полупрозрачный фон + blur, поверх обычного
+   фона страницы (не поверх .up-card-bg — тот непрозрачный). Используется
+   для блоков 2FA / смены пароля на вкладке Security. */
+.up-card--glass {
+  background: color-mix(in oklab, var(--up-card-bg) 65%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid color-mix(in oklab, var(--up-card-border) 70%, transparent);
+  border-radius: var(--up-card-radius);
+  padding: 16px;
+  display: grid; gap: 12px;
+}
+
+/* claude — настоящий ползунок вместо нативного чекбокса. Чистый CSS
+   (:checked + сосед), JS не нужен. up-toggle-row сам — <label>, клик
+   в любом месте строки (не только по ползунку) переключает состояние.
+   Пример использования — otp_exempt на вкладке Security. */
+/* claude — .up-card--toggle-btn идёт НА САМУ up-card--glass (вся рамка
+   карточки — кнопка, не только внутренняя строка): курсор, hover, и явная
+   подсветка рамки/фона зелёным, когда чекбокс внутри включён. */
+.up-card--toggle-btn { cursor: pointer; transition: background .12s ease, border-color .12s ease; }
+.up-card--toggle-btn:hover {
+  border-color: color-mix(in oklab, #22c55e 40%, var(--up-card-border));
+  background: color-mix(in oklab, var(--up-card-bg) 55%, transparent);
+}
+.up-card--toggle-btn:has(input:checked) {
+  border-color: color-mix(in oklab, #22c55e 55%, var(--up-card-border));
+  background: color-mix(in oklab, #22c55e 10%, color-mix(in oklab, var(--up-card-bg) 55%, transparent));
+}
+
+.up-toggle-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.up-toggle-row__meta { display: grid; gap: 2px; }
+.up-toggle-row__title { font-size: 0.8125rem; font-weight: 600; color: var(--up-text); }
+.up-toggle-row__sub { font-size: 0.75rem; color: var(--up-text-muted); }
+.up-toggle { flex-shrink: 0; display: inline-block; }
+.up-toggle input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.up-toggle__track {
+  display: block; width: 44px; height: 24px; border-radius: 999px;
+  background: var(--up-card-border);
+  position: relative; transition: background .15s ease, box-shadow .15s ease;
+}
+.up-toggle__track::after {
+  content: ""; position: absolute; top: 2px; left: 2px; z-index: 0;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #fff; transition: transform .15s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,.35);
+}
+/* claude — зелёная (не акцент-по-умолчанию, фиксированный "успешный"
+   зелёный — просили сделать заметнее) галочка на полупрозрачной стеклянной
+   подложке бегунка. z-index выше ::after, иначе бегунок красится поверх. */
+.up-toggle__track::before {
+  content: "✓"; position: absolute; top: 2px; left: 22px; z-index: 1;
+  width: 20px; height: 20px; text-align: center; line-height: 20px;
+  font-size: 0.8125rem; font-weight: 800; color: #15803d;
+  opacity: 0; transition: opacity .15s ease;
+}
+.up-toggle input:checked + .up-toggle__track {
+  background: color-mix(in oklab, #22c55e 80%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  box-shadow: 0 0 0 1px color-mix(in oklab, #22c55e 50%, transparent);
+}
+.up-toggle input:checked + .up-toggle__track::after { transform: translateX(20px); }
+.up-toggle input:checked + .up-toggle__track::before { opacity: 1; }
+.up-toggle input:focus-visible + .up-toggle__track { outline: 2px solid color-mix(in oklab, #22c55e 50%, transparent); outline-offset: 2px; }
+
+/* ---------- Badges ---------- */
+.up-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 100px;
+  font-size: 0.6875rem; font-weight: 600;
+  background: var(--up-bg-soft); color: var(--up-text-muted);
+  text-transform: none; letter-spacing: 0;
+}
+.up-badge--role-admin   { color: var(--up-role-admin);  background: color-mix(in oklab, var(--up-role-admin) 14%, transparent); }
+.up-badge--role-staff   { color: var(--up-role-staff);  background: color-mix(in oklab, var(--up-role-staff) 14%, transparent); }
+.up-badge--role-viewer  { color: var(--up-role-viewer); background: color-mix(in oklab, var(--up-role-viewer) 14%, transparent); }
+.up-badge--perm-allowed { color: var(--up-perm-allowed); background: color-mix(in oklab, var(--up-perm-allowed) 14%, transparent); }
+.up-badge--perm-limited { color: var(--up-perm-limited); background: color-mix(in oklab, var(--up-perm-limited) 14%, transparent); }
+.up-badge--perm-denied  { color: var(--up-perm-denied);  background: color-mix(in oklab, var(--up-perm-denied)  14%, transparent); }
+/* claude — деактивированный аккаунт. Тот же красный, что у perm-denied:
+   в системе это единственный «отзыв доступа», читается одинаково. */
+.up-badge--inactive {
+  color: var(--up-perm-denied);
+  background: color-mix(in oklab, var(--up-perm-denied) 14%, transparent);
+}
+
+/* ---------- Permission rows ---------- */
+.up-roles { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.up-perm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.up-perm { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--up-card-border); border-radius: 8px; }
+.up-perm__icon {
+  width: 24px; height: 24px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; flex-shrink: 0;
+}
+.up-perm__icon--allowed { background: color-mix(in oklab, var(--up-perm-allowed) 14%, transparent); color: var(--up-perm-allowed); }
+.up-perm__icon--limited { background: color-mix(in oklab, var(--up-perm-limited) 14%, transparent); color: var(--up-perm-limited); }
+.up-perm__icon--denied  { background: color-mix(in oklab, var(--up-perm-denied)  14%, transparent); color: var(--up-perm-denied); }
+.up-perm__meta { flex: 1; min-width: 0; }
+.up-perm__name { font-size: 0.8125rem; font-weight: 500; color: var(--up-text); }
+.up-perm__code { font-size: 0.71875rem; color: var(--up-text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* claude — permission tab: 2-column grid + collapsible groups + states */
+.up-perm-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1100px) { .up-perm-grid { grid-template-columns: 1fr; } }
+
+.up-perm-legend {
+  display: flex; flex-wrap: wrap; gap: 14px;
+  margin: 0 0 12px; padding: 0;
+  font-size: 0.71875rem; color: var(--up-text-muted);
+}
+.up-perm-legend__item { display: inline-flex; align-items: center; gap: 6px; }
+.up-perm-legend__swatch {
+  width: 14px; height: 14px; border-radius: 4px;
+  border: 1px solid var(--up-card-border); background: var(--up-bg-soft);
+}
+.up-perm-legend__swatch--locked   { background: color-mix(in oklab, var(--up-perm-allowed) 18%, transparent); border-color: color-mix(in oklab, var(--up-perm-allowed) 35%, transparent); }
+.up-perm-legend__swatch--editable { background: var(--up-bg-soft); border-color: color-mix(in oklab, var(--up-text) 25%, transparent); }
+.up-perm-legend__swatch--stub     { background: color-mix(in oklab, var(--up-perm-limited) 14%, transparent); border: 1px dashed color-mix(in oklab, var(--up-perm-limited) 50%, transparent); }
+
+/* Сворачиваемая группа: используем нативный <details>/<summary> */
+.up-perm-group {
+  margin-bottom: 10px;
+  border: 1px solid var(--up-card-border);
+  border-radius: 8px;
+  background: var(--up-bg-soft);
+  overflow: hidden;
+}
+.up-perm-group:last-child { margin-bottom: 0; }
+.up-perm-group__summary {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  font-size: 0.84375rem; font-weight: 600;
+  color: var(--up-text);
+}
+.up-perm-group__summary::-webkit-details-marker { display: none; }
+.up-perm-group__summary:hover { background: color-mix(in oklab, var(--up-text) 4%, transparent); }
+/* claude — секция теперь Alpine-обёртка с `is-open`-классом, а не <details>.
+   Кнопка должна не выглядеть как браузерная кнопка (border/bg сброшен). */
+button.up-perm-group__summary {
+  width: 100%; background: none; border: none; text-align: left; font: inherit;
+}
+/* CSS-нарисованный chevron вместо unicode ▸ — крепко рендерится и
+   переворачивается на 90° при open. */
+.up-perm-group__caret {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  color: var(--up-text-muted);
+  transform: rotate(-45deg);
+  transition: transform 150ms ease;
+  flex-shrink: 0;
+  margin-left: 2px; margin-right: 4px;
+}
+.up-perm-group[open] > .up-perm-group__summary > .up-perm-group__caret,
+.up-perm-group.is-open > .up-perm-group__summary > .up-perm-group__caret,
+.up-perm-group__caret.is-open {
+  transform: rotate(45deg);
+}
+.up-perm-group__summary:hover > .up-perm-group__caret {
+  color: var(--up-text);
+}
+.up-perm-group__title { flex: 1; }
+.up-perm-group__count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 20px; padding: 0 6px; border-radius: 100px;
+  background: color-mix(in oklab, var(--up-text) 10%, transparent);
+  color: var(--up-text-muted);
+  font-size: 0.6875rem; font-weight: 600;
+  letter-spacing: 0;
+}
+.up-perm-group .up-perm-list { padding: 4px 8px 10px; }
+
+.up-perm__check { width: 100%; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.up-perm__badges { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+
+/* Кастомный чекбокс: скруглённый квадрат, зелёная заливка + галка через ::after. */
+.up-perm__check input[type="checkbox"] {
+  flex-shrink: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border: 1.5px solid color-mix(in oklab, var(--up-text) 30%, transparent);
+  border-radius: 5px;
+  background: var(--up-bg);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+  position: relative;
+}
+.up-perm__check input[type="checkbox"]:hover:not(:disabled) {
+  border-color: var(--up-perm-allowed);
+}
+.up-perm__check input[type="checkbox"]:checked {
+  background: var(--up-perm-allowed);
+  border-color: var(--up-perm-allowed);
+}
+.up-perm__check input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  width: 4px; height: 8px;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+.up-perm__check input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+.up-perm__check input[type="checkbox"]:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--up-perm-allowed) 60%, transparent);
+  outline-offset: 2px;
+}
+
+/* Editable row — обычная рамка, чёткий hover, курсор pointer */
+.up-perm--editable {
+  border-color: color-mix(in oklab, var(--up-text) 22%, var(--up-card-border));
+  background: var(--up-bg-soft);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.up-perm--editable:hover {
+  border-color: color-mix(in oklab, var(--up-perm-allowed) 45%, transparent);
+}
+
+/* Locked row — приглушённая, без hover-эффекта, cursor not-allowed */
+.up-perm--locked {
+  background: color-mix(in oklab, var(--up-perm-allowed) 6%, transparent);
+  border-color: color-mix(in oklab, var(--up-perm-allowed) 28%, transparent);
+}
+.up-perm--locked .up-perm__check { cursor: not-allowed; }
+.up-perm--locked input[type="checkbox"] { accent-color: var(--up-perm-allowed); }
+
+/* Stub row — пунктир + амбер, поверх locked/editable */
+.up-perm--stub {
+  border-style: dashed;
+  border-color: color-mix(in oklab, var(--up-perm-limited) 50%, transparent);
+}
+.up-perm--stub .up-perm__name,
+.up-perm--stub .up-perm__code { opacity: 0.85; }
+
+.up-badge--stub {
+  color: var(--up-perm-limited);
+  background: color-mix(in oklab, var(--up-perm-limited) 14%, transparent);
+}
+
+/* ---------- Departments tab: 2-column grid ---------- */
+.up-dept-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1100px) { .up-dept-grid { grid-template-columns: 1fr; } }
+
+/* My departments — left column cards */
+.up-dept-list { display: grid; gap: 10px; }
+.up-dept-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--up-card-border);
+  border-radius: 9px;
+  background: var(--up-bg-soft);
+  transition: border-color .12s;
+}
+.up-dept-card:hover { border-color: color-mix(in oklab, var(--up-text-muted) 40%, transparent); }
+.up-dept-card--primary {
+  border-color: color-mix(in oklab, var(--up-accent) 50%, transparent);
+  background: color-mix(in oklab, var(--up-accent) 6%, var(--up-bg-soft));
+}
+.up-dept-card__icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: color-mix(in oklab, var(--up-accent) 14%, transparent);
+  color: var(--up-accent);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.875rem; flex-shrink: 0;
+}
+.up-dept-card__main { flex: 1; min-width: 0; }
+.up-dept-card__name {
+  font-size: 0.875rem; font-weight: 600; letter-spacing: -.005em;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  color: var(--up-text);
+}
+.up-dept-card__meta {
+  font-size: 0.71875rem; color: var(--up-text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin-top: 3px;
+}
+
+/* Add-department CTA + inline picker */
+.up-dept-add-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 12px;
+  background: transparent;
+  border: 1px dashed var(--up-card-border);
+  border-radius: 9px;
+  color: var(--up-text-muted);
+  font: inherit; font-size: 0.8125rem; font-weight: 500;
+  cursor: pointer;
+  transition: all .12s;
+}
+.up-dept-add-btn:hover {
+  border-color: var(--up-accent);
+  color: var(--up-accent);
+  background: color-mix(in oklab, var(--up-accent) 6%, transparent);
+}
+
+.up-dept-add-panel {
+  margin-top: 4px;
+  padding: 10px;
+  border: 1px solid var(--up-card-border);
+  border-radius: 9px;
+  background: var(--up-bg-soft);
+}
+.up-dept-add-panel[hidden] { display: none; }
+.up-search-input {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--up-card-border);
+  border-radius: 6px;
+  background: var(--up-card-bg);
+  margin-bottom: 8px;
+}
+.up-search-input input {
+  flex: 1; border: 0; outline: 0; background: transparent;
+  color: var(--up-text); font: inherit; font-size: 0.8125rem;
+}
+.up-picker-list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: 2px;
+  max-height: 240px; overflow: auto;
+  /* claude — scrolling the department picker to its end no longer
+     scrolls the page behind it. */
+  overscroll-behavior: contain;
+}
+.up-picker-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 6px; cursor: pointer;
+}
+.up-picker-row:hover { background: var(--up-card-bg); }
+.up-picker-row__icon {
+  width: 26px; height: 26px; border-radius: 5px;
+  background: color-mix(in oklab, var(--up-accent) 12%, transparent);
+  color: var(--up-accent);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.6875rem; flex-shrink: 0;
+}
+.up-picker-row__main { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+.up-picker-row__name { font-size: 0.8125rem; color: var(--up-text); }
+.up-picker-row__code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.6875rem; color: var(--up-text-muted);
+}
+.up-picker-empty {
+  padding: 14px; text-align: center;
+  font-size: 0.75rem; color: var(--up-text-muted);
+}
+
+/* Department tree (right column) */
+.up-dept-tree { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.up-dept-tree__node {
+  border: 1px solid var(--up-card-border);
+  border-radius: 9px;
+  background: var(--up-bg-soft);
+  overflow: hidden;
+}
+.up-dept-tree__node--primary {
+  border-color: color-mix(in oklab, var(--up-accent) 40%, transparent);
+}
+.up-dept-tree__head {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 11px 12px;
+  background: transparent; border: 0; cursor: pointer;
+  font: inherit; color: var(--up-text); text-align: left;
+}
+.up-dept-tree__head:hover { background: var(--up-card-bg); }
+.up-dept-tree__caret {
+  display: inline-block;
+  color: var(--up-text-muted);
+  transition: transform .15s;
+  flex-shrink: 0;
+}
+.up-dept-tree__node.is-open .up-dept-tree__caret { transform: rotate(90deg); }
+.up-dept-tree__node:not(.is-open) .up-dept-tree__body { display: none; }
+.up-dept-tree__name {
+  flex: 1; font-size: 0.84375rem; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.up-dept-tree__count {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.6875rem; color: var(--up-text-muted);
+  padding: 2px 7px; border-radius: 100px;
+  background: var(--up-card-bg);
+}
+.up-dept-tree__body {
+  list-style: none; margin: 0;
+  padding: 8px 12px 10px 38px;
+  display: grid; gap: 4px;
+  border-top: 1px dashed var(--up-card-border);
+}
+
+.up-dept-member {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 8px; border-radius: 6px;
+}
+.up-dept-member:hover { background: var(--up-card-bg); }
+.up-dept-member--you {
+  background: color-mix(in oklab, var(--up-accent) 6%, transparent);
+}
+.up-dept-member--you:hover {
+  background: color-mix(in oklab, var(--up-accent) 12%, transparent);
+}
+.up-dept-member__avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--up-card-bg); color: var(--up-text);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 0.65625rem; flex-shrink: 0;
+}
+.up-dept-member__avatar--head {
+  background: var(--up-accent); color: #fff;
+}
+.up-dept-member__info {
+  flex: 1; min-width: 0;
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+}
+.up-dept-member__name { font-size: 0.8125rem; font-weight: 500; color: var(--up-text); }
+.up-dept-member__role { font-size: 0.6875rem; color: var(--up-text-muted); }
+
+/* Tags reused inside dept tab */
+.up-tag {
+  font-size: 0.59375rem; font-weight: 700;
+  padding: 1px 5px; border-radius: 3px;
+  letter-spacing: .04em; text-transform: uppercase;
+  border: 1px solid currentColor;
+}
+.up-tag--primary { color: var(--up-accent); background: color-mix(in oklab, var(--up-accent) 10%, transparent); border-color: color-mix(in oklab, var(--up-accent) 30%, transparent); }
+.up-tag--head    { color: var(--up-accent); background: color-mix(in oklab, var(--up-accent) 10%, transparent); border-color: color-mix(in oklab, var(--up-accent) 30%, transparent); }
+.up-tag--you     { color: #6366f1; background: color-mix(in oklab, #6366f1 10%, transparent); border-color: color-mix(in oklab, #6366f1 30%, transparent); }
+html.dark .up-tag--you,
+[data-theme="dark"] .up-tag--you { color: #a5b4fc; }
+
+/* Badges (used for Primary/Secondary inline) */
+.up-badge {
+  font-size: 0.625rem; font-weight: 700;
+  padding: 1px 6px; border-radius: 3px;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.up-badge--primary {
+  color: var(--up-accent);
+  background: color-mix(in oklab, var(--up-accent) 10%, transparent);
+  border: 1px solid color-mix(in oklab, var(--up-accent) 30%, transparent);
+}
+.up-badge--muted {
+  color: var(--up-text-muted);
+  background: var(--up-card-bg);
+  border: 1px solid var(--up-card-border);
+}
+
+/* Icon buttons (used by Remove × on dept cards) */
+.up-iconbtn {
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid transparent;
+  border-radius: 6px; cursor: pointer;
+  color: var(--up-text-muted); font-size: 1.125rem; line-height: 1;
+}
+.up-iconbtn:hover { background: var(--up-card-bg); color: var(--up-text); }
+.up-iconbtn--danger:hover {
+  color: var(--up-perm-denied);
+  background: color-mix(in oklab, var(--up-perm-denied) 10%, transparent);
+}
+.up-iconbtn[disabled] { opacity: .35; cursor: not-allowed; }
+
+.up-counter {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.6875rem; font-weight: 600;
+  padding: 1px 6px; border-radius: 100px;
+  background: var(--up-bg-soft);
+  color: var(--up-text-muted);
+}
+.up-help { margin: 6px 0 0; font-size: 0.75rem; color: var(--up-text-muted); }
+.up-empty { margin: 0; padding: 10px; font-size: 0.78125rem; color: var(--up-text-muted); }
+.up-visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+
+/* ---------- Notifications switch row ---------- */
+.up-notif-group { display: grid; gap: 8px; }
+.up-switch {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  border: 1px solid var(--up-card-border); border-radius: 8px;
+}
+.up-switch__meta { flex: 1; min-width: 0; }
+.up-switch__title { display: block; font-size: 0.8125rem; font-weight: 500; color: var(--up-text); }
+.up-switch__sub   { display: block; font-size: 0.71875rem; color: var(--up-text-muted); }
+
+/* ---------- Form helpers ---------- */
+.up-row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 10px; align-items: start; }
+.up-col-6 { grid-column: span 6; }
+.up-col-12 { grid-column: span 12; }
+@media (max-width: 600px) { .up-col-6 { grid-column: span 12; } }
+.up-field { display: grid; gap: 4px; }
+.up-field__label { font-size: 0.75rem; color: var(--up-text-muted); }
+.up-field input, .up-field textarea, .up-select {
+  width: 100%; padding: 8px 10px; border-radius: 6px;
+  border: 1px solid var(--up-card-border);
+  background: var(--up-card-bg); color: var(--up-text);
+  font-size: 0.8125rem; font-family: inherit;
+}
+.up-field input:focus, .up-field textarea:focus, .up-select:focus {
+  outline: 2px solid color-mix(in oklab, var(--up-accent) 40%, transparent); outline-offset: 1px;
+}
+.up-form__actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 8px; }
+
+/* ---------- Buttons ---------- */
+.up-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 12px; border-radius: 6px;
+  font-size: 0.78125rem; font-weight: 500; cursor: pointer;
+  border: 1px solid var(--up-card-border);
+  background: var(--up-card-bg); color: var(--up-text);
+  text-decoration: none;
+}
+.up-btn:hover { background: var(--up-bg-soft); }
+.up-btn--primary { background: var(--up-accent); border-color: var(--up-accent); color: #fff; }
+.up-btn--primary:hover { filter: brightness(0.95); background: var(--up-accent); }
+.up-btn--sm { padding: 4px 10px; font-size: 0.71875rem; }
+.up-btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+/* ---------- Misc ---------- */
+.up-empty { font-size: 0.78125rem; color: var(--up-text-muted); margin: 0; }
+.up-callout { padding: 10px 12px; border-radius: 8px; background: var(--up-bg-soft); border: 1px solid var(--up-card-border); font-size: 0.8125rem; color: var(--up-text-muted); margin: 0; }
+.up-callout--success {
+  color: var(--up-perm-allowed);
+  border-color: color-mix(in oklab, var(--up-perm-allowed) 35%, transparent);
+  background: color-mix(in oklab, var(--up-perm-allowed) 10%, var(--up-bg-soft));
+}
+.up-callout--error {
+  color: var(--up-perm-denied);
+  border-color: color-mix(in oklab, var(--up-perm-denied) 40%, transparent);
+  background: color-mix(in oklab, var(--up-perm-denied) 10%, var(--up-bg-soft));
+}
+.up-callout--error ul { margin: 6px 0 0; padding-left: 18px; }
+.up-callout--error li { font-size: 0.78125rem; }
+.up-field__help { font-size: 0.71875rem; color: var(--up-text-muted); }
+.up-form-stack { display: grid; gap: 14px; }
+.up-card--narrow { max-width: 640px; }

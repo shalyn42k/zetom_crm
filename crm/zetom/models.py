@@ -1,0 +1,747 @@
+from decimal import Decimal
+
+# Django imports
+from django.contrib.auth.models import User
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey, GenericRelation,
+)
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
+from django.db import models
+from django.db.models import Q
+# Other imports
+from django.utils.translation import gettext, gettext_lazy as _
+from phonenumber_field.modelfields import PhoneNumberField
+# Other imports
+from safedelete.config import SOFT_DELETE_CASCADE
+from safedelete.models import SafeDeleteModel
+from simple_history.models import HistoricalRecords
+
+# claude
+from crm.clients.validators import normalize_nip, validate_nip
+# Zetom app imports
+from crm.status_manager.services.statuses import RequestStatus, Status
+
+
+class DepartmentsVariants(models.TextChoices):
+    DEPARTMENT_0 = "DEPARTMENT_0", _("Research Team")
+    DEPARTMENT_1 = "DEPARTMENT_1", _("Calibration Team")
+    DEPARTMENT_2 = "DEPARTMENT_2", _("Length and Angle Lab")
+    DEPARTMENT_3 = "DEPARTMENT_3", _("Electrical Lab")
+    DEPARTMENT_4 = "DEPARTMENT_4", _("Mechanical Lab")
+    DEPARTMENT_5 = "DEPARTMENT_5", _("Heating Equipment Lab")
+    DEPARTMENT_6 = "DEPARTMENT_6", _("Technical Office")
+    DEPARTMENT_7 = "DEPARTMENT_7", _("Training")
+    DEPARTMENT_8 = "DEPARTMENT_8", _("Certification")
+    DEPARTMENT_9 = "DEPARTMENT_9", _("Economic")
+
+
+class Department(models.Model):
+    code = models.CharField(max_length=30, unique=True, verbose_name=_("Department code"))
+    name = models.CharField(max_length=100, verbose_name=_("Department name"))
+
+    class Meta:
+        verbose_name = _("Department")
+        verbose_name_plural = _("Departments")
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            super().save(*args, **kwargs)
+            self.code = f"DEPARTMENT_{self.id}"
+            super().save(update_fields=["name", "code"])
+        else:
+            super().save(*args, **kwargs)
+
+    def __str__(self):
+        return gettext(self.name)
+
+
+def department_choices():
+    departs = Department.objects.all().order_by("id")
+    return [(depart.code, str(depart)) for depart in departs]
+
+
+class RequestSource(models.TextChoices):
+    PHONE = "phone", _("Phone")
+    EMAIL = "email", _("Email")
+    SITE = "site", _("Site")
+    PARENT = "main", _("Parent")
+    MANUAL = "manual", _("Manual")
+    OTHER = "other", _("Other")
+
+
+
+class RequestTemplate(SafeDeleteModel):
+    _safedelete_policy = SOFT_DELETE_CASCADE
+    source = models.CharField(choices=RequestSource.choices, default=RequestSource.OTHER, null=False, blank=False, verbose_name=_("Source"))
+    assigned_to = models.ManyToManyField(
+        User, blank=True, related_name="+", verbose_name=_("Assigned to"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Updated at"))
+    first_name = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name=_("First name"),
+    )
+    last_name = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name=_("Last name"),
+    )
+    phone = PhoneNumberField(null=False, blank=False, verbose_name=_("Phone"))
+    company_name = models.CharField(max_length=50, blank=True, null=True, verbose_name=_("Company name"))
+    email = models.EmailField(max_length=100, null=False, blank=False, verbose_name=_("Email"))
+    # claude — max_length=20 чтобы пользователь мог ввести `PL...`, дефисы и пробелы;
+    # clean() приведёт значение к 10 цифрам перед сохранением.
+    company_nip = models.CharField(
+        max_length=20,
+        validators=[validate_nip],
+        blank=True,
+        null=True,
+        verbose_name=_("Company NIP"),
+    )
+    message = models.TextField(null=True, blank=True, verbose_name=_("Message"))
+    departments = ArrayField(
+        models.CharField(max_length=30),
+        default=list,
+        blank=True,
+        verbose_name=_("Departments"),
+    )
+    # Unified timeline notes ("what was done" + note body) used across
+    # RequestMain and child documents.
+    step_notes = GenericRelation(
+        "StepNote",
+        content_type_field="target_content_type",
+        object_id_field="target_object_id",
+        related_query_name="request_objects",
+    )
+
+    class Meta:
+        abstract = True
+
+    # claude
+    def clean(self):
+        super().clean()
+        if self.company_nip:
+            self.company_nip = normalize_nip(self.company_nip)
+
+    @property
+    def full_name(self):
+        return " ".join(filter(None, (self.first_name, self.last_name)))
+
+    def __str__(self):
+        # claude — was f"{self.company_name}": a private-person request (no
+        # company) rendered as the literal "None" in breadcrumbs, titles and
+        # the avatar initials.
+        return self.company_name or self.full_name or "—"
+
+
+class RequestNull(RequestTemplate):
+    status = models.CharField(
+        max_length=20,
+        choices=RequestStatus.choices,
+        default=RequestStatus.active,
+    )
+
+    class Meta:
+        verbose_name = _("Validation Window")
+        verbose_name_plural = _("Validation Window")
+
+
+class RequestMain(RequestTemplate):
+    status = models.CharField(max_length=20, choices=RequestStatus.choices, default=RequestStatus.active)
+    from_null = models.OneToOneField(
+        RequestNull, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    address = models.CharField(
+        max_length=228, null=True, blank=True, verbose_name=_("Address"),
+    )
+    # claude — per-Req флаг "owner". owners ⊆ assigned_to поддерживается на
+    # уровне UI/admin-actions (set_owner доступен только для assigned юзеров,
+    # unassign снимает owner-флаг). Подробности в memory:
+    # project_per_req_permissions.md.
+    owners = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name="owned_requests",
+    )
+    # claude — M2M к Client через RequestClientLink. Заявка может быть
+    # привязана к нескольким клиентам (похожий/идентичный клиент или
+    # компания), и при этом продолжать существовать самостоятельно.
+    # Persisted relation, в отличие от form-only ClientField (autofill).
+    clients = models.ManyToManyField(
+        "clients.Client",
+        through="RequestClientLink",
+        related_name="requests",
+        blank=True,
+    )
+    # claude — нормализованная привязка заявки к фирме (в дополнение к
+    # снапшот-полям company_name/company_nip на самой заявке). Nullable:
+    # заявка от частного лица без фирмы её не имеет.
+    company = models.ForeignKey(
+        "clients.Company",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="requests",
+        verbose_name=_("Company"),
+    )
+    # БАГ-2: полная история всех изменений полей (кто/что/когда изменил)
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Information")
+        verbose_name_plural = _("Information")
+
+
+class Oferta(RequestTemplate):
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
+    from_main = models.ForeignKey(
+        RequestMain, on_delete=models.CASCADE, null=True, blank=True, verbose_name=_("From main")
+    )
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Price"))
+    notes = models.TextField(null=True, blank=True, verbose_name=_("Notes"))
+    # claude
+    clients = models.ManyToManyField(
+        "clients.Client",
+        through="OfertaClientLink",
+        related_name="ofertas",
+        blank=True,
+    )
+
+    # claude — fields of the offer document template (Oferta numer … /
+    # dotyczy / pozycje / warunki), see templates/admin/zetom/shared/
+    # document_paper_oferta.html. Defaults are the wording of the company's
+    # own sample offer. `price` stays the net total (items + extra costs),
+    # recomputed on save, so everything that already reads it keeps working.
+    offer_number = models.CharField(max_length=60, blank=True, verbose_name=_("Offer number"))
+    offer_date = models.DateField(null=True, blank=True, verbose_name=_("Offer date"))
+    subject = models.CharField(
+        max_length=255, blank=True, default="wzorcowania przyrządów pomiarowych", verbose_name=_("Regarding"),
+    )
+    # claude — "W odpowiedzi na <e-mail> z dnia <data>": a channel + a date
+    # (picked from a calendar) instead of free text typed every time.
+    class InquiryChannel(models.TextChoices):
+        EMAIL = "email", _("e-mail")
+        PHONE = "phone", _("phone call")
+        LETTER = "letter", _("letter")
+        FORM = "form", _("website form")
+
+    # Polish wording on the sheet — the document is always issued in Polish,
+    # whatever language the person editing it uses.
+    INQUIRY_PHRASES_PL = {
+        "email": "e-mail",
+        "phone": "zapytanie telefoniczne",
+        "letter": "pismo",
+        "form": "zapytanie złożone przez formularz",
+    }
+
+    inquiry_channel = models.CharField(
+        max_length=10, choices=InquiryChannel.choices, default=InquiryChannel.EMAIL, verbose_name=_("Inquiry received by"),
+    )
+    inquiry_date = models.DateField(null=True, blank=True, verbose_name=_("Inquiry date"))
+    extra_costs = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Additional costs (net)"),
+    )
+    vat_rate = models.PositiveSmallIntegerField(default=23, verbose_name=_("VAT rate (%)"))
+    place_of_work = models.CharField(
+        max_length=255, blank=True, default="w miejscu użytkowania", verbose_name=_("Place of work"),
+    )
+    completion_term = models.CharField(max_length=255, blank=True, verbose_name=_("Completion date"))
+    confirmation_document = models.CharField(
+        max_length=255, blank=True, default="„Świadectwo Wzorcowania” z PCA",
+        verbose_name=_("Confirming document"),
+    )
+    payment_terms = models.CharField(
+        max_length=255, blank=True, default="przelew płatny do 14 dni", verbose_name=_("Payment terms"),
+    )
+
+    class Meta:
+        verbose_name = _("Offer")
+        verbose_name_plural = _("Offers")
+
+    # claude
+    @property
+    def inquiry_phrase(self):
+        return self.INQUIRY_PHRASES_PL.get(self.inquiry_channel, "")
+
+    @property
+    def items_total(self):
+        return sum((i.line_total for i in self.items.all()), Decimal("0"))
+
+    @property
+    def net_total(self):
+        return self.items_total + (self.extra_costs or Decimal("0"))
+
+    @property
+    def vat_amount(self):
+        return (self.net_total * Decimal(self.vat_rate) / Decimal(100)).quantize(Decimal("0.01"))
+
+    @property
+    def gross_total(self):
+        return self.net_total + self.vat_amount
+
+
+# claude — one line of the offer table (Lp. / Nazwa / Ilość / cena).
+class OfertaItem(models.Model):
+    oferta = models.ForeignKey(Oferta, on_delete=models.CASCADE, related_name="items", verbose_name=_("Offer"))
+    position = models.PositiveSmallIntegerField(default=0, verbose_name=_("Sort order"))
+    name = models.CharField(max_length=255, verbose_name=_("Instrument name"))
+    details = models.TextField(blank=True, verbose_name=_("Details"))
+    norm = models.CharField(max_length=255, blank=True, verbose_name=_("Standard"))
+    quantity = models.PositiveIntegerField(default=1, verbose_name=_("Quantity"))
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Unit price (net)"))
+
+    class Meta:
+        verbose_name = _("Offer item")
+        verbose_name_plural = _("Offer items")
+        ordering = ["position", "pk"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def line_total(self):
+        return (self.unit_price or Decimal("0")) * self.quantity
+
+
+class Zlecenie(RequestTemplate):
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
+    from_main = models.ForeignKey(
+        RequestMain, on_delete=models.CASCADE, null=True, blank=True, verbose_name=_("From main")
+    )
+    # claude — мягкая цепочка Oferta -> Zlecenie -> Wniosek (business order:
+    # offer -> order -> application). Nullable: zlecenie может быть создан и
+    # без оферты, как и раньше — from_main остаётся обязательной связью,
+    # from_oferta лишь фиксирует, из какого документа выросло это zlecenie.
+    from_oferta = models.ForeignKey(
+        Oferta,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="zlecenia",
+        verbose_name=_("From offer"),
+    )
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_("Price"))
+    notes = models.TextField(null=True, blank=True, verbose_name=_("Notes"))
+    deadline = models.DateField(null=True, blank=True, verbose_name=_("Deadline"))
+    # claude
+    clients = models.ManyToManyField(
+        "clients.Client",
+        through="ZlecenieClientLink",
+        related_name="zlecenia",
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = _("Order")
+        verbose_name_plural = _("Orders")
+
+
+class Wniosek(RequestTemplate):
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.new)
+    from_main = models.ForeignKey(
+        RequestMain, on_delete=models.CASCADE, null=True, blank=True, verbose_name=_("From main")
+    )
+    # claude — тот же паттерн soft-chain, что и Zlecenie.from_oferta.
+    from_zlecenie = models.ForeignKey(
+        Zlecenie,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="wnioski",
+        verbose_name=_("From order"),
+    )
+    notes = models.TextField(null=True, blank=True, verbose_name=_("Notes"))
+    application_number = models.CharField(max_length=20, null=True, blank=True, verbose_name=_("Application number"))
+    # claude
+    clients = models.ManyToManyField(
+        "clients.Client",
+        through="WniosekClientLink",
+        related_name="wnioski",
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = _("Application")
+        verbose_name_plural = _("Applications")
+
+# claude — through-таблица для RequestMain.clients (M2M).
+# linked_by/linked_at дают аудит: кто и когда привязал клиента к заявке.
+class RequestClientLink(models.Model):
+    request = models.ForeignKey(
+        RequestMain, on_delete=models.CASCADE, related_name="client_links"
+    )
+    client = models.ForeignKey(
+        "clients.Client", on_delete=models.CASCADE, related_name="request_links"
+    )
+    linked_at = models.DateTimeField(auto_now_add=True)
+    linked_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["request", "client"], name="uniq_request_client"
+            ),
+        ]
+        verbose_name = _("Client link")
+        verbose_name_plural = _("Client links")
+
+    def __str__(self):
+        return f"{self.request_id} ↔ {self.client_id}"
+
+
+class RequestAttachment(models.Model):
+    """БАГ-8: файловые вложения к заявке (RequestNull → после валидации RequestMain)."""
+    request_null = models.ForeignKey(
+        RequestNull,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="attachments",
+    )
+    request_main = models.ForeignKey(
+        RequestMain,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="attachments",
+    )
+    # claude — files on the document window ("Pliki i notatki zespołu").
+    # Declared by name because Oferta/Zlecenie/Wniosek are defined above.
+    oferta = models.ForeignKey(
+        "Oferta", on_delete=models.CASCADE, null=True, blank=True, related_name="attachments",
+    )
+    zlecenie = models.ForeignKey(
+        "Zlecenie", on_delete=models.CASCADE, null=True, blank=True, related_name="attachments",
+    )
+    wniosek = models.ForeignKey(
+        "Wniosek", on_delete=models.CASCADE, null=True, blank=True, related_name="attachments",
+    )
+    file = models.FileField(upload_to="request_attachments/%Y/%m/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    uploaded_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = _("Attachment")
+        verbose_name_plural = _("Attachments")
+
+    def __str__(self):
+        return self.file.name
+
+    # claude — the only link templates should use: goes through
+    # zetom:attachment (login + visibility check), works in production too,
+    # where /media/ isn't served at all.
+    @property
+    def download_url(self):
+        from django.urls import reverse
+        return reverse("zetom:attachment", args=[self.pk])
+
+    @property
+    def display_name(self):
+        return self.file.name.rsplit("/", 1)[-1]
+
+    def owner(self):
+        """The request or document this file belongs to."""
+        return self.request_main or self.oferta or self.zlecenie or self.wniosek or self.request_null
+
+
+# claude — through-таблицы для Oferta/Zlecenie/Wniosek.clients (M2M).
+# Следуют тому же паттерну что и RequestClientLink.
+class OfertaClientLink(models.Model):
+    request = models.ForeignKey(
+        Oferta, on_delete=models.CASCADE, related_name="client_links"
+    )
+    client = models.ForeignKey(
+        "clients.Client", on_delete=models.CASCADE, related_name="oferta_links"
+    )
+    linked_at = models.DateTimeField(auto_now_add=True)
+    linked_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["request", "client"], name="uniq_oferta_client"
+            ),
+        ]
+        verbose_name = _("Oferta client link")
+        verbose_name_plural = _("Oferta client links")
+
+    def __str__(self):
+        return f"{self.request_id} ↔ {self.client_id}"
+
+
+class ZlecenieClientLink(models.Model):
+    request = models.ForeignKey(
+        Zlecenie, on_delete=models.CASCADE, related_name="client_links"
+    )
+    client = models.ForeignKey(
+        "clients.Client", on_delete=models.CASCADE, related_name="zlecenie_links"
+    )
+    linked_at = models.DateTimeField(auto_now_add=True)
+    linked_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["request", "client"], name="uniq_zlecenie_client"
+            ),
+        ]
+        verbose_name = _("Zlecenie client link")
+        verbose_name_plural = _("Zlecenie client links")
+
+    def __str__(self):
+        return f"{self.request_id} ↔ {self.client_id}"
+
+
+class WniosekClientLink(models.Model):
+    request = models.ForeignKey(
+        Wniosek, on_delete=models.CASCADE, related_name="client_links"
+    )
+    client = models.ForeignKey(
+        "clients.Client", on_delete=models.CASCADE, related_name="wniosek_links"
+    )
+    linked_at = models.DateTimeField(auto_now_add=True)
+    linked_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["request", "client"], name="uniq_wniosek_client"
+            ),
+        ]
+        verbose_name = _("Wniosek client link")
+        verbose_name_plural = _("Wniosek client links")
+
+    def __str__(self):
+        return f"{self.request_id} ↔ {self.client_id}"
+
+
+class StepNote(models.Model):
+    # claude — StepNote объединяет два смысла: "мы связались с клиентом" (kind=contact)
+    # и "напомни связаться" (kind=reminder). Task 3 добавит констрейнты, что contact
+    # требует contacted_at, а reminder — next_contact_at.
+    class Kind(models.TextChoices):
+        CONTACT = "contact", _("Contact")
+        REMINDER = "reminder", _("Reminder")
+
+    # claude — значения и метки скопированы один-в-один из
+    # clients.ClientInteraction.Channel (crm/clients/models.py:58-63): Task 6
+    # маппит записи ClientInteraction в StepNote напрямую по значению, любое
+    # расхождение тихо испортит данные.
+    class Channel(models.TextChoices):
+        CALL = "call", _("Call")
+        EMAIL = "email", _("Email")
+        MEETING = "meeting", _("Meeting")
+        CHAT = "chat", _("Chat")
+        OTHER = "other", _("Other")
+
+    author = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="step_notes",
+        verbose_name=_("Author"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
+    action = models.CharField(max_length=255, blank=True, verbose_name=_("What was done"))
+    text = models.TextField(blank=True, verbose_name=_("Note"))
+    next_contact_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Next client contact at"),
+    )
+    reminder_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Reminder sent at"),
+    )
+
+    # claude
+    kind = models.CharField(
+        max_length=20,
+        choices=Kind.choices,
+        default=Kind.CONTACT,
+        verbose_name=_("Kind"),
+    )
+    channel = models.CharField(
+        max_length=20,
+        choices=Channel.choices,
+        blank=True,
+        verbose_name=_("Channel"),
+    )
+    contacted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Contacted at"),
+    )
+    person = models.ForeignKey(
+        "clients.Client",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="step_notes",
+        verbose_name=_("Person"),
+    )
+    contact_person = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_("Contact person"),
+    )
+    done_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Done at"),
+    )
+
+    # claude — who a reminder is addressed to (Dziennik kontaktów → "Komu
+    # przypomnieć"). Empty = the original behaviour: owners → assignees →
+    # author (notification/services/followup_reminders.resolve_followup_recipients).
+    class Notify(models.TextChoices):
+        SELF = "self", _("Me")
+        USERS = "users", _("Colleagues")
+        ROLES = "roles", _("Role")
+        CLIENT = "client", _("Client by email")
+
+    notify = models.CharField(
+        max_length=10,
+        choices=Notify.choices,
+        blank=True,
+        verbose_name=_("Remind whom"),
+    )
+    notify_users = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name="addressed_reminders",
+        verbose_name=_("Colleagues to remind"),
+    )
+    notify_roles = ArrayField(
+        models.CharField(max_length=50),
+        default=list,
+        blank=True,
+        verbose_name=_("Roles to remind"),
+    )
+    client_email = models.EmailField(
+        max_length=254,
+        blank=True,
+        verbose_name=_("Client email"),
+    )
+
+    target_content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        related_name="step_notes",
+        verbose_name=_("Target content type"),
+        null=True,
+        blank=True,
+    )
+    target_object_id = models.PositiveIntegerField(
+        verbose_name=_("Target object id"),
+        null=True,
+        blank=True,
+    )
+    target = GenericForeignKey("target_content_type", "target_object_id")
+
+    class Meta:
+        verbose_name = _("Step note")
+        verbose_name_plural = _("Step notes")
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["target_content_type", "target_object_id", "-created_at"]),
+        ]
+        # claude — инварианты kind: contact обязательно несёт contacted_at,
+        # reminder — next_contact_at. Ставится только после Task 2 (backfill),
+        # иначе боевые строки без kind/contacted_at не пройдут констрейнт.
+        # claude — литералы "contact"/"reminder" вместо Kind.CONTACT/Kind.REMINDER:
+        # тело вложенного класса Meta не видит имена из тела StepNote как
+        # свободные переменные (в отличие от функций), только global/builtin.
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(kind="contact") | Q(contacted_at__isnull=False),
+                name="stepnote_contact_requires_contacted_at",
+            ),
+            models.CheckConstraint(
+                condition=~Q(kind="reminder") | Q(next_contact_at__isnull=False),
+                name="stepnote_reminder_requires_next_contact_at",
+            ),
+        ]
+
+    def __str__(self):
+        who = self.author.username if self.author_id else "system"
+        return f"{who}: {self.action or self.text[:40]}"
+
+    # claude — "→ whom" tag on the work-log timeline (step_notes_modal.html).
+    # Empty for contacts and for reminders that use the default recipients.
+    @property
+    def notify_label(self):
+        if self.kind != self.Kind.REMINDER or not self.notify:
+            return ""
+        if self.notify == self.Notify.SELF:
+            return str(_("me"))
+        if self.notify == self.Notify.CLIENT:
+            return str(_("client · %(email)s") % {"email": self.client_email})
+        if self.notify == self.Notify.ROLES:
+            from crm.users.models import Role
+
+            names = {r.code: str(r) for r in Role.objects.filter(code__in=self.notify_roles)}
+            return str(_("role: %(roles)s") % {"roles": ", ".join(names.get(c, c) for c in self.notify_roles)})
+        people = [u.get_full_name() or u.get_username() for u in self.notify_users.all()]
+        return ", ".join(people)
+
+    # claude — дублирует CheckConstraint-ы с переводимыми сообщениями,
+    # привязанными к конкретному полю, чтобы админка показывала ошибку
+    # у поля, а не общим баннером над формой.
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.kind == self.Kind.CONTACT and self.contacted_at is None:
+            errors["contacted_at"] = _("Contact notes require a contacted-at date.")
+        if self.kind == self.Kind.REMINDER and self.next_contact_at is None:
+            errors["next_contact_at"] = _("Reminders require a next-contact date.")
+        if errors:
+            raise ValidationError(errors)
+
+
+class DeletedRequest(RequestMain):  # proxy może otwierać te same dane w innych klasach
+    class Meta:
+        proxy = True
+        verbose_name = _("Deleted Request")
+        verbose_name_plural = _("Deleted Requests")
+
+class CancelledRequest(RequestMain):
+    class Meta:
+        proxy = True
+        verbose_name = _("Cancelled Request")
+        verbose_name_plural = _("Cancelled Requests")
+
+
+# claude — корзина для soft-удалённых лидов Validation Window (RequestNull).
+# Отдельный proxy, т.к. база — RequestNull, а не RequestMain: restore из этой
+# корзины возвращает заявку обратно в Validation Window, а не в RequestMain.
+class DeletedValidationRequest(RequestNull):
+    class Meta:
+        proxy = True
+        verbose_name = _("Deleted Validation Request")
+        verbose_name_plural = _("Deleted Validation Requests")
+
+
+# claude — корзина cancelled-лидов Validation Window (RequestNull).
+# Отдельный proxy, т.к. база — RequestNull: restore возвращает обратно в VW.
+class CancelledValidationRequest(RequestNull):
+    class Meta:
+        proxy = True
+        verbose_name = _("Cancelled Validation Request")
+        verbose_name_plural = _("Cancelled Validation Requests")
