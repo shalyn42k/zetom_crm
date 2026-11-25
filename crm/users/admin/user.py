@@ -19,7 +19,7 @@ from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from crm.notification.models import Notification
 from crm.users.forms import CustomUserChangeForm, CustomUserCreateForm
-from crm.users.models import Permission, Role, UserProfile
+from crm.users.models import Permission, UserProfile
 from crm.users.services.deactivation import deactivate_user, reactivate_user
 from crm.users.utils import PRIVILEGED_ROLE_CODES, user_has_perm
 from crm.zetom.models import department_choices

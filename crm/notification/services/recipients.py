@@ -159,13 +159,3 @@ def review_candidates_for(request_main, sender):
         key=lambda u: (u.username or "").lower(),
     )
     return default, extras
-
-
-# claude — backward-compat aliases. Старые имена остаются, но просто
-# делегируют в новые. Удалить можно после прохода по всему коду.
-def dep_heads_or_admins(request_main):
-    return default_recipients(request_main)
-
-
-def dep_heads_or_admins_emails(request_main):
-    return default_recipients_emails(request_main)

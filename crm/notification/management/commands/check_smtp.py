@@ -15,13 +15,12 @@ Output: Color-coded diagnostic info without exposing passwords.
 """
 # Stdlib
 import logging
-import socket
 import smtplib
-from typing import Optional
+import socket
 
 # Django imports
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +48,7 @@ class Command(BaseCommand):
         default_from = settings.DEFAULT_FROM_EMAIL
 
         self.stdout.write(
-            self.style.HTTP_INFO(f"Configuration from settings:")
+            self.style.HTTP_INFO("Configuration from settings:")
         )
         self.stdout.write(f"  EMAIL_HOST: {email_host}")
         self.stdout.write(f"  EMAIL_PORT: {email_port}")
@@ -73,12 +72,12 @@ class Command(BaseCommand):
             )
             self.stdout.write(
                 self.style.WARNING(
-                    f"  This matches your error: [Errno -3] Temporary failure in name resolution"
+                    "  This matches your error: [Errno -3] Temporary failure in name resolution"
                 )
             )
             self.stdout.write(
                 self.style.WARNING(
-                    f"  Check: 1) Is EMAIL_HOST correct? 2) Does server have DNS access?"
+                    "  Check: 1) Is EMAIL_HOST correct? 2) Does server have DNS access?"
                 )
             )
             return
@@ -98,7 +97,7 @@ class Command(BaseCommand):
             )
         except socket.timeout:
             self.stdout.write(
-                self.style.ERROR(f"✗ TCP connection timed out")
+                self.style.ERROR("✗ TCP connection timed out")
             )
             return
         except (socket.error, ConnectionRefusedError) as e:
@@ -117,12 +116,12 @@ class Command(BaseCommand):
                 server = smtplib.SMTP(email_host, email_port, timeout=5)
                 server.starttls()
                 self.stdout.write(
-                    self.style.SUCCESS(f"✓ STARTTLS successful")
+                    self.style.SUCCESS("✓ STARTTLS successful")
                 )
             else:
                 server = smtplib.SMTP(email_host, email_port, timeout=5)
                 self.stdout.write(
-                    self.style.SUCCESS(f"✓ SMTP connection successful (no TLS)")
+                    self.style.SUCCESS("✓ SMTP connection successful (no TLS)")
                 )
 
             # Step 4: AUTH if credentials are provided
@@ -136,7 +135,7 @@ class Command(BaseCommand):
                     if not password:
                         self.stdout.write(
                             self.style.WARNING(
-                                f"⚠ EMAIL_HOST_PASSWORD not set, skipping AUTH test"
+                                "⚠ EMAIL_HOST_PASSWORD not set, skipping AUTH test"
                             )
                         )
                     else:
@@ -160,7 +159,7 @@ class Command(BaseCommand):
                 self.stdout.write("")
                 self.stdout.write(
                     self.style.WARNING(
-                        f"⚠ EMAIL_HOST_USER not set, skipping AUTH test"
+                        "⚠ EMAIL_HOST_USER not set, skipping AUTH test"
                     )
                 )
 

@@ -17,7 +17,7 @@ from django.test import TestCase
 
 from crm.status_manager.services.statuses import RequestStatus, Status
 from crm.zetom.models import (
-    DepartmentsVariants, Oferta, RequestMain, RequestNull, Wniosek, Zlecenie,
+    Oferta, RequestMain, RequestNull, Wniosek, Zlecenie,
 )
 
 # Минимальный набор обязательных полей RequestTemplate.

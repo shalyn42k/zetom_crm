@@ -182,7 +182,7 @@ def send_to_staff(*, subject, body, recipients, template_name="", payload=None, 
     """Send an email to staff.
 
     `recipients` is required and is expected to be resolved dynamically via
-    `services/recipients.py` (dep_heads_or_admins_emails / specialists / etc.)
+    `services/recipients.py` (default_recipients_emails / specialists / etc.)
     for the specific Req context. Empty list is allowed — `_send` will skip
     with a warning instead of raising.
     """

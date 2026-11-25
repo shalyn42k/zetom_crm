@@ -19,7 +19,7 @@ from unittest.mock import MagicMock
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from crm.users.models import Permission, Role, UserProfile
+from crm.users.models import Permission, Role
 from crm.users.utils import user_has_perm
 
 User = get_user_model()

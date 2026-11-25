@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from crm.users.models import Permission, Role
+from crm.users.models import Role
 
 
 class RoleAdminPermissionsDisplayTests(TestCase):
