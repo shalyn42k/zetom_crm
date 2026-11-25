@@ -109,6 +109,10 @@ COMPANY_SIGNATURE = {
     "tagline": "BADANIA | CERTYFIKACJA | SZKOLENIA | WZORCOWANIE",
 }
 
+# claude — shared secret for POST /zetom/api/site-request/ (the client's
+# WordPress site forwards its contact form there). Empty = endpoint off (404).
+SITE_INTAKE_TOKEN = os.getenv("SITE_INTAKE_TOKEN", "")
+
 # Прод-настройки безопасности (включаются автоматически при DEBUG=False).
 # Cloudflare терминирует TLS, поэтому редирект и сертификаты не наша забота.
 if not DEBUG:

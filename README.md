@@ -119,4 +119,4 @@ EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
 
 NIP в форме проверяется строго (контрольная сумма), для теста возьмите любой реальный польский NIP.
 
-Сайт клиента https://zetomkatowice.eu (WordPress) пока с CRM не связан — его форма «Kontakt» только шлёт письмо. Варианты связки описаны в [плане проверки](DOCS/test_plan_release_test.md).
+Сайт клиента https://zetomkatowice.eu (WordPress) шлёт свою форму «Kontakt» в `POST /zetom/api/site-request/` (JSON, токен `SITE_INTAKE_TOKEN` из `.env`; пустой токен = эндпоинт выключен). Настройка WordPress и сервера: [DOCS/site_integration_wordpress.md](DOCS/site_integration_wordpress.md).
