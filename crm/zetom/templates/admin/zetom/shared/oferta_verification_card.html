@@ -1,0 +1,73 @@
+{% load i18n %}
+{% comment %}
+claude — offer verification (OfertaVerificationMixin). Shown above the
+document preview on the Oferta window only. An offer can be sent to the
+client only after another person approves it here; editing the offer
+afterwards resets the approval.
+{% endcomment %}
+{% with v=doc_window.verification %}
+<section class="de-card de-verify de-verify--{{ v.status }}" id="verification" aria-labelledby="de-verify-heading">
+  <div class="de-card__head">
+    <h2 id="de-verify-heading" class="de-card__title">{% trans "Verification" %}</h2>
+    <span class="de-vbadge de-vbadge--{{ v.status }}">{{ v.label }}</span>
+  </div>
+
+  {% if v.status == "none" %}
+    <p class="de-card__hint">{% trans "Every offer must be checked by another person before it is sent to the client." %}</p>
+  {% endif %}
+  {% if v.requested_by and v.status != "none" %}
+    <p class="de-verify__line">
+      {% trans "Requested by" %}: <strong>{{ v.requested_by.get_full_name|default:v.requested_by.username }}</strong>
+      · {{ v.requested_at|date:"d.m.Y H:i" }}
+    </p>
+  {% endif %}
+  {% if v.verified_by %}
+    <p class="de-verify__line">
+      {% if v.status == "approved" %}{% trans "Verified by" %}{% else %}{% trans "Rejected by" %}{% endif %}:
+      <strong>{{ v.verified_by.get_full_name|default:v.verified_by.username }}</strong>
+      · {{ v.verified_at|date:"d.m.Y H:i" }}
+    </p>
+  {% endif %}
+  {% if v.note %}<p class="de-verify__note">{{ v.note }}</p>{% endif %}
+  {% if v.is_own_request %}
+    <p class="de-card__hint">{% trans "Waiting for another person to verify. You can't verify your own request." %}</p>
+  {% endif %}
+
+  {% if v.can_request %}
+    <form method="post" action="{{ v.request_url }}" class="de-verify__form">
+      {% csrf_token %}
+      {% if v.candidates %}
+        <fieldset class="de-verify__people">
+          <legend>{% trans "Who should verify" %}</legend>
+          {% for person in v.candidates %}
+            <label class="de-verify__person">
+              <input type="checkbox" name="reviewer_ids" value="{{ person.pk }}">
+              {{ person.get_full_name|default:person.username }}
+              {% comment %}claude — a superuser keeps whatever role is on the profile (often "Specialist") but can do everything; say so, or the list looks wrong{% endcomment %}
+              {% if person.is_superuser %}<span class="de-verify__role">{% trans "Superuser" %}</span>
+              {% elif person.profile.role %}<span class="de-verify__role">{{ person.profile.role }}</span>{% endif %}
+            </label>
+          {% endfor %}
+        </fieldset>
+        <label class="de-verify__label" for="de-verify-request-note">{% trans "Comment (optional)" %}</label>
+        <textarea id="de-verify-request-note" name="note" rows="2" maxlength="1000" class="de-verify__text"></textarea>
+        <button type="submit" class="de-btn de-btn--accent">{% trans "Request verification" %}</button>
+      {% else %}
+        <p class="de-card__hint">{% trans "Nobody can verify this offer yet — ask an administrator to grant the review permission." %}</p>
+      {% endif %}
+    </form>
+  {% endif %}
+
+  {% if v.can_resolve %}
+    <form method="post" action="{{ v.resolve_url }}" class="de-verify__form">
+      {% csrf_token %}
+      <label class="de-verify__label" for="de-verify-resolve-note">{% trans "Comment (optional)" %}</label>
+      <textarea id="de-verify-resolve-note" name="note" rows="2" maxlength="1000" class="de-verify__text"></textarea>
+      <div class="de-verify__actions">
+        <button type="submit" name="decision" value="approved" class="de-btn de-btn--accent">{% trans "Approve" %}</button>
+        <button type="submit" name="decision" value="rejected" class="de-btn de-btn--danger">{% trans "Reject" %}</button>
+      </div>
+    </form>
+  {% endif %}
+</section>
+{% endwith %}

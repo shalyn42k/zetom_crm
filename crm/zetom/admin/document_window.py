@@ -252,6 +252,14 @@ class DocumentWindowMixin:
     # Oferta / Wniosek can be closed by hand; Zlecenie only through the chain.
     can_mark_done = False
 
+    # claude — hooks a document type can override (OfertaVerificationMixin does)
+    def send_blocked_reason(self, obj):
+        """Why "Send to client" is not allowed yet, or None."""
+        return None
+
+    def extra_doc_window_context(self, request, obj):
+        return {}
+
     def get_urls(self):
         urls = super().get_urls()
         opts = self.model._meta
@@ -381,6 +389,11 @@ class DocumentWindowMixin:
         obj, allowed = self._get_doc(request, object_id, change=True)
         if not allowed or not user_has_perm(request.user, "send_documents"):
             return HttpResponseForbidden(_("You don't have permission for this action."))
+        # claude — e.g. an offer that no second person has verified yet
+        blocked = self.send_blocked_reason(obj)
+        if blocked:
+            messages.error(request, blocked)
+            return redirect(self._change_url(obj))
 
         to = (request.POST.get("to") or "").strip()
         subject = (request.POST.get("subject") or "").strip()
@@ -496,5 +509,7 @@ class DocumentWindowMixin:
             "send_subject": _send_subject(obj, paper),
             "send_message": _send_message(obj, paper),
             "can_send": can_change and user_has_perm(request.user, "send_documents"),
+            "send_blocked": self.send_blocked_reason(obj),
             "source_channels": StepNote.Channel.choices,
+            **self.extra_doc_window_context(request, obj),
         }
