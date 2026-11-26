@@ -28,59 +28,73 @@
 
 ## 2. WordPress
 
-### 2.1. Токен и адрес в `wp-config.php`
+### 2.1. Плагин Code Snippets
 
-Через FTP / файловый менеджер хостинга добавить в `wp-config.php` перед строкой
-`/* That's all, stop editing! */`:
+Админка сайта (`/wp-admin/`) → **Плагины → Добавить новый плагин** → найти
+`Code Snippets` → **Установить** → **Активировать**. В меню слева появится
+**Фрагменты** (Snippets).
 
-```php
-define( 'ZETOM_CRM_URL', 'https://<домен-crm>/zetom/api/site-request/' );
-define( 'ZETOM_CRM_TOKEN', '<токен>' );
-```
+### 2.2. Фрагмент
 
-Токен не кладём в сам сниппет, чтобы его не было видно в админке WordPress.
-
-### 2.2. Сниппет
-
-Плагины → Добавить → **Code Snippets** → установить и активировать.
-Snippets → Add New → название «ZETOM → CRM», тип PHP, «Run snippet everywhere», вставить и активировать:
+**Фрагменты → Добавить новый**, название «ZETOM → CRM», тип PHP. В поле кода
+уже есть строка `<?php` — её не дублировать, всё ниже вставить под ней.
+Подставить адрес CRM и токен (тот же, что `SITE_INTAKE_TOKEN` в `.env` CRM),
+выбрать **Запускать фрагмент везде**, нажать **Сохранить изменения и активировать**.
 
 ```php
-<?php
-// Пересылает форму «Kontakt» (Divi) в ZETOM CRM. Письмо Divi уходит как раньше.
+// ZETOM → CRM: пересылает форму «Kontakt» (Divi) в CRM. Письмо Divi уходит как раньше.
+// Адрес и токен можно вместо этого задать в wp-config.php теми же define().
+if ( ! defined( 'ZETOM_CRM_URL' ) ) {
+    define( 'ZETOM_CRM_URL', 'https://<домен-crm>/zetom/api/site-request/' );
+}
+if ( ! defined( 'ZETOM_CRM_TOKEN' ) ) {
+    define( 'ZETOM_CRM_TOKEN', '<токен>' );
+}
+
 add_action( 'et_pb_contact_form_submit', function ( $fields, $has_error, $form_info ) {
-    if ( $has_error || ! defined( 'ZETOM_CRM_URL' ) || ! defined( 'ZETOM_CRM_TOKEN' ) ) {
+    if ( $has_error ) {
         return;
     }
-    $value = function ( $id ) use ( $fields ) {
-        return isset( $fields[ $id ]['value'] ) ? sanitize_text_field( $fields[ $id ]['value'] ) : '';
-    };
-    $payload = array(
-        'first_name'   => $value( 'imie' ),
-        'last_name'    => $value( 'nazwisko' ),
-        'phone'        => $value( 'telefon' ),
-        'email'        => $value( 'email' ),
-        'company_name' => $value( 'firma' ),
-        'message'      => isset( $fields['wiadomosc']['value'] )
-            ? sanitize_textarea_field( $fields['wiadomosc']['value'] ) : '',
-    );
-    $response = wp_remote_post( ZETOM_CRM_URL, array(
-        'timeout' => 8,
-        'headers' => array(
-            'Authorization' => 'Bearer ' . ZETOM_CRM_TOKEN,
-            'Content-Type'  => 'application/json',
-        ),
-        'body'    => wp_json_encode( $payload ),
-    ) );
-    $code = is_wp_error( $response ) ? $response->get_error_message() : wp_remote_retrieve_response_code( $response );
-    if ( ! in_array( $code, array( 200, 201 ), true ) ) {
-        error_log( 'ZETOM CRM intake failed: ' . print_r( $code, true ) . ' ' . wp_remote_retrieve_body( $response ) );
+    // Любая ошибка здесь не должна ломать форму на сайте.
+    try {
+        $value = function ( $id ) use ( $fields ) {
+            return isset( $fields[ $id ]['value'] ) ? sanitize_text_field( $fields[ $id ]['value'] ) : '';
+        };
+        $payload = array(
+            'first_name'   => $value( 'imie' ),
+            'last_name'    => $value( 'nazwisko' ),
+            'phone'        => $value( 'telefon' ),
+            'email'        => $value( 'email' ),
+            'company_name' => $value( 'firma' ),
+            'message'      => isset( $fields['wiadomosc']['value'] )
+                ? sanitize_textarea_field( $fields['wiadomosc']['value'] ) : '',
+        );
+        $response = wp_remote_post( ZETOM_CRM_URL, array(
+            'timeout' => 5,
+            'headers' => array(
+                'Authorization' => 'Bearer ' . ZETOM_CRM_TOKEN,
+                'Content-Type'  => 'application/json',
+            ),
+            'body'    => wp_json_encode( $payload ),
+        ) );
+        $code = is_wp_error( $response ) ? $response->get_error_message() : wp_remote_retrieve_response_code( $response );
+        if ( ! in_array( $code, array( 200, 201 ), true ) ) {
+            error_log( 'ZETOM CRM intake failed: ' . print_r( $code, true ) . ' ' . wp_remote_retrieve_body( $response ) );
+        }
+    } catch ( \Throwable $e ) {
+        error_log( 'ZETOM CRM intake error: ' . $e->getMessage() );
     }
 }, 10, 3 );
 ```
 
-Если на сайте несколько форм Divi, а пересылать нужно только «Kontakt», в начало
-функции добавить проверку `$form_info['contact_form_number']` (номер формы на странице).
+Типичная ошибка: оставить во фрагменте только `define(...)` (ничего не
+отправляется) или только `add_action(...)` без `define` — тогда PHP падает
+на неизвестной константе и кнопка формы на сайте крутится бесконечно.
+Нужны обе части.
+
+ID полей (`imie`, `nazwisko`, `telefon`, `email`, `firma`, `wiadomosc`)
+сверены с формой на /kontakt/ (2026-11-27). Если поле в Divi переименуют,
+поправить ключ здесь.
 
 ### 2.3. Проверка
 
