@@ -40,6 +40,7 @@ from crm.zetom.services.status_orchestration import (
 )
 
 from .base import BaseRequestAdmin, ReasonForm
+from .concurrency import OptimisticLockMixin
 from .document_window import DocumentWindowMixin
 
 # claude — document window fieldsets: the template's own fields first, the
@@ -208,7 +209,7 @@ class OfertaItemInline(StackedInline):
 
 
 @admin.register(Oferta)
-class OfertaAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
+class OfertaAdmin(OptimisticLockMixin, DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
     actions = []
     form = AddOferta
     can_mark_done = True
@@ -284,7 +285,7 @@ class OfertaAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMix
 # needs a Wniosek keeps its Zlecenie open rather than getting force-closed
 # by hand from this form.
 @admin.register(Zlecenie)
-class ZlecenieAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, BaseRequestAdmin):
+class ZlecenieAdmin(OptimisticLockMixin, DocumentWindowMixin, ChildDeleteReasonMixin, BaseRequestAdmin):
     actions = []
     form = AddZlecenie
 
@@ -317,7 +318,7 @@ class ZlecenieAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, BaseRequestAdmi
 
 
 @admin.register(Wniosek)
-class WniosekAdmin(DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
+class WniosekAdmin(OptimisticLockMixin, DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
     actions = []
     form = AddWniosek
     can_mark_done = True

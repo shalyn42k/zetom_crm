@@ -430,3 +430,15 @@ html:not(.dark) .cc-stage .pager span.active { background: var(--green); border-
    own gap doesn't reach their fields: stack them with the same gap. Shared
    by every cc-stage dialog (client/company dialogs, work-log modal). */
 .cc-stage .modal-b > div:not(.field-row):not(.field):not(.type-opt):not([hidden]) { display: flex; flex-direction: column; gap: 16px; }
+
+/* claude — phone width (audit 2026-11): long company names and the
+   Klienci type switch pushed the page wider than the screen. */
+.cc-stage .id-hero > div { min-width: 0; }
+.cc-stage .id-hero .h-nm,
+.cc-stage .id-hero .h-sub { overflow-wrap: anywhere; }
+.cc-stage .filt { min-width: 0; max-width: 100%; }
+@media (max-width: 560px) {
+  .cc-stage .seg2 { flex-wrap: wrap; }
+  .cc-stage .seg2 a { padding: 8px 12px; }
+  .cc-stage .id-hero .h-nm { font-size: 1.375rem; }
+}

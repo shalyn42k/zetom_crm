@@ -9,7 +9,7 @@
 - Permissions объявлены в [crm/users/signals.py:30-40](../crm/users/signals.py#L30-L40), роли — там же в `roles_data` ([signals.py:48-86](../crm/users/signals.py#L48-L86)).
 - Проверка — централизованно через `user_has_perm` ([crm/users/utils.py](../crm/users/utils.py)).
 - Видимость объектов по ролям — [crm/zetom/services/visibility.py](../crm/zetom/services/visibility.py).
-- Бизнес-требования по ролям — [DOCS/requirements.md](requirements.md) §3, §5.
+- Бизнес-требования — [business_requirements_ru.md](business_requirements_ru.md).
 
 ---
 

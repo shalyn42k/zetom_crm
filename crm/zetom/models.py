@@ -1,3 +1,4 @@
+import contextvars
 from decimal import Decimal
 
 # Django imports
@@ -57,9 +58,29 @@ class Department(models.Model):
         return gettext(self.name)
 
 
+# claude — department_choices() is called per row in changelists
+# (display_departments) and several times per request card: 5–10 identical
+# queries per page. RequestCacheMiddleware opens a dict for the duration of
+# one request; rows are read once into it. Outside a request (scheduler,
+# shell, tests without a client) nothing is cached. Labels are translated on
+# every call, so the active language is respected.
+_request_cache = contextvars.ContextVar("zetom_request_cache", default=None)
+
+
 def department_choices():
-    departs = Department.objects.all().order_by("id")
-    return [(depart.code, str(depart)) for depart in departs]
+    cache = _request_cache.get()
+    rows = cache.get("departments") if cache is not None else None
+    if rows is None:
+        rows = list(Department.objects.order_by("id").values_list("code", "name"))
+        if cache is not None:
+            cache["departments"] = rows
+    return [(code, gettext(name)) for code, name in rows]
+
+
+def reset_department_cache():
+    cache = _request_cache.get()
+    if cache is not None:
+        cache.pop("departments", None)
 
 
 class RequestSource(models.TextChoices):

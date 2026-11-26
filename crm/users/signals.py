@@ -3,11 +3,11 @@ import logging
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission as DjangoPermission
 from django.contrib.contenttypes.models import ContentType
-from django.db.models.signals import post_migrate
+from django.db.models.signals import m2m_changed, post_migrate
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
-from crm.users.models import Permission, Role
+from crm.users.models import Permission, Role, UserProfile
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def create_rbac_defaults(sender, **kwargs):
         return
 
     # claude — permission-каталог. Каждый код должен иметь гейт в коде;
-    # «мёртвые» коды помечены * рядом со статусом в DOCS/rbac.md.
+    # «мёртвые» коды помечены * рядом со статусом в docs/rbac.md.
     # Расширения (manage_owners / view_inbox / view_*_log) — для notification
     # и per-Req owner-флоу; их гейты см. в crm/notification/views.py,
     # crm/notification/admin.py, crm/zetom/services/per_req_perms.py.
@@ -101,7 +101,7 @@ def create_rbac_defaults(sender, **kwargs):
     valid_codes = {code for code, _name in permissions_data}
     Permission.objects.exclude(code__in=valid_codes).delete()
 
-    # claude — наборы по матрице DOCS/rbac.md §5.
+    # claude — наборы по матрице docs/rbac.md §5.
     # all_seeing по дизайну пустая роль-шаблон, права раздаются индивидуально
     # через extra_permissions.
     # claude — имена ролей обёрнуты в _() для makemessages;
@@ -229,3 +229,12 @@ def create_rbac_defaults(sender, **kwargs):
 
             perms = DjangoPermission.objects.filter(content_type=ct)
             user.user_permissions.add(*perms)
+
+
+# claude — сброс кэша UserProfile.permission_codes() при изменении
+# extra_permissions на этом же объекте профиля (например, админ выдал себе
+# право и в том же запросе идёт следующая проверка).
+@receiver(m2m_changed, sender=UserProfile.extra_permissions.through)
+def _reset_perm_cache(sender, instance, **kwargs):
+    if isinstance(instance, UserProfile):
+        instance.__dict__.pop("_perm_codes_cache", None)

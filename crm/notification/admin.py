@@ -107,7 +107,7 @@ def _pretty_json(value):
 
 
 # claude — append-only лог. Удалять / редактировать запрещено даже супер-юзеру,
-# чтобы аудит-история была настоящим immutable-логом (см. DOCS/rbac.md / README).
+# чтобы аудит-история была настоящим immutable-логом (см. docs/rbac.md / README).
 @admin.register(Notification)
 class NotificationAdmin(ModelAdmin):
     list_display = ("created_at", "kind", "recipient", "title_preview", "is_read")

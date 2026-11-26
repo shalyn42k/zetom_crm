@@ -19,4 +19,4 @@ def user_has_perm(user, perm):
     if not profile:
         return False
 
-    return profile.effective_permissions().filter(code=perm).exists()
+    return perm in profile.permission_codes()

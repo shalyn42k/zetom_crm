@@ -99,7 +99,7 @@ class UserListView(RBACRequiredMixin, View):
         # claude — было select_related("userprofile"), но related_name у
         # UserProfile.user — "profile", так что страница падала с FieldError
         # на каждом запросе (тесты обходили это моком менеджера).
-        users = User.objects.all().select_related("profile")
+        users = User.objects.all().select_related("profile", "profile__role")
         return render(request, "users/user_list.html", {"users": users})
 
 

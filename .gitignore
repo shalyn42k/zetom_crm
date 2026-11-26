@@ -224,3 +224,10 @@ DOCS/lab2/
 
 # SDD scratch workspace (superpowers)
 .superpowers/
+
+# Local-only working material (never part of the repo)
+/DOCS/
+/design_handoff_clients_unified/
+.superpowers/
+.claude/
+.ruff_cache/

@@ -1,0 +1,2 @@
+{# claude — optimistic-lock token, see crm/zetom/admin/concurrency.py #}
+{% if concurrency_token %}<input type="hidden" name="_concurrency_token" value="{{ concurrency_token }}" form="{{ opts.model_name }}_form">{% endif %}

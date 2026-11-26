@@ -402,7 +402,9 @@ def person_save(request, pk):
     person.last_name = request.POST.get("last_name", "").strip()
     person.email = email
     person.phone = phone or None
-    person.save()
+    # claude — only the fields this modal edits; notes/address saved from
+    # another tab in the meantime are not written back.
+    person.save(update_fields=["first_name", "last_name", "email", "phone"])
 
     return JsonResponse({
         "ok": True,

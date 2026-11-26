@@ -62,7 +62,14 @@ def is_dep_head_of_req(user, req):
 def is_owner_of_req(user, req):
     if not getattr(user, "is_authenticated", False):
         return False
-    return req.owners.filter(pk=user.pk).exists()
+    # claude — the request card asks this ~a dozen times per render (once per
+    # assignee row and per helper below); one query per req instance instead.
+    # Reset by the m2m_changed handler in crm/zetom/signals.py.
+    owner_ids = req.__dict__.get("_owner_ids_cache")
+    if owner_ids is None:
+        owner_ids = frozenset(req.owners.values_list("pk", flat=True))
+        req.__dict__["_owner_ids_cache"] = owner_ids
+    return user.pk in owner_ids
 
 
 # claude

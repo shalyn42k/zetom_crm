@@ -18,3 +18,4 @@ class ZetomConfig(AppConfig):
     def ready(self):
         # Side-effect import — registers post_softdelete signal handlers.
         import crm.status_manager.signals  # noqa: F401
+        import crm.zetom.signals  # noqa: F401

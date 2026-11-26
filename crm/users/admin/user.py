@@ -54,7 +54,7 @@ PERMISSION_GROUPS = [
     (_("Logs"), ["view_logs"]),
 ]
 
-# claude — заведены в БД, но реально нигде не проверяются (см. DOCS/rbac.md §7).
+# claude — заведены в БД, но реально нигде не проверяются (см. docs/rbac.md §7).
 # Отрисуем с бейджем "Not implemented", чтобы команда не думала, что галочка
 # что-то делает прямо сейчас. Любой код, который вышел из этого списка —
 # значит уже подключён в коде.
@@ -106,7 +106,7 @@ class CustomUserAdmin(DepartmentActionsMixin, UnfoldModelAdmin, DjangoUserAdmin)
         "get_job_title",
         "get_status",
     )
-    list_select_related = ("profile",)
+    list_select_related = ("profile", "profile__role")
 
     # claude — `is_staff` отключён всегда (управляется системой). Для
     # non-superuser ещё блокируем `is_superuser` (нельзя апгрейдить никого

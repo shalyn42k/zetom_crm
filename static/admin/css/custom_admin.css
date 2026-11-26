@@ -756,3 +756,7 @@ select:focus {
 .border-b.gap-1.mb-1.pb-1 > a .material-symbols-outlined {
     margin-right: 4px;
 }
+
+/* claude — phone width (audit 2026-11): textareas keep Django's cols=40
+   intrinsic width and stuck out of the card on a 390px screen. */
+textarea { max-width: 100%; box-sizing: border-box; }

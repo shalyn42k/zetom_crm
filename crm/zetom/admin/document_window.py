@@ -11,11 +11,11 @@ created document versions list who and when, reminders go to the work log
 (Dziennik kontaktów), mark-done/delete to the request history.
 
 The document text itself is a placeholder until the real templates arrive;
-"Create document" saves the current sheet as an HTML file (open it and
-print → "Save as PDF").
+"Create document" saves the current sheet as a PDF in the files list.
 """
 import base64
 import json
+import logging
 from email.mime.image import MIMEImage
 
 from django import forms
@@ -37,17 +37,15 @@ from crm.notification.services.request_mail import document_code
 from crm.users.utils import user_has_perm
 from crm.zetom.models import RequestAttachment, StepNote
 from crm.zetom.services.reminder_targets import client_email_choices
+from crm.zetom.services.uploads import upload_errors
+
+logger = logging.getLogger(__name__)
 
 DOCUMENT_TITLES = {
     "Oferta": _("Offer"),
     "Zlecenie": _("Order"),
     "Wniosek": _("Application"),
 }
-
-# max size of one uploaded file (bytes); the same limit applies to every
-# document kind.
-MAX_UPLOAD_BYTES = 20 * 1024 * 1024
-
 
 def document_context(obj, user):
     """What the paper (preview, print page, saved version) renders. Kept
@@ -146,6 +144,37 @@ def standalone_sheet(paper):
             "email_css": email_css(),
             "logo_url": f"data:image/png;base64,{base64.b64encode(logo).decode()}" if logo else "",
         })
+
+
+# claude — the document as a PDF: what "Create document" saves to the files
+# and what "Send to client" attaches (was an .html file the client had to
+# open in a browser and print). Rendered by WeasyPrint from the same
+# self-contained HTML as standalone_sheet(), so screen, print and PDF can
+# never disagree; @page / @media print in document_editor.css apply.
+class DocumentPdfError(Exception):
+    pass
+
+
+def pdf_url_fetcher():
+    # The sheet carries everything inline (CSS, logo as data: URI). Allow
+    # only data: URIs, so no value on the sheet can make the server fetch a
+    # URL or read a local file.
+    from weasyprint.urls import URLFetcher
+
+    return URLFetcher(allowed_protocols={"data"})
+
+
+def document_pdf(paper):
+    from weasyprint import HTML
+
+    try:
+        return HTML(string=standalone_sheet(paper), url_fetcher=pdf_url_fetcher()).write_pdf()
+    except Exception as exc:  # noqa: BLE001 — shown to the user, logged by caller
+        raise DocumentPdfError(str(exc)) from exc
+
+
+def pdf_name(paper, suffix=""):
+    return f"{slugify(paper['doc_code'])}{suffix}.pdf"
 
 
 _EMAIL_CSS = None
@@ -288,9 +317,10 @@ class DocumentWindowMixin:
         if not files:
             messages.error(request, _("No files selected."))
             return redirect(self._change_url(obj) + "#files")
-        too_big = [f.name for f in files if f.size > MAX_UPLOAD_BYTES]
-        if too_big:
-            messages.error(request, _("Too large (max 20 MB): %(names)s") % {"names": ", ".join(too_big)})
+        errors = upload_errors(files)
+        if errors:
+            for error in errors:
+                messages.error(request, error)
             return redirect(self._change_url(obj) + "#files")
         for f in files:
             RequestAttachment.objects.create(**{self._fk_name(): obj}, file=f, uploaded_by=request.user)
@@ -318,20 +348,25 @@ class DocumentWindowMixin:
         if not allowed:
             return HttpResponseForbidden(_("You don't have permission for this action."))
         paper = document_context(obj, request.user)
-        html = standalone_sheet(paper)
+        try:
+            pdf = document_pdf(paper)
+        except DocumentPdfError:
+            logger.exception("document PDF failed for %s %s", type(obj).__name__, obj.pk)
+            messages.error(request, _("The PDF could not be created. Try again or contact the administrator."))
+            return redirect(self._change_url(obj) + "#files")
         version = sum(
             1 for a in self._files(obj) if a.file.name.rsplit("/", 1)[-1].startswith(slugify(paper["doc_code"]))
         ) + 1
-        name = f"{slugify(paper['doc_code'])}-v{version}.html"
+        name = pdf_name(paper, f"-v{version}")
         RequestAttachment.objects.create(
-            **{self._fk_name(): obj}, file=ContentFile(html.encode("utf-8"), name=name), uploaded_by=request.user,
+            **{self._fk_name(): obj}, file=ContentFile(pdf, name=name), uploaded_by=request.user,
         )
         messages.success(request, _("Document saved to files: %(name)s") % {"name": name})
         return redirect(self._change_url(obj) + "#files")
 
     def send_to_client_action(self, request, object_id):
-        """Email the finished document to the client: the sheet in the mail
-        body + the same sheet as an .html file. Then: status -> waiting
+        """Email the finished document to the client: a short message in the
+        mail body + the document as a PDF attachment. Then: status -> waiting
         (sent, waiting for the client), a copy of what was sent in the files,
         an entry in the work log."""
         from crm.notification.services import mail_service
@@ -361,10 +396,15 @@ class DocumentWindowMixin:
             return redirect(self._change_url(obj))
 
         paper = document_context(obj, request.user)
-        sheet_file = standalone_sheet(paper)
+        try:
+            pdf = document_pdf(paper)
+        except DocumentPdfError:
+            logger.exception("document PDF failed for %s %s", type(obj).__name__, obj.pk)
+            messages.error(request, _("The PDF could not be created. Try again or contact the administrator."))
+            return redirect(self._change_url(obj))
         sig = signature(request.user)
         logo = _logo_png()
-        attachments = [(f"{slugify(paper['doc_code'])}.html", sheet_file, "text/html")]
+        attachments = [(pdf_name(paper), pdf, "application/pdf")]
         if logo:
             image = MIMEImage(logo, "png")
             image.add_header("Content-ID", "<zetom-logo>")
@@ -396,7 +436,7 @@ class DocumentWindowMixin:
         stamp = timezone.localtime().strftime("%Y%m%d-%H%M")
         RequestAttachment.objects.create(
             **{self._fk_name(): obj},
-            file=ContentFile(sheet_file.encode("utf-8"), name=f"{slugify(paper['doc_code'])}-wyslane-{stamp}.html"),
+            file=ContentFile(pdf, name=pdf_name(paper, f"-wyslane-{stamp}")),
             uploaded_by=request.user,
         )
         StepNote.objects.create(

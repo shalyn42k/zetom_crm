@@ -1,19 +1,29 @@
 import sys
 
-from django.conf import settings
 from django.shortcuts import redirect
-from django.urls import resolve, reverse
+from django.urls import Resolver404, resolve, reverse
+from django.utils.http import urlencode
 from django_otp import login as otp_login
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from crm.users import otp_trust
 
-# claude — url_name без неймспейса: в crm.users.urls неймспейса нет и не
-# заводим (иначе ломаются ~30 существующих {% url 'user_list' %} по проекту,
-# см. разбор в чате). otp_gate/otp_backup_codes и так вне /admin/, под этот
-# гейт не попадают; "logout" — чтобы не запереть юзера без 2FA без
-# возможности выйти и зайти заново под другим аккаунтом.
-_EXEMPT_URL_NAMES = {"logout"}
+# claude — view_name (с неймспейсом), которые доступны без пройденной 2FA:
+# сама страница 2FA и бэкап-коды, вход/выход (иначе юзера без 2FA нельзя
+# выпустить и впустить под другим аккаунтом), смена языка и две публичные
+# точки входа заявок (они и так открыты анониму).
+_EXEMPT_VIEW_NAMES = {
+    "admin:login",
+    "admin:logout",
+    "otp_gate",
+    "otp_backup_codes",
+    "set_language",
+    "zetom:index",
+    "zetom:site_request",
+}
+# Аватарки отдаются django.views.static.serve (config/urls.py), статику
+# раздаёт WhiteNoise раньше этого middleware.
+_EXEMPT_PATH_PREFIXES = ("/media/", "/static/")
 
 # claude — тот же приём, что и в notification/services/followup_scheduler.py
 # ("runserver" not in sys.argv): при `manage.py test` половина существующего
@@ -27,7 +37,7 @@ _RUNNING_TESTS = "test" in sys.argv
 class Enforce2FAMiddleware:
     """
     После обычного логина (пароль принят) требует подтверждённое OTP-устройство
-    для входа в /admin/ — кроме юзеров с profile.otp_exempt=True и кроме
+    на любой странице (кроме _EXEMPT_*) — кроме юзеров с otp_exempt=True и кроме
     запросов с валидной cookie "доверенного" браузера (otp_trust.is_trusted) —
     там код спрашивается только один раз, при первом входе с этого браузера.
     """
@@ -35,14 +45,16 @@ class Enforce2FAMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
+    # claude — раньше проверка стояла только на путях /admin/…, а
+    # /users/…, /clients/…, /notifications/… и /zetom/attachments/… (списки
+    # юзеров, поиск клиентов, файлы заявок) открывались после одного
+    # пароля, без кода. Теперь 2FA нужна на любом пути, кроме исключений выше.
     def __call__(self, request):
         user = getattr(request, "user", None)
-        admin_path = f"/{settings.ADMIN_URL}"
         if (
             not _RUNNING_TESTS
             and user and user.is_authenticated
-            and request.path.startswith(admin_path)
-            and not request.path.startswith(f"{admin_path}login/")
+            and not request.path.startswith(_EXEMPT_PATH_PREFIXES)
             and not _is_2fa_exempt(user)
             and not user.is_verified()
         ):
@@ -51,9 +63,14 @@ class Enforce2FAMiddleware:
                 if device is not None:
                     otp_login(request, device)
                     return self.get_response(request)
-            match = resolve(request.path)
-            if match.url_name not in _EXEMPT_URL_NAMES:
-                return redirect(reverse("otp_gate") + f"?next={request.path}")
+            try:
+                view_name = resolve(request.path_info).view_name
+            except Resolver404:
+                view_name = None  # unknown path: let it 404 normally
+            if view_name is not None and view_name not in _EXEMPT_VIEW_NAMES:
+                return redirect(
+                    reverse("otp_gate") + "?" + urlencode({"next": request.get_full_path()})
+                )
         return self.get_response(request)
 
 

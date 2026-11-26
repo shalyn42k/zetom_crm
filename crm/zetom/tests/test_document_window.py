@@ -147,9 +147,10 @@ class DocumentFilesTests(TestCase):
         self.client.post(url)
         names = sorted(a.display_name for a in RequestAttachment.objects.filter(oferta=self.oferta))
         code = document_code(self.oferta).lower()
-        self.assertEqual(names, [f"{code}-v1.html", f"{code}-v2.html"])
-        content = RequestAttachment.objects.first().file.read().decode()
-        self.assertIn(document_code(self.oferta), content)
+        self.assertEqual(names, [f"{code}-v1.pdf", f"{code}-v2.pdf"])
+        # claude — saved as a real PDF now (was the .html sheet)
+        content = RequestAttachment.objects.first().file.read()
+        self.assertTrue(content.startswith(b"%PDF"))
 
     def test_download_needs_visibility(self):
         from crm.zetom.models import RequestAttachment
