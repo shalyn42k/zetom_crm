@@ -42,6 +42,7 @@ from crm.zetom.services.status_orchestration import (
 from .base import BaseRequestAdmin, ReasonForm
 from .concurrency import OptimisticLockMixin
 from .document_window import DocumentWindowMixin
+from .oferta_verification import OfertaVerificationMixin
 
 # claude — document window fieldsets: the template's own fields first, the
 # client snapshot collapsed underneath.
@@ -209,7 +210,10 @@ class OfertaItemInline(StackedInline):
 
 
 @admin.register(Oferta)
-class OfertaAdmin(OptimisticLockMixin, DocumentWindowMixin, ChildDeleteReasonMixin, MarkDoneActionMixin, BaseRequestAdmin):
+class OfertaAdmin(
+    OptimisticLockMixin, OfertaVerificationMixin, DocumentWindowMixin, ChildDeleteReasonMixin,
+    MarkDoneActionMixin, BaseRequestAdmin,
+):
     actions = []
     form = AddOferta
     can_mark_done = True

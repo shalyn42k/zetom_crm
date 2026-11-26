@@ -275,6 +275,31 @@ class Oferta(RequestTemplate):
         max_length=255, blank=True, default="przelew płatny do 14 dni", verbose_name=_("Payment terms"),
     )
 
+    # claude — mandatory second-person verification before the offer may be
+    # sent to the client (crm/zetom/services/oferta_verification.py). Any
+    # change to the offer after approval puts it back to NONE.
+    class Verification(models.TextChoices):
+        NONE = "none", _("Not verified")
+        PENDING = "pending", _("Waiting for verification")
+        APPROVED = "approved", _("Verified")
+        REJECTED = "rejected", _("Verification rejected")
+
+    verification_status = models.CharField(
+        max_length=10, choices=Verification.choices, default=Verification.NONE,
+        verbose_name=_("Verification"),
+    )
+    verification_requested_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+        verbose_name=_("Verification requested by"),
+    )
+    verification_requested_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Verification requested at"))
+    verified_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+",
+        verbose_name=_("Verified by"),
+    )
+    verified_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Verified at"))
+    verification_note = models.TextField(blank=True, verbose_name=_("Verification note"))
+
     class Meta:
         verbose_name = _("Offer")
         verbose_name_plural = _("Offers")

@@ -46,9 +46,17 @@ old per-model templates did.
       </button>
       <a class="de-btn" href="{{ doc_window.print_url }}" target="_blank" rel="noopener">{% trans "Print / PDF" %}</a>
       {% if doc_window.can_send %}
-        <button type="button" class="de-btn de-btn--accent" data-de-send-open data-de-form="{{ opts.model_name }}_form">
-          {% trans "Send to client" %}
-        </button>
+        {% if doc_window.send_blocked %}
+          {% comment %}claude — e.g. an offer nobody else has verified yet: the button is there but off, the reason on hover and next to it{% endcomment %}
+          <button type="button" class="de-btn de-btn--accent" disabled aria-describedby="de-send-blocked" title="{{ doc_window.send_blocked }}">
+            {% trans "Send to client" %}
+          </button>
+          <a id="de-send-blocked" class="de-send-blocked" href="#verification">{{ doc_window.send_blocked }}</a>
+        {% else %}
+          <button type="button" class="de-btn de-btn--accent" data-de-send-open data-de-form="{{ opts.model_name }}_form">
+            {% trans "Send to client" %}
+          </button>
+        {% endif %}
       {% endif %}
       {% if doc_window.mark_done_url %}
         <form method="post" action="{{ doc_window.mark_done_url }}" class="de-inline">
@@ -74,6 +82,7 @@ old per-model templates did.
     <div class="de-main">{{ block.super }}</div>
     {% include "admin/zetom/shared/_concurrency_token.html" %}
     <aside class="de-side">
+      {% if doc_window.verification %}{% include "admin/zetom/shared/oferta_verification_card.html" %}{% endif %}
       <section class="de-card" aria-labelledby="de-preview-heading">
         <div class="de-card__head">
           <h2 id="de-preview-heading" class="de-card__title">{% trans "Document" %}</h2>
@@ -173,7 +182,7 @@ old per-model templates did.
       </div>
     </div>
   </div>
-  {% if doc_window.can_send %}
+  {% if doc_window.can_send and not doc_window.send_blocked %}
   <input type="hidden" name="_open_send" value="" form="{{ opts.model_name }}_form" data-de-send-flag>
   {% comment %}
   claude — "Send to client": the message + signature go by email, the

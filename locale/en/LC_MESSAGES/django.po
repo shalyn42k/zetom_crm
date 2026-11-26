@@ -5392,3 +5392,121 @@ msgstr ""
 #: templates/unfold/helpers/userlinks.html:30
 msgid "Your profile"
 msgstr ""
+
+#: crm/zetom/models.py
+msgid "Not verified"
+msgstr ""
+
+#: crm/zetom/models.py
+msgid "Waiting for verification"
+msgstr ""
+
+#: crm/zetom/models.py
+msgid "Verified"
+msgstr ""
+
+#: crm/zetom/models.py
+msgid "Verification rejected"
+msgstr ""
+
+#: crm/zetom/models.py
+msgid "Verification"
+msgstr ""
+
+#: crm/zetom/models.py
+msgid "Verification requested by"
+msgstr ""
+
+#: crm/zetom/models.py
+msgid "Verification requested at"
+msgstr ""
+
+#: crm/zetom/models.py
+msgid "Verified by"
+msgstr ""
+
+#: crm/zetom/models.py
+msgid "Verified at"
+msgstr ""
+
+#: crm/zetom/models.py
+msgid "Verification note"
+msgstr ""
+
+#: crm/zetom/services/oferta_verification.py
+msgid "The offer is waiting for verification. It can be sent once another person approves it."
+msgstr ""
+
+#: crm/zetom/services/oferta_verification.py
+msgid "The offer was rejected at verification. Fix it and request verification again."
+msgstr ""
+
+#: crm/zetom/services/oferta_verification.py
+msgid "The offer must be verified by another person before it can be sent."
+msgstr ""
+
+#: crm/zetom/services/oferta_verification.py
+#, python-format
+msgid "Offer %(number)s"
+msgstr ""
+
+#: crm/zetom/services/oferta_verification.py
+msgid "This offer is already waiting for verification or verified."
+msgstr ""
+
+#: crm/zetom/services/oferta_verification.py
+msgid "Pick at least one person who can verify the offer."
+msgstr ""
+
+#: crm/zetom/services/oferta_verification.py
+msgid "Unknown decision."
+msgstr ""
+
+#: crm/zetom/services/oferta_verification.py
+msgid "You can't verify this offer."
+msgstr ""
+
+#: crm/zetom/admin/oferta_verification.py
+#, python-format
+msgid "Verification requested from: %(names)s"
+msgstr ""
+
+#: crm/zetom/admin/oferta_verification.py
+msgid "Offer verified. It can now be sent to the client."
+msgstr ""
+
+#: crm/zetom/admin/oferta_verification.py
+msgid "Offer rejected at verification. The author has been notified."
+msgstr ""
+
+#: crm/zetom/admin/oferta_verification.py
+msgid "The offer changed after verification — it needs to be verified again."
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Every offer must be checked by another person before it is sent to the client."
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Requested by"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Rejected by"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Waiting for another person to verify. You can't verify your own request."
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Who should verify"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Request verification"
+msgstr ""
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Nobody can verify this offer yet — ask an administrator to grant the review permission."
+msgstr ""

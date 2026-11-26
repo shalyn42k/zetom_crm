@@ -76,8 +76,11 @@ class DocumentSourceAndSendTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_superuser("boss", "b@zetom.pl", "x", first_name="Anna", last_name="Nowak")
         self.client.force_login(self.user)
+        # claude — these tests are about sending; the mandatory second-person
+        # verification is covered in test_oferta_verification.py.
         self.oferta = Oferta.objects.create(first_name="Jan", last_name="Kowalski", phone="+48501600300",
-                                            email="jan@acme.pl", company_name="Acme", offer_number="LTO/1/2025-10")
+                                            email="jan@acme.pl", company_name="Acme", offer_number="LTO/1/2025-10",
+                                            verification_status=Oferta.Verification.APPROVED)
         self.oferta.assigned_to.add(self.user)
         self.url = reverse("admin:zetom_oferta_change", args=[self.oferta.pk])
 
