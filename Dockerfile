@@ -7,9 +7,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# gettext нужен Django для makemessages/compilemessages (переводы)
+# gettext нужен Django для makemessages/compilemessages (переводы).
+# pango/harfbuzz + шрифты — для WeasyPrint (документы в PDF): Liberation Sans
+# метрически совпадает с Arial бланка оферты, Inter/DejaVu — для остальных,
+# все с польскими буквами.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gettext \
+    && apt-get install -y --no-install-recommends \
+        gettext \
+        libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 \
+        fonts-liberation fonts-inter fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

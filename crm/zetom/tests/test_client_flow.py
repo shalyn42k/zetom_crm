@@ -138,10 +138,17 @@ class DocumentSourceAndSendTests(TestCase):
         self.assertIn("cid:zetom-logo", html)
         self.assertNotIn("de-paper", html)
         self.assertIn("Anna Nowak", sent.body)
-        # attachment: the document as a self-contained .html file + the inline logo
-        name, sheet, sheet_type = next(a for a in sent.attachments if isinstance(a, tuple))
-        self.assertTrue(name.endswith(".html"))
-        self.assertEqual(sheet_type, "text/html")
+        # claude — attachment: the document as a PDF (was an .html file) + the inline logo
+        name, pdf, pdf_type = next(a for a in sent.attachments if isinstance(a, tuple))
+        self.assertTrue(name.endswith(".pdf"))
+        self.assertEqual(pdf_type, "application/pdf")
+        self.assertTrue(pdf.startswith(b"%PDF"))
+        # the PDF is rendered from this self-contained sheet: nothing external
+        from crm.zetom.admin.document_window import (
+            document_context, standalone_sheet,
+        )
+
+        sheet = standalone_sheet(document_context(self.oferta, self.user))
         self.assertIn("LTO/1/2025-10", sheet)
         self.assertIn("de-paper", sheet)
         self.assertIn("data:image/png;base64,", sheet)
@@ -151,8 +158,33 @@ class DocumentSourceAndSendTests(TestCase):
         self.assertEqual(logo["Content-ID"], "<zetom-logo>")
         self.oferta.refresh_from_db()
         self.assertEqual(self.oferta.status, Status.waiting)
-        self.assertTrue(RequestAttachment.objects.filter(oferta=self.oferta, file__contains="wyslane").exists())
+        saved = RequestAttachment.objects.get(oferta=self.oferta, file__contains="wyslane")
+        self.assertTrue(saved.display_name.endswith(".pdf"))
         self.assertEqual(StepNote.objects.get().channel, "email")
+
+    # claude — PDF generation failing must not send a half-done mail
+    def test_send_stops_when_the_pdf_fails(self):
+        from unittest.mock import patch
+
+        from crm.zetom.admin.document_window import DocumentPdfError
+
+        with patch("crm.zetom.admin.document_window.document_pdf", side_effect=DocumentPdfError("boom")):
+            self.client.post(reverse("admin:zetom_oferta_send_to_client", args=[self.oferta.pk]),
+                             {"to": "jan@acme.pl", "subject": "Oferta", "message": "x"})
+        self.assertEqual(len(mail.outbox), 0)
+        self.oferta.refresh_from_db()
+        self.assertEqual(self.oferta.status, Status.new)
+        self.assertFalse(RequestAttachment.objects.exists())
+
+    def test_pdf_renderer_never_fetches_urls(self):
+        from crm.zetom.admin.document_window import pdf_url_fetcher
+
+        fetcher = pdf_url_fetcher()
+        with self.assertRaises(ValueError):
+            fetcher.fetch("http://169.254.169.254/latest/meta-data/")
+        with self.assertRaises(ValueError):
+            fetcher.fetch("file:///etc/passwd")
+        self.assertEqual(fetcher.fetch("data:text/plain,ok").read(), b"ok")
 
     def test_default_message_has_no_signature_twice(self):
         message = self.client.get(self.url).context["doc_window"]["send_message"]

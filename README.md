@@ -11,7 +11,7 @@ CRM для ZETOM Katowice: заявки клиентов → оферты, zlece
 * **Приём заявок**: публичная форма `/zetom/email/`, форма «Kontakt» сайта клиента (WordPress → `POST /zetom/api/site-request/`), ручное создание.
 * **Окно валидации** (`RequestNull`): проверка лида, поиск дублей среди заявок и клиентов, привязка или создание клиента, выбор отделов и ответственных, перевод в заявку (`RequestMain`).
 * **Карточка заявки**: данные клиента, команда и отделы, файлы, журнал работы, история изменений полей, запрос ревью, письма клиенту.
-* **Документы**: Oferta → Zlecenie → Wniosek с мягкой цепочкой, окно документа с печатью/PDF и отправкой клиенту.
+* **Документы**: Oferta → Zlecenie → Wniosek с мягкой цепочкой, окно документа: печать, сохранение в PDF и отправка клиенту на почту PDF-файлом.
 * **Клиенты и фирмы**: единый список «Klienci», карточки человека и фирмы, поиск фирмы по NIP в реестре VAT (MF).
 * **Уведомления**: в приложении и по почте, напоминания о контакте, запланированные письма, настройки уведомлений на пользователя.
 * **Права (RBAC)**: роли и права из каталога, видимость по отделам, per-заявка владельцы. Матрица: [docs/rbac.md](docs/rbac.md).
@@ -28,7 +28,7 @@ CRM для ZETOM Katowice: заявки клиентов → оферты, zlece
 
 ## Стек
 
-Python 3.13 · Django 5.2 LTS · PostgreSQL 16 · django-unfold · gunicorn + WhiteNoise · Docker Compose · Cloudflare Tunnel.
+Python 3.13 · Django 5.2 LTS · PostgreSQL 16 · django-unfold · WeasyPrint (PDF) · gunicorn + WhiteNoise · Docker Compose · Cloudflare Tunnel.
 
 ## Структура
 
@@ -57,7 +57,7 @@ docs/              бизнес-требования, RBAC, интеграция
    ```bash
    docker compose up -d db
    ```
-3. Зависимости (Python 3.13+):
+3. Зависимости (Python 3.13+). Для PDF нужны системные pango и шрифты: на Debian/Ubuntu `apt install libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-liberation`, на Arch `pacman -S pango`, на macOS `brew install pango`.
    ```bash
    python -m venv .venv && source .venv/bin/activate
    pip install -r requirements-dev.txt

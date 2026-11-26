@@ -4,6 +4,12 @@
 
 First version prepared for `main`.
 
+### Documents as PDF
+- "Create document" saves the sheet as a PDF, and "Send to client" attaches a PDF (both used to be `.html` files the client had to open in a browser). The copy of what was sent is a PDF too.
+- Rendered server-side with WeasyPrint from the same self-contained HTML as the print view, so screen, print and PDF match. The renderer may load only inline `data:` resources, never URLs or local files.
+- If the PDF can't be built, nothing is sent and the status doesn't change; the user sees an error.
+- The Docker image installs pango and fonts with Polish characters (Liberation Sans for the offer's Arial, Inter, DejaVu).
+
 ### Security
 - 2FA is required on every page after login, not only under the admin path (before, `/users/`, `/clients/`, `/notifications/` and file downloads opened with just a password).
 - django-axes locks the username+IP pair. The previous setting locked by IP alone, and behind Cloudflare every visitor shares one IP, so five wrong passwords from anyone locked everybody out. The real visitor IP is now taken from `CF-Connecting-IP`.

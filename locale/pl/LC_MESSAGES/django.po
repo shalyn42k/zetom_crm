@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-26 23:59+0100\n"
+"POT-Creation-Date: 2026-11-27 00:18+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -226,10 +226,10 @@ msgstr "Klient nie znaleziony."
 #: crm/zetom/admin/base.py:203 crm/zetom/admin/children.py:69
 #: crm/zetom/admin/deletedrequest.py:120
 #: crm/zetom/admin/deletedvalidationrequest.py:103
-#: crm/zetom/admin/document_window.py:282
-#: crm/zetom/admin/document_window.py:302
-#: crm/zetom/admin/document_window.py:316
-#: crm/zetom/admin/document_window.py:345 crm/zetom/admin/requestmain.py:824
+#: crm/zetom/admin/document_window.py:315
+#: crm/zetom/admin/document_window.py:335
+#: crm/zetom/admin/document_window.py:349
+#: crm/zetom/admin/document_window.py:383 crm/zetom/admin/requestmain.py:824
 #: crm/zetom/admin/requestmain.py:968 crm/zetom/admin/requestmain.py:1171
 #: crm/zetom/admin/requestmain.py:1196 crm/zetom/admin/requestmain_mail.py:64
 #: crm/zetom/admin/requestmain_resolve_review.py:115
@@ -3066,7 +3066,7 @@ msgid "Enter the client's email address."
 msgstr "Wpisz adres e-mail klienta."
 
 #: crm/zetom/admin/base.py:324 crm/zetom/admin/children.py:227
-#: crm/zetom/admin/document_window.py:43 crm/zetom/models.py:279
+#: crm/zetom/admin/document_window.py:45 crm/zetom/models.py:279
 #: crm/zetom/models.py:306
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:182
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:31
@@ -3074,14 +3074,14 @@ msgid "Offer"
 msgstr "Oferta"
 
 #: crm/zetom/admin/base.py:326 crm/zetom/admin/children.py:306
-#: crm/zetom/admin/document_window.py:44 crm/zetom/models.py:356
+#: crm/zetom/admin/document_window.py:46 crm/zetom/models.py:356
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:196
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:31
 msgid "Order"
 msgstr "Zlecenie"
 
 #: crm/zetom/admin/base.py:328 crm/zetom/admin/children.py:332
-#: crm/zetom/admin/document_window.py:45 crm/zetom/models.py:385
+#: crm/zetom/admin/document_window.py:47 crm/zetom/models.py:385
 #: crm/zetom/templates/admin/zetom/deletedrequest/change_form.html:210
 #: crm/zetom/templates/admin/zetom/requestmain/_partials/documents.html:31
 msgid "Application"
@@ -3160,8 +3160,12 @@ msgstr "inny użytkownik"
 
 #: crm/zetom/admin/concurrency.py:64
 #, python-format
-msgid "%(who)s saved this record at %(when)s, after you opened it. Your changes were not saved."
-msgstr "%(who)s zapisał(a) ten rekord o %(when)s, już po tym, jak go otworzyłeś/aś. Twoje zmiany nie zostały zapisane."
+msgid ""
+"%(who)s saved this record at %(when)s, after you opened it. Your changes "
+"were not saved."
+msgstr ""
+"%(who)s zapisał(a) ten rekord o %(when)s, już po tym, jak go otworzyłeś/aś. "
+"Twoje zmiany nie zostały zapisane."
 
 #: crm/zetom/admin/concurrency.py:68
 #, python-format
@@ -3169,8 +3173,11 @@ msgid "Changed meanwhile: %(fields)s."
 msgstr "W międzyczasie zmieniono: %(fields)s."
 
 #: crm/zetom/admin/concurrency.py:70
-msgid "Reload the page to see the current data, or press Save again to overwrite it."
-msgstr "Odśwież stronę, aby zobaczyć aktualne dane, albo kliknij Zapisz ponownie, aby je nadpisać."
+msgid ""
+"Reload the page to see the current data, or press Save again to overwrite it."
+msgstr ""
+"Odśwież stronę, aby zobaczyć aktualne dane, albo kliknij Zapisz ponownie, "
+"aby je nadpisać."
 
 #: crm/zetom/admin/deletedrequest.py:148
 msgid "Restored from trash"
@@ -3189,52 +3196,57 @@ msgstr "Zlecenie trwale usunięte."
 msgid "Request restored to the Validation Window."
 msgstr "Zgłoszenie przywrócono do okna walidacji."
 
-#: crm/zetom/admin/document_window.py:194
+#: crm/zetom/admin/document_window.py:227
 msgid "Client data changed — say where the new data came from (contact log)."
 msgstr ""
 "Zmieniono dane klienta — podaj, skąd pochodzą nowe dane (dziennik kontaktów)."
 
-#: crm/zetom/admin/document_window.py:214
+#: crm/zetom/admin/document_window.py:247
 #, python-format
 msgid "Client data changed: %(fields)s"
 msgstr "Zmiana danych klienta: %(fields)s"
 
-#: crm/zetom/admin/document_window.py:285 crm/zetom/admin/requestmain.py:1331
+#: crm/zetom/admin/document_window.py:318 crm/zetom/admin/requestmain.py:1331
 msgid "No files selected."
 msgstr "Nie wybrano plików."
 
-#: crm/zetom/admin/document_window.py:294 crm/zetom/admin/requestmain.py:1343
+#: crm/zetom/admin/document_window.py:327 crm/zetom/admin/requestmain.py:1343
 #, python-format
 msgid "%(n)d file(s) uploaded."
 msgstr "Przesłano %(n)d plik(ów)."
 
-#: crm/zetom/admin/document_window.py:307 crm/zetom/admin/requestmain.py:1356
+#: crm/zetom/admin/document_window.py:340 crm/zetom/admin/requestmain.py:1356
 msgid "Attachment deleted."
 msgstr "Załącznik usunięty."
 
-#: crm/zetom/admin/document_window.py:326
+#: crm/zetom/admin/document_window.py:355
+#: crm/zetom/admin/document_window.py:403
+msgid "The PDF could not be created. Try again or contact the administrator."
+msgstr "Nie udało się utworzyć pliku PDF. Spróbuj ponownie lub skontaktuj się z administratorem."
+
+#: crm/zetom/admin/document_window.py:364
 #, python-format
 msgid "Document saved to files: %(name)s"
 msgstr "Dokument zapisany w plikach: %(name)s"
 
-#: crm/zetom/admin/document_window.py:354
+#: crm/zetom/admin/document_window.py:392
 msgid "Enter a valid email address."
 msgstr "Wprowadź poprawny adres e-mail."
 
-#: crm/zetom/admin/document_window.py:357
+#: crm/zetom/admin/document_window.py:395
 msgid "Subject is required."
 msgstr "Temat jest wymagany."
 
-#: crm/zetom/admin/document_window.py:381
+#: crm/zetom/admin/document_window.py:424
 msgid "The email could not be sent — see the email log."
 msgstr "Nie udało się wysłać e-maila — sprawdź dziennik e-maili."
 
-#: crm/zetom/admin/document_window.py:402
+#: crm/zetom/admin/document_window.py:445
 #, python-format
 msgid "Document sent to the client: %(subject)s"
 msgstr "Wysłano dokument do klienta: %(subject)s"
 
-#: crm/zetom/admin/document_window.py:406
+#: crm/zetom/admin/document_window.py:449
 #, python-format
 msgid "Sent to %(email)s. Status: waiting for the client."
 msgstr "Wysłano do %(email)s. Status: oczekuje na klienta."
