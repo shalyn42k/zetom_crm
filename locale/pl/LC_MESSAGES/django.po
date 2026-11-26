@@ -5548,3 +5548,121 @@ msgstr "Ciemny"
 #: templates/unfold/helpers/userlinks.html:30
 msgid "Your profile"
 msgstr "Profil użytkownika"
+
+#: crm/zetom/models.py
+msgid "Not verified"
+msgstr "Niezweryfikowana"
+
+#: crm/zetom/models.py
+msgid "Waiting for verification"
+msgstr "Czeka na weryfikację"
+
+#: crm/zetom/models.py
+msgid "Verified"
+msgstr "Zweryfikowana"
+
+#: crm/zetom/models.py
+msgid "Verification rejected"
+msgstr "Odrzucona w weryfikacji"
+
+#: crm/zetom/models.py
+msgid "Verification"
+msgstr "Weryfikacja"
+
+#: crm/zetom/models.py
+msgid "Verification requested by"
+msgstr "Prośba o weryfikację od"
+
+#: crm/zetom/models.py
+msgid "Verification requested at"
+msgstr "Data prośby o weryfikację"
+
+#: crm/zetom/models.py
+msgid "Verified by"
+msgstr "Zweryfikowana przez"
+
+#: crm/zetom/models.py
+msgid "Verified at"
+msgstr "Data weryfikacji"
+
+#: crm/zetom/models.py
+msgid "Verification note"
+msgstr "Uwagi z weryfikacji"
+
+#: crm/zetom/services/oferta_verification.py
+msgid "The offer is waiting for verification. It can be sent once another person approves it."
+msgstr "Oferta czeka na weryfikację. Można ją wysłać, gdy zatwierdzi ją inna osoba."
+
+#: crm/zetom/services/oferta_verification.py
+msgid "The offer was rejected at verification. Fix it and request verification again."
+msgstr "Oferta została odrzucona w weryfikacji. Popraw ją i ponownie poproś o weryfikację."
+
+#: crm/zetom/services/oferta_verification.py
+msgid "The offer must be verified by another person before it can be sent."
+msgstr "Przed wysłaniem oferta musi zostać zweryfikowana przez inną osobę."
+
+#: crm/zetom/services/oferta_verification.py
+#, python-format
+msgid "Offer %(number)s"
+msgstr "Oferta %(number)s"
+
+#: crm/zetom/services/oferta_verification.py
+msgid "This offer is already waiting for verification or verified."
+msgstr "Ta oferta czeka już na weryfikację lub jest zweryfikowana."
+
+#: crm/zetom/services/oferta_verification.py
+msgid "Pick at least one person who can verify the offer."
+msgstr "Wybierz co najmniej jedną osobę, która może zweryfikować ofertę."
+
+#: crm/zetom/services/oferta_verification.py
+msgid "Unknown decision."
+msgstr "Nieznana decyzja."
+
+#: crm/zetom/services/oferta_verification.py
+msgid "You can't verify this offer."
+msgstr "Nie możesz zweryfikować tej oferty."
+
+#: crm/zetom/admin/oferta_verification.py
+#, python-format
+msgid "Verification requested from: %(names)s"
+msgstr "Poproszono o weryfikację: %(names)s"
+
+#: crm/zetom/admin/oferta_verification.py
+msgid "Offer verified. It can now be sent to the client."
+msgstr "Oferta zweryfikowana. Można ją teraz wysłać do klienta."
+
+#: crm/zetom/admin/oferta_verification.py
+msgid "Offer rejected at verification. The author has been notified."
+msgstr "Oferta odrzucona w weryfikacji. Autor otrzymał powiadomienie."
+
+#: crm/zetom/admin/oferta_verification.py
+msgid "The offer changed after verification — it needs to be verified again."
+msgstr "Oferta zmieniła się po weryfikacji — wymaga ponownej weryfikacji."
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Every offer must be checked by another person before it is sent to the client."
+msgstr "Każda oferta musi zostać sprawdzona przez inną osobę przed wysłaniem do klienta."
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Requested by"
+msgstr "Prośba od"
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Rejected by"
+msgstr "Odrzucona przez"
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Waiting for another person to verify. You can't verify your own request."
+msgstr "Czeka na weryfikację przez inną osobę. Nie możesz zweryfikować własnej prośby."
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Who should verify"
+msgstr "Kto ma zweryfikować"
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Request verification"
+msgstr "Poproś o weryfikację"
+
+#: crm/zetom/templates/admin/zetom/shared/oferta_verification_card.html
+msgid "Nobody can verify this offer yet — ask an administrator to grant the review permission."
+msgstr "Nikt nie może jeszcze zweryfikować tej oferty — poproś administratora o nadanie uprawnienia do weryfikacji."
