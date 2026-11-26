@@ -1,9 +1,18 @@
+import hmac
+import json
+import logging
+from datetime import timedelta
+
 # Django imports
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 # Notification app imports
 from crm.notification.services.notification_service import (
@@ -12,7 +21,9 @@ from crm.notification.services.notification_service import (
 from crm.users.utils import user_has_perm
 # Zetom app imports
 from crm.zetom.forms import AddRequestFormNull
-from crm.zetom.models import RequestAttachment, RequestSource
+from crm.zetom.models import RequestAttachment, RequestNull, RequestSource
+
+logger = logging.getLogger(__name__)
 
 
 def _is_dns_error(error_message: str) -> bool:
@@ -87,3 +98,59 @@ def attachment_download(request, pk):
     except FileNotFoundError:
         raise Http404
     return FileResponse(handle, filename=att.display_name)
+
+
+# claude — intake for the client's WordPress site (zetomkatowice.eu): its
+# Divi contact form forwards every submission here as JSON, authenticated by
+# a shared token (SITE_INTAKE_TOKEN). The site keeps sending its own e-mail,
+# so a rejected or failed call never loses a lead. Only the contact fields
+# are taken from the payload (never `client`, `status`, ...).
+SITE_INTAKE_FIELDS = ("first_name", "last_name", "phone", "email", "company_name", "message")
+# A double click or a retry from the site within this window returns the
+# request already created instead of a second one.
+SITE_INTAKE_DEDUP_WINDOW = timedelta(minutes=10)
+
+
+def _site_token_ok(request, expected):
+    header = request.headers.get("Authorization", "")
+    scheme, _sep, token = header.partition(" ")
+    return scheme == "Bearer" and hmac.compare_digest(token.strip(), expected)
+
+
+@csrf_exempt
+@require_POST
+def site_request(request):
+    expected = getattr(settings, "SITE_INTAKE_TOKEN", "")
+    if not expected:
+        raise Http404
+    if not _site_token_ok(request, expected):
+        return JsonResponse({"error": "unauthorized"}, status=401)
+    try:
+        payload = json.loads(request.body)
+    except (ValueError, UnicodeDecodeError):
+        return JsonResponse({"error": "invalid json"}, status=400)
+    if not isinstance(payload, dict):
+        return JsonResponse({"error": "invalid json"}, status=400)
+
+    data = {name: str(payload.get(name) or "").strip() for name in SITE_INTAKE_FIELDS}
+    form = AddRequestFormNull(data)
+    if not form.is_valid():
+        return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+
+    duplicate = RequestNull.objects.filter(
+        source=RequestSource.SITE,
+        email=form.cleaned_data["email"],
+        message=form.cleaned_data["message"],
+        created_at__gte=timezone.now() - SITE_INTAKE_DEDUP_WINDOW,
+    ).order_by("-created_at").first()
+    if duplicate is not None:
+        return JsonResponse({"id": duplicate.pk, "duplicate": True}, status=200)
+
+    new_request = form.save(commit=False)
+    new_request.source = RequestSource.SITE
+    new_request.save()
+    try:
+        send_notification_to_staff(new_request)
+    except Exception:
+        logger.exception("site_request: staff notification failed for RequestNull %s", new_request.pk)
+    return JsonResponse({"id": new_request.pk}, status=201)

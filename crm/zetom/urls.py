@@ -7,6 +7,8 @@ app_name = "zetom"
 
 urlpatterns = [
     path("email/", views.email_template, name="index"),
+    # claude — JSON intake for the client's WordPress site (token-protected).
+    path("api/site-request/", views.site_request, name="site_request"),
     # claude — authenticated download of request/document files.
     path("attachments/<int:pk>/", views.attachment_download, name="attachment"),
 ]
