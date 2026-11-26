@@ -102,6 +102,7 @@ Bottom row = child documents. See handoff/CLAUDE.md for the full spec.
   <form method="post" enctype="multipart/form-data" class="rm-grid{% if original.pk %} rm-grid--3{% endif %}"
         id="{{ opts.model_name }}_form" novalidate>
     {% csrf_token %}
+    {% include "admin/zetom/shared/_concurrency_token.html" %}
 
     {% if original.pk %}
     <div class="rm-col rm-col--client">

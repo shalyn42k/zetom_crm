@@ -22,6 +22,8 @@ from crm.users.utils import user_has_perm
 # Zetom app imports
 from crm.zetom.forms import AddRequestFormNull
 from crm.zetom.models import RequestAttachment, RequestNull, RequestSource
+from crm.zetom.services.throttle import public_form_allowed
+from crm.zetom.services.uploads import upload_errors
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +47,18 @@ def _is_dns_error(error_message: str) -> bool:
 # БАГ-8: теперь принимаем request.FILES и сохраняем каждый файл как RequestAttachment.
 def email_template(request):
     if request.method == "POST":
+        # claude — anonymous endpoint: cap submissions per IP and the files
+        # (count + size) before anything is written.
+        if not public_form_allowed(request):
+            form = AddRequestFormNull(request.POST)
+            form.full_clean()
+            form.add_error(None, _("Too many requests from your address. Please try again later."))
+            return render(request, "zetom/email_template.html", {"form": form}, status=429)
         form = AddRequestFormNull(request.POST, request.FILES)
+        for error in upload_errors(
+            request.FILES.getlist("attachments"), max_files=settings.PUBLIC_FORM_MAX_FILES,
+        ):
+            form.add_error(None, error)
         if form.is_valid():
             new_request = form.save(commit=False)
             new_request.source = RequestSource.SITE
@@ -97,7 +110,18 @@ def attachment_download(request, pk):
         handle = att.file.open("rb")
     except FileNotFoundError:
         raise Http404
-    return FileResponse(handle, filename=att.display_name)
+    response = FileResponse(handle, filename=att.display_name)
+    # claude — files come from anonymous visitors (public form) too, and are
+    # shown inline (saved document sheets are .html). An uploaded .html/.svg
+    # would otherwise run its scripts on the CRM origin with the viewer's
+    # session. The CSP sandbox opens it in an isolated origin with scripts
+    # off; nosniff stops the browser second-guessing the content type.
+    # Not for PDF: Chrome refuses to start its PDF viewer in a sandbox, and
+    # that viewer doesn't give the file access to the CRM origin anyway.
+    if response.get("Content-Type", "").split(";")[0] != "application/pdf":
+        response["Content-Security-Policy"] = "sandbox"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 # claude — intake for the client's WordPress site (zetomkatowice.eu): its

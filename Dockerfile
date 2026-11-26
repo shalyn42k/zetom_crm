@@ -17,17 +17,27 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
+# /app/media is a volume in docker-compose.prod.yml (uploads must survive a
+# redeploy); created here so the volume starts out owned by the app user.
 RUN chmod +x docker/entrypoint.sh docker/followup_scheduler.sh \
     && useradd --create-home --shell /bin/bash app \
+    && mkdir -p /app/media \
     && chown -R app:app /app
 USER app
 
 EXPOSE 8000
 
 ENTRYPOINT ["./docker/entrypoint.sh"]
+# gthread: 3 processes x 4 threads = 12 requests at once. Plain sync workers
+# served only 3, so one slow call (SMTP, VAT register lookup) stalled a third
+# of the site for everyone. max-requests recycles workers to cap memory.
 CMD ["gunicorn", "config.wsgi:application", \
      "--bind", "0.0.0.0:8000", \
+     "--worker-class", "gthread", \
      "--workers", "3", \
+     "--threads", "4", \
      "--timeout", "120", \
+     "--max-requests", "1000", \
+     "--max-requests-jitter", "100", \
      "--access-logfile", "-", \
      "--error-logfile", "-"]

@@ -72,6 +72,7 @@ old per-model templates did.
 
   <div class="de-layout">
     <div class="de-main">{{ block.super }}</div>
+    {% include "admin/zetom/shared/_concurrency_token.html" %}
     <aside class="de-side">
       <section class="de-card" aria-labelledby="de-preview-heading">
         <div class="de-card__head">

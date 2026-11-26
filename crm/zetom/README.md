@@ -134,7 +134,7 @@ Reason-required ветки открывают `reason_form.html` (тот же ш
 > Известное ограничение: `active`/`open`/`closed`/`inactive` ручной
 > Apply-выбор может быть **затёрт** child-логикой при следующем
 > `handle_child_change`. Защищены только cancelled/deleted. Решение
-> «manual_status flag» — отложено, см. `DOCS/manual_status_override_todo.md`.
+> «manual_status flag» — отложено (решение 2026-05, обсуждение в истории git).
 
 ### 2.5 Trash (`DeletedRequest`)
 
@@ -207,8 +207,7 @@ crm/zetom/
 - `crm/status_manager/` — `StatusHistory` модель, `RequestStatus` /
   `Status` enums, `cancel_request` / `delete_request` /
   `update_parent` / `change_status`. **Tightly coupled с zetom**
-  (cross-app FK + знание дочек). См. `DOCS/status_manager_coupling.md`
-  если будет создан.
+  (cross-app FK + знание дочек).
 - `crm/users/` — `UserProfile` (с `department`), `Role`, `Permission`,
   `user_has_perm` helper. Используется в RBAC zetom-админок.
 - `crm/notification/` — email-уведомления при создании RequestNull /

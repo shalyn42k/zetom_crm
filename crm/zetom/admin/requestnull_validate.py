@@ -469,7 +469,24 @@ class ValidationWindowMixin:
         if request.method == "POST":
             form = ValidationWindowForm(request.POST, candidate_ids=candidate_ids)
             if form.is_valid():
-                new_main = _do_approve(rn, form.cleaned_data, user=request.user)
+                # claude — two people approving the same lead at once: the
+                # row lock makes the second wait for the first to commit,
+                # then finds the lead already promoted instead of silently
+                # overwriting the first one's departments/owners.
+                with transaction.atomic():
+                    locked = (
+                        RequestNull.all_objects.select_for_update()
+                        .filter(pk=rn.pk).first()
+                    )
+                    if locked is None or locked.deleted:
+                        existing = RequestMain.objects.filter(from_null_id=rn.pk).first()
+                        messages.warning(
+                            request, _("This request has already been approved by someone else."),
+                        )
+                        if existing is not None:
+                            return redirect("admin:zetom_requestmain_change", existing.pk)
+                        return redirect("admin:zetom_requestnull_changelist")
+                    new_main = _do_approve(rn, form.cleaned_data, user=request.user)
                 try:
                     send_notification_approve_null(new_main)
                 except Exception:  # noqa: BLE001 — notification must not block approve

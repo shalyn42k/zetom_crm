@@ -2,7 +2,8 @@ from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Count, IntegerField, OuterRef, Q, Subquery
+from django.db.models.functions import Coalesce
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.response import TemplateResponse
@@ -12,7 +13,10 @@ from django.utils.translation import gettext_lazy as _
 
 from crm.status_manager.services.statuses import RequestStatus, Status
 from crm.users.utils import user_has_perm
-from crm.zetom.models import RequestMain, StepNote, department_choices
+from crm.zetom.models import (
+    OfertaClientLink, RequestClientLink, RequestMain, StepNote,
+    WniosekClientLink, ZlecenieClientLink, department_choices,
+)
 from crm.zetom.services.step_notes import create_step_note, mark_reminder_done
 
 from . import views
@@ -23,6 +27,22 @@ from .services_contacts import (
     reminder_rows_for_company, reminder_rows_for_person,
     timeline_notes_for_company, timeline_notes_for_person,
 )
+
+
+# claude — per-client document counts as one correlated subquery each.
+# Four Count(..., distinct=True) over four M2M joins in one GROUP BY
+# multiplied every client's rows (links × links × links × links) before
+# DISTINCT folded them back: 300 ms on nine clients, growing with every
+# link. Link tables are unique per (request, client), so a row count is the
+# distinct count; they're read directly, like the joins did (soft-deleted
+# documents included).
+def _link_count(link_qs):
+    counted = (
+        link_qs.filter(client=OuterRef("pk")).order_by()
+        .values("client").annotate(n=Count("pk")).values("n")
+    )
+    return Coalesce(Subquery(counted, output_field=IntegerField()), 0)
+
 
 # claude — Phase 3a Task 3: RequestStatus → the four status-badge CSS classes
 # the design defines (company_card.css `.st.*`). RequestMain's real statuses
@@ -219,10 +239,10 @@ class ClientAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.annotate(
-            _request_count=Count("requests", distinct=True),
-            _oferta_count=Count("ofertas", distinct=True),
-            _zlecenie_count=Count("zlecenia", distinct=True),
-            _wniosek_count=Count("wnioski", distinct=True),
+            _request_count=_link_count(RequestClientLink.objects.all()),
+            _oferta_count=_link_count(OfertaClientLink.objects.all()),
+            _zlecenie_count=_link_count(ZlecenieClientLink.objects.all()),
+            _wniosek_count=_link_count(WniosekClientLink.objects.all()),
         )
 
     # claude
@@ -571,14 +591,12 @@ class ClientAdmin(admin.ModelAdmin):
         # prefetch — модель прямо предупреждает (Client.primary_company), что
         # без него на каждую строку уходит отдельный запрос.
         persons = Client.objects.prefetch_related("company_links__company").annotate(
-            _c_main=Count(
-                "requests",
-                filter=~Q(requests__status__in=excluded_statuses),
-                distinct=True,
+            _c_main=_link_count(
+                RequestClientLink.objects.exclude(request__status__in=excluded_statuses)
             ),
-            _c_oferta=Count("ofertas", distinct=True),
-            _c_zlecenie=Count("zlecenia", distinct=True),
-            _c_wniosek=Count("wnioski", distinct=True),
+            _c_oferta=_link_count(OfertaClientLink.objects.all()),
+            _c_zlecenie=_link_count(ZlecenieClientLink.objects.all()),
+            _c_wniosek=_link_count(WniosekClientLink.objects.all()),
         )
         if typ_active:
             # claude — Typ dostawcy only exists on Company; a person can

@@ -37,17 +37,13 @@ from crm.notification.services.request_mail import document_code
 from crm.users.utils import user_has_perm
 from crm.zetom.models import RequestAttachment, StepNote
 from crm.zetom.services.reminder_targets import client_email_choices
+from crm.zetom.services.uploads import upload_errors
 
 DOCUMENT_TITLES = {
     "Oferta": _("Offer"),
     "Zlecenie": _("Order"),
     "Wniosek": _("Application"),
 }
-
-# max size of one uploaded file (bytes); the same limit applies to every
-# document kind.
-MAX_UPLOAD_BYTES = 20 * 1024 * 1024
-
 
 def document_context(obj, user):
     """What the paper (preview, print page, saved version) renders. Kept
@@ -288,9 +284,10 @@ class DocumentWindowMixin:
         if not files:
             messages.error(request, _("No files selected."))
             return redirect(self._change_url(obj) + "#files")
-        too_big = [f.name for f in files if f.size > MAX_UPLOAD_BYTES]
-        if too_big:
-            messages.error(request, _("Too large (max 20 MB): %(names)s") % {"names": ", ".join(too_big)})
+        errors = upload_errors(files)
+        if errors:
+            for error in errors:
+                messages.error(request, error)
             return redirect(self._change_url(obj) + "#files")
         for f in files:
             RequestAttachment.objects.create(**{self._fk_name(): obj}, file=f, uploaded_by=request.user)

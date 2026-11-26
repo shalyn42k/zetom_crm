@@ -31,7 +31,7 @@ def visible_requests_for(user, qs):
 
         return qs.filter(personal).distinct()
 
-    # claude — per DOCS/rbac.md §7.3: dep_head раньше видел/редактировал ВСЕ
+    # claude — per docs/rbac.md §7.3: dep_head раньше видел/редактировал ВСЕ
     # отделы, не только свой (ничем не отличался от auditor по видимости).
     # Сужаем до head_of_departments + личные назначения (как у specialist),
     # чтобы dep_head не был слеп на Req, назначенный лично ему вне его отделов.

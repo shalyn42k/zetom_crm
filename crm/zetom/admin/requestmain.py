@@ -44,9 +44,11 @@ from crm.zetom.services.request_service import (
 from crm.zetom.services.status_orchestration import (
     ReasonRequired, apply_status_change,
 )
+from crm.zetom.services.uploads import upload_errors
 from crm.zetom.services.visibility import visible_requests_for
 
 from .base import BaseRequestAdmin, ReasonForm
+from .concurrency import OptimisticLockMixin
 from .requestmain_mail import RequestMailMixin
 from .requestmain_resolve_review import (
     RequestResolveReviewMixin, latest_open_review,
@@ -78,6 +80,7 @@ def _show_client_data_read_only(form, obj):
 
 @admin.register(RequestMain)
 class RequestMainAdmin(
+    OptimisticLockMixin,
     RequestMailMixin,
     RequestReviewMixin,
     RequestResolveReviewMixin,
@@ -239,8 +242,16 @@ class RequestMainAdmin(
             obj._actor = request.user  # claude — skip self in the assignment notification
             obj.assigned_to.set(owner_users)
             obj.owners.set(owner_users)
-        for f in request.FILES.getlist("attachments"):
-            RequestAttachment.objects.create(request_main=obj, file=f, uploaded_by=request.user)
+        # claude — the request itself is already saved here; files over the
+        # limit are skipped with a message instead of failing the whole add.
+        files = request.FILES.getlist("attachments")
+        errors = upload_errors(files)
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+        else:
+            for f in files:
+                RequestAttachment.objects.create(request_main=obj, file=f, uploaded_by=request.user)
         return redirect("admin:zetom_requestmain_change", obj.pk)
 
     # ---------- Delete (status flip + safedelete) ----------
@@ -390,10 +401,13 @@ class RequestMainAdmin(
             records = list(
                 obj.history.select_related("history_user").order_by("-history_date")[:50]
             )
-            for record in records:
+            for i, record in enumerate(records):
                 changes = []
-                if record.prev_record:
-                    delta = record.diff_against(record.prev_record)
+                # claude — records are newest-first, so the previous version
+                # is the next item; record.prev_record was one query per row.
+                prev = records[i + 1] if i + 1 < len(records) else record.prev_record
+                if prev:
+                    delta = record.diff_against(prev)
                     changes = [
                         {
                             "field": history_field_label(c.field),
@@ -446,7 +460,8 @@ class RequestMainAdmin(
                 review_candidates_for,
             )
             review_default, review_extras = review_candidates_for(obj, request.user)
-            owner_ids_in_default = {u.pk for u in review_default if u.pk in obj.owners.values_list("id", flat=True)}
+            req_owner_ids = set(obj.owners.values_list("id", flat=True))
+            owner_ids_in_default = {u.pk for u in review_default if u.pk in req_owner_ids}
             context["review_default_locked"] = [u for u in review_default if u.pk in owner_ids_in_default]
             context["review_default_optional"] = [u for u in review_default if u.pk not in owner_ids_in_default]
             context["review_extras"] = review_extras
@@ -987,12 +1002,15 @@ class RequestMainAdmin(
         if not Department.objects.filter(code=code).exists():
             messages.error(request, _("Invalid department."))
             return redirect("admin:zetom_requestmain_change", object_id)
-        if code in (obj.departments or []):
-            messages.info(request, _("Already assigned."))
-            return redirect("admin:zetom_requestmain_change", object_id)
-
-        obj.departments = list(obj.departments or []) + [code]
-        obj.save(update_fields=["departments"])
+        # claude — read-modify-write of the array under a row lock: two people
+        # adding different departments at once both end up on the request.
+        with transaction.atomic():
+            obj = RequestMain.objects.select_for_update().get(pk=obj.pk)
+            if code in (obj.departments or []):
+                messages.info(request, _("Already assigned."))
+                return redirect("admin:zetom_requestmain_change", object_id)
+            obj.departments = list(obj.departments or []) + [code]
+            obj.save(update_fields=["departments"])
         label = dict(department_choices()).get(code, code)
         messages.success(request, _("Added %(label)s.") % {"label": label})
         return redirect("admin:zetom_requestmain_change", object_id)
@@ -1004,9 +1022,13 @@ class RequestMainAdmin(
         if denied is not None:
             return denied
 
-        if dept_code in (obj.departments or []):
-            obj.departments = [c for c in obj.departments if c != dept_code]
-            obj.save(update_fields=["departments"])
+        with transaction.atomic():
+            obj = RequestMain.objects.select_for_update().get(pk=obj.pk)
+            removed = dept_code in (obj.departments or [])
+            if removed:
+                obj.departments = [c for c in obj.departments if c != dept_code]
+                obj.save(update_fields=["departments"])
+        if removed:
             label = dict(department_choices()).get(dept_code, dept_code)
             messages.success(request, _("Removed %(label)s.") % {"label": label})
         return redirect("admin:zetom_requestmain_change", object_id)
@@ -1307,6 +1329,12 @@ class RequestMainAdmin(
         files = request.FILES.getlist("attachments")
         if not files:
             messages.error(request, _("No files selected."))
+            return redirect("admin:zetom_requestmain_change", object_id)
+        # claude — same size limit as the document window.
+        errors = upload_errors(files)
+        if errors:
+            for error in errors:
+                messages.error(request, error)
             return redirect("admin:zetom_requestmain_change", object_id)
         for f in files:
             RequestAttachment.objects.create(

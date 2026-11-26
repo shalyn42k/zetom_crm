@@ -20,6 +20,10 @@ services:
     container_name: zetom-web
     restart: unless-stopped
     env_file: .env
+    # Uploaded files (request attachments, avatars). Without a volume they
+    # lived inside the container and were lost on every redeploy.
+    volumes:
+      - media_data:/app/media
     dns:
       - 1.1.1.1
       - 8.8.8.8
@@ -52,3 +56,4 @@ services:
 
 volumes:
   postgres_data_prod:
+  media_data:

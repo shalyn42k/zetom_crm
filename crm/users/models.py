@@ -118,6 +118,25 @@ class UserProfile(models.Model):
             ).distinct()
         return self.extra_permissions.all()
 
+    # claude — коды прав одним запросом на объект профиля. user_has_perm
+    # дёргается десятки раз за страницу (сайдбар, карточка заявки, …):
+    # раньше это был отдельный SQL на каждую проверку — 60–120 одинаковых
+    # запросов на страницу у не-суперюзера. Профиль живёт в рамках одного
+    # запроса (request.user грузится заново на каждый), так что кэш не
+    # переживает смену прав между запросами. Внутри запроса сбрасывается
+    # при смене роли, save() и изменении extra_permissions (signals.py).
+    def permission_codes(self):
+        cached = getattr(self, "_perm_codes_cache", None)
+        if cached is None or cached[0] != self.role_id:
+            codes = frozenset(self.effective_permissions().values_list("code", flat=True))
+            cached = (self.role_id, codes)
+            self._perm_codes_cache = cached
+        return cached[1]
+
+    def save(self, *args, **kwargs):
+        self.__dict__.pop("_perm_codes_cache", None)
+        super().save(*args, **kwargs)
+
     # claude
     def clean(self):
         super().clean()
